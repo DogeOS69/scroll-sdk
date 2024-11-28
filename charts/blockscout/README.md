@@ -1,6 +1,6 @@
 # blockscout
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout scroll helm charts
 
@@ -16,7 +16,7 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://blockscout.github.io/helm-charts | blockscout-stack | 1.6.8 |
+| https://blockscout.github.io/helm-charts | blockscout-stack | 1.8.0 |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | external-secrets-lib | 0.0.3 |
 
 ## Values
@@ -24,6 +24,7 @@ Kubernetes: `>=1.22.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | blockscout-stack.blockscout.env.BLOCK_TRANSFORMER | string | `"clique"` |  |
+| blockscout-stack.blockscout.env.CHAIN_SPEC_PATH | string | `"/app/genesis/genesis.json"` |  |
 | blockscout-stack.blockscout.env.CHAIN_TYPE | string | `"scroll"` |  |
 | blockscout-stack.blockscout.env.ECTO_USE_SSL | bool | `false` |  |
 | blockscout-stack.blockscout.env.ETHEREUM_JSONRPC_HTTP_INSECURE | bool | `true` |  |
@@ -47,11 +48,16 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/enable-cors" | string | `"true"` |  |
 | blockscout-stack.blockscout.ingress.className | string | `"nginx"` |  |
 | blockscout-stack.blockscout.ingress.enabled | bool | `true` |  |
-| blockscout-stack.blockscout.ingress.hostname | string | `"blockscout-backend.scrollsdk"` |  |
+| blockscout-stack.blockscout.ingress.hostname | string | `"blockscout.scrollsdk"` |  |
+| blockscout-stack.blockscout.volumeMounts[0].mountPath | string | `"/app/genesis"` |  |
+| blockscout-stack.blockscout.volumeMounts[0].name | string | `"genesis-config"` |  |
+| blockscout-stack.blockscout.volumeMounts[0].readOnly | bool | `true` |  |
+| blockscout-stack.blockscout.volumes[0].configMap.name | string | `"genesis-config"` |  |
+| blockscout-stack.blockscout.volumes[0].name | string | `"genesis-config"` |  |
 | blockscout-stack.frontend.env.FAVICON_MASTER_URL | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/favicons/scroll_180x180.png"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_AD_BANNER_PROVIDER | string | `"none"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_AD_TEXT_PROVIDER | string | `"none"` |  |
-| blockscout-stack.frontend.env.NEXT_PUBLIC_API_HOST | string | `"blockscout-backend.scrollsdk"` |  |
+| blockscout-stack.frontend.env.NEXT_PUBLIC_API_HOST | string | `"blockscout.scrollsdk"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_API_PROTOCOL | string | `"http"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL | string | `"ws"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_APP_PROTOCOL | string | `"http"` |  |

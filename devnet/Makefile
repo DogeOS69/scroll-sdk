@@ -4,17 +4,18 @@ ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "a
 NAMESPACE ?= default
 L2_IMAGE_TAG := $(ARCH_OTHER)v5.7.25$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
+SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
 		echo "Pulling helm chart..."
-		helm pull oci://ghcr.io/scroll-tech/scroll-sdk/helm/scroll-sdk --version 0.1.0
+		helm pull oci://ghcr.io/scroll-tech/scroll-sdk/helm/scroll-sdk --version 0.1.1
 		echo "Extracting helm chart..."
 		tar -xvf *.tgz
 		$(MAKE) config
 
 config:
 		echo "Creating configuration files..."
-		cd scroll-sdk && time docker run --rm -it -v .:/contracts/volume scrolltech/scroll-stack-contracts:gen-configs-2eba3d2c418b16f4a66d9baadeb1c1bafdca81b1
+		cd scroll-sdk && time docker run --rm -it -v .:/contracts/volume scrolltech/scroll-stack-contracts:gen-configs-64934888f4cd002e77414a8e62812f70c00c5937
 		echo "Creating env files..."
 		./create-env-files.sh scroll-sdk
 		./prepare-config-files.sh
@@ -24,6 +25,7 @@ install:
 			--set l2-rpc.image.tag=$(L2_IMAGE_TAG) \
 			--set l2-sequencer.image.tag=$(L2_IMAGE_TAG) \
 			--set l2-bootnode.image.tag=$(L2_IMAGE_TAG) \
+			--set blockscout-sc-verifier.image.tag=$(SC_VERIFIER_TAG) \
 			--set l1-devnet.ingress.main.hosts[0].host=$(L1_RPC_HOST) \
 			--set l1-devnet.ingress.main.hosts[0].paths[0].path=/ \
 			--set l1-devnet.ingress.main.hosts[0].paths[0].pathType=Prefix \
@@ -51,3 +53,7 @@ delete:
 
 upgrade:
 		$(MAKE) install
+
+verify:
+		echo "Verifing contracts..."
+		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume scrolltech/scroll-stack-contracts:verify-64934888f4cd002e77414a8e62812f70c00c5937

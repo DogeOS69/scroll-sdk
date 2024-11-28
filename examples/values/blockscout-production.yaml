@@ -47,14 +47,13 @@ blockscout-stack:
       hostname: ""
       tls:
         enabled: true
-        secretName: blockscout-tls  # Set here the name of the secret. Example : blockscout-backend.scrollsdk
+        secretName: blockscout-tls  # Set here the name of the secret. Example : blockscout.scrollsdk
 
   frontend:
     env:
       NEXT_PUBLIC_API_PROTOCOL: https
       NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: wss
-      NEXT_PUBLIC_API_HOST: "" # Backend host, example  "blockscout-backend.scrollsdk"
-      NEXT_PUBLIC_APP_HOST: "" # Backend host, example  "blockscout-backend.scrollsdk"
+      NEXT_PUBLIC_API_HOST: "" # Backend host, example  "blockscout.scrollsdk"
       NEXT_PUBLIC_APP_PROTOCOL: https
 
     ingress:

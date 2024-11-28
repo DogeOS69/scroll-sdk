@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk
 name: scroll-sdk
-version: 0.1.0
+version: 0.1.1
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -14,7 +14,7 @@ keywords:
 home: https://github.com/scroll-tech/scroll-sdk
 dependencies:
   - name: l1-devnet
-    version: 0.1.0
+    version: 0.1.1
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: l1-devnet.enabled
   - name: balance-checker
@@ -22,7 +22,7 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: balance-checker.enabled
   - name: blockscout
-    version: 0.1.0
+    version: 0.1.1
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: blockscout.enabled
   - name: bridge-history-api
@@ -34,7 +34,7 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: bridge-history-fetcher.enabled
   - name: blockscout-sc-verifier
-    version: 0.0.2
+    version: 0.1.0
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: blockscout-sc-verifier.enabled
   - name: chain-monitor
@@ -42,7 +42,7 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: chain-monitor.enabled
   - name: contracts
-    version: 0.1.0
+    version: 0.1.1
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: contracts.enabled
   - name: coordinator-api
@@ -62,7 +62,7 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: gas-oracle.enabled
   - name: l1-explorer
-    version: 0.1.0
+    version: 0.1.1
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: l1-explorer.enabled
   - name: l2-bootnode

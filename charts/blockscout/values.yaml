@@ -25,6 +25,7 @@ blockscout-stack:
       SCROLL_L2_CURIE_UPGRADE_BLOCK: 0
       ECTO_USE_SSL: false
       ETHEREUM_JSONRPC_HTTP_INSECURE: true
+      CHAIN_SPEC_PATH: /app/genesis/genesis.json
       # Not sure what these values are for
       #      SCROLL_L1_SCALAR_INIT:
       #      SCROLL_L1_OVERHEAD_INIT:
@@ -46,7 +47,17 @@ blockscout-stack:
         nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
         nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
         nginx.ingress.kubernetes.io/cors-max-age: "86400"
-      hostname: blockscout-backend.scrollsdk
+      hostname: blockscout.scrollsdk
+
+    volumes:
+      - name: genesis-config
+        configMap:
+          name: genesis-config
+
+    volumeMounts:
+      - name: genesis-config
+        mountPath: "/app/genesis"
+        readOnly: true
 
   frontend:
     image:
@@ -64,7 +75,7 @@ blockscout-stack:
       NEXT_PUBLIC_HOMEPAGE_STATS: '["total_blocks", "average_block_time", "total_txs", "wallet_addresses", "gas_tracker"]'
       NEXT_PUBLIC_API_PROTOCOL: http
       NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
-      NEXT_PUBLIC_API_HOST: "blockscout-backend.scrollsdk"
+      NEXT_PUBLIC_API_HOST: "blockscout.scrollsdk"
       NEXT_PUBLIC_APP_PROTOCOL: http
       NEXT_PUBLIC_AD_BANNER_PROVIDER: none
       NEXT_PUBLIC_AD_TEXT_PROVIDER: none
