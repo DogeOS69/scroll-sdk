@@ -33,15 +33,15 @@ L2_GAS_ORACLE_SENDER_ADDR = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
 [db]
 
-# ADMIN_SYSTEM_BACKEND_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+ADMIN_SYSTEM_BACKEND_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
 BLOCKSCOUT_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/blockscout"
-# BRIDGE_HISTORY_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
-# CHAIN_MONITOR_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
-# GAS_ORACLE_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
-# COORDINATOR_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
-# L1_EXPLORER_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/l1-explorer"
-# ROLLUP_NODE_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
-# ROLLUP_EXPLORER_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+BRIDGE_HISTORY_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+CHAIN_MONITOR_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+GAS_ORACLE_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+COORDINATOR_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+L1_EXPLORER_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/l1-explorer"
+ROLLUP_NODE_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
+ROLLUP_EXPLORER_DB_CONNECTION_STRING = "postgres://postgres:qwerty12345@postgresql:5432/scroll?sslmode=disable"
 
 [gas-token]
 
@@ -72,16 +72,16 @@ TEST_ENV_MOCK_FINALIZE_TIMEOUT_SEC = 300
 FINALIZE_BATCH_DEADLINE_SEC = 43200
 RELAY_MESSAGE_DEADLINE_SEC = 21600
 
-# [frontend]
+[frontend]
 
-# EXTERNAL_RPC_URI_L1 = "http://l1-devnet.scrollsdk"
-# EXTERNAL_RPC_URI_L2 = "http://l2-rpc.scrollsdk"
-# BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
-# ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
-# EXTERNAL_EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
-# EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
-# ADMIN_SYSTEM_DASHBOARD_URI = "http://admin-system-dashboard.scrollsdk"
-# GRAFANA_URI = "http://grafana.scrollsdk"
+EXTERNAL_RPC_URI_L1 = "http://l1-devnet.scrollsdk"
+EXTERNAL_RPC_URI_L2 = "http://l2-rpc.scrollsdk"
+BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
+ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
+EXTERNAL_EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
+EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
+ADMIN_SYSTEM_DASHBOARD_URI = "http://admin-system-dashboard.scrollsdk"
+GRAFANA_URI = "http://grafana.scrollsdk"
 
 [genesis]
 
@@ -117,12 +117,12 @@ RPC_URI_L2 = "http://l2-rpc.scrollsdk"
 EXPLORER_API_KEY_L1 = ""
 EXPLORER_API_KEY_L2 = ""
 
-# [coordinator]
-# 
-# CHUNK_COLLECTION_TIME_SEC = 3600
-# BATCH_COLLECTION_TIME_SEC = 1800
-# BUNDLE_COLLECTION_TIME_SEC = 600
-# COORDINATOR_JWT_SECRET_KEY = "e788b62d39254928a821ac1c76b274a8c835aa1e20ecfb6f50eb10e87847de44"
+[coordinator]
+
+CHUNK_COLLECTION_TIME_SEC = 3600
+BATCH_COLLECTION_TIME_SEC = 1800
+BUNDLE_COLLECTION_TIME_SEC = 600
+COORDINATOR_JWT_SECRET_KEY = "e788b62d39254928a821ac1c76b274a8c835aa1e20ecfb6f50eb10e87847de44"
 
 [ingress]
 
