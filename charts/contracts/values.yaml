@@ -4,7 +4,7 @@ global:
 
 image:
   repository: shuunifra/scroll-stack-contracts
-  tag: deploy-3cadb4d-amd64
+  tag: deploy-3cadb4d
 
 envFrom:
   - configMapRef:
