@@ -29,12 +29,12 @@ spec:
               value: {{ .Values.db.pg_port | quote }}
             - name: PGPASSWORD
               value: {{ .Values.db.pg_password }}
-            # - name: DB_USER
-            #   value: bridge_history
+            - name: DB_USER
+              value: bridge_history
             - name: POSTGRES_PASSWORD
               value: {{ .Values.db.pg_password }}
-            # - name: DB_PASSWORD
-            #   value: {{ .Values.db.bridge_history_password }}
+            - name: DB_PASSWORD
+              value: {{ .Values.db.bridge_history_password }}
           command: ["bash", "-c", "./init-db.sh"]
           volumeMounts:
             - name: init-db
