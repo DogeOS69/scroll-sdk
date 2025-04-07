@@ -97,7 +97,7 @@ jobs:
             helm dependencies build charts/$chart
             helm package charts/$chart
             export CHART_VERSION=$(grep 'version:' charts/$chart/Chart.yaml | head -n1 | awk '{ print $2 }')
-            helm push --public $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
+            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
           done
 
   helm-chart-testing-scroll-sdk:
@@ -190,5 +190,5 @@ jobs:
             helm dependencies build charts/$chart
             helm package charts/$chart
             export CHART_VERSION=$(grep 'version:' charts/$chart/Chart.yaml | head -n1 | awk '{ print $2 }')
-            helm push --public $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
+            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
           done
