@@ -1,3 +1,4 @@
+# Trigger publish-chart workflow
 ---
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk
