@@ -9,7 +9,7 @@ blockscout-stack:
     image:
       repository: blockscout/blockscout-scroll
       pullPolicy: IfNotPresent
-      tag: 6.9.0-alpha.1
+      tag: 8.0.0-alpha.1
 
     env:
       ETHEREUM_JSONRPC_HTTP_URL: http://l2-rpc:8545
