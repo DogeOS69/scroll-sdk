@@ -7,7 +7,7 @@ blockscout-stack:
 
   blockscout:
     image:
-      repository: blockscout/blockscout-scroll
+      repository: ghcr.io/blockscout/blockscout-scroll
       pullPolicy: IfNotPresent
       tag: 8.0.0-alpha.1
 
