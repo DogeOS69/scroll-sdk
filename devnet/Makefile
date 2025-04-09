@@ -2,14 +2,14 @@
 ARCH_ARM64 := $(shell if [ "$$(uname -m)" = "arm64" ] || [ "$$(uname -m)" = "aarch64" ]; then echo "-arm64"; else echo ""; fi)
 ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "aarch64" ]; then echo "scroll-"; else echo ""; fi)
 NAMESPACE ?= default
-L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.35$(ARCH_ARM64)
+L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
-SCROLL_CONTRACTS_TAG_SUFFIX := 327767a
+SCROLL_CONTRACTS_TAG_SUFFIX := 200577d
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
 		echo "Pulling helm chart..."
-		helm pull oci://ghcr.io/unifralabs/scroll-sdk/helm/scroll-sdk --version 0.1.9-do
+		helm pull oci://ghcr.io/unifralabs/scroll-sdk/helm/scroll-sdk --version 0.1.10-do
 		echo "Extracting helm chart..."
 		tar -xvf *.tgz
 		$(MAKE) config

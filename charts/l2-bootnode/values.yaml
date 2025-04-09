@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.8.35
+  tag: scroll-v5.8.36
 
 env:
   - name: L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK
