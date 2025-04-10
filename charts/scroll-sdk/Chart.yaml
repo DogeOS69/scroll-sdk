@@ -1,6 +1,6 @@
 ---
 apiVersion: v2
-description: scroll helm charts to deploy scroll sdk
+description: scroll helm charts to deploy scroll sdk for dogeos
 name: scroll-sdk
 version: 0.1.4-dogeos
 appVersion: v0.1.0
