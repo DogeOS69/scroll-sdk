@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.7.25
+  tag: scroll-v5.8.36
 
 service:
   main:
@@ -94,6 +94,7 @@ command:
     --ws --ws.port \"$L2GETH_RPC_WS_PORT\" --ws.addr \"0.0.0.0\" --ws.api \"eth,scroll,net,web3,debug\" \
     $L2GETH_CCC_FLAG --ccc.numworkers \"$L2GETH_CCC_NUMWORKERS\" \
     $METRICS_FLAGS \
+    --scroll-mpt \
     --gcmode archive \
     --cache.noprefetch \
     --verbosity 3 \
@@ -104,7 +105,6 @@ command:
     --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" --gpo.percentile 20 --gpo.blocks 100 \
     --gpo.congestionthreshold 500 \
     --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" \
-    --rollup.verify \
     --metrics --metrics.expensive \
     $L2GETH_EXTRA_PARAMS"
 

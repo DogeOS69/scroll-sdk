@@ -6,7 +6,7 @@ blockscout-stack:
       ETHEREUM_JSONRPC_TRACE_URL: http://l2-rpc:8545
       ETHEREUM_JSONRPC_VARIANT: geth
       ETHEREUM_JSONRPC_WS_URL: ws://l2-rpc:8546
-      BLOCK_TRANSFORMER: clique
+      # BLOCK_TRANSFORMER: clique
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
       CHAIN_TYPE: scroll
       INDEXER_SCROLL_L1_CHAIN_CONTRACT: ""  # value of L1_SCROLL_CHAIN_PROXY_ADDR on config-contracts.toml

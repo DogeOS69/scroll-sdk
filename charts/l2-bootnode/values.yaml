@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.7.25
+  tag: scroll-v5.8.36
 
 env:
   - name: L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK
@@ -54,6 +54,7 @@ command:
     geth --datadir \"/l2geth/data\" \
     --port \"$L2GETH_P2P_PORT\" --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" \
     --bootnodes \"\" \
+    --scroll-mpt \
     --gcmode archive \
     --config \"/l2geth/config.toml\" \
     --cache.noprefetch \

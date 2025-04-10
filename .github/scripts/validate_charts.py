@@ -86,8 +86,9 @@ def validate_example_makefile():
         makefile_content = re.sub(r"\\\n\s*", " ", f.read())
 
     # Extract version patterns from helm upgrade commands
+    # Modified regex to support versions with suffixes like -do
     version_patterns = re.findall(
-        r"helm upgrade -i ([a-zA-Z0-9-]+)\s+oci://[^\s]+\s+.*?--version=(\d+\.\d+\.\d+)",
+        r"helm upgrade -i ([a-zA-Z0-9-]+)\s+oci://[^\s]+\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
         makefile_content,
     )
 

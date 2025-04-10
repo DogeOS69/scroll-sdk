@@ -2,7 +2,7 @@
 apiVersion: v2
 description: blockscout scroll helm charts
 name: blockscout
-version: 0.1.1
+version: 0.1.4-do
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -14,4 +14,4 @@ dependencies:
     version: 0.0.3
   - name: blockscout-stack
     repository: https://blockscout.github.io/helm-charts
-    version: 1.8.0
+    version: 2.2.0

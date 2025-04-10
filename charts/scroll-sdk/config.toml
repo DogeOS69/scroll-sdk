@@ -69,6 +69,8 @@ MAX_BATCH_IN_BUNDLE = 30
 MAX_L1_MESSAGE_GAS_LIMIT = 10_000_000
 TEST_ENV_MOCK_FINALIZE_ENABLED = true
 TEST_ENV_MOCK_FINALIZE_TIMEOUT_SEC = 300
+FINALIZE_BATCH_DEADLINE_SEC = 43200
+RELAY_MESSAGE_DEADLINE_SEC = 21600
 
 [frontend]
 
@@ -108,7 +110,7 @@ L2_TX_FEE_VAULT = "0x5300000000000000000000000000000000000005"
 
 VERIFIER_TYPE_L1 = "blockscout"
 VERIFIER_TYPE_L2 = "blockscout"
-EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
+# EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
 EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
 RPC_URI_L1 = "http://l1-devnet.scrollsdk"
 RPC_URI_L2 = "http://l2-rpc.scrollsdk"
@@ -124,12 +126,12 @@ COORDINATOR_JWT_SECRET_KEY = "e788b62d39254928a821ac1c76b274a8c835aa1e20ecfb6f50
 
 [ingress]
 
-FRONTEND_HOST = "frontends.scrollsdk"
-BRIDGE_HISTORY_API_HOST = "bridge-history-api.scrollsdk"
-ROLLUP_EXPLORER_API_HOST = "rollup-explorer-backend.scrollsdk"
-COORDINATOR_API_HOST = "coordinator-api.scrollsdk"
+# FRONTEND_HOST = "frontends.scrollsdk"
+# BRIDGE_HISTORY_API_HOST = "bridge-history-api.scrollsdk"
+# ROLLUP_EXPLORER_API_HOST = "rollup-explorer-backend.scrollsdk"
+# COORDINATOR_API_HOST = "coordinator-api.scrollsdk"
 RPC_GATEWAY_HOST = "l2-rpc.scrollsdk"
 BLOCKSCOUT_HOST = "blockscout.scrollsdk"
 BLOCKSCOUT_BACKEND_HOST = "blockscout.scrollsdk"
-ADMIN_SYSTEM_DASHBOARD_HOST = "admin-system-dashboard.scrollsdk"
+# ADMIN_SYSTEM_DASHBOARD_HOST = "admin-system-dashboard.scrollsdk"
 GRAFANA_HOST = "http://grafana.scrollsdk"
