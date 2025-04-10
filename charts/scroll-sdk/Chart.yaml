@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk
 name: scroll-sdk
-version: 0.1.10-do
+version: 0.1.4-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -30,8 +30,8 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: balance-checker.enabled
   - name: blockscout
-    version: 0.1.4-do
-    repository: "oci://ghcr.io/unifralabs/scroll-sdk/helm"
+    version: 0.1.2-dogeos
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: blockscout.enabled
   # - name: blockscout-sc-verifier
   #   version: 0.1.1
@@ -50,8 +50,8 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: chain-monitor.enabled
   - name: contracts
-    version: 0.1.3-do
-    repository: "oci://ghcr.io/unifralabs/scroll-sdk/helm"
+    version: 0.1.2-dogeos
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: contracts.enabled
   # - name: coordinator-api
   #   version: 0.1.2
@@ -78,16 +78,16 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: l1-explorer.enabled
   - name: l2-bootnode
-    version: 0.1.4-do
-    repository: "oci://ghcr.io/unifralabs/scroll-sdk/helm"
+    version: 0.1.3-dogeos
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-bootnode.enabled
   - name: l2-rpc
-    version: 0.1.4-do
-    repository: "oci://ghcr.io/unifralabs/scroll-sdk/helm"
+    version: 0.1.3-dogeos
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-rpc.enabled
   - name: l2-sequencer
-    version: 0.1.4-do
-    repository: "oci://ghcr.io/unifralabs/scroll-sdk/helm"
+    version: 0.1.3-dogeos
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-sequencer.enabled
   - name: postgresql
     repository: "oci://registry-1.docker.io/bitnamicharts"

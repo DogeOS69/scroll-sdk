@@ -2,7 +2,7 @@ name: Lint, test and publish charts
 
 on:
   push:
-    branches: [ develop, feat/euclid-upgrade ]
+    branches: [ develop, dogeos]
     paths:
       - 'charts/**'
 
@@ -32,7 +32,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/unifralabs/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       #  List chart change except scroll-sdk
       - name: Run chart-testing (list-changed)
@@ -70,7 +70,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/unifralabs/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
         # We filter here the scroll-sdk chart
       - name: Push chart to ghcr
@@ -97,7 +97,7 @@ jobs:
             helm dependencies build charts/$chart
             helm package charts/$chart
             export CHART_VERSION=$(grep 'version:' charts/$chart/Chart.yaml | head -n1 | awk '{ print $2 }')
-            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
+            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/dogeos69/scroll-sdk/helm
           done
 
   helm-chart-testing-scroll-sdk:
@@ -129,7 +129,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/unifralabs/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       #  List scroll-sdk chart if it has changed
       - name: Run chart-testing (list-changed)
@@ -167,7 +167,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/unifralabs/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push chart to ghcr
         if: steps.filter.outputs.addedOrModified == 'true'
@@ -190,5 +190,5 @@ jobs:
             helm dependencies build charts/$chart
             helm package charts/$chart
             export CHART_VERSION=$(grep 'version:' charts/$chart/Chart.yaml | head -n1 | awk '{ print $2 }')
-            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/unifralabs/scroll-sdk/helm
+            helm push $chart-${CHART_VERSION}.tgz oci://ghcr.io/dogeos69/scroll-sdk/helm
           done
