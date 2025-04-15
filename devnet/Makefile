@@ -4,7 +4,7 @@ ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "a
 NAMESPACE ?= default
 L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
-SCROLL_CONTRACTS_TAG_SUFFIX := 200577d
+SCROLL_CONTRACTS_TAG_SUFFIX := db5a12452586121c219a2d9e877fce8ef86c6eb9
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:

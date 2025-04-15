@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk
 name: scroll-sdk
-version: 0.1.4-dogeos
+version: 0.1.5-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -50,7 +50,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: chain-monitor.enabled
   - name: contracts
-    version: 0.1.2-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: contracts.enabled
   # - name: coordinator-api
