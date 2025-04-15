@@ -3,8 +3,8 @@ global:
   isStandalone: false
 
 image:
-  repository: shuunifra/scroll-stack-contracts
-  tag: deploy-db5a12452586121c219a2d9e877fce8ef86c6eb9
+  repository: dogeos69/scroll-stack-contracts
+  tag: deploy-38c822d4dd33165b4def23c2f99e94220ecd4ba5
 
 envFrom:
   - configMapRef:

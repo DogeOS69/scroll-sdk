@@ -68,7 +68,7 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.frontend.env.NEXT_PUBLIC_NETWORK_LOGO | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll.svg"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_NETWORK_LOGO_DARK | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll-dark.svg"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_OG_IMAGE_URL | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/og-images/scroll-sepolia.png"` |  |
-| blockscout-stack.frontend.image.tag | string | `"v1.35.2"` |  |
+| blockscout-stack.frontend.image.tag | string | `"v1.38.2"` |  |
 | blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-headers" | string | `"updated-gas-oracle, Content-Type, Authorization"` |  |
 | blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-methods" | string | `"GET, POST, OPTIONS"` |  |
 | blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-origin" | string | `"http://blockscout.scrollsdk"` |  |

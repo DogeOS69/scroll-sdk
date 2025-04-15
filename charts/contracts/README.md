@@ -24,8 +24,8 @@ Kubernetes: `>=1.22.0-0`
 |-----|------|---------|-------------|
 | envFrom[0].configMapRef.name | string | `"contracts-deployment-env"` |  |
 | global.isStandalone | bool | `false` |  |
-| image.repository | string | `"shuunifra/scroll-stack-contracts"` |  |
-| image.tag | string | `"deploy-db5a12452586121c219a2d9e877fce8ef86c6eb9"` |  |
+| image.repository | string | `"dogeos69/scroll-stack-contracts"` |  |
+| image.tag | string | `"deploy-38c822d4dd33165b4def23c2f99e94220ecd4ba5"` |  |
 | scrollConfig | string | `"{}\n"` |  |
 | scrollConfigContracts | string | `"{}\n"` |  |
 
