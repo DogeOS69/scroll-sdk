@@ -4,7 +4,7 @@ global:
 
 image:
   repository: shuunifra/scroll-stack-contracts
-  tag: deploy-200577d
+  tag: deploy-45488bb55f025dc9529742451b28654ce8585e1d
 
 envFrom:
   - configMapRef:
