@@ -61,7 +61,7 @@ blockscout-stack:
 
   frontend:
     image:
-      tag: v1.35.2
+      tag: v1.38.2
 
     env:
       NEXT_PUBLIC_NETWORK_LOGO: "https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll.svg"
