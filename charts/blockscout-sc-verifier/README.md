@@ -1,6 +1,6 @@
 # blockscout-sc-verifier
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.2-dogeos](https://img.shields.io/badge/Version-0.1.2--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout-sc-verifier helm charts
 
@@ -16,7 +16,7 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.1 |
+| oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.2 |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | external-secrets-lib | 0.0.3 |
 
 ## Values
@@ -74,7 +74,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"blockscout-sc-verifier"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/blockscout/smart-contract-verifier"` |  |
-| image.tag | string | `"v1.7.0"` |  |
+| image.tag | string | `"v1.9.3"` |  |
 | probes.liveness.enabled | bool | `false` |  |
 | probes.readiness.enabled | bool | `false` |  |
 | probes.startup.enabled | bool | `false` |  |

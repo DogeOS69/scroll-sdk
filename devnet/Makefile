@@ -4,19 +4,19 @@ ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "a
 NAMESPACE ?= default
 L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
-SCROLL_CONTRACTS_TAG_SUFFIX := 200577d
+SCROLL_CONTRACTS_TAG_SUFFIX := 7b371720ad75929f5bcf747ddfe04a4a5a65deb3
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
 		echo "Pulling helm chart..."
-		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.4-dogeos
+		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.5-dogeos
 		echo "Extracting helm chart..."
 		tar -xvf *.tgz
 		$(MAKE) config
 
 config:
 		echo "Creating configuration files..."
-		cd scroll-sdk && time docker run --rm -it -v .:/contracts/volume shuunifra/scroll-stack-contracts:gen-configs-$(SCROLL_CONTRACTS_TAG_SUFFIX)
+		cd scroll-sdk && time docker run --rm -it -v .:/contracts/volume dogeos69/scroll-stack-contracts:gen-configs-$(SCROLL_CONTRACTS_TAG_SUFFIX)
 		echo "Creating env files..."
 		./create-env-files.sh scroll-sdk
 		./prepare-config-files.sh
@@ -45,4 +45,4 @@ upgrade:
 
 verify:
 		echo "Verifing contracts..."
-		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume shuunifra/scroll-stack-contracts:verify-64934888f4cd002e77414a8e62812f70c00c5937
+		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume dogeos69/scroll-stack-contracts:verify-7b371720ad75929f5bcf747ddfe04a4a5a65deb3

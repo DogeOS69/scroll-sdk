@@ -125,7 +125,7 @@ jobs:
         uses: helm/chart-testing-action@v2.6.0
 
       - name: Setup scroll-sdk values
-        run: cd charts/scroll-sdk && docker run --rm -t -v .:/contracts/volume shuunifra/scroll-stack-contracts:gen-configs-200577d
+        run: cd charts/scroll-sdk && docker run --rm -t -v .:/contracts/volume dogeos69/scroll-stack-contracts:gen-configs-7b371720ad75929f5bcf747ddfe04a4a5a65deb3
 
       - name: Helm registry login
         run: |
