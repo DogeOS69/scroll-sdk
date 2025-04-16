@@ -1,6 +1,6 @@
 # scroll-sdk
 
-![Version: 0.1.5-dogeos](https://img.shields.io/badge/Version-0.1.5--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy scroll sdk
 
@@ -19,7 +19,7 @@ Kubernetes: `>=1.22.0-0`
 | Repository | Name | Version |
 |------------|------|---------|
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.2-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.3-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.3-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.3-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.3-dogeos |
