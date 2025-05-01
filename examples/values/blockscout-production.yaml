@@ -46,7 +46,7 @@ blockscout-stack:
         nginx.ingress.kubernetes.io/cors-max-age: "86400"
       hostname: "blockscout.scrollsdk"
       paths:
-        - path: "/"
+        - path: "/api"
           pathType: "Prefix"
       tls:
         enabled: true
@@ -69,7 +69,7 @@ blockscout-stack:
         nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
         nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
         nginx.ingress.kubernetes.io/cors-max-age: "86400"
-      hostname: "blockscout.scrollsdk"  # Set the hostname for the frontend. Example : blockscout.scrollsdk 
+      hostname: "blockscout.scrollsdk"  # Set the hostname for the frontend. Example : blockscout.scrollsdk
       paths:
         - path: "/"
           pathType: "Prefix"

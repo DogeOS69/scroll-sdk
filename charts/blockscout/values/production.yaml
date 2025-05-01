@@ -46,7 +46,7 @@ blockscout-stack:
         nginx.ingress.kubernetes.io/cors-max-age: "86400"
       hostname: "blockscout.scrollsdk"
       paths:
-        - path: "/"
+        - path: "/api"
           pathType: "Prefix"
       tls:
         enabled: true

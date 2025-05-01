@@ -142,7 +142,7 @@ Alternatively, you can utilize the provided `anvil-fund-accounts.sh` script to f
 `anvil-fund-accounts.sh` script requires the `yq` library, please use version v4.44.2 or later. A known [issue](https://github.com/mikefarah/yq/issues/2039) exists in version v4.44.1 or earlier, where the value `10_000_000` is incorrectly parsed as a string instead of an integer, which may affect the script's execution.
 
 
-### 3. Installing the Helm Charts
+### 3. Installing Scroll Services
 
 Review the `Makefile` to identify the required Helm charts for installation. The Makefile includes core Scroll components as well as additional services like Blockscout (stack & explorer) and Blockscout Smart Contract Verifier.
 
@@ -154,8 +154,6 @@ To deploy the charts:
 
 The deployment process will install:
 - Core Scroll components (sequencer, bootnode, l2-rpc, coordinator, bridge, etc.)
-- Blockscout stack and  explorer
-- Smart contract verification service
 - Scroll monitoring services
 
 Verify successful deployment by ensuring all pods reach "Running" status without errors.
@@ -170,7 +168,132 @@ scrollsdk helper fund-accounts -f 0.2 -l 2
 
 Select the "Bridging funds from L1 to L2" menu to transfer fund from L1 to L2 for the deployer account.
 
+
+### 5. Deploy contracts
+
+```bash
+make install-contracts
+```
 > Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in step 4.
+
+
+### 6. Install Blockscout services
+
+Firstly, verify configurations in `values/blockscout-production.yaml` file:
+
+```yaml
+# values/blockscout-production.yaml
+blockscout-stack:
+  blockscout:
+    env:
+      ETHEREUM_JSONRPC_HTTP_URL: "http://l2-rpc:8545"
+      ETHEREUM_JSONRPC_TRACE_URL: "http://l2-rpc:8545"
+      ETHEREUM_JSONRPC_VARIANT: "geth"
+      ETHEREUM_JSONRPC_WS_URL: "ws://l2-rpc:8546"
+      INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
+      CHAIN_TYPE: "scroll"
+      INDEXER_SCROLL_L1_CHAIN_CONTRACT: "0x645976A68420cB4254F09732a371c30bbaA7Cfc9" # value of L1_SCROLL_CHAIN_PROXY_ADDR on config-contracts.toml
+      INDEXER_SCROLL_L1_BATCH_START_BLOCK: "0" # value of L1_CONTRACT_DEPLOYMENT_BLOCK on config.toml
+      INDEXER_SCROLL_L1_MESSENGER_CONTRACT: "0xA869aE8171Df7cD06Bc72C637d469489d3795B83" # value of L1_SCROLL_MESSENGER_PROXY_ADDR on config-contracts.toml
+      INDEXER_SCROLL_L1_MESSENGER_START_BLOCK: "0" # value of L1_CONTRACT_DEPLOYMENT_BLOCK on config.toml
+      INDEXER_SCROLL_L2_MESSENGER_CONTRACT: "0x0B33Ec28bB50161b7170E47C76c4D0bd19Ed82A2" # value of L2_SCROLL_MESSENGER_PROXY_ADDR on config-contracts.toml
+      INDEXER_SCROLL_L2_GAS_ORACLE_CONTRACT: "0x5300000000000000000000000000000000000002" # value of L1_GAS_PRICE_ORACLE_ADDR on config-contracts.toml
+      INDEXER_SCROLL_L1_RPC: "http://l1-devnet:8545"
+      INDEXER_SCROLL_L2_MESSENGER_START_BLOCK: 0
+      INDEXER_SCROLL_L1_ETH_GET_LOGS_RANGE_SIZE: 500
+      INDEXER_SCROLL_L2_ETH_GET_LOGS_RANGE_SIZE: 500
+      SCROLL_L2_CURIE_UPGRADE_BLOCK: 0
+      ECTO_USE_SSL: true
+      ETHEREUM_JSONRPC_HTTP_INSECURE: false
+
+    ingress:
+      enabled: true
+      className: "nginx"
+      annotations:
+        ...
+        nginx.ingress.kubernetes.io/cors-allow-origin: "https://blockscout.scrollsdk.<your domain>"
+        ...
+      hostname: "blockscout.scrollsdk.<your domain>"
+    ...
+
+  frontend:
+    ...
+    ingress:
+      enabled: true
+      className: "nginx"
+      annotations:
+        ...
+        nginx.ingress.kubernetes.io/cors-allow-origin: "https://blockscout.scrollsdk.<your domain>"
+        ...
+      hostname: "blockscout.scrollsdk.<your domain>"
+  ...
+```
+
+Secondly, install blockscout and blockscout-sc-verifier services:
+```bash
+make install-blockscout
+```
+The script will install:
+- Blockscout stack and  explorer
+- Smart contract verification service
+
+### 7. Test After Deployment
+
+After all the required services are deployed successfully, run the following test commands:
+
+```bash
+scrollsdk test ingress
+scrollsdk test contracts
+```
+
+</br>
+
+## Verify Contracts
+
+### 1. Check Contract Verification Parameters
+
+```toml
+[contracts.verification]
+VERIFIER_TYPE_L1 = "blockscout"
+VERIFIER_TYPE_L2 = "blockscout"
+EXPLORER_URI_L1 = "https://blockscout.scrollsdk.<your domain>"
+EXPLORER_URI_L2 = "https://blockscout.scrollsdk.<your domain>"
+RPC_URI_L1 = "https://l1-devnet.scrollsdk.<your domain>"
+RPC_URI_L2 = "https://l2-rpc.scrollsdk.<your domain>"
+EXPLORER_API_KEY_L1 = ""
+EXPLORER_API_KEY_L2 = ""
+```
+> Note:
+> - Remove the leading space if any
+> - Ensure all URI addresses are correctly configured and replace `<your domain>` with your actual domain name.
+
+
+### 2. Configure Chain IDs
+
+In the `config.toml` file, ensure chain IDs are in the correct numeric format:
+
+```yaml
+CHAIN_ID_L1 = 31337
+CHAIN_ID_L2 = 221122
+```
+
+> Important: Chain IDs must be in pure numeric format without quotes or underscores.
+
+### 3. Execute Contract Verification
+
+Run the following command to verify contracts:
+
+```bash
+scrollsdk setup verify-contracts
+```
+
+> Important Notes:
+> - Contract verification can only be performed successfully once, all the consequent verification will fail after that.
+> - If contracts are required to be verified again, blockscout database must be deleted and blockscout/blockscout-sc-verifier services must be redeployed.
+> - After successful verification, results can be viewed in the Blockscout explorer
+> - There is a known issue in blockscout explorer which won't update the number of the verified contracts, reployment of blockscout services will fix the issue.
+
+</br>
 
 ## Re-Deployment
 ### Delete all charts and release all resources
@@ -182,6 +305,8 @@ make delete-l1-devnet
 # release all persistent volume associated with services
 kubectl delete pvc --all
 ```
+
+</br>
 
 ### Known Issues When Updating Configuration
 When re-running the `scrollsdk setup gen-keystore `command, the CLI tool may not update certain fields in the `l2-sequencer-production-*.yaml` files. In such cases, manual updates to these configuration files are required to ensure proper deployment and operation of the sequencer components.
