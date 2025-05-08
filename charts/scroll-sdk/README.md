@@ -2,7 +2,7 @@
 
 ![Version: 0.1.7-dogeos](https://img.shields.io/badge/Version-0.1.7--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
-scroll helm charts to deploy scroll sdk
+scroll helm charts to deploy scroll sdk for dogeos
 
 **Homepage:** <https://github.com/scroll-tech/scroll-sdk>
 

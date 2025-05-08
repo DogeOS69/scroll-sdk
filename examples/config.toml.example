@@ -78,7 +78,7 @@ RELAY_MESSAGE_DEADLINE_SEC = 21_600
 
 [frontend]
 
-EXTERNAL_RPC_URI_L1 ="http://l1-devnet.scrollsdk"
+EXTERNAL_RPC_URI_L1 = "http://l1-devnet.scrollsdk"
 EXTERNAL_RPC_URI_L2 = "http://l2-rpc.scrollsdk"
 BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
 ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
@@ -136,6 +136,7 @@ ROLLUP_EXPLORER_API_HOST = "rollup-explorer-backend.scrollsdk"
 COORDINATOR_API_HOST = "coordinator-api.scrollsdk"
 RPC_GATEWAY_HOST = "l2-rpc.scrollsdk"
 BLOCKSCOUT_HOST = "blockscout.scrollsdk"
+BLOCKSCOUT_BACKEND_HOST = "blockscout.scrollsdk"
 ADMIN_SYSTEM_DASHBOARD_HOST = "admin-system-dashboard.scrollsdk"
 L1_DEVNET_HOST = "l1-devnet.scrollsdk"
 L1_EXPLORER_HOST = "l1-explorer.scrollsdk"
