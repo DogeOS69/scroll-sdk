@@ -1,6 +1,6 @@
 # rollup-node
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.3-dogeos](https://img.shields.io/badge/Version-0.1.3--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 rollup-node helm charts
 
@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 |-----|------|---------|-------------|
 | command[0] | string | `"sh"` |  |
 | command[1] | string | `"-c"` |  |
-| command[2] | string | `"rollup_relayer --config /app/conf/rollup-config.json --genesis /app/genesis/genesis.json --import-genesis --metrics --metrics.addr 0.0.0.0 --metrics.port ${METRICS_PORT} --log.debug --verbosity 3"` |  |
+| command[2] | string | `"rollup_relayer --config /app/conf/rollup-config.json --genesis /app/genesis/genesis.json --min-codec-version 7 --metrics --metrics.addr 0.0.0.0 --metrics.port ${METRICS_PORT} --log.debug --verbosity 3"` |  |
 | configMaps.migrate-db.data."migrate-db.json" | string | `"{\n    \"driver_name\": \"postgres\",\n    \"dsn\": \"\"\n}\n"` |  |
 | configMaps.migrate-db.enabled | bool | `true` |  |
 | controller.replicas | int | `1` |  |
@@ -38,7 +38,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"rollup-node"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/rollup-relayer"` |  |
-| image.tag | string | `"v4.4.71"` |  |
+| image.tag | string | `"v4.5.7"` |  |
 | initContainers.1-check-postgres-connection.args[0] | string | `"postgresql"` |  |
 | initContainers.1-check-postgres-connection.args[1] | string | `"$(SCROLL_ROLLUP_DB_CONFIG_DSN)"` |  |
 | initContainers.1-check-postgres-connection.args[2] | string | `"--timeout"` |  |
