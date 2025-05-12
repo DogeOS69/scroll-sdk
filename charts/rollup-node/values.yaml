@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/rollup-relayer
   pullPolicy: IfNotPresent
-  tag: v4.4.71
+  tag: v4.5.7
 
 env:
   - name: METRICS_PORT
@@ -26,7 +26,7 @@ command:
   - "-c"
   - "rollup_relayer --config /app/conf/rollup-config.json \
     --genesis /app/genesis/genesis.json \
-    --import-genesis \
+    --min-codec-version 7 \
     --metrics --metrics.addr 0.0.0.0 --metrics.port ${METRICS_PORT} \
     --log.debug --verbosity 3"
 

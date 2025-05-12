@@ -48,6 +48,7 @@ install:
 	# 	--values values/frontends-config.yaml
 
 	helm upgrade -i gas-oracle oci://ghcr.io/scroll-tech/scroll-sdk/helm/gas-oracle -n $(NAMESPACE) \
+		--set image.tag=v4.5.7 \
 		--version=0.1.2 \
 		--values values/gas-oracle-production.yaml \
 		--values values/gas-oracle-config.yaml
@@ -70,6 +71,7 @@ install:
 	 	--values values/rollup-explorer-backend-config.yaml
 
 	helm upgrade -i rollup-node oci://ghcr.io/scroll-tech/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
+		--set image.tag=v4.5.7 \
 	 	--version=0.1.2 \
 	 	--values values/rollup-node-production.yaml \
 	 	--values values/rollup-node-config.yaml
@@ -88,24 +90,13 @@ install:
 	# 	--version=0.1.1 \
 	# 	--values values/admin-system-dashboard-production.yaml
 
-	# helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-	# 	--version=0.1.5-dogeos \
-	# 	--values values/contracts-production.yaml \
-	# 	--values values/scroll-common-config-contracts.yaml \
-	# 	--values values/scroll-common-config.yaml
+	-$(MAKE) install-contracts
+	-$(MAKE) install-blockscout
 
 	# helm upgrade -i balance-checker oci://ghcr.io/scroll-tech/scroll-sdk/helm/balance-checker -n $(NAMESPACE) \
 	# 	--version=0.1.1 \
 	# 	--values values/balance-checker-production.yaml \
 	# 	--values values/balance-checker-config.yaml
-
-	# helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
-	# 	--version=0.1.4-dogeos \
-	# 	--values values/blockscout-production.yaml
-
-	# helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-	#  	--version=0.1.2-dogeos
-
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
@@ -122,12 +113,11 @@ install-blockscout:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--set contracts.image.tag="deploy-935a67215041cbc6d4a5a3c0f45ee0da23e1c3c8" \
+		--set contracts.image.tag="deploy-c330f3602fa9506c012a5d4ea27ffe06c8c1c651" \
 		--version=0.1.5-dogeos \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
-		
 
 delete:
 	-helm delete -n $(NAMESPACE) scroll-common
