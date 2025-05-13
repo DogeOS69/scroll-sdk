@@ -1,6 +1,6 @@
 # contracts
 
-![Version: 0.1.5-dogeos](https://img.shields.io/badge/Version-0.1.5--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 contracts helm charts
 
@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 | envFrom[0].configMapRef.name | string | `"contracts-deployment-env"` |  |
 | global.isStandalone | bool | `false` |  |
 | image.repository | string | `"dogeos69/scroll-stack-contracts"` |  |
-| image.tag | string | `"deploy-f961bf3e75c7c3fec63250062e751b0aaf47fefd"` |  |
+| image.tag | string | `"deploy-64c65842e35017142b68d878e691dae7e41a7af9"` |  |
 | scrollConfig | string | `"{}\n"` |  |
 | scrollConfigContracts | string | `"{}\n"` |  |
 
