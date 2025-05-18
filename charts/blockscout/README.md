@@ -1,6 +1,6 @@
 # blockscout
 
-![Version: 0.1.4-dogeos](https://img.shields.io/badge/Version-0.1.4--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.5-dogeos](https://img.shields.io/badge/Version-0.1.5--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout scroll helm charts
 
@@ -39,7 +39,7 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.blockscout.envFrom[0].configMapRef.name | string | `"blockscout-env"` |  |
 | blockscout-stack.blockscout.image.pullPolicy | string | `"IfNotPresent"` |  |
 | blockscout-stack.blockscout.image.repository | string | `"ghcr.io/blockscout/blockscout-scroll"` |  |
-| blockscout-stack.blockscout.image.tag | string | `"8.0.0-alpha.1"` |  |
+| blockscout-stack.blockscout.image.tag | string | `"8.0.2"` |  |
 | blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-headers" | string | `"updated-gas-oracle, Content-Type, Authorization"` |  |
 | blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-methods" | string | `"GET, POST, OPTIONS"` |  |
 | blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-origin" | string | `"http://blockscout.scrollsdk"` |  |
