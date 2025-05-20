@@ -103,7 +103,7 @@ install-l1-devnet:
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
-		--version=0.1.4-dogeos \
+		--version=0.1.5-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
@@ -111,8 +111,7 @@ install-blockscout:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--set contracts.image.tag="deploy-03267b6897c93080973252acb202ddcde035be99" \
-		--version=0.1.6-dogeos \
+		--version=0.1.7-dogeos \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
