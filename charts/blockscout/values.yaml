@@ -8,7 +8,7 @@ blockscout-stack:
   blockscout:
     image:
       repository: ghcr.io/blockscout/blockscout-scroll
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       tag: 8.0.2
 
     env:
@@ -61,6 +61,7 @@ blockscout-stack:
 
   frontend:
     image:
+      pullPolicy: Always
       tag: v1.38.2
 
     env:
