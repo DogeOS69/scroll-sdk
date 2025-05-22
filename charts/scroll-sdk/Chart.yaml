@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk for dogeos
 name: scroll-sdk
-version: 0.1.9-dogeos
+version: 0.1.10-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -30,7 +30,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: balance-checker.enabled
   - name: blockscout
-    version: 0.1.5-dogeos
+    version: 0.1.6-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: blockscout.enabled
   # - name: blockscout-sc-verifier

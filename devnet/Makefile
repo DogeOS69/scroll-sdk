@@ -9,7 +9,7 @@ SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
 		echo "Pulling helm chart..."
-		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.9-dogeos
+		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.10-dogeos
 		echo "Extracting helm chart..."
 		tar -xvf *.tgz
 		$(MAKE) config
