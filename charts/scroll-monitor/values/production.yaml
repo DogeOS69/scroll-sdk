@@ -9,6 +9,9 @@ grafana:
     hosts:
       - ""
 
+promtail:
+  enabled: false
+
 kube-prometheus-stack:
   alertmanager:
     config:
