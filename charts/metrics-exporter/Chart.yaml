@@ -23,6 +23,9 @@ version: 0.1.1
 # It is recommended to use it with quotes.
 appVersion: "0.1.2"
 kubeVersion: ">=1.22.0-0"
+maintainers:
+  - name: unifra
+    email: tony@unifra.io
 
 dependencies:
   - name: common
