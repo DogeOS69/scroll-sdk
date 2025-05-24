@@ -1,0 +1,129 @@
+---
+{{- $configs := (.Values.metricsConfig | default dict) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metrics-exporter.fullname" $ }}-config
+  labels:
+    {{- include "metrics-exporter.labels" $ | nindent 4 }}
+data:
+  config.yml: |
+    app:
+{{ $configs.app | toYaml | indent 6 }}
+    modules:
+{{- if $configs.l1Network.url }}
+{{- $l1DefaultPrefix := "l1" }}
+      {{ $configs.l1Network.name | default $l1DefaultPrefix }}-block:
+        method: POST
+        body: '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+        url: {{ $configs.l1Network.url }}
+        interval: 1m
+        metrics:
+          - name: {{ $configs.l1Network.prefix | default $l1DefaultPrefix }}_block_height
+            path: "{.result}"
+            type: gauge
+            help: "Current block height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}" 
+{{- if $configs.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR }}
+      {{ $configs.l1Network.name | default $l1DefaultPrefix }}-queue:
+        method: POST
+        body: '{"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": "{{ $configs.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR }}", "data": "0xfd0ad31e"}, "latest"], "id": 1}'
+        url: {{ $configs.l1Network.url }}
+        interval: 30s
+        metrics:
+          - name: {{ $configs.l1Network.prefix | default $l1DefaultPrefix }}_queue_height
+            path: "{.result}"
+            type: gauge
+            help: "Current queue height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}"
+{{- end }}
+{{- end }}
+{{- if and $configs.dogecoin.url $configs.dogecoin.basicAuth }}
+{{- $dogecoinDefaultPrefix := "dogecoin" }}
+      {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-chaininfo:
+        method: POST
+        url: {{ $configs.dogecoin.url }}
+        headers:
+          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+        body: '{"jsonrpc":"2.0","method":"getblockchaininfo","params":[],"id":1}'
+        metrics:
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_chain_block_height
+            path: "{.result.blocks}"
+            type: gauge
+            help: "Current block height of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_synced_headers_total
+            path: "{.result.headers}"
+            type: gauge
+            help: "Number of synced headers of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_size_on_disk_bytes
+            path: "{.result.size_on_disk}"
+            type: gauge
+            help: "Size of the {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }} blockchain on disk (blk and undo/rev files) in IEC bytes"
+      {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-info:
+        method: POST
+        url: {{ $configs.dogecoin.url }}
+        headers:
+          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+        body: '{"jsonrpc":"2.0","method":"getinfo","params":[],"id":1}'
+        interval: 30s
+        metrics:
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_peer_connections_total
+            path: "{.result.connections}"
+            type: gauge
+            help: "Number of peer connections of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_difficulty 
+            path: "{.result.difficulty}"
+            type: gauge
+            help: "Current difficulty of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_errors_total
+            path: "{.result.errors}"
+            type: counter
+            action: inc
+            help: "Total number of errors of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+      {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-mempool:
+        method: POST
+        url: {{ $configs.dogecoin.url }}
+        headers:
+          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+        body: '{"jsonrpc":"2.0","method":"getmempoolinfo","params":[],"id":1}'
+        interval: 30s
+        metrics:
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_mempool_size_bytes
+            path: "{.result.size}"
+            type: gauge
+            help: "Number of unconfirmed transactions in mempool of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_mempool_bytes_total
+            path: "{.result.bytes}"
+            type: gauge
+            help: "Total size of unconfirmed transactions in mempool in bytes of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+      {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-nettotals:
+        method: POST
+        url: {{ $configs.dogecoin.url }}
+        headers:
+          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+        body: '{"jsonrpc":"2.0","method":"getnettotals","params":[],"id":1}'
+        metrics:
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_bytes_recv_total
+            path: "{.result.totalbytesrecv}"
+            type: gauge
+            help: "Total bytes received of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_bytes_sent_total
+            path: "{.result.totalbytessent}"
+            type: gauge
+            help: "Total bytes sent of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+      {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-networkhashps:
+        method: POST
+        url: {{ $configs.dogecoin.url }}
+        headers:
+          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+        body: '{"jsonrpc":"2.0","method":"getnetworkhashps","params":[],"id":1}'
+        metrics:
+          - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_network_hash_ps
+            path: "{.result}"
+            type: gauge
+            help: "Estimated network hash rate per second of {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix | upper }}"
+{{- end }}
+{{- if $configs.modules }}
+{{- range $moduleName, $moduleConfig := $configs.modules }}
+      {{ $moduleName }}:
+{{ $moduleConfig | toYaml | indent 8 }}
+{{- end }}
+{{- end }}
