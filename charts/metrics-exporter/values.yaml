@@ -56,9 +56,9 @@ metricsConfig:
   l1Network:
     name: anvil
     prefix: anvil
-    url: 
+    url:
     L1_MESSAGE_QUEUE_PROXY_ADDR:
   dogecoin:
-    url: 
+    url:
     basicAuth:
     prefix: dogecoin_testnet
