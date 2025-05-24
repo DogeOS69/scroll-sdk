@@ -1,4 +1,3 @@
----
 {{- $configs := (.Values.metricsConfig | default dict) -}}
 apiVersion: v1
 kind: ConfigMap
@@ -22,7 +21,7 @@ data:
           - name: {{ $configs.l1Network.prefix | default $l1DefaultPrefix }}_block_height
             path: "{.result}"
             type: gauge
-            help: "Current block height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}" 
+            help: "Current block height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}"
 {{- if $configs.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR }}
       {{ $configs.l1Network.name | default $l1DefaultPrefix }}-queue:
         method: POST
