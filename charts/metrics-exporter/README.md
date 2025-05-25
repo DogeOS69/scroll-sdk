@@ -1,6 +1,6 @@
 # metrics-exporter
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
 
 A Helm chart for the Metrics Exporter
 
@@ -27,7 +27,7 @@ Kubernetes: `>=1.22.0-0`
 | global.fullnameOverride | string | `"metrics-exporter"` |  |
 | global.nameOverride | string | `"metrics-exporter"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"ghcr.io/fihtony/metrics-exporter"` |  |
+| image.repository | string | `"ghcr.io/unifralabs/metrics-exporter"` |  |
 | image.tag | string | `"v0.1.2"` |  |
 | metricsConfig.app.job | string | `"metrics-exporter"` |  |
 | metricsConfig.app.logLevel | string | `"info"` |  |

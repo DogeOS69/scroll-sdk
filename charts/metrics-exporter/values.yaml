@@ -10,7 +10,7 @@ args:
 
 
 image:
-  repository: ghcr.io/fihtony/metrics-exporter
+  repository: ghcr.io/unifralabs/metrics-exporter
   pullPolicy: IfNotPresent
   tag: v0.1.2
 
