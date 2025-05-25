@@ -21,12 +21,9 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
     tls:
       - secretName: tso-tls
         hosts:
-          - tso.scrollsdk
 
 defaultProbes:
   enabled: false

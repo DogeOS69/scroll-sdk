@@ -1,3 +1,8 @@
+image:
+  repository: dogeos69/tso-service
+  pullPolicy: Always
+  tag: v0.1.0-beta
+
 env:
   - name: PORT
     value: "3000"

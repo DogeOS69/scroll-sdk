@@ -1,5 +1,9 @@
 ---
 # Production environment overrides
+image:
+  repository: dogeos69/dogeos-deposit-processor
+  pullPolicy: IfNotPresent
+  tag: v0.1.2
 
 # Direct environment variables
 env:
