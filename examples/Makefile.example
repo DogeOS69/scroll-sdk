@@ -87,10 +87,10 @@ install-gas-oracle:
 		--values values/gas-oracle-production.yaml \
 		--values values/gas-oracle-config.yaml
 
-#install-deposit-processor:
-#	helm upgrade -i deposit-processor oci://ghcr.io/dogeos69/helm/dogeos-deposit-processor -n $(NAMESPACE) \
-#		--version=0.1.1 \
-#		--values dogeos-values/deposit-processor-production.yaml
+install-deposit-processor:
+	helm upgrade -i deposit-processor charts/dogeos-deposit-processor -n $(NAMESPACE) \
+		--version=0.1.1 \
+		--values dogeos-values/deposit-processor-production.yaml
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
