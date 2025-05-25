@@ -31,7 +31,7 @@ install-scroll-core:
 		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrcis-exporter -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/metrics-exporter-production.yaml
 
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
