@@ -1,9 +1,16 @@
 grafana:
+  grafana.ini:
+    server:
+      domain: grafana.scrollsdk
+      root_url: "https://grafana.scrollsdk"
   ingress:
     enabled: true
     ingressClassName: nginx
     hosts:
       - ""
+
+promtail:
+  enabled: false
 
 kube-prometheus-stack:
   alertmanager:

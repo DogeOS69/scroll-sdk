@@ -1,0 +1,159 @@
+alloy:
+  extraPorts:
+    - name: celestia
+      port: 4318
+      targetPort: 4318
+  configMap:
+    create: true
+    content: |-
+      logging {
+        level = "info"
+        format = "logfmt"
+      }
+
+      loki.write "grafana_loki" {
+        endpoint {
+          url = "http://loki:3100/loki/api/v1/push"
+          tenant_id = "1"
+        }
+      }
+
+      discovery.kubernetes "k8s_pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "k8s_containers" {
+          targets = discovery.kubernetes.k8s_pods.targets
+          rule {
+              source_labels = ["__meta_kubernetes_pod_container_name"]
+              action = "replace"
+              target_label  = "service"
+          }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.k8s_containers.output
+        forward_to = [loki.process.process_logs.receiver]
+      }
+
+      loki.process "process_logs" {
+        stage.match {
+          selector = "{service=\"dogeos-deposit-processor\"}"
+
+          stage.json {
+            expressions = {
+              level = "",
+              component = "",
+              currentHeight = "",
+              safeHeight = "",
+              currentChainHeight = "",
+              balance = "",
+              queueNumber = "",
+              depositValue = "",
+              errors = "error.name",
+            }
+          }
+          stage.labels {
+            values = {
+              level = "",
+              component = "",
+              errors = "",
+            }
+          }
+          stage.metrics {
+            metric.gauge {
+              name        = "current_indexer_height"
+              description = "Current Indexer Height"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "currentHeight"
+              action      = "set"
+            }
+            metric.gauge {
+              name        = "current_chain_height"
+              description = "Current Chain Height"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "currentChainHeight"
+              action      = "set"
+            }
+            metric.histogram {
+              name        = "deposit"
+              description = "Deposit Value Distribution"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "depositValue"
+              buckets     = [1e+12, 1e+15, 1e+16, 1e+17, 1e+18, 1e+19, 1e+20]
+            }
+            metric.histogram {
+              name        = "balance"
+              description = "Deposit Balance Distribution"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "balance"
+              buckets     = [1e+12, 1e+15, 1e+16, 1e+17, 1e+18, 1e+19, 1e+20]
+            }
+            metric.gauge {
+              name        = "queue_height"
+              description = "Current Queue Height"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "queueNumber"
+              action      = "set"
+            }
+            metric.counter {
+              name        = "error_total"
+              description = "Total errors"
+              prefix      = "dogeos_deposit_processor_"
+              source      = "errors"
+              action      = "inc"
+            }
+          }
+        }
+        stage.static_labels {
+          values = {
+            source = "grafana-alloy",
+          }
+        }
+        forward_to = [loki.write.grafana_loki.receiver]
+      }
+
+      otelcol.receiver.otlp "celestia" {
+        http {}
+
+        output {
+          metrics = [otelcol.exporter.prometheus.celestia.input]
+        }
+      }
+
+      otelcol.exporter.prometheus "celestia" {
+        forward_to = [prometheus.relabel.celestia.receiver]
+      }
+
+      prometheus.relabel "celestia" {
+        forward_to = [prometheus.remote_write.celestia.receiver]
+
+        rule {
+          action        = "replace"
+          source_labels = ["job"]
+          regex         = "(.*)/(.*)"
+          replacement   = "celestia-testnet-$1-$2"
+          target_label  = "job"
+        }
+      }
+
+      prometheus.remote_write "celestia" {
+        endpoint {
+          url = "http://prometheus-prometheus:9090/api/v1/write"
+        }
+      }
+
+
+# Monitoring configuration
+serviceMonitor:
+  enabled: true
+  labels:
+    release: scroll-sdk
+  serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
+  endpoints:
+    - port: http
+      interval: 15s
+      scrapeTimeout: 10s
+      path: /metrics
+
+
