@@ -1,0 +1,57 @@
+---
+image:
+  repository: dogeos69/dogeos-deposit-processor
+  pullPolicy: IfNotPresent
+  tag: v0.1.2
+
+# Direct environment variables
+env:
+  - name: DOGEOS_DEPOSIT_PROCESSOR_LOG_LEVEL
+    value: "info"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_NODE_ENV
+    value: "production"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_PORT
+    value: "3000"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_HOST
+    value: "0.0.0.0"
+
+# ConfigMap overrides for local development
+configMaps:
+  env:
+    enabled: true
+    data:
+      # Dogecoin Access Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DOGE_ACCESS_TYPE: "blockbook"
+      DOGEOS_DEPOSIT_PROCESSOR_DOGE_RPC_URL: "https://dogebook-testnet.nownodes.io"
+      DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY: ""
+
+      # Deposit Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: ""
+      DOGEOS_DEPOSIT_PROCESSOR_START_HEIGHT: "7619000"
+      DOGEOS_DEPOSIT_PROCESSOR_CONFIRMATIONS: "6"
+      DOGEOS_DEPOSIT_PROCESSOR_MOAT_ADDRESS: ""
+
+      # Database Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DB_PATH: "./data/deposits.db"
+
+      # L1/L2 Bridge Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DESTINATION_CHAIN_NAME: "DogeOS Alpha"
+      DOGEOS_DEPOSIT_PROCESSOR_ANVIL_RPC_URL: "http://l1-devnet:8545"
+      DOGEOS_DEPOSIT_PROCESSOR_GENERATE_L1_MESSAGE_TX: "true"
+      DOGEOS_DEPOSIT_PROCESSOR_L1_MESSENGER_ADDRESS: ""
+      DOGEOS_DEPOSIT_PROCESSOR_GAS_LIMIT: "1234567"
+
+      # Feature Flags
+      DOGEOS_DEPOSIT_PROCESSOR_FAST_SYNC: "true"
+      DOGEOS_DEPOSIT_PROCESSOR_POLL_INTERVAL: "10000"
+      DOGEOS_DEPOSIT_PROCESSOR_INDEXER_POLL_INTERVAL: "3000"
+      DOGEOS_DEPOSIT_PROCESSOR_SYNC_WAIT_INTERVAL: "1000"
+
+# Development resource limits
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

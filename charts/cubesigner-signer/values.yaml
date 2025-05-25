@@ -1,0 +1,95 @@
+global:
+  nameOverride: &app_name cubesigner-signer
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/cubesigner-signer
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 3000
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/health"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 12
+
+# Direct environment variables for CubeSigner Signer configuration
+env:
+  - name: DOGEOS_CUBESIGNER_SIGNER_PORT
+    value: "3000"
+  - name: DOGEOS_CUBESIGNER_SIGNER_NETWORK
+    value: "testnet"
+  - name: DOGEOS_CUBESIGNER_SIGNER_TSO_URL
+    value: "http://dogeos-tso:3000"
+  - name: DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY
+    value: "1"
+  - name: DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL
+    value: "5000"
+  - name: DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID
+    value: ""
+  - name: DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH
+    value: "/etc/cubesigner/session.json"
+
+persistence:
+  # Mount session file from a Secret
+  session:
+    name: cubesigner-session-secret-vol
+    enabled: true
+    type: secret
+    secretName: cubesigner-default-session-secret # Default name, override per instance
+    mountPath: /etc/cubesigner
+    readOnly: true
+
+  # Mount a PVC for the persistent .sessions directory managed by the SDK
+  session-cache:
+    name: cubesigner-session-cache-pvc
+    enabled: true
+    type: pvc
+    mountPath: /app/.sessions # Mount the PVC to the default location used by sdk-fs-storage
+    accessMode: ReadWriteOnce
+    size: 50Mi # Adjusted size
+    # storageClass: "your-storage-class" # Optional: specify if needed
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Monitoring configuration
+serviceMonitor:
+  main:
+    enabled: false

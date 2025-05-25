@@ -1,0 +1,151 @@
+---
+# Production environment overrides for dogeos-withdrawal-processor
+env:
+  # Top-level settings
+  - name: DOGEOS_WITHDRAWAL_NETWORK_STR
+    value: "mainnet"
+  - name: DOGEOS_WITHDRAWAL_DATABASE_URL
+    value: "postgres://user:password@host:port/dbname" # FIXME: Update with your production DB connection string
+  - name: DOGEOS_WITHDRAWAL_API_PORT
+    value: "3000" # Typically remains the same unless specific need
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
+    value: "https://your-mainnet-dogecoin-rpc-url" # FIXME: Update with production Dogecoin RPC URL
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
+    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
+    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
+    value: "https://your-mainnet-blockbook-url" # FIXME: Update with production Blockbook URL (e.g., Nownodes mainnet)
+  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
+    value: "" # Sensitive: REQUIRED if your Blockbook needs an API key - Set via K8s secret
+  - name: DOGEOS_WITHDRAWAL_TSO_URL
+    value: "http://tso-service.your-namespace.svc.cluster.local:3000" # FIXME: Update with actual TSO service URL in K8s
+  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
+    value: "your-mainnet-bridge-address" # FIXME: Update with your MAINNET bridge address
+  - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
+    value: "your-mainnet-bridge-script-hex" # FIXME: Update with your MAINNET bridge script hex
+  - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
+    value: "85" # Review if this needs adjustment for mainnet
+  - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
+    value: "1000000" # Review and set appropriate mainnet fee rate
+  - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS
+    value: "10"
+  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_BROADCAST
+    value: "false"
+
+  # Dogecoin Indexer
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
+    value: "0" # FIXME: Set to a recent block height for mainnet, or 0 to sync from genesis
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS
+    value: "6" # Typical mainnet confirmations
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__POLL_INTERVAL_MS
+    value: "60000" # e.g., 1 minute for mainnet
+
+  # DogeOS Indexer (update URLs and addresses for mainnet)
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL
+    value: "https://your-mainnet-dogeos-compatible-rpc-url" # FIXME
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK
+    value: "0" # FIXME: Set to a recent block height for mainnet
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS
+    value: "12" # Adjust based on chain finality
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS
+    value: "60000"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSENGER_ADDRESS
+    value: "your-mainnet-messenger-address" # FIXME
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS
+    value: "your-mainnet-message-queue-address" # FIXME
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE
+    value: "1000" # May need adjustment based on RPC provider limits
+
+  # Celestia Indexer (update URLs and addresses for mainnet)
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
+    value: "https://your-mainnet-celestia-da-rpc-url" # FIXME
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
+    value: "https://your-mainnet-celestia-tendermint-rpc-url" # FIXME
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
+    value: "your-mainnet-da-namespace" # FIXME
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
+    value: "0" # FIXME: Set to a recent block height for mainnet
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS
+    value: "6" # Adjust based on chain finality
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS
+    value: "60000"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
+    value: "your-mainnet-celestia-signer-address" # FIXME (Optional)
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
+    value: "your-mainnet-genesis-blob-commitment" # FIXME
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
+    value: "true"
+
+  # UTXO Manager
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS
+    value: "10000000000" # Example: 100 DOGE for mainnet, adjust as needed
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS
+    value: "3600" # 1 hour
+
+# Persistence Configuration
+persistence:
+  data:
+    enabled: true
+    name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
+    size: 1Gi
+    storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
+
+# Resource configuration for production
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1500m"
+
+serviceMonitor:
+  main:
+    enabled: true # Enable if you have Prometheus monitoring in production
+
+defaultProbes:
+  enabled: false
+
+# As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
+# Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
+# has the correct mainnet TSO signer configurations.
+# Example:
+# [[tso_signers]]
+# network = "mainnet"
+# uri = "http://mainnet-cubesigner-signer-1:3000" # Adjust URI for your prod signer
+# role = "Correctness"
+#
+# [[tso_signers]]
+# network = "mainnet"
+# uri = "http://mainnet-cubesigner-signer-2:3000" # Adjust URI for your prod signer
+# role = "Attestation"
+#
+# Note on Database: A 1Gi Persistent Volume Claim (data) is configured and enabled above.
+# However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.
+# If you intend to use SQLite with this PVC in production, update the
+# DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'. 
+
+tsoSigners:
+  - network: "testnet"
+    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: ""
+    role: "Attestation"
+  - network: "testnet"
+    uri: ""
+    role: "Attestation"
+  - network: "testnet"
+    uri: ""
+    role: "Attestation"

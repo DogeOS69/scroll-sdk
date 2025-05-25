@@ -1,0 +1,25 @@
+# Define an ingress for dogecoin RPCs
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dogecoin-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - dogecoin.testnet.dogeos.com
+    secretName: dogecoin-tls
+  rules:
+  - host: dogecoin.testnet.dogeos.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "dogecoin.fullname" . }}
+            port:
+              number: 44555

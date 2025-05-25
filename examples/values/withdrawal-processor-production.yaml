@@ -1,0 +1,182 @@
+---
+# Local testing overrides for dogeos-withdrawal-processor
+# WARNING: This file contains secrets from WithdrawalProcessor.toml for local testing.
+# DO NOT COMMIT THIS FILE TO YOUR REPOSITORY.
+image:
+  repository: dogeos69/withdrawal-processor
+  pullPolicy: Always
+  tag: v0.1.0-beta
+
+env:
+  # Top-level settings from WithdrawalProcessor.toml (adapted for local K8s testing)
+  - name: DOGEOS_WITHDRAWAL_NETWORK_STR
+    value: "testnet"
+  - name: DOGEOS_WITHDRAWAL_DATABASE_URL
+    value: "sqlite:///app/data/withdrawal_processor.db" # Using SQLite on PVC for local
+  - name: DOGEOS_WITHDRAWAL_API_PORT
+    value: "3000"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
+    value: "https://dogecoin.scrollsdk"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
+    value: "user" # From TOML - For local testing only
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
+    value: "password" # From TOML - For local testing only
+  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
+    value: "https://dogebook-testnet.nownodes.io"
+  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
+    value: "" # From TOML - For local testing only
+  - name: DOGEOS_WITHDRAWAL_TSO_URL
+    value: "http://tso-service:3000" # Assumes tso-service is running in K8s on default port
+    # If TSO is external or on host, use e.g., "http://host.docker.internal:3001" or "http://127.0.0.1:3001"
+  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
+    value: ""
+  - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
+    value: "6351210217593c69aa5a746338774232938fe5925c6346f287944dc0a53bb8915c07563a51af5221020be956efa691d96445a605a934372f1809fbd37d02ca43f3e11e527d08d184a92103ab43c03c3435d6824e934cc827bf4b42808ebb0a2c5a541add61f5ce5344b4e62103d26a83f92fca6729d2286244c43f141c9044cfadbc14d3eb8840acfd1cad4ea553af52210323585a3cb6186bc1069e77c350fa9b69c1f36131ca8f648c1435ba184c2a47f22103cffc7221efadb66223f906b0cd0646ed476093085f9206b417739509b3dbf9f421031a3af93373e4d94da8b9d164829a446dc4565470d58c262a2411ff081ea843de53ae6702100eb175522102a6276a34072c14f3078633e8280213f5e276bfc0eb88d266b5c7a2bf387062da2103254e96282af2954fe52e83765192be9c82b0d34d8b36410b864dc63c258fa95f2103341eb4a85046e4cfd69c6346d0fabf4eb08a48a61a7c24463436b13dc029985353ae68"
+  - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+    value: ""
+  - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+    value: ""
+  - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
+    value: "85"
+  - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
+    value: "1000000"
+  - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS
+    value: "10"
+  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_BROADCAST
+    value: "false" # Often useful for local testing
+
+  # Dogecoin Indexer
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
+    value: "4000000"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS
+    value: "2"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__POLL_INTERVAL_MS
+    value: "10000"
+
+  # DogeOS Indexer
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL
+    value: "http://l2-rpc:8545"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK
+    value: "0"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS
+    value: "10"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS
+    value: "5000"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSENGER_ADDRESS
+    value: "0x05BC9E6fB53953e8fE733B8403B13a52EC553AB4"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS
+    value: "0x5300000000000000000000000000000000000000"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE
+    value: "10000"
+
+  # Celestia Indexer
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
+    value: "http://celestia-testnet-mocha:26658"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
+    value: "https://small-neat-frog.celestia-mocha.quiknode.pro/c9ed382718eb0defaefadb06843330a94886f641/"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
+    value: "98E6DED48612C0B8E4FA"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
+    value: "6338800"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS
+    value: "3"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS
+    value: "15000"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
+    value: "celestia1ps9llfyvul24z2l74m9x7xgs7gcc2taplan5r5"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
+    value: "Pnw/8OJ8jGtL3P8Kihs1IIpouOS6yPbLF40GFJ91XBg="
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
+    value: "true"
+
+  # UTXO Manager
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS
+    value: "1000000000"
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS
+    value: "3600"
+
+  # Logging
+  - name: RUST_LOG
+    value: "info,withdrawal_processor=debug"
+
+# TSO Signers Configuration for local K8s testing
+# This will be used by the Helm template to create a ConfigMap
+# which is then mounted as /app/config/signers.toml
+tsoSigners:
+  - network: "testnet"
+    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "https://hjyjdjvxyw.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "https://3mqhpxstvh.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-0:3000"
+    role: "Attestation"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-1:3000"
+    role: "Attestation"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-2:3000"
+    role: "Attestation"
+
+# Persistence Configuration
+persistence:
+  data:
+    enabled: true
+    name: withdrawal-processor-data-local-pvc # Unique name for local PVC
+    size: 1Gi
+    storageClass: "" # Use default storage class for local K8s (e.g., Minikube)
+
+# Resource configuration for local testing (same as chart defaults)
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "1024Mi"
+    cpu: "1000m"
+
+serviceMonitor:
+  main:
+    enabled: false
+
+defaultProbes:
+  enabled: false
+
+# Note on TSO Signers:
+# The [[tso_signers]] array of tables from WithdrawalProcessor.toml
+# cannot be easily configured via Helm environment variables due to Figment limitations.
+# For local testing, ensure your local WithdrawalProcessor.toml (if used directly by the application)
+# or the TOML file mounted as a ConfigMap (if testing full K8s deployment)
+# has the correct TSO signer configurations for 'testnet', e.g.:
+# [[tso_signers]]
+# network = "testnet"
+# uri = "http://127.0.0.1:4001" # or http://cubesigner-signer-1:3000 if in K8s
+# role = "Correctness"
+#
+# [[tso_signers]]
+# network = "testnet"
+# uri = "http://127.0.0.1:4002" # or http://cubesigner-signer-2:3000 if in K8s
+# role = "Attestation"
+
+# As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
+# Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
+# has the correct mainnet TSO signer configurations.
+# Example:
+# [[tso_signers]]
+# network = "mainnet"
+# uri = "http://mainnet-cubesigner-signer-1:3000" # Adjust URI for your prod signer
+# role = "Correctness"
+#
+# [[tso_signers]]
+# network = "mainnet"
+# uri = "http://mainnet-cubesigner-signer-2:3000" # Adjust URI for your prod signer
+# role = "Attestation"
+#
+# Note on Database: A 1Gi Persistent Volume Claim (data) is configured and enabled above.
+# However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.
+# If you intend to use SQLite with this PVC in production, update the
+# DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'.

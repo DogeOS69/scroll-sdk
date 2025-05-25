@@ -1,0 +1,36 @@
+env:
+  - name: PORT
+    value: "3000"
+  - name: DOGE_NETWORK
+    value: "mainnet"
+  - name: WITHDRAWAL_PROCESSOR_URL
+    value: "http://withdrawal-processor:3000"
+  - name: RUST_LOG
+    value: "info"
+
+ingress:
+  main:
+    ingressClassName: "nginx"
+    hosts:
+      - host: ""
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: tso-tls
+        hosts:
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+serviceMonitor:
+  main:
+    enabled: true
+
+defaultProbes:
+  enabled: false

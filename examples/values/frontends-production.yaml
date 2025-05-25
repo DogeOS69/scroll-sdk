@@ -1,15 +1,33 @@
+image:
+  repository: dogeos69/scroll-sdk-frontends
+  pullPolicy: Always
+  tag: 3.0.2-beta.0
 persistence:
   frontends:
     enabled: true
     type: configMap
     mountPath: /app/conf/
     name: frontends-config
-
+command:
+  - /bin/bash
+  - -cx
+  - |
+    grep -v '^#' /app/conf/frontend-config | awk -F' = ' 'NF==2 {printf "export %s=\"%s\"\n", $1, $2}' | sed 's/""/"/g' > /usr/share/nginx/html/.env
+    cat /usr/share/nginx/html/.env
+    source /usr/share/nginx/html/.env
+    sed -i "s|src=\"/runtime-env.js\"|src=\"/runtime-env.js?rand=$RANDOM\"|" index.html
+    exec /usr/local/bin/entrypoint.sh
 ingress:
   main:
-    ingressClassName: "nginx"
+    ingressClassName: nginx
     hosts:
-      - host: ""
+      - host: "portal.scrollsdk"
         paths:
           - path: /
             pathType: Prefix
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      - secretName: frontends-tls
+        hosts:
+          - portal.scrollsdk
