@@ -66,7 +66,7 @@ persistence:
     name: cubesigner-session-secret-vol
     enabled: true
     type: secret
-    secretName: cubesigner-default-session-secret # Default name, override per instance
+    secretName: cubesigner-default-session-secret    # Default name, override per instance
     mountPath: /etc/cubesigner
     readOnly: true
 
@@ -75,9 +75,9 @@ persistence:
     name: cubesigner-session-cache-pvc
     enabled: true
     type: pvc
-    mountPath: /app/.sessions # Mount the PVC to the default location used by sdk-fs-storage
+    mountPath: /app/.sessions    # Mount the PVC to the default location used by sdk-fs-storage
     accessMode: ReadWriteOnce
-    size: 50Mi # Adjusted size
+    size: 50Mi    # Adjusted size
     # storageClass: "your-storage-class" # Optional: specify if needed
 
 # Resource configuration
