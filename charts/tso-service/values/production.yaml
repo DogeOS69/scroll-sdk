@@ -7,17 +7,17 @@ env:
   - name: PORT
     value: "3000"
   - name: DOGE_NETWORK
-    value: "mainnet"
+    value: "testnet"
   - name: WITHDRAWAL_PROCESSOR_URL
     value: "http://withdrawal-processor:3000"
   - name: RUST_LOG
-    value: "info"
+    value: "debug"
 
 ingress:
   main:
-    ingressClassName: "nginx"
+    ingressClassName: nginx
     hosts:
-      - host: ""
+      - host: tso.scrollsdk
         paths:
           - path: /
             pathType: Prefix

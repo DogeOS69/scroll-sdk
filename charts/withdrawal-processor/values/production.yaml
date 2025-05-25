@@ -1,5 +1,10 @@
 ---
 # Production environment overrides for dogeos-withdrawal-processor
+image:
+  repository: dogeos69/withdrawal-processor
+  pullPolicy: Always
+  tag: v0.1.0-beta
+
 env:
   # Top-level settings
   - name: DOGEOS_WITHDRAWAL_NETWORK_STR
@@ -59,7 +64,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS
     value: "your-mainnet-message-queue-address" # FIXME
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE
-    value: "1000" # May need adjustment based on RPC provider limits
+    value: "10000" # May need adjustment based on RPC provider limits
 
   # Celestia Indexer (update URLs and addresses for mainnet)
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
@@ -87,6 +92,33 @@ env:
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS
     value: "3600" # 1 hour
 
+  # Logging
+  - name: RUST_LOG
+    value: "info,withdrawal_processor=info"
+
+# TSO Signers Configuration for local K8s testing
+# This will be used by the Helm template to create a ConfigMap
+# which is then mounted as /app/config/signers.toml
+tsoSigners:
+  - network: "testnet"
+    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "https://hjyjdjvxyw.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "https://3mqhpxstvh.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
+    role: "Correctness"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-0:3000"
+    role: "Attestation"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-1:3000"
+    role: "Attestation"
+  - network: "testnet"
+    uri: "http://cubesigner-signer-2:3000"
+    role: "Attestation"
+
 # Persistence Configuration
 persistence:
   data:
@@ -111,6 +143,22 @@ serviceMonitor:
 defaultProbes:
   enabled: false
 
+# Note on TSO Signers:
+# The [[tso_signers]] array of tables from WithdrawalProcessor.toml
+# cannot be easily configured via Helm environment variables due to Figment limitations.
+# For local testing, ensure your local WithdrawalProcessor.toml (if used directly by the application)
+# or the TOML file mounted as a ConfigMap (if testing full K8s deployment)
+# has the correct TSO signer configurations for 'testnet', e.g.:
+# [[tso_signers]]
+# network = "testnet"
+# uri = "http://127.0.0.1:4001" # or http://cubesigner-signer-1:3000 if in K8s
+# role = "Correctness"
+#
+# [[tso_signers]]
+# network = "testnet"
+# uri = "http://127.0.0.1:4002" # or http://cubesigner-signer-2:3000 if in K8s
+# role = "Attestation"
+
 # As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
 # Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
 # has the correct mainnet TSO signer configurations.
@@ -128,24 +176,4 @@ defaultProbes:
 # Note on Database: A 1Gi Persistent Volume Claim (data) is configured and enabled above.
 # However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.
 # If you intend to use SQLite with this PVC in production, update the
-# DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'. 
-
-tsoSigners:
-  - network: "testnet"
-    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
-  - network: "testnet"
-    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
-  - network: "testnet"
-    uri: "" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
-  - network: "testnet"
-    uri: ""
-    role: "Attestation"
-  - network: "testnet"
-    uri: ""
-    role: "Attestation"
-  - network: "testnet"
-    uri: ""
-    role: "Attestation"
+# DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'.

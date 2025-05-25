@@ -1,4 +1,5 @@
 ---
+# Production environment overrides
 image:
   repository: dogeos69/dogeos-deposit-processor
   pullPolicy: IfNotPresent
@@ -15,7 +16,7 @@ env:
   - name: DOGEOS_DEPOSIT_PROCESSOR_HOST
     value: "0.0.0.0"
 
-# ConfigMap overrides for local development
+# ConfigMap overrides for production
 configMaps:
   env:
     enabled: true
@@ -26,7 +27,7 @@ configMaps:
       DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY: ""
 
       # Deposit Configuration
-      DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: ""
+      DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: "DBxgFHhyBhPuBcEcZM3SH5Djt5tnWVQQqc"
       DOGEOS_DEPOSIT_PROCESSOR_START_HEIGHT: "7619000"
       DOGEOS_DEPOSIT_PROCESSOR_CONFIRMATIONS: "6"
       DOGEOS_DEPOSIT_PROCESSOR_MOAT_ADDRESS: ""
@@ -47,11 +48,32 @@ configMaps:
       DOGEOS_DEPOSIT_PROCESSOR_INDEXER_POLL_INTERVAL: "3000"
       DOGEOS_DEPOSIT_PROCESSOR_SYNC_WAIT_INTERVAL: "1000"
 
-# Development resource limits
+# External Secrets configuration for production
+externalSecrets:
+  dogeos-deposit-processor-secrets:
+    provider: aws
+    data:
+      - remoteRef:
+          key: dogeos/deposit-processor/rpc
+          property: username
+        secretKey: rpc-username
+      - remoteRef:
+          key: dogeos/deposit-processor/rpc
+          property: password
+        secretKey: rpc-password
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+
+# Production resource limits
 resources:
   requests:
-    memory: "128Mi"
-    cpu: "100m"
+    memory: "256Mi"
+    cpu: "200m"
   limits:
-    memory: "512Mi"
-    cpu: "500m"
+    memory: "1Gi"
+    cpu: "1000m"
+
+# Storage size override for production
+persistence:
+  data:
+    size: 10Gi 

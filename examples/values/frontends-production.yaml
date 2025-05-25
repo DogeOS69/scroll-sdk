@@ -22,7 +22,7 @@ command:
 
 ingress:
   main:
-    ingressClassName: nginx
+    ingressClassName: "nginx"
     hosts:
       - host: "portal.scrollsdk"
         paths:
