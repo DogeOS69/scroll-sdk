@@ -1,0 +1,103 @@
+global:
+  nameOverride: &app_name dogeos-da
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/da
+  pullPolicy: IfNotPresent
+  tag: latest
+
+env:
+  - name: RUST_LOG
+    value: "debug"
+  - name: CELESTIA_URL
+    value: "celestia-testnet-mocha:26658"
+  - name: CELESTIA_NAMESPACE
+    value: "98E6DED48612C0B8E4FA"
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 3000
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/healthz"
+      port: 3000
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+
+# Environment variables from ConfigMap
+# envFrom:
+#   - configMapRef:
+#       name: dogeos-da-env
+
+# ConfigMap for non-sensitive configuration
+# configMaps:
+#   env:
+#     enabled: true
+#     data:
+
+# External Secrets configuration
+# externalSecrets:
+#   dogeos-da-secrets:
+#     provider: aws
+#     data:
+#       - remoteRef:
+#           key: dogeos/withdrawal-processor/nownodes
+#           property: api-key
+#         secretKey: nownodes-api-key
+#       - remoteRef:
+#           key: dogeos/withdrawal-processor/doge
+#           property: signer-private-key
+#         secretKey: doge-signer-private-key
+#     refreshInterval: 2m
+#     serviceAccount: external-secrets
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Persistent storage configuration
+# persistence:
+#   data:
+#     enabled: true
+#     type: pvc
+#     mountPath: /data
+#     accessMode: ReadWriteOnce
+#     size: 1Gi
+
+# Monitoring configuration
+# serviceMonitor:
+#   main:
+#     enabled: true
+#     labels:
+#       release: scroll-sdk
+#     serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
+#     endpoints:
+#       - port: http
+#         interval: 1m
+#         scrapeTimeout: 10s
+#         path: /metrics

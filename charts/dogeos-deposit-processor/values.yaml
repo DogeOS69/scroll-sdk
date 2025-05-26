@@ -1,0 +1,123 @@
+global:
+  nameOverride: &app_name dogeos-deposit-processor
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/dogeos-deposit-processor
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 3000
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/healthz"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+
+# Direct environment variables
+env:
+  - name: DOGEOS_DEPOSIT_PROCESSOR_LOG_LEVEL
+    value: "debug"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_NODE_ENV
+    value: "development"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_PORT
+    value: "3000"
+  - name: DOGEOS_DEPOSIT_PROCESSOR_HOST
+    value: "0.0.0.0"
+
+# Environment variables from ConfigMap
+envFrom:
+  - configMapRef:
+      name: dogeos-deposit-processor-env
+
+# ConfigMap for non-sensitive configuration
+configMaps:
+  env:
+    enabled: true
+    data:
+      # Dogecoin Access Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DOGE_ACCESS_TYPE: "blockbook"
+      DOGEOS_DEPOSIT_PROCESSOR_DOGE_RPC_URL: "https://dogebook.nownodes.io"
+
+      # Deposit Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: "DARn34TPXXQZgcVo5nZ7iqvJJRsm2PkjSC"
+      DOGEOS_DEPOSIT_PROCESSOR_START_HEIGHT: "5546370"
+      DOGEOS_DEPOSIT_PROCESSOR_CONFIRMATIONS: "60"
+
+      # Database Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_DB_PATH: "/data/deposits.db"
+
+      # L1/L2 Bridge Configuration
+      DOGEOS_DEPOSIT_PROCESSOR_ANVIL_RPC_URL: "http://l1-devnet:8545"
+      DOGEOS_DEPOSIT_PROCESSOR_GENERATE_L1_MESSAGE_TX: "true"
+      DOGEOS_DEPOSIT_PROCESSOR_L1_MESSENGER_ADDRESS: "0xEd07bbda5D53AA599E693602E45c2d985026eD1c"
+      DOGEOS_DEPOSIT_PROCESSOR_MOAT_ADDRESS: "0x0000000000000000000000000000000000000000"
+      DOGEOS_DEPOSIT_PROCESSOR_GAS_LIMIT: "500000"
+
+      # Feature Flags
+      DOGEOS_DEPOSIT_PROCESSOR_FAST_SYNC: "true"
+
+# External Secrets configuration
+externalSecrets:
+  dogeos-deposit-processor-secrets:
+    provider: aws
+    data:
+      - remoteRef:
+          key: dogeos/deposit-processor/nownodes
+          property: api-key
+        secretKey: nownodes-api-key
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Persistent storage configuration
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+# Monitoring configuration
+serviceMonitor:
+  main:
+    enabled: true
+    labels:
+      release: scroll-sdk
+    serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
+    endpoints:
+      - port: http
+        interval: 1m
+        scrapeTimeout: 10s
+        path: /metrics

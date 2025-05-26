@@ -1,0 +1,38 @@
+replicaCount: 1
+namespace: default
+
+dogecoinConf:
+  disablewallet: 1
+  rpcuser: user
+  server: 1
+  testnet: 1
+  printtoconsole: 1
+  rpcbind: 0.0.0.0        # Bind to all interfaces for cluster access
+  rpcallowip:             # Allow cluster pod CIDR (adjust if needed)
+    - 192.168.0.0/16
+    - 10.100.0.0/16
+  listen: 0
+
+rpcPassword: password     # override this with a secret
+
+image:
+  repository: "docker.io/dogeos69/dogecoin"
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: "1.14.9"
+
+service:
+  type: ClusterIP
+  port: 44556             # 44556 for testnet, 22556 for mainnet
+  rpcPort: 44555          # 44555 for testnet, 22555 for mainnet
+
+# Storage
+storage:
+  size: 50Gi              # Should be > 200Gi for mainnet
+  storageClassName: gp3-immediate      # Storage class with immediate binding
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

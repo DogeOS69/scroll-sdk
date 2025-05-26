@@ -1,0 +1,81 @@
+global:
+  nameOverride: &app_name tso-service
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/tso-service
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 3000
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/health"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 12
+
+# Direct environment variables for CubeSigner Signer configuration
+env:
+  - name: PORT
+    value: "3000"
+  - name: DOGE_NETWORK
+    value: "testnet"
+  - name: WITHDRAWAL_PROCESSOR_URL
+    value: "http://withdrawal-processor:3000"
+
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Monitoring configuration
+serviceMonitor:
+  main:
+    enabled: false
+
+ingress:
+  main:
+    enabled: true
+    primary: true
+    annotations: {}
+    labels: {}
+    ingressClassName: "nginx"
+    hosts:
+      - host: tso.scrollsdk
+        paths:
+          - path: /
+            pathType: Prefix

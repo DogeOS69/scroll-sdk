@@ -1,0 +1,41 @@
+image:
+  repository: dogeos69/tso-service
+  pullPolicy: Always
+  tag: v0.1.0-beta
+
+env:
+  - name: PORT
+    value: "3000"
+  - name: DOGE_NETWORK
+    value: "testnet"
+  - name: WITHDRAWAL_PROCESSOR_URL
+    value: "http://withdrawal-processor:3000"
+  - name: RUST_LOG
+    value: "debug"
+
+ingress:
+  main:
+    ingressClassName: nginx
+    hosts:
+      - host: tso.scrollsdk
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: tso-tls
+        hosts:
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+serviceMonitor:
+  main:
+    enabled: true
+
+defaultProbes:
+  enabled: false
