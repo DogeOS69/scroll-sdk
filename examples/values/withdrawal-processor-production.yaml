@@ -1,5 +1,5 @@
 ---
-# Production environment overrides for dogeos-withdrawal-processor
+# Production environment overrides for withdrawal-processor
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: Always
