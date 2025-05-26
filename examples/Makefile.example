@@ -112,7 +112,7 @@ install-cubesigner-signers:
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
-		--values values/tso-production.yaml
+		--values values/tso-service-production.yaml
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/withdrawal-processor -n $(NAMESPACE) \
@@ -151,9 +151,9 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
-	helm delete -n $(NAMESPACE) tso || true
+	helm delete -n $(NAMESPACE) tso-service || true
 	make delete-cubesigner-signers
-	helm delete -n $(NAMESPACE) deposit-processor || true
+	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) grafana-alloy || true
 	helm delete -n $(NAMESPACE) l1-devnet
@@ -178,10 +178,10 @@ delete-withdrawal-processor:
 	helm delete -n $(NAMESPACE) withdrawal-processor
 
 delete-deposit-processor:
-	helm delete -n $(NAMESPACE) deposit-processor
+	helm delete -n $(NAMESPACE) dogeos-deposit-processor
 
 delete-tso:
-	helm delete -n $(NAMESPACE) tso
+	helm delete -n $(NAMESPACE) tso-service
 
 delete-dogeos-da:
 	helm delete -n $(NAMESPACE) dogeos-da
