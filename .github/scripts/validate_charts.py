@@ -85,22 +85,18 @@ def validate_example_makefile():
         # Replace line continuations (\newline) with spaces
         makefile_content = re.sub(r"\\\n\s*", " ", f.read())
 
-    # Extract version patterns from helm upgrade commands
+    # Modified regex to extract service name from URL and version
     # Modified regex to support versions with suffixes like -dogeos
     version_patterns = re.findall(
-        r"helm upgrade -i ([a-zA-Z0-9-]+)\s+oci://[^\s]+\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
+        r"helm upgrade -i [^\s]+\s+oci://.+?/helm/?.*?([^/\s]+)\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
         makefile_content,
     )
 
     success = True
     for service, version in version_patterns:
-        # Handle special cases like l2-sequencer-0 -> l2-sequencer
-        base_service = re.sub(r"-\d+$", "", service)
-
-        # Find corresponding Chart.yaml
-        chart_file = f"charts/{base_service}/Chart.yaml"
+        chart_file = f"charts/{service}/Chart.yaml"
         if not os.path.exists(chart_file):
-            print(f"❌ Chart file not found for service: {base_service}")
+            print(f"❌ Chart file not found for service: {service}")
             success = False
             continue
 
@@ -110,7 +106,7 @@ def validate_example_makefile():
 
         chart_version = chart_data[0].get("version")
         if version != chart_version:
-            print(f"❌ Version mismatch in Makefile.example for {base_service}")
+            print(f"❌ Version mismatch in Makefile.example for {service}")
             print(f"  Makefile version: {version}")
             print(f"  Chart version: {chart_version}")
             success = False

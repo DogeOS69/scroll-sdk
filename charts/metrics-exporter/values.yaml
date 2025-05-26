@@ -54,11 +54,11 @@ metricsConfig:
     metrics: /metrics
     port: *service_port
   l1Network:
-    name: anvil
-    prefix: anvil
+    name: l1
+    prefix: l1
     url:
     L1_MESSAGE_QUEUE_PROXY_ADDR:
   dogecoin:
     url:
     basicAuth:
-    prefix: dogecoin_testnet
+    prefix: dogecoin
