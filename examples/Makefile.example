@@ -63,7 +63,7 @@ install-contracts:
 
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/dogeos-da -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--values values/da-production.yaml \
 		--set image.tag=v0.0.2 \
 
