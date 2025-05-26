@@ -5,12 +5,12 @@ prepare:
 	helm repo update
 
 install-dogecoin:
-	helm upgrade -i dogecoin-testnet charts/dogecoin -n $(NAMESPACE) \
-		--values charts/dogecoin/values.yaml
+	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/dogecoin -n $(NAMESPACE) \
+		--version=0.1.0
 
 install-celestia:
-	helm upgrade -i celestia-testnet charts/celestia-node -n $(NAMESPACE) \
-		--values charts/celestia-node/values.yaml
+	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/celestia-node -n $(NAMESPACE) \
+		--version=0.1.0
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
@@ -62,7 +62,7 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 
 install-dogeos-da:
-	helm upgrade -i dogeos-da ./charts/dogeos-da -n $(NAMESPACE) \
+	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/dogeos-da -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--values values/da-production.yaml \
 		--set image.tag=v0.0.2 \
@@ -88,34 +88,34 @@ install-gas-oracle:
 		--values values/gas-oracle-config.yaml
 
 install-deposit-processor:
-	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/helm/dogeos-deposit-processor -n $(NAMESPACE) \
+	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/dogeos-deposit-processor -n $(NAMESPACE) \
 		--version=0.1.1 \
 		--values values/dogeos-deposit-processor-production.yaml
 
 install-cubesigner-signers:
-	helm upgrade -i cubesigner-signer-0 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
+	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/cubesigner-signer -n $(NAMESPACE) \
 	 	--version=0.1.0 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-0.yaml
-	helm upgrade -i cubesigner-signer-1 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
+	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/cubesigner-signer -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-1.yaml
-	helm upgrade -i cubesigner-signer-2 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
+	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/cubesigner-signer -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
-	helm upgrade -i tso ../dogeos-core/charts/tso-service -n $(NAMESPACE) \
+	helm upgrade -i tso oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--values values/tso-production.yaml
 
 install-withdrawal-processor:
-	helm upgrade -i withdrawal-processor ../dogeos-core/charts/withdrawal-processor -n $(NAMESPACE) \
+	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--values values/withdrawal-processor-production.yaml
 
@@ -128,7 +128,7 @@ install-blockscout:
 	 	--version=0.1.2-dogeos
 
 install-frontends:
-	helm upgrade -i frontends oci://ghcr.io/scroll-tech/scroll-sdk/helm/frontends -n $(NAMESPACE) \
+	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/frontends -n $(NAMESPACE) \
 		--version=0.1.2-dogeos \
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
