@@ -30,7 +30,7 @@ install-scroll-core:
 		--version=1.0.2 \
 		--values values/grafana-alloy-production.yaml
 
-	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrcis-exporter -n $(NAMESPACE) \
+	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
 		--version=0.1.2 \
 		--values values/metrics-exporter-production.yaml
 
@@ -110,7 +110,7 @@ install-cubesigner-signers:
 		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
-	helm upgrade -i tso oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/tso-service -n $(NAMESPACE) \
+	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--values values/tso-production.yaml
 
