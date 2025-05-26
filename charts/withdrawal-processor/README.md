@@ -8,7 +8,7 @@ A Helm chart for the DOGEOS Withdrawal Processor
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| DogeOS | <support@dogeos.com> |  |
+| DogeOS69 | <support@dogeos.com> |  |
 
 ## Requirements
 

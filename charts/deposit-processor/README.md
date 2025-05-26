@@ -8,7 +8,7 @@ A Helm chart for the DogeOS Bridge deposit processor
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| DogeOS | <support@dogeos.com> |  |
+| DogeOS69 | <support@dogeos.com> |  |
 
 ## Requirements
 

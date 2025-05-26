@@ -9,8 +9,8 @@ install-dogecoin:
 		--values charts/dogecoin/values.yaml
 
 install-celestia:
-	helm upgrade -i celestia-testnet charts/celestia -n $(NAMESPACE) \
-		--values charts/celestia/values.yaml
+	helm upgrade -i celestia-testnet charts/celestia-node -n $(NAMESPACE) \
+		--values charts/celestia-node/values.yaml
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
