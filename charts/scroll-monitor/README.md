@@ -1,6 +1,6 @@
 # scroll-monitor
 
-![Version: 0.1.1-dogeos](https://img.shields.io/badge/Version-0.1.1--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.2-dogeos](https://img.shields.io/badge/Version-0.1.2--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 helm chart to deploy grafana, prometheus and loki to monitor scroll-sdk
 
@@ -42,6 +42,22 @@ Kubernetes: `>=1.22.0-0`
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].options.path | string | `"/var/lib/grafana/dashboards/kubernetes/"` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].orgId | int | `1` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].type | string | `"file"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].disableDeletion | bool | `false` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].editable | bool | `true` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].folder | string | `"dogeos"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].name | string | `"dogeos"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].options.path | string | `"/var/lib/grafana/dashboards/dogeos/"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].orgId | int | `1` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].type | string | `"file"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].disableDeletion | bool | `false` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].editable | bool | `true` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].folder | string | `"blockscout"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].name | string | `"blockscout"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].options.path | string | `"/var/lib/grafana/dashboards/blockscout/"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].orgId | int | `1` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].type | string | `"file"` |  |
+| grafana.dashboardsConfigMaps.blockscout | string | `"grafana-blockscout-dashboards"` |  |
+| grafana.dashboardsConfigMaps.dogeos | string | `"grafana-dogeos-dashboards"` |  |
 | grafana.dashboardsConfigMaps.kubernetes | string | `"grafana-kubernetes-dashboards"` |  |
 | grafana.dashboardsConfigMaps.scroll | string | `"grafana-scroll-dashboards"` |  |
 | grafana.datasources."datasources.yaml".apiVersion | int | `1` |  |

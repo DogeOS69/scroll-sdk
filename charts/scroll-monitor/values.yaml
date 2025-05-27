@@ -43,9 +43,27 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/kubernetes/
+        - name: 'dogeos'
+          orgId: 1
+          folder: 'dogeos'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/dogeos/
+        - name: 'blockscout'
+          orgId: 1
+          folder: 'blockscout'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/blockscout/
   dashboardsConfigMaps:
     scroll: grafana-scroll-dashboards
     kubernetes: grafana-kubernetes-dashboards
+    dogeos: grafana-dogeos-dashboards
+    blockscout: grafana-blockscout-dashboards
   ingress:
     enabled: true
     ingressClassName: nginx
