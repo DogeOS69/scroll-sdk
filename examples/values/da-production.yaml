@@ -90,14 +90,6 @@ resources:
 #     size: 1Gi
 
 # Monitoring configuration
-# serviceMonitor:
-#   main:
-#     enabled: true
-#     labels:
-#       release: scroll-sdk
-#     serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
-#     endpoints:
-#       - port: http
-#         interval: 1m
-#         scrapeTimeout: 10s
-#         path: /metrics
+serviceMonitor:
+  main:
+    enabled: true
