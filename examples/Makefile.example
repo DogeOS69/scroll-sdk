@@ -94,17 +94,17 @@ install-deposit-processor:
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.0 \
+	 	--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-0.yaml
 	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-1.yaml
 	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-2.yaml
