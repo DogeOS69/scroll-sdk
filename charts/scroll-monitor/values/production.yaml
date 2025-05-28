@@ -9,10 +9,54 @@ grafana:
     hosts:
       - ""
 
+
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      jsonData:
+        maxLines: 5000
+loki:
+  enabled: true
+  fullnameOverride: loki
+  deploymentMode: SingleBinary
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    name: loki-pvc
+  loki:
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+    schemaConfig:
+      configs:
+        - from: '2024-01-01'
+          store: tsdb
+          index:
+            prefix: loki_index_
+            period: 24h
+          object_store: filesystem
+          schema: v13
+  singleBinary:
+    replicas: 1
+  read:
+    replicas: 0
+  backend:
+    replicas: 0
+  write:
+    replicas: 0
+
 promtail:
   enabled: false
 
 kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      enableRemoteWriteReceiver: true
   alertmanager:
     config:
       global:
@@ -31,3 +75,77 @@ kube-prometheus-stack:
         routes:
         - matchers: []
           receiver: "slack-alerts"
+  additionalPrometheusRules:
+    - groups:
+        - name: balance-cheker-group
+          rules:
+            - alert: ether_balance_of_L1_COMMIT_SENDER
+              annotations:
+                description: >-
+                  Balance of L1_COMMIT_SENDER
+                  (0x2f9d5a5646A0688db6D6BD19DA9006c344786B8d) is less than
+                  threshold 10
+                summary: Balance of L1_COMMIT_SENDER is less than threshold 10
+              expr: ether_balance_of_L1_COMMIT_SENDER < 10
+              for: 5m
+              labels:
+                severity: critical
+            - alert: ether_balance_of_L1_FINALIZE_SENDER
+              annotations:
+                description: >-
+                  Balance of L1_FINALIZE_SENDER
+                  (0xE3f6AB0b254EA2f91C7e9cC3343cE6774D6ABc30) is less than
+                  threshold 10
+                summary: Balance of L1_FINALIZE_SENDER is less than threshold 10
+              expr: ether_balance_of_L1_FINALIZE_SENDER < 10
+              for: 5m
+              labels:
+                severity: critical
+            - alert: ether_balance_of_L1_GAS_ORACLE_SENDER
+              annotations:
+                description: >-
+                  Balance of L1_GAS_ORACLE_SENDER
+                  (0x3f9cfe93D935aD97a0D95e788E6c286Cdc6D8Ac3) is less than
+                  threshold 1.1
+                summary: Balance of L1_GAS_ORACLE_SENDER is less than threshold 1.1
+              expr: ether_balance_of_L1_GAS_ORACLE_SENDER < 1.1
+              for: 5m
+              labels:
+                severity: critical
+            - alert: ether_balance_of_L1_SCROLL_FEE_VAULT
+              annotations:
+                description: >-
+                  Balance of L1_SCROLL_FEE_VAULT
+                  (0x80616B8a63A895cf7EF29c6c7421C5FfC54F2E6d) is less than
+                  threshold 0
+                summary: Balance of L1_SCROLL_FEE_VAULT is less than threshold 0
+              expr: ether_balance_of_L1_SCROLL_FEE_VAULT < 0
+              for: 5m
+              labels:
+                severity: critical
+            - alert: ether_balance_of_L2_GAS_ORACLE_SENDER
+              annotations:
+                description: >-
+                  Balance of L2_GAS_ORACLE_SENDER
+                  (0xF465d1d2266A3Feb882186FB042B0A414C7066aA) is less than
+                  threshold 1.1
+                summary: Balance of L2_GAS_ORACLE_SENDER is less than threshold 1.1
+              expr: ether_balance_of_L2_GAS_ORACLE_SENDER < 1.1
+              for: 5m
+              labels:
+                severity: critical
+            - alert: ether_balance_of_L2_TX_FEE_VAULT
+              annotations:
+                description: >-
+                  Balance of L2_TX_FEE_VAULT
+                  (0x5300000000000000000000000000000000000005) is less than
+                  threshold 0
+                summary: Balance of L2_TX_FEE_VAULT is less than threshold 0
+              expr: ether_balance_of_L2_TX_FEE_VAULT < 0
+              for: 5m
+              labels:
+                severity: critical
+      labels:
+        release: scroll-monitor
+        role: alert-rules
+      name: balance-cheker

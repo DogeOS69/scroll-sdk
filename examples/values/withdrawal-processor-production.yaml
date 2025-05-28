@@ -98,10 +98,10 @@ env:
 
 envFrom:
   - secretRef:
-      name: dogeos-deposit-processor-secret-env
+      name: withdrawal-processor-secret-env
 
 externalSecrets:
-  dogeos-deposit-processor-secret-env:
+  withdrawal-processor-secret-env:
     provider: aws
     data:
       - remoteRef:

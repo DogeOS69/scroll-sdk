@@ -8,6 +8,8 @@ grafana:
     ingressClassName: nginx
     hosts:
       - ""
+
+
   additionalDataSources:
     - name: Loki
       type: loki

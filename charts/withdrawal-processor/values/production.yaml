@@ -96,6 +96,36 @@ env:
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
 
+envFrom:
+  - secretRef:
+      name: withdrawal-processor-secret-env
+
+externalSecrets:
+  withdrawal-processor-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
+        secretKey: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
+        secretKey: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
+        secretKey: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+        secretKey: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+        secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
 # This will be used by the Helm template to create a ConfigMap
 # which is then mounted as /app/config/signers.toml
