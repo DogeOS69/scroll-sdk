@@ -42,6 +42,7 @@ Kubernetes: `>=1.22.0-0`
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].options.path | string | `"/var/lib/grafana/dashboards/kubernetes/"` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].orgId | int | `1` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[1].type | string | `"file"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[2].allowUiUpdates | bool | `true` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].disableDeletion | bool | `false` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].editable | bool | `true` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].folder | string | `"dogeos"` |  |
@@ -49,6 +50,7 @@ Kubernetes: `>=1.22.0-0`
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].options.path | string | `"/var/lib/grafana/dashboards/dogeos/"` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].orgId | int | `1` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[2].type | string | `"file"` |  |
+| grafana.dashboardProviders."dashboardproviders.yaml".providers[3].allowUiUpdates | bool | `true` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[3].disableDeletion | bool | `false` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[3].editable | bool | `true` |  |
 | grafana.dashboardProviders."dashboardproviders.yaml".providers[3].folder | string | `"blockscout"` |  |

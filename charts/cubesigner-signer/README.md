@@ -49,12 +49,6 @@ Kubernetes: `>=1.22.0-0`
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/cubesigner-signer"` |  |
 | image.tag | string | `"latest"` |  |
-| persistence.session-cache.accessMode | string | `"ReadWriteOnce"` |  |
-| persistence.session-cache.enabled | bool | `true` |  |
-| persistence.session-cache.mountPath | string | `"/app/.sessions"` |  |
-| persistence.session-cache.name | string | `"cubesigner-session-cache-pvc"` |  |
-| persistence.session-cache.size | string | `"50Mi"` |  |
-| persistence.session-cache.type | string | `"pvc"` |  |
 | persistence.session.enabled | bool | `true` |  |
 | persistence.session.mountPath | string | `"/etc/cubesigner"` |  |
 | persistence.session.name | string | `"cubesigner-session-secret-vol"` |  |
