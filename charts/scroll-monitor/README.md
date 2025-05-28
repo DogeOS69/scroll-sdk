@@ -76,6 +76,10 @@ Kubernetes: `>=1.22.0-0`
 | grafana.datasources."datasources.yaml".datasources[1].type | string | `"loki"` |  |
 | grafana.datasources."datasources.yaml".datasources[1].url | string | `"http://loki:3100"` |  |
 | grafana.enabled | bool | `true` |  |
+| grafana.extraConfigmapMounts[0].configMap | string | `"grafana-alerts-config"` |  |
+| grafana.extraConfigmapMounts[0].mountPath | string | `"/etc/grafana/provisioning/alerting/provisioned_alerts.yaml"` |  |
+| grafana.extraConfigmapMounts[0].name | string | `"grafana-alerts"` |  |
+| grafana.extraConfigmapMounts[0].subPath | string | `"provisioned_alerts.yaml"` |  |
 | grafana.fullnameOverride | string | `"grafana"` |  |
 | grafana.ingress.enabled | bool | `true` |  |
 | grafana.ingress.hosts[0] | string | `"grafana.scrollsdk"` |  |

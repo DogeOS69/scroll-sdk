@@ -26,6 +26,14 @@ Deploy a Dogecoin FullNode in Kubernetes
 | dogecoinConf.testnet | int | `1` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/dogecoin"` |  |
+| ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
+| ingress.className | string | `"nginx"` |  |
+| ingress.enabled | bool | `false` |  |
+| ingress.hosts[0].host | string | `"dogecoin.testnet.dogeos.com"` |  |
+| ingress.hosts[0].paths[0].path | string | `"/"` |  |
+| ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
+| ingress.tls[0].hosts[0] | string | `"dogecoin.testnet.dogeos.com"` |  |
+| ingress.tls[0].secretName | string | `"dogecoin-tls"` |  |
 | namespace | string | `"default"` |  |
 | nodeSelector | object | `{}` |  |
 | replicaCount | int | `1` |  |

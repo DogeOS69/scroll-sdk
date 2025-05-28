@@ -71,6 +71,11 @@ grafana:
     ingressClassName: nginx
     hosts:
       - "grafana.scrollsdk"
+  extraConfigmapMounts:
+    - name: grafana-alerts
+      mountPath: /etc/grafana/provisioning/alerting/provisioned_alerts.yaml
+      subPath: provisioned_alerts.yaml
+      configMap: grafana-alerts-config
 
 loki:
   enabled: false
