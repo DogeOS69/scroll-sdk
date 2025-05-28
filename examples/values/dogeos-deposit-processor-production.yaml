@@ -59,14 +59,6 @@ externalSecrets:
     data:
       - remoteRef:
           key: dogeos/deposit-processor/rpc
-          property: username
-        secretKey: rpc-username
-      - remoteRef:
-          key: dogeos/deposit-processor/rpc
-          property: password
-        secretKey: rpc-password
-      - remoteRef:
-          key: dogeos/deposit-processor/rpc
           property: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
         secretKey: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
 
