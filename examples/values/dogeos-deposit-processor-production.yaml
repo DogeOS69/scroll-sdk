@@ -48,9 +48,13 @@ configMaps:
       DOGEOS_DEPOSIT_PROCESSOR_INDEXER_POLL_INTERVAL: "3000"
       DOGEOS_DEPOSIT_PROCESSOR_SYNC_WAIT_INTERVAL: "1000"
 
+envFrom:
+  - secretRef:
+      name: dogeos-deposit-processor-secret-env
+
 # External Secrets configuration for production
 externalSecrets:
-  dogeos-deposit-processor-secrets:
+  dogeos-deposit-processor-secret-env:
     provider: aws
     data:
       - remoteRef:
@@ -61,6 +65,11 @@ externalSecrets:
           key: dogeos/deposit-processor/rpc
           property: password
         secretKey: rpc-password
+      - remoteRef:
+          key: dogeos/deposit-processor/rpc
+          property: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
+        secretKey: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
+
     refreshInterval: 2m
     serviceAccount: external-secrets
 
