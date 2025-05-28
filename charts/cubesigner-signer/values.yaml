@@ -70,16 +70,6 @@ persistence:
     mountPath: /etc/cubesigner
     readOnly: true
 
-  # Mount a PVC for the persistent .sessions directory managed by the SDK
-  session-cache:
-    name: cubesigner-session-cache-pvc
-    enabled: true
-    type: pvc
-    mountPath: /app/.sessions    # Mount the PVC to the default location used by sdk-fs-storage
-    accessMode: ReadWriteOnce
-    size: 50Mi    # Adjusted size
-    # storageClass: "your-storage-class" # Optional: specify if needed
-
 # Resource configuration
 resources:
   requests:
