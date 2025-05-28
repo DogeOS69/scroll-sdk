@@ -11,3 +11,19 @@ service:
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
   storageClassName: gp3-immediate      # Storage class with immediate binding 
+
+# Enable ingress
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+  hosts:
+    - host: dogecoin.testnet.dogeos.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: dogecoin-tls
+      hosts:
+        - dogecoin.testnet.dogeos.com 

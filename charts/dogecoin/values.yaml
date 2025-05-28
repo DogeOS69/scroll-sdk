@@ -36,3 +36,19 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+  hosts:
+    - host: dogecoin.testnet.dogeos.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: dogecoin-tls
+      hosts:
+        - dogecoin.testnet.dogeos.com

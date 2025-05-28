@@ -1,25 +1,44 @@
-# Define an ingress for dogecoin RPCs
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: dogecoin-ingress
+  name: {{ include "dogecoin.fullname" . }}-ingress
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dogecoin.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  ingressClassName: nginx
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
   tls:
-  - hosts:
-    - dogecoin.testnet.dogeos.com
-    secretName: dogecoin-tls
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- if .secretName }}
+      secretName: {{ .secretName }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
   rules:
-  - host: dogecoin.testnet.dogeos.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: {{ include "dogecoin.fullname" . }}
-            port:
-              number: 44555
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "dogecoin.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.rpcPort }}
+          {{- end }}
+    {{- end }}
+{{- end }}
