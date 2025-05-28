@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 22,
+  "id": 21,
   "links": [],
   "panels": [
     {
@@ -313,7 +313,7 @@
           "exemplar": false,
           "expr": "avg(dogeos_deposit_processor_error_total{service=\"dogeos-deposit-processor\", errors!=\"\"})",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Total Errors",
           "range": true,
           "refId": "A"
         }
@@ -778,6 +778,6 @@
   "timezone": "browser",
   "title": "Dogeos Deposit Service",
   "uid": "cen2jvuipspa8e",
-  "version": 4,
+  "version": 3,
   "weekStart": ""
 }
