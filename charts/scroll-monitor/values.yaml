@@ -48,6 +48,7 @@ grafana:
           folder: 'dogeos'
           type: file
           disableDeletion: false
+          allowUiUpdates: true
           editable: true
           options:
             path: /var/lib/grafana/dashboards/dogeos/
@@ -56,6 +57,7 @@ grafana:
           folder: 'blockscout'
           type: file
           disableDeletion: false
+          allowUiUpdates: true
           editable: true
           options:
             path: /var/lib/grafana/dashboards/blockscout/

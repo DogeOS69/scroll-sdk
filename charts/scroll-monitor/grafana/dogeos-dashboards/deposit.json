@@ -107,7 +107,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "dogeos_deposit_processor_current_indexer_height{service=\"dogeos-deposit-processor\"}",
+          "expr": "avg(dogeos_deposit_processor_current_indexer_height{service=\"dogeos-deposit-processor\"})",
           "instant": false,
           "legendFormat": "Current",
           "range": true,
@@ -119,7 +119,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "dogeos_deposit_processor_current_chain_height{service=\"dogeos-deposit-processor\"}",
+          "expr": "avg(dogeos_deposit_processor_current_chain_height{service=\"dogeos-deposit-processor\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "Chain",
@@ -236,7 +236,7 @@
           "refId": "A"
         }
       ],
-      "title": "Anvil Block Height",
+      "title": "L1 Block Height",
       "type": "timeseries"
     },
     {
@@ -311,7 +311,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "dogeos_deposit_processor_error_total{service=\"dogeos-deposit-processor\", errors!=\"\"}",
+          "expr": "avg(dogeos_deposit_processor_error_total{service=\"dogeos-deposit-processor\", errors!=\"\"})",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -501,7 +501,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "dogeos_deposit_processor_queue_height{service=\"dogeos-deposit-processor\"}",
+          "expr": "avg(dogeos_deposit_processor_queue_height{service=\"dogeos-deposit-processor\"})",
           "instant": false,
           "legendFormat": "deposit queue",
           "range": true,
@@ -778,6 +778,6 @@
   "timezone": "browser",
   "title": "Dogeos Deposit Service",
   "uid": "cen2jvuipspa8e",
-  "version": 1,
+  "version": 4,
   "weekStart": ""
 }
