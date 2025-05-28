@@ -1,6 +1,6 @@
 # metrics-exporter
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
 
 A Helm chart for the Metrics Exporter
 
@@ -36,11 +36,11 @@ Kubernetes: `>=1.22.0-0`
 | metricsConfig.app.port | int | `8801` |  |
 | metricsConfig.app.workers | int | `5` |  |
 | metricsConfig.dogecoin.basicAuth | string | `nil` |  |
-| metricsConfig.dogecoin.prefix | string | `"dogecoin_testnet"` |  |
+| metricsConfig.dogecoin.prefix | string | `"dogecoin"` |  |
 | metricsConfig.dogecoin.url | string | `nil` |  |
 | metricsConfig.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR | string | `nil` |  |
-| metricsConfig.l1Network.name | string | `"anvil"` |  |
-| metricsConfig.l1Network.prefix | string | `"anvil"` |  |
+| metricsConfig.l1Network.name | string | `"l1"` |  |
+| metricsConfig.l1Network.prefix | string | `"l1"` |  |
 | metricsConfig.l1Network.url | string | `nil` |  |
 | persistence.metrics-exporter.enabled | bool | `true` |  |
 | persistence.metrics-exporter.mountPath | string | `"/config/"` |  |

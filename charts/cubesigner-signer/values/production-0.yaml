@@ -1,0 +1,81 @@
+global:
+  fullnameOverride: "cubesigner-signer-0"
+# image:
+#   pullPolicy: IfNotPresent
+#   tag: test-amd64
+# Direct environment variables (set overrides here if needed)
+
+env:
+  # - name: DOGEOS_CUBESIGNER_SIGNER_LOG_LEVEL # Example: Override log level
+  #   value: "warn"
+  - name: DOGEOS_CUBESIGNER_SIGNER_PORT
+    value: "3000"
+  - name: DOGEOS_CUBESIGNER_SIGNER_NETWORK
+    value: "testnet" # Default to mainnet for production
+  - name: DOGEOS_CUBESIGNER_SIGNER_TSO_URL
+    value: "http://tso-service:3000" # Example production TSO URL
+  - name: DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY
+    value: "0"
+  - name: DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL
+    value: "5000"
+  - name: DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: cubesigner-signer-0-env
+        key: DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID
+  - name: DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH
+    value: "/etc/cubesigner/session.json" # Path where session secret is mounted
+
+persistence:
+  session:
+    name: cubesigner-signer-0-session # CHANGED to match the desired K8s Secret name (no -secret suffix)
+    enabled: true
+    type: secret
+    secretName: cubesigner-signer-0-session # CHANGED to match the desired K8s Secret name
+    mountPath: /etc/cubesigner
+    readOnly: true
+
+# Mount a PVC for the persistent .sessions directory managed by the SDK
+volumeClaimTemplates:
+  - name: "session-cache-0"
+    accessMode: "ReadWriteOnce"
+    size: "1Gi" # Adjusted size
+    mountPath: "/app/.sessions" # Mount the PVC to the default location used by sdk-fs-storage
+
+# ExternalSecrets section
+externalSecrets:
+  # For environment variables like CS_KEY_ID
+  cubesigner-signer-0-env: # This will create a K8s secret named "cubesigner-signer-0-env-secret" (by default)
+    provider: "aws" # This will be updated by the push-secrets script
+    data:
+      - remoteRef:
+          # This key will be like "your-prefix/cubesigner-signer-0-env" in Vault/AWS
+          key: "scroll/cubesigner-signer-0-env"
+          property: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID" # The key name in the Vault/AWS secret
+        secretKey: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID" # The key name in the K8s secret
+    refreshInterval: "2m"
+    serviceAccount: "external-secrets"
+
+  cubesigner-signer-0-session: # This is the $key for the ExternalSecret resource itself
+    provider: "aws"
+    data:
+      - remoteRef:
+          key: "scroll/cubesigner-signer-0-session"
+          property: "session.json"
+        secretKey: "session.json"
+    refreshInterval: "2m"
+    serviceAccount: "external-secrets"
+
+# Production resource limits (Adjust as needed)
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "50m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# ServiceMonitor can be enabled for production if desired
+serviceMonitor:
+  main:
+    enabled: false

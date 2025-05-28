@@ -1,0 +1,16 @@
+{{- if .Values.tsoSigners }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "withdrawal-processor.fullname" . }}-tso-signers
+  labels:
+    {{- include "withdrawal-processor.labels" . | nindent 4 }}
+data:
+  signers.toml: |
+{{- range .Values.tsoSigners }}
+    [[tso_signers]]
+    network = "{{ .network }}"
+    uri = "{{ .uri }}"
+    role = "{{ .role }}"
+{{- end }}
+{{- end }} 

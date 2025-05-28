@@ -5,12 +5,12 @@ prepare:
 	helm repo update
 
 install-dogecoin:
-	helm upgrade -i dogecoin-testnet charts/dogecoin -n $(NAMESPACE) \
-		--values charts/dogecoin/values.yaml
+	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
+		--version=0.1.0
 
 install-celestia:
-	helm upgrade -i celestia-testnet charts/celestia -n $(NAMESPACE) \
-		--values charts/celestia/values.yaml
+	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
+		--version=0.1.0
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
@@ -19,7 +19,7 @@ install-l1-devnet:
 
 install-scroll-core:
 	helm upgrade -i scroll-monitor oci://ghcr.io/scroll-tech/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.1-dogeos \
+		--version=0.1.2-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 	helm upgrade -i scroll-common oci://ghcr.io/scroll-tech/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
@@ -30,8 +30,8 @@ install-scroll-core:
 		--version=1.0.2 \
 		--values values/grafana-alloy-production.yaml
 
-	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrcis-exporter -n $(NAMESPACE) \
-		--version=0.1.2 \
+	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
+		--version=0.1.3 \
 		--values values/metrics-exporter-production.yaml
 
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
@@ -62,9 +62,9 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 
 install-dogeos-da:
-	helm upgrade -i dogeos-da ./charts/dogeos-da -n $(NAMESPACE) \
-		--version=0.1.0 \
-		--values dogeos-values/da-production.yaml \
+	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
+		--version=0.1.1 \
+		--values values/dogeos-da-production.yaml \
 		--set image.tag=v0.0.2 \
 
 install-rollup-node:
@@ -88,36 +88,36 @@ install-gas-oracle:
 		--values values/gas-oracle-config.yaml
 
 install-deposit-processor:
-	helm upgrade -i deposit-processor charts/dogeos-deposit-processor -n $(NAMESPACE) \
+	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
 		--version=0.1.1 \
-		--values dogeos-values/deposit-processor-production.yaml
+		--values values/dogeos-deposit-processor-production.yaml
 
 install-cubesigner-signers:
-	helm upgrade -i cubesigner-signer-0 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.0 \
+	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
+	 	--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
-		--values dogeos-values/cubesigner-signer-production-0.yaml
-	helm upgrade -i cubesigner-signer-1 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--values values/cubesigner-signer-production-0.yaml
+	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
+		--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
-		--values dogeos-values/cubesigner-signer-production-1.yaml
-	helm upgrade -i cubesigner-signer-2 ../dogeos-core/charts/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--values values/cubesigner-signer-production-1.yaml
+	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
+		--version=0.1.1 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
-		--values dogeos-values/cubesigner-signer-production-2.yaml
+		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
-	helm upgrade -i tso ../dogeos-core/charts/tso-service -n $(NAMESPACE) \
+	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
-		--values dogeos-values/tso-production.yaml
+		--values values/tso-service-production.yaml
 
 install-withdrawal-processor:
-	helm upgrade -i withdrawal-processor ../dogeos-core/charts/withdrawal-processor -n $(NAMESPACE) \
+	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.0 \
-		--values dogeos-values/withdrawal-processor-production.yaml
+		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
@@ -128,10 +128,10 @@ install-blockscout:
 	 	--version=0.1.2-dogeos
 
 install-frontends:
-	helm upgrade -i frontends oci://ghcr.io/scroll-tech/scroll-sdk/helm/frontends -n $(NAMESPACE) \
-		--version=0.1.1 \
-		--values dogeos-values/frontends-production.yaml \
-		--values dogeos-values/frontends-config.yaml
+	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
+		--version=0.1.2-dogeos \
+		--values values/frontends-production.yaml \
+		--values values/frontends-config.yaml
 
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
@@ -151,9 +151,9 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
-	helm delete -n $(NAMESPACE) tso || true
+	helm delete -n $(NAMESPACE) tso-service || true
 	make delete-cubesigner-signers
-	helm delete -n $(NAMESPACE) deposit-processor || true
+	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) grafana-alloy || true
 	helm delete -n $(NAMESPACE) l1-devnet
@@ -178,10 +178,10 @@ delete-withdrawal-processor:
 	helm delete -n $(NAMESPACE) withdrawal-processor
 
 delete-deposit-processor:
-	helm delete -n $(NAMESPACE) deposit-processor
+	helm delete -n $(NAMESPACE) dogeos-deposit-processor
 
 delete-tso:
-	helm delete -n $(NAMESPACE) tso
+	helm delete -n $(NAMESPACE) tso-service
 
 delete-dogeos-da:
 	helm delete -n $(NAMESPACE) dogeos-da

@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "celestia-node.fullname" . }}
+  labels:
+    {{- include "celestia-node.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "celestia-node.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "celestia-node.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: init-dirs
+          image: "busybox:latest"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              mkdir -p /home/celestia
+              mkdir -p /home/celestia/keys
+              chmod 777 /home/celestia
+              chmod 777 /home/celestia/keys
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+        {{- if .Values.mnemonic }}
+        - name: key-management
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              echo "Importing key from mnemonic..."
+              MNEMONIC=$(cat /mnemonic/mnemonic)
+              echo "$MNEMONIC" | cel-key add my_celes_key --recover --keyring-backend test --node.type {{ .Values.node_type }}
+              echo "Key imported successfully"
+              echo "Available keys:"
+              cel-key list --node.type {{ .Values.node_type }} --keyring-backend test
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+            - name: mnemonic
+              mountPath: /mnemonic
+              readOnly: true
+        {{- end }}
+        - name: init-node
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              # Check if config already exists to avoid permission errors on restart
+              if [ -f /home/celestia/config.toml ]; then
+                echo "Configuration already exists, skipping initialization"
+              else
+                # Initialize the node
+                echo "Initializing celestia node..."
+                celestia {{ .Values.node_type }} init --p2p.network {{ .Values.network }}
+                echo "Node initialized"
+              fi
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+        - name: fix-permissions
+          image: "busybox:latest"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              echo "Fixing p2p-key permissions..."
+              find /home/celestia -name "p2p-key" -type f -exec chmod 600 {} \; 2>/dev/null || echo "No p2p-key found"
+              echo "Fixing keyring permissions..."
+              find /home/celestia -path "*/keyring-test/*" -type f -exec chmod 600 {} \; 2>/dev/null || echo "No keyring files found"
+              find /home/celestia -type d -name "keyring-test" -exec chmod 700 {} \; 2>/dev/null || echo "No keyring directory found"
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+        - name: init-config
+          image: "busybox:latest"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              echo "Applying custom configuration..."
+              cp /config/config.toml /home/celestia/config.toml
+              chmod 664 /home/celestia/config.toml
+              echo "Configuration applied"
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+            - name: node-config
+              mountPath: /config
+              readOnly: true
+        {{- if not .Values.rpc.auth.skipAuth }}
+        - name: generate-auth-token
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              echo "=== Generating AUTH_TOKEN ===" && \
+              AUTH_TOKEN=$(celestia {{ .Values.node_type }} auth admin --p2p.network {{ .Values.network }}) && \
+              echo "AUTH_TOKEN: $AUTH_TOKEN" && \
+              echo "======================"
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+        {{- end }}
+      containers:
+        - name: celestia-node
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - celestia
+          args:
+            - "{{ .Values.node_type }}"
+            - "start"
+            - "--core.ip"
+            - "{{ .Values.core.rpc_url }}"
+            - "--core.port"
+            - "{{ .Values.core.grpc_port }}"
+            - "--p2p.network"
+            - "{{ .Values.network }}"
+            - "--keyring.backend"
+            - "test"
+            - "--metrics.tls=false"
+            - "--metrics"
+            - "--metrics.endpoint"
+            - "grafana-alloy:4318"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "pkill -SIGTERM celestia && sleep 5"]
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+            - name: node-config
+              mountPath: /config
+              readOnly: true
+          ports:
+            - name: p2p-tcp
+              containerPort: 2121
+              protocol: TCP
+            - name: p2p-udp
+              containerPort: 2121
+              protocol: UDP
+            - name: rpc
+              containerPort: 26658
+              protocol: TCP
+            - name: core
+              containerPort: 9090
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: node-store
+          persistentVolumeClaim:
+            claimName: {{ include "celestia-node.fullname" . }}-pvc
+        - name: node-config
+          configMap:
+            name: {{ include "celestia-node.fullname" . }}-config
+        {{- if .Values.mnemonic }}
+        - name: mnemonic
+          secret:
+            secretName: {{ include "celestia-node.fullname" . }}-mnemonic
+        {{- end }}
