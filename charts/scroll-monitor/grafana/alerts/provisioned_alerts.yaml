@@ -240,7 +240,7 @@ contactPoints:
           settings:
             text: '{{ template "slack.dogeos.text" . }}'
             title: '{{ template "slack.dogeos.title" . }}'
-            url: https://hooks.slack.com/services/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
+            url: https://hooks.slack.com/services/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
           disableResolveMessage: false
 
 # List of templates to import or update
