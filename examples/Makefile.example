@@ -90,7 +90,7 @@ install-gas-oracle:
 
 install-deposit-processor:
 	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/dogeos-deposit-processor-production.yaml
 
 install-cubesigner-signers:

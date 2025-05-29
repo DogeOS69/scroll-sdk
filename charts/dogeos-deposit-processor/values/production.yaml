@@ -24,7 +24,6 @@ configMaps:
       # Dogecoin Access Configuration
       DOGEOS_DEPOSIT_PROCESSOR_DOGE_ACCESS_TYPE: "blockbook"
       DOGEOS_DEPOSIT_PROCESSOR_DOGE_RPC_URL: "https://dogebook-testnet.nownodes.io"
-      DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY: ""
 
       # Deposit Configuration
       DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: "DBxgFHhyBhPuBcEcZM3SH5Djt5tnWVQQqc"
