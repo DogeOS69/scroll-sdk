@@ -6,7 +6,8 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.0
+		--version=0.1.0 \
+		--values values/dogecoin-production.yaml
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
