@@ -49,7 +49,9 @@ configMaps:
 
 envFrom:
   - secretRef:
-      name: dogeos-deposit-processor-secret-env
+      name: "dogeos-deposit-processor-secret-env"
+  - configMapRef:
+      name: dogeos-deposit-processor-env
 
 # External Secrets configuration for production
 externalSecrets:
