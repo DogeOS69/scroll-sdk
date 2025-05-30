@@ -1,7 +1,18 @@
 metricsConfig:
   l1Network:
-    url: http://l1-devnet:8545
-    L1_MESSAGE_QUEUE_PROXY_ADDR: 0x7Fc443703F969EF871a65feb9c43b8b3a1b7B462
+    url: "http://l1-devnet:8545"
+    L1_MESSAGE_QUEUE_PROXY_ADDR: ""
   dogecoin:
-    url: http://dogecoin-testnet:44555
-    basicAuth: "dXNlcjpwYXNzd29yZA=="
+    url: "http://dogecoin-testnet:44555"
+
+# External Secrets configuration
+externalSecrets:
+  metrics-exporter-secrets:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/metrics-exporter-secrets
+          property: METRICS_EXPORTER_DOGECOIN_BASIC_AUTH
+        secretKey: DOGECOIN_RPC_TOKEN
+    refreshInterval: 2m
+    serviceAccount: external-secrets
