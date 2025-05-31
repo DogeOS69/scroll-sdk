@@ -6,12 +6,12 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--values values/dogecoin-production.yaml
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.0
+		--version=0.1.1
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
@@ -57,7 +57,7 @@ install-scroll-core:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.7-dogeos \
+		--version=0.1.8-dogeos \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
