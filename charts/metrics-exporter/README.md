@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 |-----|------|---------|-------------|
 | args[0] | string | `"-config=/config/config.yml"` |  |
 | controller.replicas | int | `1` |  |
-| envFrom[0].secretRef.name | string | `"metrics-exporter-secrets"` |  |
+| envFrom[0].secretRef.name | string | `"metrics-exporter-secret-env"` |  |
 | global.fullnameOverride | string | `"metrics-exporter"` |  |
 | global.nameOverride | string | `"metrics-exporter"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |

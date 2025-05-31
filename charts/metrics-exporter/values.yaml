@@ -47,7 +47,7 @@ serviceMonitor:
 
 envFrom:
   - secretRef:
-      name: "metrics-exporter-secrets"
+      name: "metrics-exporter-secret-env"
 
 
 metricsConfig:

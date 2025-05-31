@@ -7,7 +7,7 @@ metricsConfig:
 
 # External Secrets configuration
 externalSecrets:
-  metrics-exporter-secrets:
+  metrics-exporter-secret-env:
     provider: aws
     data:
       - remoteRef:
