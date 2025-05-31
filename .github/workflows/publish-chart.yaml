@@ -32,7 +32,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       #  List chart change except scroll-sdk
       - name: Run chart-testing (list-changed)
@@ -70,7 +70,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
         # We filter here the scroll-sdk chart
       - name: Push chart to ghcr
@@ -129,7 +129,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       #  List scroll-sdk chart if it has changed
       - name: Run chart-testing (list-changed)
@@ -167,7 +167,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/dogeos69/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io/dogeos69/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push chart to ghcr
         if: steps.filter.outputs.addedOrModified == 'true'
