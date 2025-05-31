@@ -108,9 +108,7 @@ env:
 
   # Celestia Indexer
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
-    value: "https://small-neat-frog.celestia-mocha.quiknode.pro/c9ed382718eb0defaefadb06843330a94886f641/"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
-    value: "https://small-neat-frog.celestia-mocha.quiknode.pro/c9ed382718eb0defaefadb06843330a94886f641/"
+    value: "http://celestia-testnet-mocha:26658"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
     value: "D06305735700"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK

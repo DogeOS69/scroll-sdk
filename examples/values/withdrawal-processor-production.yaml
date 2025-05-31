@@ -69,8 +69,6 @@ env:
   # Celestia Indexer (update URLs and addresses for mainnet)
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
     value: "https://your-mainnet-celestia-da-rpc-url" # FIXME
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
-    value: "https://your-mainnet-celestia-tendermint-rpc-url" # FIXME
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
     value: "your-mainnet-da-namespace" # FIXME
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
@@ -124,6 +122,10 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
+        secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing

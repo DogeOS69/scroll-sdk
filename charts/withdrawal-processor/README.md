@@ -1,6 +1,6 @@
 # withdrawal-processor
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
@@ -59,29 +59,27 @@ Kubernetes: `>=1.22.0-0`
 | env[21].name | string | `"DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE"` |  |
 | env[21].value | string | `"10000"` |  |
 | env[22].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL"` |  |
-| env[22].value | string | `"https://small-neat-frog.celestia-mocha.quiknode.pro/c9ed382718eb0defaefadb06843330a94886f641/"` |  |
-| env[23].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL"` |  |
-| env[23].value | string | `"https://small-neat-frog.celestia-mocha.quiknode.pro/c9ed382718eb0defaefadb06843330a94886f641/"` |  |
-| env[24].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE"` |  |
-| env[24].value | string | `"D06305735700"` |  |
-| env[25].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK"` |  |
-| env[25].value | string | `"5965461"` |  |
-| env[26].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS"` |  |
-| env[26].value | string | `"3"` |  |
-| env[27].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS"` |  |
-| env[27].value | string | `"15000"` |  |
-| env[28].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS"` |  |
-| env[28].value | string | `"celestia1n4m4rxllc55kaf2t7hzl9vuuzjtszakww8xcvn"` |  |
-| env[29].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT"` |  |
-| env[29].value | string | `"XWcGNcRS7gHrv3sfEqQY6oJpm8V1PT7vH2RfwYHv830="` |  |
+| env[22].value | string | `"http://celestia-testnet-mocha:26658"` |  |
+| env[23].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE"` |  |
+| env[23].value | string | `"D06305735700"` |  |
+| env[24].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK"` |  |
+| env[24].value | string | `"5965461"` |  |
+| env[25].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS"` |  |
+| env[25].value | string | `"3"` |  |
+| env[26].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS"` |  |
+| env[26].value | string | `"15000"` |  |
+| env[27].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS"` |  |
+| env[27].value | string | `"celestia1n4m4rxllc55kaf2t7hzl9vuuzjtszakww8xcvn"` |  |
+| env[28].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT"` |  |
+| env[28].value | string | `"XWcGNcRS7gHrv3sfEqQY6oJpm8V1PT7vH2RfwYHv830="` |  |
+| env[29].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS"` |  |
+| env[29].value | string | `"true"` |  |
 | env[2].name | string | `"DOGEOS_WITHDRAWAL_API_PORT"` |  |
 | env[2].value | string | `"3000"` |  |
-| env[30].name | string | `"DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS"` |  |
-| env[30].value | string | `"true"` |  |
-| env[31].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS"` |  |
-| env[31].value | string | `"1000000000"` |  |
-| env[32].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS"` |  |
-| env[32].value | string | `"3600"` |  |
+| env[30].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS"` |  |
+| env[30].value | string | `"1000000000"` |  |
+| env[31].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS"` |  |
+| env[31].value | string | `"3600"` |  |
 | env[3].name | string | `"DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL"` |  |
 | env[3].value | string | `"https://testnet.doge.xyz"` |  |
 | env[4].name | string | `"DOGEOS_WITHDRAWAL_BLOCKBOOK_URL"` |  |
