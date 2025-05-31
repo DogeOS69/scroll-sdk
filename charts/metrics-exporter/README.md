@@ -1,6 +1,6 @@
 # metrics-exporter
 
-![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
+![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3](https://img.shields.io/badge/AppVersion-0.1.3-informational?style=flat-square)
 
 A Helm chart for the Metrics Exporter
 
@@ -17,6 +17,7 @@ Kubernetes: `>=1.22.0-0`
 | Repository | Name | Version |
 |------------|------|---------|
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.2 |
+| oci://ghcr.io/scroll-tech/scroll-sdk/helm | external-secrets-lib | 0.0.3 |
 
 ## Values
 
@@ -24,18 +25,18 @@ Kubernetes: `>=1.22.0-0`
 |-----|------|---------|-------------|
 | args[0] | string | `"-config=/config/config.yml"` |  |
 | controller.replicas | int | `1` |  |
+| envFrom[0].secretRef.name | string | `"metrics-exporter-secret-env"` |  |
 | global.fullnameOverride | string | `"metrics-exporter"` |  |
 | global.nameOverride | string | `"metrics-exporter"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/unifralabs/metrics-exporter"` |  |
-| image.tag | string | `"v0.1.2"` |  |
+| image.tag | string | `"v0.1.3"` |  |
 | metricsConfig.app.job | string | `"metrics-exporter"` |  |
 | metricsConfig.app.logLevel | string | `"info"` |  |
 | metricsConfig.app.maxBodySize | int | `512` |  |
 | metricsConfig.app.metrics | string | `"/metrics"` |  |
 | metricsConfig.app.port | int | `8801` |  |
 | metricsConfig.app.workers | int | `5` |  |
-| metricsConfig.dogecoin.basicAuth | string | `nil` |  |
 | metricsConfig.dogecoin.prefix | string | `"dogecoin"` |  |
 | metricsConfig.dogecoin.url | string | `nil` |  |
 | metricsConfig.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR | string | `nil` |  |

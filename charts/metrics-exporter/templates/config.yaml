@@ -35,13 +35,13 @@ data:
             help: "Current queue height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}"
 {{- end }}
 {{- end }}
-{{- if and $configs.dogecoin.url $configs.dogecoin.basicAuth }}
+{{- if and $configs.dogecoin.url }}
 {{- $dogecoinDefaultPrefix := "dogecoin" }}
       {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-chaininfo:
         method: POST
         url: {{ $configs.dogecoin.url }}
         headers:
-          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+          "Authorization": "Basic ${env.DOGECOIN_RPC_TOKEN}"
         body: '{"jsonrpc":"2.0","method":"getblockchaininfo","params":[],"id":1}'
         metrics:
           - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_chain_block_height
@@ -60,7 +60,7 @@ data:
         method: POST
         url: {{ $configs.dogecoin.url }}
         headers:
-          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+          "Authorization": "Basic ${env.DOGECOIN_RPC_TOKEN}"
         body: '{"jsonrpc":"2.0","method":"getinfo","params":[],"id":1}'
         interval: 30s
         metrics:
@@ -81,7 +81,7 @@ data:
         method: POST
         url: {{ $configs.dogecoin.url }}
         headers:
-          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+          "Authorization": "Basic ${env.DOGECOIN_RPC_TOKEN}"
         body: '{"jsonrpc":"2.0","method":"getmempoolinfo","params":[],"id":1}'
         interval: 30s
         metrics:
@@ -97,7 +97,7 @@ data:
         method: POST
         url: {{ $configs.dogecoin.url }}
         headers:
-          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+          "Authorization": "Basic ${env.DOGECOIN_RPC_TOKEN}"
         body: '{"jsonrpc":"2.0","method":"getnettotals","params":[],"id":1}'
         metrics:
           - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_bytes_recv_total
@@ -112,7 +112,7 @@ data:
         method: POST
         url: {{ $configs.dogecoin.url }}
         headers:
-          "Authorization": "Basic {{ $configs.dogecoin.basicAuth }}"
+          "Authorization": "Basic ${env.DOGECOIN_RPC_TOKEN}"
         body: '{"jsonrpc":"2.0","method":"getnetworkhashps","params":[],"id":1}'
         metrics:
           - name: {{ $configs.dogecoin.prefix | default $dogecoinDefaultPrefix }}_network_hash_ps

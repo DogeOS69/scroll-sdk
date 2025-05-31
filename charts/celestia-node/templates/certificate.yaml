@@ -9,4 +9,6 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - celestia.testnet.dogeos.com
+  {{- range .Values.ingress.hosts }}
+  - {{ .host }}
+  {{- end }}

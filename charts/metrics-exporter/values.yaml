@@ -12,7 +12,7 @@ args:
 image:
   repository: ghcr.io/unifralabs/metrics-exporter
   pullPolicy: IfNotPresent
-  tag: v0.1.2
+  tag: v0.1.3
 
 
 service:
@@ -45,6 +45,11 @@ serviceMonitor:
         scrapeTimeout: 10s
 
 
+envFrom:
+  - secretRef:
+      name: "metrics-exporter-secret-env"
+
+
 metricsConfig:
   app:
     logLevel: info
@@ -60,5 +65,4 @@ metricsConfig:
     L1_MESSAGE_QUEUE_PROXY_ADDR:
   dogecoin:
     url:
-    basicAuth:
     prefix: dogecoin
