@@ -169,7 +169,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io--username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Replace helm registry by helm/dev
         run: |
