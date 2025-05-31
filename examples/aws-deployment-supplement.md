@@ -310,3 +310,42 @@ kubectl delete pvc --all
 
 ### Known Issues When Updating Configuration
 When re-running the `scrollsdk setup gen-keystore `command, the CLI tool may not update certain fields in the `l2-sequencer-production-*.yaml` files. In such cases, manual updates to these configuration files are required to ensure proper deployment and operation of the sequencer components.
+
+
+</br>
+
+# Setting Up Grafana Alert Rules
+
+After installation, Grafana comes with several pre-configured alert rules. These provisioned alerts are in a read-only state and paused by default.
+
+![Grafana Provisioned Alerts](./images/provisioned_alerts.png)
+
+## Enabling Alert Rules
+
+To enable and customize these alert rules, follow these steps:
+
+1. **Duplicate the Rule**
+   - Click the `More` menu
+   - Select `Duplicate`
+   - Rename the alert rule, removing the `(Paused) (copy)` suffix
+
+2. **Configure Evaluation Behavior**
+   - Navigate to the `Set evaluation behavior` section
+   - Click `create a new evaluation group`
+   
+   ![Create Evaluation Group](./images/create_evaluation_group.png)
+   
+   ![Name Evaluation Group](./images/create_evaluation_group_name.png)
+
+   > Note: The evaluation group only needs to be created once and can be reused for multiple alert rules.
+
+3. **Save and Enable**
+   - Save the modified rule
+   - Resume the alert rule to activate it
+   
+   ![Enable Alert Rule](./images/enable_alert_rule.png)
+
+4. **Repeat Process**
+   - Follow steps 1-3 for each alert rule you wish to enable
+
+This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
