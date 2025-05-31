@@ -33,7 +33,7 @@ jobs:
 
       - name: Helm registry login
         run: |
-          helm registry login ghcr.io/scroll-tech/helm/scroll-sdk --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          helm registry login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run chart-testing (list-changed)
         id: list-changed
