@@ -24,7 +24,6 @@ configMaps:
       # Dogecoin Access Configuration
       DOGEOS_DEPOSIT_PROCESSOR_DOGE_ACCESS_TYPE: "blockbook"
       DOGEOS_DEPOSIT_PROCESSOR_DOGE_RPC_URL: "https://dogebook-testnet.nownodes.io"
-      DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY: ""
 
       # Deposit Configuration
       DOGEOS_DEPOSIT_PROCESSOR_DEPOSIT_DOGE_ADDRESS: "DBxgFHhyBhPuBcEcZM3SH5Djt5tnWVQQqc"
@@ -50,7 +49,9 @@ configMaps:
 
 envFrom:
   - secretRef:
-      name: dogeos-deposit-processor-secret-env
+      name: "dogeos-deposit-processor-secret-env"
+  - configMapRef:
+      name: dogeos-deposit-processor-env
 
 # External Secrets configuration for production
 externalSecrets:
@@ -59,17 +60,8 @@ externalSecrets:
     data:
       - remoteRef:
           key: dogeos/deposit-processor/rpc
-          property: username
-        secretKey: rpc-username
-      - remoteRef:
-          key: dogeos/deposit-processor/rpc
-          property: password
-        secretKey: rpc-password
-      - remoteRef:
-          key: dogeos/deposit-processor/rpc
           property: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
         secretKey: DOGEOS_DEPOSIT_PROCESSOR_NOWNODES_API_KEY
-
     refreshInterval: 2m
     serviceAccount: external-secrets
 

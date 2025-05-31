@@ -15,24 +15,24 @@ env:
     value: "3000" # Typically remains the same unless specific need
   - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
     value: "https://your-mainnet-dogecoin-rpc-url" # FIXME: Update with production Dogecoin RPC URL
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
-    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
-    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
+  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
+  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
   - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
     value: "https://your-mainnet-blockbook-url" # FIXME: Update with production Blockbook URL (e.g., Nownodes mainnet)
-  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
-    value: "" # Sensitive: REQUIRED if your Blockbook needs an API key - Set via K8s secret
+  # - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
+  #   value: "" # Sensitive: REQUIRED if your Blockbook needs an API key - Set via K8s secret
   - name: DOGEOS_WITHDRAWAL_TSO_URL
     value: "http://tso-service.your-namespace.svc.cluster.local:3000" # FIXME: Update with actual TSO service URL in K8s
   - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
     value: "your-mainnet-bridge-address" # FIXME: Update with your MAINNET bridge address
   - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
     value: "your-mainnet-bridge-script-hex" # FIXME: Update with your MAINNET bridge script hex
-  - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
-    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
-  - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-    value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  # - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
+  # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
   - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
     value: "85" # Review if this needs adjustment for mainnet
   - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
@@ -69,8 +69,6 @@ env:
   # Celestia Indexer (update URLs and addresses for mainnet)
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
     value: "https://your-mainnet-celestia-da-rpc-url" # FIXME
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
-    value: "https://your-mainnet-celestia-tendermint-rpc-url" # FIXME
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
     value: "your-mainnet-da-namespace" # FIXME
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
@@ -124,6 +122,10 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
+        secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
@@ -155,7 +157,7 @@ persistence:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
     size: 1Gi
-    storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
+    # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
 
 # Resource configuration for production
 resources:

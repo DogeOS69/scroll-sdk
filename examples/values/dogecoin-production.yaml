@@ -1,6 +1,10 @@
 dogecoinConf:
   rpcuser: user
   testnet: 1
+  rpcallowip:
+    # Option 1: Allow all (NOT recommended for production)
+    - 0.0.0.0/0
+
 rpcPassword: ""  # This will be automatically stored as a Kubernetes secret
 
 service:
@@ -26,4 +30,5 @@ ingress:
   tls:
     - secretName: dogecoin-tls
       hosts:
-        - dogecoin.testnet.dogeos.com 
+        - dogecoin.testnet.dogeos.com
+ 

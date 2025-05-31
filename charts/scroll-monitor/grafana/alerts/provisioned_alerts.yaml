@@ -229,6 +229,386 @@ groups:
           notification_settings:
             receiver: dogeos default slack alert
             repeat_interval: 5m
+        - uid: aeni86j0olzpce
+          title: No blobs posted in 5 minutes(Paused)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                expr: last_posted_blob_timestamp
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: D
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: timestamp(last_posted_blob_timestamp)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: D
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 300
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: []
+                      reducer:
+                        params: []
+                        type: avg
+                      type: query
+                datasource:
+                    name: Expression
+                    type: __expr__
+                    uid: __expr__
+                expression: $D - $A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: B
+                type: math
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            description: |-
+                No blob posted in last 5 minutes.
+                Last posted blob at {{ humanizeTimestamp $values.A.Value }}
+          labels: {}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            repeat_interval: 5m
+        - uid: fenjo4h3lr18ga
+          title: Low Wallet Balance(Paused)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                expr: wallet_balance
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1e+06
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            summary: |-
+                Wallet balance is low!
+
+                Current wallet balance: {{ printf "%.0f" $values.A.Value }}
+          labels: {}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            repeat_interval: 5m
+        - uid: eenjodcbu3jlsb
+          title: No withdrawal processed in 5 minutes(Paused)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                expr: withdrawal_processor_last_processed_timestamp
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: D
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: timestamp(withdrawal_processor_last_processed_timestamp)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: D
+            - refId: E
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: withdrawal_processor_last_processed_batch_height
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: E
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 300
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: []
+                      reducer:
+                        params: []
+                        type: avg
+                      type: query
+                datasource:
+                    name: Expression
+                    type: __expr__
+                    uid: __expr__
+                expression: $D - $A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: B
+                type: math
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            description: |-
+                No withdrawal processed in last 5 minutes.
+                Last processed withdrawal at {{ humanizeTimestamp $values.A.Value }}
+                Last processed withdrawal height: {{ $values.E.Value }}
+          labels: {}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            repeat_interval: 5m
+        - uid: fenjrsinwhhq8e
+          title: High latency for TEE signers(Paused)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 900
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                expr: avg(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              relativeTimeRange:
+                from: 900
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: max(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: B
+            - refId: D
+              relativeTimeRange:
+                from: 900
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: min(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: D
+            - refId: C
+              relativeTimeRange:
+                from: 900
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 15
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            description: |-
+                High latency for TEE signers in past 15 minutes
+
+                Average latency: {{ humanize $values.A.Value }} seconds
+                Max latency: {{ humanize $values.B.Value }} seconds
+                Min latency: {{ humanize $values.D.Value }} seconds
+          labels: {}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            repeat_interval: 5m
 
 # List of contact points to import or update
 contactPoints:
@@ -240,7 +620,7 @@ contactPoints:
           settings:
             text: '{{ template "slack.dogeos.text" . }}'
             title: '{{ template "slack.dogeos.title" . }}'
-            url: https://hooks.slack.com/services/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
+            url: https://hooks.slack.com/services/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
           disableResolveMessage: false
 
 # List of templates to import or update
