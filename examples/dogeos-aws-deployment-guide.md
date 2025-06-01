@@ -9,37 +9,41 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Setup your local deployment repository](#setup-your-local-deployment-repository)
 
-2. [Copy files from `scroll-sdk/examples` folder](#copy-files-from-scroll-sdkexamples-folder)
+1. [Copy files from `scroll-sdk/examples` folder](#copy-files-from-scroll-sdkexamples-folder)
 
-3. [Create a Dogeos wallet](#create-a-dogeos-wallet)
+1. [Create a Dogeos wallet](#create-a-dogeos-wallet)
 
-4. [Config DogeOs Parameters](#config-dogeos-parameters)
+1. [Setup Domains](#setup-domains)
 
-5. [Initialize DogeOs Bridge](#initialize-dogeos-bridge)
+1. [Database Initialization](#database-initialization)
 
-6. [Setup Domains](#setup-domains)
+1. [Generate Keystore Files](#generate-keystore-files)
 
-7. [Database Initialization](#database-initialization)
+1. [Config DogeOs Parameters](#config-dogeos-parameters)
 
-8. [Generate Keystore Files](#generate-keystore-files)
+1. [Setup dummy signers](#setup-dummy-signers)
 
-9. [Generate Service Configuration Files](#generate-service-configuration-files)
+1. [Initialize DogeOs Bridge](#initialize-dogeos-bridge)
 
-10. [Prepare Helm Chart Configurations](#prepare-helm-chart-configurations)
+1. [Generate Service Configuration Files](#generate-service-configuration-files)
 
-11. [Configure AWS Secrets Management](#configure-aws-secrets-management)
+1. [Prepare Helm Chart Configurations](#prepare-helm-chart-configurations)
 
-12. [Configure TLS and HTTPS](#configure-tls-and-https)
+1. [Refresh cubesigner session secrets](#refresh-cubesigner-session-secrets)
 
-13. [DogeOs Deployment](#dogeos-deployment)
+1. [Configure AWS Secrets Management](#configure-aws-secrets-management)
 
-14. [Test After Deployment](#test-after-deployment)
+1. [Configure TLS and HTTPS](#configure-tls-and-https)
 
-15. [Verify Contracts](#verify-contracts)
+1. [DogeOs Deployment](#dogeos-deployment)
 
-16. [Re-Deployment from scratch](#re-deployment-from-scratch)
+1. [Test After Deployment](#test-after-deployment)
 
-17. [Setting Up Grafana Alert Rules](#setting-up-grafana-alert-rules)
+1. [Verify Contracts](#verify-contracts)
+
+1. [Re-Deployment from scratch](#re-deployment-from-scratch)
+
+1. [Setting Up Grafana Alert Rules](#setting-up-grafana-alert-rules)
 
 
 ## Setup your local deployment repository
@@ -74,32 +78,6 @@ During the wallet creation process, you will be prompted to:
 
 > **Important**: Securely store your generated private key, as it is the only credential required to access your wallet.
 
-## Config DogeOs Parameters
-Execute the following command to configure essential DogeOS parameters:
-```
-scrollsdk doge config
-```
-
-This command configures the core settings required for DogeOS bridge and essential services. You will need to provide:
-
-1. External Dogecoin RPC URL - for connecting to the Dogecoin network
-2. RPC Authentication Credentials:
-   - Username
-   - Password
-3. Celestia Tendermint RPC URL - for network communication and data availability
-
-> **Note**: Ensure all provided URLs are accessible from your deployment environment and have the necessary permissions configured.
-
-## Initialize DogeOs Bridge
-Before proceeding with the bridge initialization, ensure that the Docker daemon is running on the deployment machine.
-
-Execute the following command to initialize the DogeOS bridge:
-
-```bash
-scrollsdk doge bridge-init
-```
-
-> **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
 
 
 ## Setup Domains
@@ -157,6 +135,9 @@ After successful database initialization, follow the [AWS EKS Deployment](https:
 
 ## Generate Keystore Files
 
+```
+scrollsdk setup gen-keystore
+```
 ### Purpose
 This step generates essential cryptographic keys required for on-chain activities:
 - Sequencer signer private keys
@@ -189,6 +170,40 @@ scrollsdk setup gen-keystore
 > ```
 > err: key L2GETH_PASSWORD_0 does not exist in secret scroll/l2-sequencer-secret-env
 > ```
+
+## Config DogeOs Parameters
+Execute the following command to configure essential DogeOS parameters:
+```
+scrollsdk doge config
+```
+
+This command configures the core settings required for DogeOS bridge and essential services. You will need to provide:
+
+1. External Dogecoin RPC URL - for connecting to the Dogecoin network
+2. RPC Authentication Credentials:
+   - Username
+   - Password
+3. Celestia Tendermint RPC URL - for network communication and data availability
+
+> **Note**: Ensure all provided URLs are accessible from your deployment environment and have the necessary permissions configured.
+
+## Setup dummy signers
+```
+scrollsdk doge dummy-signers
+```
+
+## Initialize DogeOs Bridge
+Before proceeding with the bridge initialization, ensure that the Docker daemon is running on the deployment machine.
+
+Execute the following command to initialize the DogeOS bridge:
+
+```bash
+scrollsdk doge bridge-init
+```
+
+> **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
+
+
 
 ## Generate Service Configuration Files
 
@@ -243,6 +258,19 @@ During execution, you may encounter the following error:
 
 > **Important**: Ensure all chart configurations are properly validated before proceeding with deployment.
 
+## Refresh cubesigner session secrets
+
+### Purpose
+This command refreshes the CubeSigner session secrets that are required for secure key management and transaction signing operations.
+
+### Refresh Session
+Execute the following command to refresh the CubeSigner session secrets:
+
+```
+scrollsdk setup cubesigner-refresh
+```
+
+> **Note**: CubeSigner sessions have expiration periods for security purposes. Regular refresh ensures uninterrupted signing operations during deployment and runtime.
 
 ## Configure AWS Secrets Management
 
@@ -324,14 +352,10 @@ make install-l1-devnet
 
 #### 3.1. Fund the Deployer
 
-After L1 is deployed, run the provided `anvil-fund-accounts.sh` script to fund the deployer account required for contract deployment.
-
 ```bash
-./anvil-fund-accounts.sh
+scrollsdk helper fund-accounts -i -f 2 -d
+scrollsdk helper fund-accounts -l 1 -f 2 -d
 ```
-
-`anvil-fund-accounts.sh` script requires the `yq` library, please use version v4.44.2 or later. A known [issue](https://github.com/mikefarah/yq/issues/2039) exists in version v4.44.1 or earlier, where the value `10_000_000` is incorrectly parsed as a string instead of an integer, which may affect the script's execution.
-
 
 ### 4. Deploy Scroll Core Services
 
@@ -416,22 +440,22 @@ make install-gas-oracle
 make install-deposit-processor
 ```
 
-### 11. Deploy Cubesigner Signers
+### 10. Deploy Cubesigner Signers
 ```bash
 make install-cubesigner-signers
 ```
 
-### 12. Deploy TSO service
+### 11. Deploy TSO service
 ```bash
 make install-tso
 ```
 
-### 13. Deploy Withdrawal Processor
+### 12. Deploy Withdrawal Processor
 ```bash
 make install-withdrawal-processor
 ```
 
-### 14. Deploy Blockscout services
+### 13. Deploy Blockscout services
 ```bash
 make install-blockscout
 ```
@@ -440,7 +464,7 @@ The script will install:
 - Smart contract verification service
 
 
-### 12. Deploy Frontends
+### 14. Deploy Frontends
 ```bash
 make install-frontends
 ```
