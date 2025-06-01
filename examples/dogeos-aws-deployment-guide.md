@@ -203,7 +203,30 @@ scrollsdk doge bridge-init
 
 > **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
 
+```
+? Enter the seed string abcdefg
+Pulling Docker Image: docker.io/dogeos69/generate-test-keys:v0.1.1-test
+Image pulled successfully
+Creating Docker Container...
+Starting Container
+M--- Running Test Setup & Key Generation (with OP_RETURN bridge funding) ---
+PLoading configuration from: "./crates/test_utils/config/setup_defaults.toml"...
+'Starting setup for network: Testnet...
+)Using RPC URL: https://testnet.doge.xyz/
+:Using Blockbook URL: https://dogebook-testnet.nownodes.io
+�2025-06-01T10:25:59.802847Z  INFO generate_test_keys: Using OP_RETURN payload (hex): 00bb8bc29695232088b1a2dbc117e8c6006478c295 for script (hex): 6a1500bb8bc29695232088b1a2dbc117e8c6006478c295
+TDistribution Helper Address (derived from seed): ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF
+{2025-06-01T10:25:59.802919Z  INFO generate_test_keys: Initializing Dogecoin RPC client...
+�2025-06-01T10:25:59.868387Z  INFO generate_test_keys: Checking funding for distribution helper address: ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF
+�2025-06-01T10:26:01.326648Z ERROR generate_test_keys: Distribution Helper address ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF has no funds on testnet!
 
+EPlease send some testnet DOGE to: ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF
+Then re-run this script.
+...
+...
+```
+
+Please send some testnet DOGE to: ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF
 
 ## Generate Service Configuration Files
 
@@ -398,7 +421,15 @@ When prompted, select the `Bridging funds from L1 to L2` option to initiate the 
 
 > **Note**: This step is essential for contracts deployment.
 
-#### 4.2 Fund L2 Wallet
+
+### 5. Deploy contracts
+
+```bash
+make install-contracts
+```
+> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 4.1`.
+
+#### 5.1 Fund L2 Wallet
 
 To transfer funds directly to your L2 wallet, execute the same command:
 
@@ -412,13 +443,6 @@ When prompted, select the `Directly fund L2 wallet` option to complete the trans
 
 > **Note**: The `-f 0.2` parameter specifies the amount of ETH to transfer. Adjust this value based on your requirements.
 
-
-### 5. Deploy contracts
-
-```bash
-make install-contracts
-```
-> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 4.1`.
 
 ### 6. Deploy Dogeos DA service
 ```bash
