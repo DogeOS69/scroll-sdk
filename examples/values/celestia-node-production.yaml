@@ -1,0 +1,82 @@
+network: "mocha"
+node_type: "light"
+core:
+  rpc_url: rpc-mocha.pops.one
+  grpc_port: 9090
+
+# Optional: Your wallet's mnemonic phrase for key restoration
+# If not provided, a random key will be generated on first startup and persisted
+# use --set mnemonic="<your mnemonic here>" to set the mnemonic via helm install
+mnemonic: ""
+
+share:
+  useExchange: true
+  discovery:
+    enabled: true
+    # Number of peers to sample for data availability sampling
+    sampleSize: 8
+    # Minimum number of successful responses required
+    minSamples: 2
+    # Concurrency limit for data availability sampling
+    concurrencyLimit: 8
+  light:
+    trustedPeers: []
+    trustedHeight: 0
+    samplingRange: 128
+    samplingPeriod: "1s"
+    waitForCheckpoint: false
+
+image:
+  repository: "ghcr.io/celestiaorg/celestia-node"
+  tag: "v0.22.2-mocha"
+  pullPolicy: IfNotPresent
+
+storage:
+  size: "220Gi"
+
+service:
+  type: "ClusterIP"
+  ports:
+    p2p-tcp:
+      enabled: true
+      port: 2121
+      targetPort: 2121
+      protocol: TCP
+    p2p-udp:
+      enabled: true
+      port: 2121
+      targetPort: 2121
+      protocol: UDP
+    rpc:
+      enabled: true
+      port: 26658
+      targetPort: 26658
+      protocol: TCP
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: ""
+      paths:
+        - path: "/"
+          pathType: Prefix
+  tls:
+    - secretName: "celestia-tls"
+      hosts:
+        - ""
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1000m"
+    memory: "4Gi"
+
+rpc:
+  auth:
+    skipAuth: true
