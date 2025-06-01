@@ -7,7 +7,7 @@ core:
 # Optional: Your wallet's mnemonic phrase for key restoration
 # If not provided, a random key will be generated on first startup and persisted
 # use --set mnemonic="<your mnemonic here>" to set the mnemonic via helm install
-mnemonic: "smoke fury omit zoo push razor manual wisdom lumber stand level report inject twenty fringe wolf sport spoon whisper menu discover silly crowd rather"
+mnemonic: ""
 
 share:
   useExchange: true

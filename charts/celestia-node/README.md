@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![AppVersion: v0.22.0-mocha](https://img.shields.io/badge/AppVersion-v0.22.0--mocha-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![AppVersion: v0.22.0-mocha](https://img.shields.io/badge/AppVersion-v0.22.0--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -28,7 +28,7 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls[0].hosts[0] | string | `"celestia.testnet.dogeos.com"` |  |
 | ingress.tls[0].secretName | string | `"celestia-tls"` |  |
-| mnemonic | string | `"smoke fury omit zoo push razor manual wisdom lumber stand level report inject twenty fringe wolf sport spoon whisper menu discover silly crowd rather"` |  |
+| mnemonic | string | `""` |  |
 | network | string | `"mocha"` |  |
 | node_type | string | `"light"` |  |
 | resources.limits.cpu | string | `"1000m"` |  |
