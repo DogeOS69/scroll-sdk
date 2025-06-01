@@ -572,9 +572,12 @@ To enable and customize these alert rules, follow these steps:
    - Navigate to the `Set evaluation behavior` section
    - Click `create a new evaluation group`
    
-   ![Create Evaluation Group](./images/create_evaluation_group.png)
-   
-   ![Name Evaluation Group](./images/create_evaluation_group_name.png)
+   <img src="./images/create_evaluation_group.png" alt="Create Evaluation Group" width="400">
+
+   Create and name your evaluation group. This group can be reused for configuring multiple alert rules in the future.
+
+   <img src="./images/create_evaluation_group_name.png" alt="Name Evaluation Group" width="400">
+
 
    > Note: The evaluation group only needs to be created once and can be reused for multiple alert rules.
 
