@@ -122,7 +122,9 @@ The initialization process requires two sets of database connection parameters:
    - Used for inter-pod communication within Kubernetes
    - Optimized for cluster-internal access
 
-> **Note**: The same connection parameters can be used for both external and internal connections if your setup permits.
+> **Note**: 
+> * The same connection parameters can be used for both external and internal connections if your setup permits.
+> * Create appropriate database based on your service requirements, e.g. blockscout, L1 explorer
 
 ### Security Configuration
 After successful database initialization, follow the [AWS EKS Deployment](https://docs.scroll.io/en/sdk/guides/aws-deployment/#initializing-our-databases-and-database-users) guide to:
@@ -203,7 +205,12 @@ scrollsdk doge bridge-init
 
 > **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
 
->**Note** If you see a log similar to this, please follow the instructions to fund the **Helper Address** with about 100 dogecoins. 
+> **Important**: During the bridge initialization process, if you encounter a log indicating insufficient funds for the `Helper Address`, you must:
+> 1. Fund the displayed Helper Address with approximately 100 testnet DOGE
+> 2. Re-run the initialization command using the `identical seed` value to maintain address consistency
+>
+> This step is crucial for the successful deployment of the bridge infrastructure.
+
 ```
 ? Enter the seed string abcdefg
 Pulling Docker Image: docker.io/dogeos69/generate-test-keys:v0.1.1-test
@@ -324,7 +331,9 @@ The command will:
 3. Configure access permissions
 4. Verify successful secret storage
 
-> **Note**: Ensure you have the necessary AWS permissions and credentials configured before proceeding.
+> **Note**: 
+> * Ensure you have the necessary AWS permissions and credentials configured before proceeding.
+> * When generating new service secrets, ensure to overwrite existing secrets to maintain consistency and prevent potential conflicts in the deployment environment.
 
 ## Configure TLS and HTTPS
 
@@ -432,9 +441,12 @@ make install-rollup-node
 make install-gas-oracle
 ```
 We need to fund our L1 Gas Oracle Sender (an account on L2 😅) with some funds.
+
 ```bash
 scrollsdk helper fund-accounts -f 0.2 -l 2
 ```
+
+When prompted, select the `Directly fund L2 wallet` option to complete the transfer.
 
 ### 9. Deploy Dogeos Deposit Processor
 ```bash
