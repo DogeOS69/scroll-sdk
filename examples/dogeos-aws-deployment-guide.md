@@ -203,6 +203,7 @@ scrollsdk doge bridge-init
 
 > **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
 
+>**Note** If you see a log similar to this, please follow the instructions to fund the **Helper Address** with about 100 dogecoins. 
 ```
 ? Enter the seed string abcdefg
 Pulling Docker Image: docker.io/dogeos69/generate-test-keys:v0.1.1-test
@@ -225,8 +226,6 @@ Then re-run this script.
 ...
 ...
 ```
-
-Please send some testnet DOGE to: ns2qzrycHLw9EbLarqkU4AFgWosH15WpJF
 
 ## Generate Service Configuration Files
 
@@ -409,39 +408,13 @@ Monitor the deployment progress using either:
 
 > **Note**: The deployment process may take several minutes to complete. Allow sufficient time for all components to initialize properly.
 
-#### 4.1 Fund L2 Deployer Account
-
-Execute the following command to transfer funds from L1 to the L2 deployer account:
-
-```bash
-scrollsdk helper fund-accounts -f 0.2 -l 2
-```
-
-When prompted, select the `Bridging funds from L1 to L2` option to initiate the transfer.
-
-> **Note**: This step is essential for contracts deployment.
-
 
 ### 5. Deploy contracts
 
 ```bash
 make install-contracts
 ```
-> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 4.1`.
-
-#### 5.1 Fund L2 Wallet
-
-To transfer funds directly to your L2 wallet, execute the same command:
-
-```bash
-scrollsdk helper fund-accounts -f 0.2 -l 2
-```
-
-When prompted, select the `Directly fund L2 wallet` option to complete the transfer.
-
-> **Important**: Ensure you have sufficient L1 funds before initiating these transfers.
-
-> **Note**: The `-f 0.2` parameter specifies the amount of ETH to transfer. Adjust this value based on your requirements.
+> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 3.1`.
 
 
 ### 6. Deploy Dogeos DA service
@@ -457,6 +430,10 @@ make install-rollup-node
 ### 8. Deploy Gas Oracle
 ```bash
 make install-gas-oracle
+```
+We need to fund our L1 Gas Oracle Sender (an account on L2 😅) with some funds.
+```bash
+scrollsdk helper fund-accounts -f 0.2 -l 2
 ```
 
 ### 9. Deploy Dogeos Deposit Processor
