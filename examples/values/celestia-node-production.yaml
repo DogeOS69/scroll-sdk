@@ -80,3 +80,15 @@ resources:
 rpc:
   auth:
     skipAuth: true
+
+# External Secrets configuration for managing sensitive data
+externalSecrets:
+  celestia-node-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/celestia-node-secret-env
+          property: mnemonic
+        secretKey: mnemonic
+    refreshInterval: 2m
+    serviceAccount: external-secrets

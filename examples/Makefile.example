@@ -11,7 +11,7 @@ install-dogecoin:
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--values values/celestia-node-production.yaml
 
 install-l1-devnet:

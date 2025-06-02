@@ -1,8 +1,12 @@
 apiVersion: v2
 name: celestia-node
 description: A Helm chart for deploying Celestia light node on Kubernetes
-version: 0.1.2
+version: 0.1.3
 appVersion: "v0.22.0-mocha"
 maintainers:
   - name: Celestia
     email: support@celestia.org
+dependencies:
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
+    version: 0.0.3
