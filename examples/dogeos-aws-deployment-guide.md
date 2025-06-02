@@ -109,7 +109,7 @@ Follow the [AWS EKS Deployment](https://docs.scroll.io/en/sdk/guides/aws-deploym
 Execute the following command to initialize the database:
 
 ```bash
-scrollsdk setup db-init
+scrollsdk setup db-init --clean
 ```
 
 The initialization process requires two sets of database connection parameters:
@@ -125,6 +125,7 @@ The initialization process requires two sets of database connection parameters:
 > **Note**: 
 > * The same connection parameters can be used for both external and internal connections if your setup permits.
 > * Create appropriate database based on your service requirements, e.g. blockscout, L1 explorer
+> * use `--clean` option to delete existing database and user before creating new ones
 
 ### Security Configuration
 After successful database initialization, follow the [AWS EKS Deployment](https://docs.scroll.io/en/sdk/guides/aws-deployment/#initializing-our-databases-and-database-users) guide to:
