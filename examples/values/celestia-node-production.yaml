@@ -32,7 +32,7 @@ image:
   pullPolicy: IfNotPresent
 
 storage:
-  size: "200Gi"
+  size: "220Gi"
 
 service:
   type: "ClusterIP"
@@ -60,14 +60,14 @@ ingress:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: "celestia.testnet.dogeos.com"
+    - host: ""
       paths:
         - path: "/"
           pathType: Prefix
   tls:
     - secretName: "celestia-tls"
       hosts:
-        - "celestia.testnet.dogeos.com"
+        - ""
 
 resources:
   requests:
@@ -80,3 +80,15 @@ resources:
 rpc:
   auth:
     skipAuth: true
+
+# External Secrets configuration for managing sensitive data
+externalSecrets:
+  celestia-node-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/celestia-node-secret-env
+          property: mnemonic
+        secretKey: mnemonic
+    refreshInterval: 2m
+    serviceAccount: external-secrets

@@ -33,7 +33,7 @@ spec:
           volumeMounts:
             - name: node-store
               mountPath: /home/celestia
-        {{- if .Values.mnemonic }}
+        {{- if or .Values.mnemonic .Values.externalSecrets }}
         - name: key-management
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           command:
@@ -172,4 +172,12 @@ spec:
         - name: mnemonic
           secret:
             secretName: {{ include "celestia-node.fullname" . }}-mnemonic
+        {{- else if .Values.externalSecrets }}
+        {{- $secretName := "" }}
+        {{- range $key, $val := .Values.externalSecrets }}
+        {{- $secretName = $key }}
+        {{- end }}
+        - name: mnemonic
+          secret:
+            secretName: {{ $secretName }}
         {{- end }}
