@@ -490,6 +490,15 @@ After all the required services are deployed successfully, run the following tes
 ```bash
 scrollsdk test ingress
 scrollsdk test contracts
+scrollsdk test e2e
+```
+## Disable public access after testing
+The following 3 services will be restricted from public access:
+  - celestia
+  - dogecoin
+  - l1-devnet
+```bash
+scrollsdk setup disable-internal
 ```
 
 </br>
