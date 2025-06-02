@@ -1,3 +1,8 @@
+controller:
+  type: statefulset
+  replicas: 1
+  autoscaling:
+    enabled: false
 alloy:
   extraPorts:
     - name: celestia

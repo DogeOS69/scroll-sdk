@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![AppVersion: v0.22.0-mocha](https://img.shields.io/badge/AppVersion-v0.22.0--mocha-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![AppVersion: v0.22.0-mocha](https://img.shields.io/badge/AppVersion-v0.22.0--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -9,6 +9,12 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | Name | Email | Url |
 | ---- | ------ | --- |
 | Celestia | <support@celestia.org> |  |
+
+## Requirements
+
+| Repository | Name | Version |
+|------------|------|---------|
+| oci://ghcr.io/scroll-tech/scroll-sdk/helm | external-secrets-lib | 0.0.3 |
 
 ## Values
 

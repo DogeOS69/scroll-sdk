@@ -49,7 +49,14 @@ loki:
     replicas: 0
   write:
     replicas: 0
-
+  lokiCanary:
+    enabled: false
+  test:
+    enabled: false
+  resultsCache:
+    enabled: false
+  chunksCache:
+    enabled: false
 promtail:
   enabled: false
 
