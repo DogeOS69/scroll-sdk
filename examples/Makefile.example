@@ -33,7 +33,7 @@ install-scroll-core:
 		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
-		--version=0.1.4 \
+		--version=0.1.5 \
 		--values values/metrics-exporter-production.yaml
 
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
@@ -118,7 +118,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.3 \
+		--version=0.1.4 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -127,7 +127,7 @@ install-blockscout:
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-	 	--version=0.1.2-dogeos
+	 	--version=0.1.3-dogeos
 
 install-frontends:
 	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
