@@ -2,7 +2,7 @@
 apiVersion: v2
 description: blockscout-sc-verifier helm charts
 name: blockscout-sc-verifier
-version: 0.1.2-dogeos
+version: 0.1.3-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -13,5 +13,5 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     version: 1.5.2
   - name: external-secrets-lib
-    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
-    version: 0.0.3
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4
