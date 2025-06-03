@@ -142,6 +142,12 @@ install-frontends:
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
+
+install-testnet-activity-helper:
+	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
+		--version=0.1.0 \
+		--values values/testnet-activity-helper-production.yaml
+
 install-all:
 #	$(MAKE) install-dogecoin
 #	$(MAKE) install-celestia
@@ -186,6 +192,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) grafana-alloy || true
 	helm delete -n $(NAMESPACE) l1-devnet
+	$(MAKE) delete-testnet-activity-helper
 
 delete-l1-devnet:
 	helm delete -n $(NAMESPACE) l1-devnet
@@ -226,3 +233,6 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-1 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-2 || true
+
+delete-testnet-activity-helper:
+	helm delete -n $(NAMESPACE) testnet-activity-helper

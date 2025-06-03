@@ -1,0 +1,82 @@
+global:
+  nameOverride: &app_name testnet-activity-helper
+  fullnameOverride: *app_name
+
+replicaCount: 1
+
+image:
+  repository: dogeos69/testnet-activity-helper
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+# nameOverride: ""
+# fullnameOverride: ""
+
+service:
+  enabled: false  # This app doesn't need a service
+
+# Dependencies configuration
+dependencies:
+  # Runtime dependency checks - wait for any version of contracts to complete
+  waitFor:
+    enabled: true
+    timeout: 1800  # seconds
+    contracts:
+      # Match pods with this pattern (supports any release name)
+      podNamePattern: "*-contracts-deployment"  # Pattern to match contracts deployment pods
+      namespace: default
+
+config:
+  # DANGER: Don't put real private keys here in production!
+  # Use external secret management solutions
+  # deployerPrivateKey: ""  # Moved to externalSecrets
+  
+  # Activity Helper Private Key - if provided and not empty, this will be used
+  # instead of the value from externalSecrets
+  ACTIVITY_HELPER_PRIVATE_KEY: ""
+  
+  externalRpcUriL2: "http://l2-rpc:8545"
+
+# External Secrets configuration
+externalSecrets:
+  testnet-activity-helper-secret-env:
+    provider: aws
+    region: us-west-2
+    data:
+      - remoteRef:
+          key: dogeos/testnet-activity-helper-secret-env
+          property: private-key
+        secretKey: ACTIVITY_HELPER_PRIVATE_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+
+resources:
+  limits:
+    cpu: 100m     # Allow burst capacity
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+    - ALL 
