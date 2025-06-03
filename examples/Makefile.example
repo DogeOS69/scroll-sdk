@@ -37,28 +37,28 @@ install-scroll-core:
 		--values values/metrics-exporter-production.yaml
 
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/l2-sequencer-production-0.yaml
 
 	helm upgrade -i l2-sequencer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/l2-sequencer-production-1.yaml
 
 	helm upgrade -i l2-bootnode-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/l2-bootnode-production-0.yaml
 
 	helm upgrade -i l2-bootnode-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/l2-bootnode-production-1.yaml
 
 	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/l2-rpc-production.yaml
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
+		--version=0.1.9-dogeos \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
@@ -71,7 +71,7 @@ install-dogeos-da:
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--set image.tag=latest \
 		--set image.repository=dogeos69/rollup-relayer \
 		--set image.pullPolicy=Always \
@@ -85,7 +85,7 @@ install-rollup-node:
 
 install-gas-oracle:
 	helm upgrade -i gas-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/gas-oracle -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/gas-oracle-production.yaml \
 		--values values/gas-oracle-config.yaml
 
@@ -123,7 +123,7 @@ install-withdrawal-processor:
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
-		--version=0.1.6-dogeos \
+		--version=0.1.7-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
@@ -154,7 +154,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) tso-service || true
-	make delete-cubesigner-signers
+	make delete-cubesigner-signers || true
 	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) grafana-alloy || true
