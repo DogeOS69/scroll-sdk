@@ -174,7 +174,7 @@ delete-frontends:
 
 delete-blockscout:
 	helm delete -n $(NAMESPACE) blockscout || true
-	helm delete -n $(NAMESPACE) blockscout-sc-verifier
+	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 
 delete-withdrawal-processor:
 	helm delete -n $(NAMESPACE) withdrawal-processor
@@ -193,9 +193,9 @@ delete-gas-oracle:
 
 delete-rollup-node:
 	helm delete -n $(NAMESPACE) rollup-node || true
-	helm delete -n $(NAMESPACE) rollup-explorer-backend
+	helm delete -n $(NAMESPACE) rollup-explorer-backend || true
 
 delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-1 || true
-	helm delete -n $(NAMESPACE) cubesigner-signer-2
+	helm delete -n $(NAMESPACE) cubesigner-signer-2 || true
