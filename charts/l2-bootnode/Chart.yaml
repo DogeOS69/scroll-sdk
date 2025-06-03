@@ -14,4 +14,4 @@ dependencies:
     version: 1.5.1
   - name: external-secrets-lib
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
-    version: 0.0.3
+    version: 0.0.4

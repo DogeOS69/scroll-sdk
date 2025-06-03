@@ -11,4 +11,4 @@ maintainers:
 dependencies:
   - name: external-secrets-lib
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
-    version: 0.0.3
+    version: 0.0.4
