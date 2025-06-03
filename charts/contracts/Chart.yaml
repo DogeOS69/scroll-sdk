@@ -10,5 +10,5 @@ maintainers:
     email: sebastien@scroll.io
 dependencies:
   - name: external-secrets-lib
-    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
-    version: 0.0.3
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4
