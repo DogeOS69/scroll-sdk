@@ -1,0 +1,17 @@
+apiVersion: v2
+name: testnet-activity-helper
+description: A Helm chart for DogeOS L2 testnet activity helper
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - dogeos
+  - l2
+  - testnet
+  - activity
+  - blockchain
+maintainers:
+  - name: Alex Lewis
+    email: alex@dogeos.org
+sources:
+  - https://github.com/dogeos/scroll-sdk
