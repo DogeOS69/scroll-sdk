@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk for dogeos
 name: scroll-sdk
-version: 0.1.12-dogeos
+version: 0.1.11-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -30,7 +30,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: balance-checker.enabled
   - name: blockscout
-    version: 0.1.7-dogeos
+    version: 0.1.6-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: blockscout.enabled
   # - name: blockscout-sc-verifier
@@ -50,7 +50,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: chain-monitor.enabled
   - name: contracts
-    version: 0.1.9-dogeos
+    version: 0.1.8-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: contracts.enabled
   # - name: coordinator-api
@@ -66,7 +66,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: frontends.enabled
   - name: gas-oracle
-    version: 0.1.4-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: gas-oracle.enabled
   - name: l1-devnet
@@ -78,15 +78,15 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: l1-explorer.enabled
   - name: l2-bootnode
-    version: 0.1.4-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-bootnode.enabled
   - name: l2-rpc
-    version: 0.1.4-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-rpc.enabled
   - name: l2-sequencer
-    version: 0.1.4-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-sequencer.enabled
   - name: postgresql
@@ -98,7 +98,7 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: rollup-explorer-backend.enabled
   - name: rollup-node
-    version: 0.1.4-dogeos
+    version: 0.1.3-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: rollup-node.enabled
   # - name: rpc-gateway
