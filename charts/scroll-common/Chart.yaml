@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy common scripts and configuration
 name: scroll-common
-version: 0.1.0
+version: 0.1.1-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -14,5 +14,5 @@ keywords:
 home: https://github.com/scroll-tech/scroll-sdk
 dependencies:
   - name: external-secrets-lib
-    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
-    version: 0.0.3
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4
