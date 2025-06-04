@@ -118,7 +118,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.4 \
+		--version=0.1.5 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:

@@ -129,6 +129,10 @@ env:
     value: "1000000000"
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS
     value: "3600"
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT
+    value: "0"
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID
+    value: "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # Fulfillment Processor (defaults are usually fine, typically not set via env vars unless overriding specific fields)
   # - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__MAX_RETRIES
