@@ -9,6 +9,8 @@ blockscout-stack:
       # BLOCK_TRANSFORMER: clique
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
       CHAIN_TYPE: scroll
+      COIN: "DOGE"
+      COIN_NAME: "DOGE"
       INDEXER_SCROLL_L1_CHAIN_CONTRACT: ""  # value of L1_SCROLL_CHAIN_PROXY_ADDR on config-contracts.toml
       INDEXER_SCROLL_L1_BATCH_START_BLOCK: ""  # value of L1_CONTRACT_DEPLOYMENT_BLOCK on config.toml
       INDEXER_SCROLL_L1_MESSENGER_CONTRACT: ""  # value of L1_SCROLL_MESSENGER_PROXY_ADDR on config-contracts.toml
