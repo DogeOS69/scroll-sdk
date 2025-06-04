@@ -1,6 +1,6 @@
 # scroll-common
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.1-dogeos](https://img.shields.io/badge/Version-0.1.1--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy common scripts and configuration
 
@@ -18,7 +18,7 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | external-secrets-lib | 0.0.3 |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
 
 ## Values
 
