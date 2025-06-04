@@ -95,7 +95,7 @@ dependencies:
     condition: postgresql.enabled
   - name: rollup-explorer-backend
     version: 0.1.2
-    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: rollup-explorer-backend.enabled
   - name: rollup-node
     version: 0.1.4-dogeos
