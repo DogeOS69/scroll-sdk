@@ -12,7 +12,7 @@ service:
 # Storage
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
-  storageClassName: gp3-immediate      # Storage class with immediate binding 
+  storageClassName: gp3-immediate      # Storage class with immediate binding
 
 # Enable ingress
 ingress:
@@ -29,7 +29,7 @@ ingress:
     - secretName: dogecoin-tls
       hosts:
         - dogecoin.testnet.dogeos.com
- 
+
  # RPC Password Configuration for Production
 # Option 1: Use External Secrets (Recommended for enterprise environments)
 externalSecrets:
