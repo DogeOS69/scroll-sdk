@@ -23,6 +23,8 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Setup dummy signers](#setup-dummy-signers)
 
+1. [Create or select cubesigner keys and roles](#create-or-select-cubesigner-keys-and-roles)
+
 1. [Initialize DogeOs Bridge](#initialize-dogeos-bridge)
 
 1. [Generate Service Configuration Files](#generate-service-configuration-files)
@@ -195,6 +197,12 @@ This command configures the core settings required for DogeOS bridge and essenti
 scrollsdk doge dummy-signers
 ```
 
+## Create or select cubesigner keys and roles
+
+```bash
+scrollsdk setup cubesigner-init
+```
+
 ## Initialize DogeOs Bridge
 Before proceeding with the bridge initialization, ensure that the Docker daemon is running on the deployment machine.
 
@@ -246,6 +254,20 @@ Execute the following command to generate service-specific configuration files a
 
 ```bash
 scrollsdk setup configs
+```
+Usage examples:
+```bash
+# Select existing roles
+$ scrollsdk setup cubesigner-init --roles foo_role bar_role baz_role
+
+# Create new roles and keys
+$ scrollsdk setup cubesigner-init --new --count 3 --role-prefix validator
+
+# Specify a doge config file
+$ scrollsdk setup cubesigner-init --roles role_a role_b --doge-config .data/doge-config-testnet.toml
+
+# Interactive mode - you will be prompted to make choices
+$ scrollsdk setup cubesigner-init
 ```
 
 ### Output Locations

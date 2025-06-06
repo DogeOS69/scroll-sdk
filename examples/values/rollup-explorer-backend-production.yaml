@@ -9,3 +9,11 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
+
+resources:
+  requests:
+    memory: "200Mi"
+    cpu: "50m"
+  limits:
+    memory: "2Gi"
+    cpu: "2000m"

@@ -1,6 +1,6 @@
 # dogecoin
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
 
 Deploy a Dogecoin FullNode in Kubernetes
 
@@ -9,6 +9,12 @@ Deploy a Dogecoin FullNode in Kubernetes
 | Name | Email | Url |
 | ---- | ------ | --- |
 | Dogecoin | <support@dogecoin.org> |  |
+
+## Requirements
+
+| Repository | Name | Version |
+|------------|------|---------|
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
 
 ## Values
 
@@ -24,6 +30,7 @@ Deploy a Dogecoin FullNode in Kubernetes
 | dogecoinConf.rpcuser | string | `"user"` |  |
 | dogecoinConf.server | int | `1` |  |
 | dogecoinConf.testnet | int | `1` |  |
+| externalSecrets | object | `{}` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/dogecoin"` |  |
 | ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
@@ -37,7 +44,8 @@ Deploy a Dogecoin FullNode in Kubernetes
 | namespace | string | `"default"` |  |
 | nodeSelector | object | `{}` |  |
 | replicaCount | int | `1` |  |
-| rpcPassword | string | `"password"` |  |
+| rpcPassword.secretKey | string | `"password"` |  |
+| rpcPassword.value | string | `"password"` |  |
 | service.port | int | `44556` |  |
 | service.rpcPort | int | `44555` |  |
 | service.type | string | `"ClusterIP"` |  |

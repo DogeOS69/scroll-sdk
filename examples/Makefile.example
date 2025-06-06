@@ -6,7 +6,7 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/dogecoin-production.yaml
 
 install-celestia:
@@ -15,8 +15,8 @@ install-celestia:
 		--values values/celestia-node-production.yaml
 
 install-l1-devnet:
-	helm upgrade -i l1-devnet oci://ghcr.io/scroll-tech/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
-		--version=0.1.3 \
+	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
+		--version=0.1.4 \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-core:
@@ -78,8 +78,8 @@ install-rollup-node:
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
 
-	helm upgrade -i rollup-explorer-backend oci://ghcr.io/scroll-tech/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
-		--version=0.1.1 \
+	helm upgrade -i rollup-explorer-backend oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
+		--version=0.1.2 \
 		--values values/rollup-explorer-backend-production.yaml \
 		--values values/rollup-explorer-backend-config.yaml
 
@@ -96,17 +96,17 @@ install-deposit-processor:
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.2 \
+	 	--version=0.1.3 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-0.yaml
 	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-1.yaml
 	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--set image.tag=test-amd64 \
 		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-2.yaml
@@ -118,7 +118,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.4 \
+		--version=0.1.5 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:

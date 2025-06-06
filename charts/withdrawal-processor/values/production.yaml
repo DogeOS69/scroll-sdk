@@ -79,8 +79,8 @@ env:
     value: "60000"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
     value: "your-mainnet-celestia-signer-address" # FIXME (Optional)
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
-    value: "your-mainnet-genesis-blob-commitment" # FIXME
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
+  #   value: "your-mainnet-genesis-blob-commitment" # FIXME
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
     value: "true"
 
@@ -89,6 +89,10 @@ env:
     value: "10000000000" # Example: 100 DOGE for mainnet, adjust as needed
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS
     value: "3600" # 1 hour
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT
+    value: "0"
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID
+    value: "0x0000000000000000000000000000000000000000000000000000000000000000"
 
   # Logging
   - name: RUST_LOG

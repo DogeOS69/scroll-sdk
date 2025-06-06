@@ -1,10 +1,10 @@
 # scroll-sdk
 
-![Version: 0.1.11-dogeos](https://img.shields.io/badge/Version-0.1.11--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.14-dogeos](https://img.shields.io/badge/Version-0.1.14--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy scroll sdk for dogeos
 
-**Homepage:** <https://github.com/scroll-tech/scroll-sdk>
+**Homepage:** <https://github.com/dogeos69/scroll-sdk>
 
 ## Maintainers
 
@@ -18,17 +18,17 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.6-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.8-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.3-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.3-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.3-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.3-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-node | 0.1.3-dogeos |
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | l1-devnet | 0.1.3 |
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | rollup-explorer-backend | 0.1.1 |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.7-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.9-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.4 |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.2 |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-node | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | scroll-monitor | 0.1.4-dogeos |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-common | 0.1.0 |
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-monitor | 0.1.0 |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 15.5.0 |
 
 ## Values
