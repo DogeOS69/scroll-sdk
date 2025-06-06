@@ -29,7 +29,7 @@ spec:
             - -c
             - |
               cp /etc/dogecoin.conf /tmp/dogecoin.conf
-              echo "rpcpassword=$(cat /etc/dogecoin-secrets/rpcpassword)" >> /tmp/dogecoin.conf
+              echo "rpcpassword=$(cat /etc/dogecoin-secrets/{{ .Values.rpcPassword.secretKey }})" >> /tmp/dogecoin.conf
               /dogecoin/bin/dogecoind -conf=/tmp/dogecoin.conf -datadir=/dogecoin-data
           lifecycle:
             preStop:
@@ -74,7 +74,16 @@ spec:
             name: {{ include "dogecoin.fullname" . }}-config
         - name: secret-volume
           secret:
+            {{- if .Values.externalSecrets }}
+            {{- $secretName := "" }}
+            {{- range $key, $value := .Values.externalSecrets }}
+            {{- $secretName = $key }}
+            {{- break }}
+            {{- end }}
+            secretName: {{ $secretName }}
+            {{- else }}
             secretName: {{ include "dogecoin.fullname" . }}-rpc-secret
+            {{- end }}
         - name: dogecoin-data
           persistentVolumeClaim:
             claimName: {{ include "dogecoin.fullname" . }}-data

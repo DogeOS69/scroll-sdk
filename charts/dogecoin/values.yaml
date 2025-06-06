@@ -13,7 +13,27 @@ dogecoinConf:
     - 10.100.0.0/16
   listen: 0
 
-rpcPassword: password     # override this with a secret
+# RPC password configuration
+# Primary method: Use External Secrets Operator (recommended for production)
+# Fallback: Auto-create secret with provided value (for development/testing only)
+rpcPassword:
+  secretKey: "password"   # Key in the secret containing the password
+  value: "password"       # Fallback value for development (used only if no externalSecrets)
+
+# External Secrets configuration (recommended for production)
+# Uses External Secrets Operator to fetch secrets from external systems
+externalSecrets: {}
+# Example configuration for AWS Secrets Manager:
+# externalSecrets:
+#   dogecoin-rpc-secret:
+#     provider: aws
+#     serviceAccount: external-secrets
+#     refreshInterval: 2m
+#     data:
+#       - remoteRef:
+#           key: dogecoin/rpc-credentials
+#           property: password
+#         secretKey: password
 
 image:
   repository: "docker.io/dogeos69/dogecoin"

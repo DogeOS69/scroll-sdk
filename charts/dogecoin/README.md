@@ -4,6 +4,52 @@
 
 Deploy a Dogecoin FullNode in Kubernetes
 
+## RPC Password Configuration
+
+This chart supports two ways to configure the RPC password:
+
+### Option 1: External Secrets Operator (Recommended for Production)
+```yaml
+externalSecrets:
+  dogecoin-rpc-secret:
+    provider: aws
+    serviceAccount: external-secrets
+    refreshInterval: 2m
+    data:
+      - remoteRef:
+          key: dogecoin/rpc-credentials
+          property: password
+        secretKey: password
+```
+
+This will use the External Secrets Operator to fetch secrets from external systems like AWS Secrets Manager, HashiCorp Vault, etc. This is the **recommended approach for production** environments.
+
+### Option 2: Auto-created Secret (Development/Testing Only)
+```yaml
+rpcPassword:
+  secretKey: "password"
+  value: "your-password"
+```
+
+This will automatically create a Kubernetes secret with the provided password. **Only use this for development or testing environments.**
+
+### Prerequisites for External Secrets
+- External Secrets Operator installed in the cluster
+- Service account with appropriate permissions for the external secret provider
+- Secret stored in the external system (AWS Secrets Manager, Vault, etc.)
+
+### AWS Secrets Manager Setup Example
+```bash
+# Create secret in AWS Secrets Manager
+aws secretsmanager create-secret \
+  --name "dogecoin/rpc-credentials" \
+  --description "Dogecoin RPC credentials" \
+  --secret-string '{"password":"your-secure-password"}'
+
+# Deploy with External Secrets
+helm install dogecoin charts/dogecoin -f your-external-secrets-values.yaml
+```
+
 ## Maintainers
 
 | Name | Email | Url |

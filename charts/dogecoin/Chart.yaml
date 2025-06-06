@@ -2,8 +2,13 @@ apiVersion: v2
 name: dogecoin
 description: Deploy a Dogecoin FullNode in Kubernetes
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "1.14.9"
 maintainers:
   - name: Dogecoin
     email: support@dogecoin.org
+
+dependencies:
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

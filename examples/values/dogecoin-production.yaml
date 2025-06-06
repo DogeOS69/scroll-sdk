@@ -5,8 +5,6 @@ dogecoinConf:
     # Option 1: Allow all (NOT recommended for production)
     - 0.0.0.0/0
 
-rpcPassword: ""  # This will be automatically stored as a Kubernetes secret
-
 service:
   port: 44556             # 44556 for testnet, 22556 for mainnet
   rpcPort: 44555          # 44555 for testnet, 22555 for mainnet
@@ -32,3 +30,15 @@ ingress:
       hosts:
         - dogecoin.testnet.dogeos.com
  
+ # RPC Password Configuration for Production
+# Option 1: Use External Secrets (Recommended for enterprise environments)
+externalSecrets:
+  dogecoin-secret-env:
+    provider: aws
+    serviceAccount: external-secrets
+    refreshInterval: 2m
+    data:
+      - remoteRef:
+          key: scroll/dogecoin-production/rpc-credentials
+          property: DOGECOIN_RPC_PASSWORD
+        secretKey: password
