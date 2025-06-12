@@ -135,6 +135,30 @@ install-frontends:
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
+install-all:
+	make install-l1-devnet
+	make install-scroll-core
+	scrollsdk helper fund-accounts -i -f 2 -d
+	scrollsdk helper fund-accounts -l 1 -f 2 -d
+	make install-contracts
+
+	@echo "Waiting for contracts-contracts-deployment to complete..."
+	@while [[ "$$(kubectl get pod contracts-contracts-deployment -o jsonpath='{.status.phase}')" != "Succeeded" ]]; do \
+		echo "Waiting for contracts deployment to complete..."; \
+		sleep 5; \
+	done
+	@echo "Contracts deployment completed successfully!"
+	scrollsdk helper fund-accounts -l 2 -f 2 -d
+	make install-dogeos-da
+	make install-rollup-node
+	make install-gas-oracle
+	make install-deposit-processor
+	make install-cubesigner-signers
+	make install-tso
+	make install-withdrawal-processor
+	make install-blockscout
+	make install-frontends
+
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
 	helm delete -n $(NAMESPACE) l2-sequencer-0 || true

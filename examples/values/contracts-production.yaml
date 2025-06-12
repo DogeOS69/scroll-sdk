@@ -1,5 +1,5 @@
 image:
-  tag: deploy-190ae316a799df2a4b7e48784eefd84c21304205
+  tag: deploy-ceb73197462fb6a3af9ded14c056ba37b028ed4b
 configMaps:
   contracts-deployment-env:
     enabled: true
@@ -12,6 +12,8 @@ configMaps:
 envFrom:
   - secretRef:
       name: contracts-secret-env
+  - configMapRef:
+      name: contracts-deployment-env
 
 externalSecrets:
   contracts-secret-env:
@@ -37,5 +39,13 @@ externalSecrets:
           key: scroll/contracts-secret-env
           property: L2_GAS_ORACLE_SENDER_PRIVATE_KEY
         secretKey: L2_GAS_ORACLE_SENDER_PRIVATE_KEY
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: ROLLUP_EXPLORER_DB_CONNECTION_STRING
+        secretKey: ROLLUP_EXPLORER_DB_CONNECTION_STRING
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: COORDINATOR_JWT_SECRET_KEY
+        secretKey: COORDINATOR_JWT_SECRET_KEY
     refreshInterval: 2m
     serviceAccount: external-secrets
