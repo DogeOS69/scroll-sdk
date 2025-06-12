@@ -6,3 +6,34 @@ configMaps:
       L2_RPC_ENDPOINT: "http://l2-rpc:8545"
       CHAIN_ID_L1: ""
       CHAIN_ID_L2: ""
+
+envFrom:
+  - secretRef:
+      name: contracts-secret-env
+
+externalSecrets:
+  contracts-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: DEPLOYER_PRIVATE_KEY
+        secretKey: DEPLOYER_PRIVATE_KEY
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: L1_COMMIT_SENDER_PRIVATE_KEY
+        secretKey: L1_COMMIT_SENDER_PRIVATE_KEY
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: L1_FINALIZE_SENDER_PRIVATE_KEY
+        secretKey: L1_FINALIZE_SENDER_PRIVATE_KEY
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: L1_GAS_ORACLE_SENDER_PRIVATE_KEY
+        secretKey: L1_GAS_ORACLE_SENDER_PRIVATE_KEY
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: L2_GAS_ORACLE_SENDER_PRIVATE_KEY
+        secretKey: L2_GAS_ORACLE_SENDER_PRIVATE_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets
