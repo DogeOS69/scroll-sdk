@@ -17,3 +17,14 @@ resources:
   limits:
     memory: "2Gi"
     cpu: "2000m"
+
+externalSecrets:
+  rollup-explorer-backend-secret-env:
+    enabled: true
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/rollup-explorer-backend-secret-env
+        secretKey: rollup-explorer-backend-secret-config
+    refreshInterval: 2m
+    serviceAccount: external-secrets
