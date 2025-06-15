@@ -79,7 +79,7 @@ install-rollup-node:
 		--values values/rollup-node-config.yaml
 
 	helm upgrade -i rollup-explorer-backend oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--values values/rollup-explorer-backend-production.yaml \
 		--values values/rollup-explorer-backend-config.yaml
 
