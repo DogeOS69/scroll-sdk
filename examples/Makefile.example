@@ -80,8 +80,7 @@ install-rollup-node:
 
 	helm upgrade -i rollup-explorer-backend oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
 		--version=0.1.3 \
-		--values values/rollup-explorer-backend-production.yaml \
-		--values values/rollup-explorer-backend-config.yaml
+		--values values/rollup-explorer-backend-production.yaml
 
 install-gas-oracle:
 	helm upgrade -i gas-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/gas-oracle -n $(NAMESPACE) \
@@ -141,14 +140,8 @@ install-all:
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	make install-contracts
-
-	@echo "Waiting for contracts-contracts-deployment to complete..."
-	@while [[ "$$(kubectl get pod contracts-contracts-deployment -o jsonpath='{.status.phase}')" != "Succeeded" ]]; do \
-		echo "Waiting for contracts deployment to complete..."; \
-		sleep 5; \
-	done
-	@echo "Contracts deployment completed successfully!"
-	scrollsdk helper fund-accounts -l 2 -f 2 -d
+	
+	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	make install-dogeos-da
 	make install-rollup-node
 	make install-gas-oracle
