@@ -33,6 +33,8 @@ image:
 
 storage:
   size: "200Gi"
+  # Set to true to keep the PersistentVolumeClaim when the Helm chart is uninstalled.
+  retainPvcOnUninstall: true
 
 service:
   type: "ClusterIP"

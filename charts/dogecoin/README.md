@@ -1,6 +1,6 @@
 # dogecoin
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
+![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
 
 Deploy a Dogecoin FullNode in Kubernetes
 
@@ -49,6 +49,7 @@ Deploy a Dogecoin FullNode in Kubernetes
 | service.port | int | `44556` |  |
 | service.rpcPort | int | `44555` |  |
 | service.type | string | `"ClusterIP"` |  |
+| storage.retainPvcOnUninstall | bool | `false` |  |
 | storage.size | string | `"50Gi"` |  |
 | storage.storageClassName | string | `"gp3-immediate"` |  |
 | tolerations | list | `[]` |  |

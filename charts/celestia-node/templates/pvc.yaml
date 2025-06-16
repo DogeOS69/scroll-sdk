@@ -6,6 +6,9 @@ metadata:
     {{- include "celestia-node.labels" . | nindent 4 }}
   annotations:
     pv.beta.kubernetes.io/gid: "1000"
+    {{- if .Values.storage.retainPvcOnUninstall }}
+    helm.sh/resource-policy: keep
+    {{- end }}
 spec:
   accessModes:
     - ReadWriteOnce

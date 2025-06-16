@@ -202,6 +202,20 @@ scrollsdk doge dummy-signers
 ```bash
 scrollsdk setup cubesigner-init
 ```
+Usage examples:
+```bash
+# Select existing roles
+$ scrollsdk setup cubesigner-init --roles foo_role bar_role baz_role
+
+# Create new roles and keys
+$ scrollsdk setup cubesigner-init --new --count 3 --role-prefix validator
+
+# Specify a doge config file
+$ scrollsdk setup cubesigner-init --roles role_a role_b --doge-config .data/doge-config-testnet.toml
+
+# Interactive mode - you will be prompted to make choices
+$ scrollsdk setup cubesigner-init
+```
 
 ## Initialize DogeOs Bridge
 Before proceeding with the bridge initialization, ensure that the Docker daemon is running on the deployment machine.
@@ -255,20 +269,6 @@ Execute the following command to generate service-specific configuration files a
 ```bash
 scrollsdk setup configs
 ```
-Usage examples:
-```bash
-# Select existing roles
-$ scrollsdk setup cubesigner-init --roles foo_role bar_role baz_role
-
-# Create new roles and keys
-$ scrollsdk setup cubesigner-init --new --count 3 --role-prefix validator
-
-# Specify a doge config file
-$ scrollsdk setup cubesigner-init --roles role_a role_b --doge-config .data/doge-config-testnet.toml
-
-# Interactive mode - you will be prompted to make choices
-$ scrollsdk setup cubesigner-init
-```
 
 ### Output Locations
 The command will generate:
@@ -281,8 +281,6 @@ The command will prompt for various configuration parameters. You can:
 - Provide custom values for specific requirements
 
 > **Note**: The generated configuration files will be used by various services in the deployment. Ensure all values are correctly set before proceeding with the deployment.
-
-
 
 ## Prepare Helm Chart Configurations
 

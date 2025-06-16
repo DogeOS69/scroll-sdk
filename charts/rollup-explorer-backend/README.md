@@ -1,6 +1,6 @@
 # rollup-explorer-backend
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.3-dogeos](https://img.shields.io/badge/Version-0.1.3--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 rollup-explorer-backend helm charts
 
@@ -55,8 +55,8 @@ Kubernetes: `>=1.22.0-0`
 | ingress.main.primary | bool | `true` |  |
 | persistence.app_name.enabled | bool | `true` |  |
 | persistence.app_name.mountPath | string | `"/app/config/"` |  |
-| persistence.app_name.name | string | `"rollup-explorer-backend-config"` |  |
-| persistence.app_name.type | string | `"configMap"` |  |
+| persistence.app_name.name | string | `"rollup-explorer-backend-secret"` |  |
+| persistence.app_name.type | string | `"secret"` |  |
 | ports[0].containerPort | int | `8080` |  |
 | probes.liveness.<<.custom | bool | `true` |  |
 | probes.liveness.<<.enabled | bool | `true` |  |
@@ -74,7 +74,6 @@ Kubernetes: `>=1.22.0-0`
 | resources.limits.memory | string | `"6Gi"` |  |
 | resources.requests.cpu | string | `"2"` |  |
 | resources.requests.memory | string | `"4Gi"` |  |
-| scrollConfig | string | `"{}\n"` |  |
 | service.main.enabled | bool | `true` |  |
 | service.main.labels.app | string | `"rollup-explorer-backend"` |  |
 | service.main.ports.http.enabled | bool | `true` |  |

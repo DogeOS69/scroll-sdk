@@ -7,4 +7,4 @@ metadata:
     {{- include "scroll-sdk.labels" $ | nindent 4 }}
 data:
   config.json: |
-{{ .Values.scrollConfig | indent 4 }}
+{{ .Values.scrollConfig | default "" | indent 4 }}

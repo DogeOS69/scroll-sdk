@@ -33,6 +33,7 @@ image:
 
 storage:
   size: "220Gi"
+  retainPvcOnUninstall: true
 
 service:
   type: "ClusterIP"

@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![AppVersion: v0.22.0-mocha](https://img.shields.io/badge/AppVersion-v0.22.0--mocha-informational?style=flat-square)
+![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![AppVersion: v0.22.2-mocha](https://img.shields.io/badge/AppVersion-v0.22.2--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -65,6 +65,7 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | share.light.trustedPeers | list | `[]` |  |
 | share.light.waitForCheckpoint | bool | `false` |  |
 | share.useExchange | bool | `true` |  |
+| storage.retainPvcOnUninstall | bool | `true` |  |
 | storage.size | string | `"200Gi"` |  |
 
 ----------------------------------------------

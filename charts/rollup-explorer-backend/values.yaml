@@ -69,9 +69,12 @@ probes:
 persistence:
   *app_name:
     enabled: true
-    type: configMap
+    # type: configMap
+    type: secret
     mountPath: /app/config/
-    name: rollup-explorer-backend-config
+    # name: rollup-explorer-backend-config
+    name: rollup-explorer-backend-secret
+
 
 ingress:
   main:
@@ -97,5 +100,5 @@ serviceMonitor:
         interval: 1m
         scrapeTimeout: 10s
 
-scrollConfig: |
-  {}
+# scrollConfig: |
+#   {}
