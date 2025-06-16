@@ -4,6 +4,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ include "dogecoin.fullname" . }}-data
   namespace: {{ .Values.namespace | default "default" }}
+  {{- if .Values.storage.retainPvcOnUninstall }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
 spec:
   accessModes:
     - ReadWriteOnce
