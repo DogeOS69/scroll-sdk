@@ -40,12 +40,6 @@ Kubernetes: `>=1.22.0-0`
 | env[3].value | int | `500` |  |
 | env[4].name | string | `"RUST_LOG"` |  |
 | env[4].value | string | `"debug"` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.data[0].remoteRef.key | string | `"placeholder/path/to/secret"` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.data[0].secretKey | string | `"config.json"` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.enabled | bool | `false` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.kubernetesSecretName | string | `"rollup-explorer-backend-secret-config"` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.refreshInterval | string | `"1h"` |  |
-| externalSecrets.rollup-explorer-backend-secret-env.secretStoreName | string | `"placeholder-secret-store"` |  |
 | global.fullnameOverride | string | `"rollup-explorer-backend"` |  |
 | global.nameOverride | string | `"rollup-explorer-backend"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
@@ -61,7 +55,7 @@ Kubernetes: `>=1.22.0-0`
 | ingress.main.primary | bool | `true` |  |
 | persistence.app_name.enabled | bool | `true` |  |
 | persistence.app_name.mountPath | string | `"/app/config/"` |  |
-| persistence.app_name.name | string | `"rollup-explorer-backend-secret-config"` |  |
+| persistence.app_name.name | string | `"rollup-explorer-backend-secret"` |  |
 | persistence.app_name.type | string | `"secret"` |  |
 | ports[0].containerPort | int | `8080` |  |
 | probes.liveness.<<.custom | bool | `true` |  |

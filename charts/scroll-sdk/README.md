@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.2 |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.3 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-node | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | scroll-monitor | 0.1.4-dogeos |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-common | 0.1.0 |
