@@ -49,8 +49,8 @@ service:
 # Storage
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
-  retainPvcOnUninstall: false # Set to true to keep the PVC when the Helm chart is uninstalled.
   storageClassName: gp3-immediate      # Storage class with immediate binding
+  retainPvcOnUninstall: false          # Set to true to keep the PVC when the Helm chart is uninstalled.
 
 nodeSelector: {}
 

@@ -69,10 +69,10 @@ probes:
 persistence:
   *app_name:
     enabled: true
-    #type: configMap
+    # type: configMap
     type: secret
     mountPath: /app/config/
-    #name: rollup-explorer-backend-config
+    # name: rollup-explorer-backend-config
     name: rollup-explorer-backend-secret
 
 
@@ -102,4 +102,3 @@ serviceMonitor:
 
 # scrollConfig: |
 #   {}
-
