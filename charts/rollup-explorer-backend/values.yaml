@@ -103,20 +103,6 @@ serviceMonitor:
 # scrollConfig: |
 #   {}
 
-# externalSecrets configuration can be overridden by environment-specific values files
-# For example, in production.yaml, you would enable and configure this.
-# externalSecrets:
-#   rollup-explorer-backend-secret-env:
-#     enabled: false # Default to false, enable in environment-specific files
-#     kubernetesSecretName: rollup-explorer-backend-secret-config
-#     secretStoreName: "placeholder-secret-store" # Placeholder, should be overridden
-#     refreshInterval: "1h"
-#     data:
-#       - secretKey: "config.json"
-#         remoteRef:
-#           key: "placeholder/path/to/secret" # Placeholder, should be overridden
-
-
 externalSecrets:
   rollup-explorer-backend-secret-env:
     enabled: false
