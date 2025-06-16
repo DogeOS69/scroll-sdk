@@ -4,7 +4,7 @@ ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "a
 NAMESPACE ?= default
 L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
-SCROLL_CONTRACTS_TAG_SUFFIX := 0f04f9b71dccc3a1647fb6473f414d6de5020c3d
+SCROLL_CONTRACTS_TAG_SUFFIX := ae647993c907ff52824d8dc3cb27f5d0c38e4a7a
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
@@ -45,4 +45,4 @@ upgrade:
 
 verify:
 		echo "Verifing contracts..."
-		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume dogeos69/scroll-stack-contracts:verify-0f04f9b71dccc3a1647fb6473f414d6de5020c3d
+		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume dogeos69/scroll-stack-contracts:verify-ae647993c907ff52824d8dc3cb27f5d0c38e4a7a

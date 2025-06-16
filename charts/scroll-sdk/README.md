@@ -19,7 +19,7 @@ Kubernetes: `>=1.22.0-0`
 | Repository | Name | Version |
 |------------|------|---------|
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.7-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.10-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.11 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.4 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.4-dogeos |
