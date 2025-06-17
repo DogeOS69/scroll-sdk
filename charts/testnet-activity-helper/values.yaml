@@ -31,11 +31,11 @@ config:
   # DANGER: Don't put real private keys here in production!
   # Use external secret management solutions
   # deployerPrivateKey: ""  # Moved to externalSecrets
-  
+
   # Activity Helper Private Key - if provided and not empty, this will be used
   # instead of the value from externalSecrets
   ACTIVITY_HELPER_PRIVATE_KEY: ""
-  
+
   externalRpcUriL2: "http://l2-rpc:8545"
 
 # External Secrets configuration
@@ -53,7 +53,7 @@ externalSecrets:
 
 resources:
   limits:
-    cpu: 100m     # Allow burst capacity
+    cpu: 100m   # Allow burst capacity
     memory: 256Mi
   requests:
     cpu: 50m
@@ -79,4 +79,4 @@ securityContext:
   runAsUser: 1000
   capabilities:
     drop:
-    - ALL 
+      - ALL
