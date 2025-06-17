@@ -11,7 +11,8 @@ externalSecrets:
     refreshInterval: "5m"
     serviceAccount: "external-secrets"
     secretRegion: "us-west-2"
-
+config:
+  externalRpcUriL2: "http://l2-rpc:8545"
 resources:
   limits:
     cpu: "200m"

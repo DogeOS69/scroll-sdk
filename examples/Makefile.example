@@ -16,6 +16,7 @@ install-celestia:
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
+		--wait  \
 		--version=0.1.4 \
 		--values values/l1-devnet-production.yaml
 
@@ -64,6 +65,7 @@ install-l2-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
+		--wait \
 		--version=0.1.11 \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
@@ -71,9 +73,11 @@ install-contracts:
 
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
+		--wait  \
+		--set image.tag="latest" \
+		--set image.repository="dogeos69/da" \
 		--version=0.1.1 \
-		--values values/dogeos-da-production.yaml \
-		--set image.tag=v0.0.3 \
+		--values values/dogeos-da-production.yaml
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
@@ -96,6 +100,7 @@ install-gas-oracle:
 
 install-deposit-processor:
 	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
+		--set image.tag=060925-00 \
 		--version=0.1.4 \
 		--values values/dogeos-deposit-processor-production.yaml
 
@@ -149,16 +154,15 @@ install-testnet-activity-helper:
 		--values values/testnet-activity-helper-production.yaml
 
 install-all:
-#	$(MAKE) install-dogecoin
-#	$(MAKE) install-celestia
-	$(MAKE) install-l1-devnet
+	$(MAKE) install-dogecoin
+	$(MAKE) install-celestia
+	$(MAKE) install-dogeos-da 
+	$(MAKE) install-l1-devnet 
 	$(MAKE) install-scroll-core
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
-
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-dogeos-da
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
 	$(MAKE) install-deposit-processor
@@ -167,6 +171,7 @@ install-all:
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
+	$(MAKE) install-testnet-activity-helper
 
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
@@ -233,6 +238,9 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-1 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-2 || true
+	-kubectl delete pvc session-cache-0-cubesigner-signer-0-0
+	-kubectl delete pvc session-cache-1-cubesigner-signer-1-0
+	-kubectl delete pvc session-cache-2-cubesigner-signer-2-0
 
 delete-testnet-activity-helper:
 	helm delete -n $(NAMESPACE) testnet-activity-helper
