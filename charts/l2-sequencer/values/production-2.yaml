@@ -22,6 +22,46 @@ initContainers:
         mountPath: /wait-for-l1.sh
         subPath: wait-for-l1.sh
 
+service:
+  # Dedicated P2P service for external access
+  p2p:
+    enabled: true
+    type: LoadBalancer
+    ports:
+      p2p-tcp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: TCP
+      p2p-udp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: UDP
+    # Cloud provider specific annotations (enable based on your cloud platform)
+    annotations:
+      # === AWS Static IP Configuration ===
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      # Use pre-allocated Elastic IPs (replace with your actual EIP allocation IDs)
+      service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "eipalloc-0ebf1ef1b13dc4a3a"
+    
+      # === Alternative Cloud Provider Static IP Configurations ===
+      # === GCP Static IP ===
+      # cloud.google.com/load-balancer-type: "External"
+      # cloud.google.com/load-balancer-ip: "YOUR_RESERVED_STATIC_IP"
+    
+      # === Azure Static IP ===
+      # service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+      # service.beta.kubernetes.io/azure-pip-name: "sequencer-2-p2p-ip"
+      # service.beta.kubernetes.io/azure-pip-resource-group: "YOUR_RESOURCE_GROUP"
+    
+      # === Alibaba Cloud Static IP ===
+      # service.beta.kubernetes.io/alibaba-cloud-loadbalancer-spec: "slb.s1.small"
+      # service.beta.kubernetes.io/alibaba-cloud-loadbalancer-address-type: "internet"
+      # service.beta.kubernetes.io/alibaba-cloud-loadbalancer-id: "YOUR_SLB_INSTANCE_ID"
+
 configMaps:
   env:
     enabled: true

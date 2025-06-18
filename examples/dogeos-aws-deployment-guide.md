@@ -623,3 +623,186 @@ To enable and customize these alert rules, follow these steps:
    - Follow steps 1-3 for each alert rule you wish to enable
 
 This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
+
+
+
+# 在 AWS-EKS 上为 Sequencer 配置 NLB + Route 53 自动化
+
+> 适用场景：每个 L2 sequencer 节点单独暴露 `30303/TCP/UDP`，并自动获得公网 IP 与子域名。  
+> 前提：本机已安装 `aws`, `eksctl`, `kubectl`, `helm`，且已创建好 **EKS 集群**。
+
+---
+
+## 1. 预设环境变量
+
+```bash
+export CLUSTER_NAME=shude-eks
+export AWS_REGION=us-west-2
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+```
+
+---
+
+## 2. 为子网打标签（允许 NLB 落在这些子网上）
+
+```bash
+VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME \
+         --query 'cluster.resourcesVpcConfig.vpcId' --output text)
+
+for subnet in $(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" \
+              --query 'Subnets[].SubnetId' --output text); do
+  aws ec2 create-tags --resources $subnet \
+    --tags Key=kubernetes.io/cluster/$CLUSTER_NAME,Value=shared
+  aws ec2 create-tags --resources $subnet \
+    --tags Key=kubernetes.io/role/elb,Value=1
+done
+```
+
+---
+
+## 3. 关联 OIDC Provider（若已配置可跳过）
+
+```bash
+eksctl utils associate-iam-oidc-provider \
+  --cluster $CLUSTER_NAME --approve
+```
+
+---
+
+## 4. 创建 IAM Policy + ServiceAccount（AWS Load Balancer Controller）
+
+```bash
+curl -o iam_policy.json \
+  https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.6.2/docs/install/iam_policy.json
+
+aws iam create-policy \
+  --policy-name AWSLoadBalancerControllerIAMPolicy \
+  --policy-document file://iam_policy.json
+
+eksctl create iamserviceaccount \
+  --cluster $CLUSTER_NAME \
+  --namespace kube-system \
+  --name aws-load-balancer-controller \
+  --attach-policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+```
+
+---
+
+## 5. 安装 AWS Load Balancer Controller
+
+```bash
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=$CLUSTER_NAME \
+  --set region=$AWS_REGION \
+  --set vpcId=$VPC_ID \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller
+```
+
+---
+
+## 6. 创建（或确认）Route 53 Hosted Zone
+
+```bash
+aws route53 create-hosted-zone \
+  --name shude.unifra.xyz \
+  --caller-reference $(date +%s)
+# 若 Hosted Zone 已存在，可跳过
+```
+
+---
+
+## 7. 创建 IAM Policy + ServiceAccount（ExternalDNS）
+
+```bash
+cat > externaldns-policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": ["route53:ChangeResourceRecordSets"], "Resource": ["arn:aws:route53:::hostedzone/*"] },
+    { "Effect": "Allow", "Action": ["route53:ListHostedZones","route53:ListResourceRecordSets"], "Resource": ["*"] }
+  ]
+}
+EOF
+
+aws iam create-policy \
+  --policy-name ExternalDNSPolicy \
+  --policy-document file://externaldns-policy.json
+
+eksctl create iamserviceaccount \
+  --cluster $CLUSTER_NAME \
+  --namespace kube-system \
+  --name external-dns \
+  --attach-policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/ExternalDNSPolicy \
+  --approve
+```
+
+---
+
+## 8. 部署 ExternalDNS
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm upgrade -i external-dns bitnami/external-dns \
+  -n kube-system \
+  --set provider=aws \
+  --set policy=upsert \
+  --set registry=txt \
+  --set txtOwnerId=shude \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=external-dns
+```
+
+---
+
+## 9. 为单个 Sequencer 创建 NLB-type Service（可复制多份）
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: l2-sequencer-0-p2p
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    external-dns.alpha.kubernetes.io/hostname: l2-sequencer-0.shude.unifra.xyz
+spec:
+  type: LoadBalancer
+  ports:
+    - name: p2p-tcp
+      port: 30303
+      protocol: TCP
+      targetPort: 30303
+    - name: p2p-udp
+      port: 30303
+      protocol: UDP
+      targetPort: 30303
+  selector:
+    app.kubernetes.io/instance: l2-sequencer-0
+    app.kubernetes.io/name: l2-sequencer
+EOF
+```
+
+---
+
+## 10. 验证负载均衡与 DNS
+
+```bash
+# 查看 EXTERNAL-IP 是否就绪
+kubectl get svc l2-sequencer-0-p2p -o wide
+
+# 域名解析应指向同一 NLB
+dig +short l2-sequencer-0.shude.unifra.xyz
+```
+
+---
+
+完成以上 10 步：  
+* Service → 自动创建 NLB → 自动写 Route 53 记录*，每个 sequencer 即拥有独立公网 IP 与子域名，可直接对外提供 P2P 连接。
