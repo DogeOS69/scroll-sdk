@@ -8,7 +8,7 @@ A Helm chart for DogeOS L2 testnet activity helper
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Alex Lewis | <alex@dogeos.org> |  |
+| DogeOS69 | <alex@dogeos.org> |  |
 
 ## Source Code
 

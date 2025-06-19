@@ -130,12 +130,26 @@ service:
     enabled: true
     ports:
       http:
-        enabled: true
+        enabled: false
         port: 30303
       metrics:
         enabled: true
         port: 6060
         targetPort: 6060
+  p2p:
+    enabled: true
+    type: LoadBalancer
+    ports:
+      p2p-tcp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: TCP
+      p2p-udp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: UDP
 
 serviceMonitor:
   main:

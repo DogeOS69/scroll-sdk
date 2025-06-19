@@ -122,6 +122,7 @@ Kubernetes: `>=1.22.0-0`
 | service.main.ports.ws.enabled | bool | `true` |  |
 | service.main.ports.ws.port | int | `8546` |  |
 | service.main.ports.ws.targetPort | int | `8546` |  |
+| service.main.type | string | `"ClusterIP"` |  |
 | serviceMonitor.main.enabled | bool | `true` |  |
 | serviceMonitor.main.endpoints[0].interval | string | `"1m"` |  |
 | serviceMonitor.main.endpoints[0].path | string | `"/debug/metrics/prometheus"` |  |

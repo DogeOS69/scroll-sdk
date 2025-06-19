@@ -1,0 +1,67 @@
+global:
+  fullnameOverride: l2-sequencer-__INSTANCE_INDEX__
+
+resources:
+  requests:
+    memory: "150Mi"
+    cpu: "50m"
+  limits:
+    memory: "8Gi"
+    cpu: "4"
+
+envFrom:
+  - configMapRef:
+      name: l2-sequencer-__INSTANCE_INDEX__-env
+  - secretRef:
+      name: l2-sequencer-__INSTANCE_INDEX__-secret-env
+
+initContainers:
+  wait-for-l1:
+    image: scrolltech/scroll-alpine:v0.0.1
+    command:
+      - /bin/sh
+      - -c
+      - /wait-for-l1.sh $L2GETH_L1_ENDPOINT
+    envFrom:
+      - configMapRef:
+          name: l2-sequencer-__INSTANCE_INDEX__-env
+    volumeMounts:
+      - name: wait-for-l1-script
+        mountPath: /wait-for-l1.sh
+        subPath: wait-for-l1.sh
+
+configMaps:
+  env:
+    enabled: true
+    data:
+      CHAIN_ID: ""
+      L2GETH_L1_ENDPOINT: ""
+      L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
+      L2GETH_SIGNER_ADDRESS: ""
+      L2GETH_PEER_LIST: '[""]'
+      L2GETH_CCC_NUMWORKERS: ""
+
+persistence:
+  env:
+    enabled: true
+    type: configMap
+    name: l2-sequencer-__INSTANCE_INDEX__-env
+
+externalSecrets:
+  l2-sequencer-__INSTANCE_INDEX__-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/l2-sequencer-__INSTANCE_INDEX__-secret-env
+          property: L2GETH_KEYSTORE
+        secretKey: L2GETH_KEYSTORE
+      - remoteRef:
+          key: scroll/l2-sequencer-__INSTANCE_INDEX__-secret-env
+          property: L2GETH_PASSWORD
+        secretKey: L2GETH_PASSWORD
+      - remoteRef:
+          key: scroll/l2-sequencer-__INSTANCE_INDEX__-secret-env
+          property: L2GETH_NODEKEY
+        secretKey: L2GETH_NODEKEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets

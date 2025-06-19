@@ -1,5 +1,15 @@
 NAMESPACE ?= default
 
+.PHONY: prepare install-dogecoin install-celestia install-l1-devnet install-scroll-core \
+	install-l2-sequencer install-l2-bootnode install-contracts install-dogeos-da \
+	install-rollup-node install-gas-oracle install-deposit-processor \
+	install-cubesigner-signers install-tso install-withdrawal-processor \
+	install-blockscout install-frontends install-testnet-activity-helper install-all \
+	delete-all delete-l1-devnet delete-dogecoin delete-celestia delete-frontends \
+	delete-blockscout delete-withdrawal-processor delete-deposit-processor delete-tso \
+	delete-dogeos-da delete-gas-oracle delete-rollup-node delete-cubesigner-signers \
+	delete-testnet-activity-helper
+
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
@@ -69,11 +79,12 @@ install-contracts:
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
+	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=360s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
 		--wait  \
-		--set image.tag="latest" \
+		--set image.tag="v0.0.3" \
 		--set image.repository="dogeos69/da" \
 		--version=0.1.1 \
 		--values values/dogeos-da-production.yaml
@@ -158,6 +169,7 @@ install-all:
 	$(MAKE) install-dogeos-da 
 	$(MAKE) install-l1-devnet 
 	$(MAKE) install-scroll-core
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
@@ -194,9 +206,8 @@ delete-all:
 	$(MAKE) delete-cubesigner-signers || true
 	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
-	helm delete -n $(NAMESPACE) grafana-alloy || true
-	helm delete -n $(NAMESPACE) l1-devnet
-	$(MAKE) delete-testnet-activity-helper
+	helm delete -n $(NAMESPACE) l1-devnet || true
+	$(MAKE) delete-testnet-activity-helper || true
 
 delete-l1-devnet:
 	helm delete -n $(NAMESPACE) l1-devnet
