@@ -35,6 +35,44 @@ data:
             help: "Current queue height of {{ $configs.l1Network.name | default $l1DefaultPrefix | upper }}"
 {{- end }}
 {{- end }}
+{{- if $configs.dogeos.url }}
+{{- $dogeosDefaultPrefix := "dogeos" }}
+{{- if $configs.dogeos.L2_TX_FEE_VAULT_ADDR }}
+      {{ $configs.dogeos.name | default $dogeosDefaultPrefix }}-l2-tx-fee-vault:
+        method: POST
+        body: '{"jsonrpc":"2.0","method":"eth_getBalance","params":["{{ $configs.dogeos.L2_TX_FEE_VAULT_ADDR }}","latest"],"id":1}'
+        url: {{ $configs.dogeos.url }}
+        interval: 1m
+        metrics:
+          - name: {{ $configs.dogeos.prefix | default $dogeosDefaultPrefix }}_l2_tx_fee_vault_balance
+            path: "{.result}"
+            type: gauge
+            help: "Current balance of L2 tx fee vault of {{ $configs.dogeos.name | default $dogeosDefaultPrefix | upper }}"
+{{- end }}
+{{- if $configs.dogeos.L2_BRIDGE_FEE_RECIPIENT_ADDR }}
+      {{ $configs.dogeos.name | default $dogeosDefaultPrefix }}-l2-bridge-fee-recipient:
+        method: POST
+        body: '{"jsonrpc": "2.0", "method": "eth_getBalance", "params": ["{{ $configs.dogeos.L2_BRIDGE_FEE_RECIPIENT_ADDR }}","latest"], "id": 1}'
+        url: {{ $configs.dogeos.url }}
+        interval: 1m
+        metrics:
+          - name: {{ $configs.dogeos.prefix | default $dogeosDefaultPrefix }}_l2_bridge_fee_recipient_balance
+            path: "{.result}"
+            type: gauge
+            help: "Current balance of L2 bridge fee recipient of {{ $configs.dogeos.name | default $dogeosDefaultPrefix | upper }}"
+{{- end }}
+{{- end }}
+{{- if $configs.rollup.url }}
+{{- $rollupDefaultPrefix := "rollup" }}
+      {{ $configs.rollup.name | default $rollupDefaultPrefix }}-last-batch-indexes:
+        url: {{ $configs.rollup.url }}/api/last_batch_indexes
+        interval: 1m
+        metrics:
+          - name: {{ $configs.rollup.prefix | default $rollupDefaultPrefix }}_last_batch_index
+            path: "{.committed_index}"
+            type: gauge
+            help: "Last batch index of {{ $configs.rollup.name | default $rollupDefaultPrefix | upper }}"
+{{- end }}
 {{- if and $configs.dogecoin.url }}
 {{- $dogecoinDefaultPrefix := "dogecoin" }}
       {{ $configs.dogecoin.name | default $dogecoinDefaultPrefix }}-chaininfo:

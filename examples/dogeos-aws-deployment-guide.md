@@ -11,15 +11,15 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Copy files from `scroll-sdk/examples` folder](#copy-files-from-scroll-sdkexamples-folder)
 
-1. [Create a Dogeos wallet](#create-a-dogeos-wallet)
-
 1. [Setup Domains](#setup-domains)
 
 1. [Database Initialization](#database-initialization)
 
 1. [Generate Keystore Files](#generate-keystore-files)
 
-1. [Config DogeOs Parameters](#config-dogeos-parameters)
+1. [Configure DogeOs Parameters](#configure-dogeos-parameters)
+
+1. [Create a Dogeos wallet](#create-a-dogeos-wallet)
 
 1. [Setup dummy signers](#setup-dummy-signers)
 
@@ -66,19 +66,6 @@ cp ../scroll-sdk/examples/anvil-fund-accounts.sh .
 ```
 
 The `anvil-fund-accounts.sh` script funds the default L1 accounts when using an Anvil devnet.
-
-## Create a Dogeos wallet
-Execute the following command to create a new DogeOS wallet:
-
-```bash
-scrollsdk doge wallet new
-```
-
-During the wallet creation process, you will be prompted to:
-1. Enter your nownodes.io API key
-2. Select the network type
-
-> **Important**: Securely store your generated private key, as it is the only credential required to access your wallet.
 
 
 
@@ -140,9 +127,6 @@ After successful database initialization, follow the [AWS EKS Deployment](https:
 
 ## Generate Keystore Files
 
-```
-scrollsdk setup gen-keystore
-```
 ### Purpose
 This step generates essential cryptographic keys required for on-chain activities:
 - Sequencer signer private keys
@@ -176,21 +160,36 @@ scrollsdk setup gen-keystore
 > err: key L2GETH_PASSWORD_0 does not exist in secret scroll/l2-sequencer-secret-env
 > ```
 
-## Config DogeOs Parameters
+## Configure DogeOS Parameters
+
 Execute the following command to configure essential DogeOS parameters:
+
+```bash
+scrollsdk doge:config
 ```
-scrollsdk doge config
+
+### Required Configuration
+You will be prompted to provide:
+
+1. **Nownodes API Key** - For Dogecoin network access
+2. **External Dogecoin RPC** - URL, username, and password for bridge initialization
+3. **Celestia Tendermint RPC URL** - For data availability layer
+4. **Celestia Mnemonic** - For network authentication
+
+> **Note**: Ensure all provided credentials are valid and accessible from your deployment environment.
+
+## Create a Dogeos wallet
+Execute the following command to create a new DogeOS wallet:
+
+```bash
+scrollsdk doge wallet new
 ```
 
-This command configures the core settings required for DogeOS bridge and essential services. You will need to provide:
+During the wallet creation process, you will be prompted to:
+1. Enter your nownodes.io API key
+2. Select the network type
 
-1. External Dogecoin RPC URL - for connecting to the Dogecoin network
-2. RPC Authentication Credentials:
-   - Username
-   - Password
-3. Celestia Tendermint RPC URL - for network communication and data availability
-
-> **Note**: Ensure all provided URLs are accessible from your deployment environment and have the necessary permissions configured.
+> **Important**: Securely store your generated private key, as it is the only credential required to access your wallet.
 
 ## Setup dummy signers
 ```
@@ -226,7 +225,9 @@ Execute the following command to initialize the DogeOS bridge:
 scrollsdk doge bridge-init
 ```
 
-> **Note**: The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
+> **Note**: 
+> 1. If bridge-init errors occur, verify that the Dogecoin RPC endpoint is accessible and functioning properly before proceeding.
+> 2. The initialization process involves multiple blockchain transactions and may take several minutes to complete. Please allow sufficient time for the process to finish.
 
 > **Important**: During the bridge initialization process, if you encounter a log indicating insufficient funds for the `Helper Address`, you must:
 > 1. Fund the displayed Helper Address with approximately 100 testnet DOGE
@@ -510,6 +511,7 @@ After all the required services are deployed successfully, run the following tes
 ```bash
 scrollsdk test ingress
 scrollsdk test contracts
+scrollsdk setup verify-contracts
 scrollsdk test e2e
 ```
 ## Disable public access after testing

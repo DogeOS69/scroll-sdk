@@ -4,7 +4,7 @@ global:
 
 image:
   repository: dogeos69/scroll-stack-contracts
-  tag: deploy-ae647993c907ff52824d8dc3cb27f5d0c38e4a7a
+  tag: deploy-c94e1a901a9e4e98d83828bb1b2eda3c76d42333
 
 envFrom:
   - configMapRef:
