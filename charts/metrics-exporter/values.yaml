@@ -58,6 +58,8 @@ metricsConfig:
     maxBodySize: 512
     metrics: /metrics
     port: *service_port
+  rollup:
+    url:
   l1Network:
     name: l1
     prefix: l1
@@ -66,3 +68,7 @@ metricsConfig:
   dogecoin:
     url:
     prefix: dogecoin
+  dogeos:
+    url:
+    L2_TX_FEE_VAULT_ADDR:
+    L2_BRIDGE_FEE_RECIPIENT_ADDR:
