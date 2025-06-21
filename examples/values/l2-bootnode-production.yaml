@@ -51,10 +51,6 @@ externalSecrets:
     refreshInterval: 2m
     serviceAccount: external-secrets
 
-
-
 service:
   p2p:
-    ports:
-      annotations:
-        #  service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    enabled: true

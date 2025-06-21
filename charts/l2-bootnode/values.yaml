@@ -55,7 +55,7 @@ command:
     --port \"$L2GETH_P2P_PORT\" --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" \
     --bootnodes \"\" \
     --scroll-mpt \
-    --gcmode archive \
+    --gcmode full \
     --config \"/l2geth/config.toml\" \
     --cache.noprefetch \
     --verbosity 3 \
