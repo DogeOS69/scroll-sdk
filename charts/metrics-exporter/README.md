@@ -39,10 +39,14 @@ Kubernetes: `>=1.22.0-0`
 | metricsConfig.app.workers | int | `5` |  |
 | metricsConfig.dogecoin.prefix | string | `"dogecoin"` |  |
 | metricsConfig.dogecoin.url | string | `nil` |  |
+| metricsConfig.dogeos.L2_BRIDGE_FEE_RECIPIENT_ADDR | string | `nil` |  |
+| metricsConfig.dogeos.L2_TX_FEE_VAULT_ADDR | string | `nil` |  |
+| metricsConfig.dogeos.url | string | `nil` |  |
 | metricsConfig.l1Network.L1_MESSAGE_QUEUE_PROXY_ADDR | string | `nil` |  |
 | metricsConfig.l1Network.name | string | `"l1"` |  |
 | metricsConfig.l1Network.prefix | string | `"l1"` |  |
 | metricsConfig.l1Network.url | string | `nil` |  |
+| metricsConfig.rollup.url | string | `nil` |  |
 | persistence.metrics-exporter.enabled | bool | `true` |  |
 | persistence.metrics-exporter.mountPath | string | `"/config/"` |  |
 | persistence.metrics-exporter.name | string | `"metrics-exporter-config"` |  |

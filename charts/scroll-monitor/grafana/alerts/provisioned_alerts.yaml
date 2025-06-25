@@ -609,6 +609,178 @@ groups:
           notification_settings:
             receiver: dogeos default slack alert
             repeat_interval: 5m
+        - uid: beps65bnpp98ga
+          title: Next Batch Height Behind(Paused)
+          condition: D
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                exemplar: false
+                expr: sum by(service) (label_replace(rollup_last_batch_index, "service", "withdrawal-processor", "", ""))
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                datasource:
+                    type: prometheus
+                    uid: PBFA97CFB590B2093
+                editorMode: code
+                expr: sum by(service) (withdrawal_processor_next_batch_height)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: B
+            - refId: D
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 2
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: C
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: D
+                type: threshold
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: []
+                      reducer:
+                        params: []
+                        type: avg
+                      type: query
+                datasource:
+                    name: Expression
+                    type: __expr__
+                    uid: __expr__
+                expression: $A-$B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: math
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            summary: |-
+                Rollup committed index:  {{ printf "%.0f" $values.A.Value }}
+                Withdrawal next batch height:  {{ printf "%.0f" $values.B.Value }}
+                Difference: {{ printf "%.0f" $values.C.Value }}
+          labels: {}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            repeat_interval: 5m
+    - orgId: 1
+      name: dogeos critial alert provisioned
+      folder: dogeos
+      interval: 20s
+      rules:
+        - uid: feprf4q4x91c0e
+          title: Low Fee Wallet UTXOs(Paused)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: PBFA97CFB590B2093
+              model:
+                editorMode: code
+                expr: fee_wallet_total_unredeemed_utxo_amount
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 2e+08
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 0s
+          annotations:
+            summary: |-
+                Fee Wallet UTXOs amount is low!
+
+                Current fee wallet utxo amount(DOGE): {{ printf "%.5f" $values.A.Value/100000000 }}
+          isPaused: true
+          notification_settings:
+            receiver: dogeos default slack alert
+            group_wait: 1s
+            group_interval: 1s
+            repeat_interval: 1m
+
 
 # List of contact points to import or update
 contactPoints:
@@ -630,5 +802,5 @@ templates:
     # <string, required> name of the template, must be unique
     name: template.dogeos.provisioned
     # <string, required> content of the template
-    template: "{{ define \"slack.dogeos.title\" }}\n[{{ if eq .Status \"firing\" }}🔥{{ end }}{{ if eq .Status \"resolved\" }}✅{{ end }}{{ .Status | toUpper }}{{ if eq .Status \"firing\" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, ✅RESOLVED{{ end }}{{ end }}{{ if gt (.Alerts.Resolved | len) 0 }}:{{ .Alerts.Resolved | len }}{{ end }}] {{ .GroupLabels.alertname }} in {{ with .CommonLabels.service }}{{ . }}{{ else }}multiple services{{ end }}\n{{ end }}\n\n\n{{ define \"slack.dogeos.text\" }}\nHere are details:\n{{ if gt (len .Alerts.Firing) 0 }}🔥🔥🔥 {{ len .Alerts.Firing }} FIRING 🔥🔥🔥\n{{ template \"dogeos_text_alert_list\" .Alerts.Firing }}{{ if gt (len .Alerts.Resolved) 0 }}\n{{ end }}{{ end }}{{ if gt (len .Alerts.Resolved) 0 }}✅✅✅ {{ len .Alerts.Resolved }} RESOLVED ✅✅✅\n{{ template \"dogeos_text_alert_list\" .Alerts.Resolved }}{{ end }}{{ end }}\n\n\n{{ define \"dogeos_text_alert_list\" }}{{ range . }}\nLabels:\n{{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}Annotations:\n{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}\n{{ end }}{{ if gt (len .SilenceURL) 0 }}Silence: {{ .SilenceURL }}\n{{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}\n{{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}\n{{ end }}{{ end }}{{ end }}"
+    template: "{{ define \"slack.dogeos.title\" -}}\n[{{ if eq .Status \"firing\" }}🔥{{ end }}{{ if eq .Status \"resolved\" }}✅{{ end }}{{ .Status | toUpper -}}\n{{- if eq .Status \"firing\" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, ✅RESOLVED{{ end }}{{ end -}}\n{{- if gt (.Alerts.Resolved | len) 0 }}:{{ .Alerts.Resolved | len }}{{ end }}] {{ .GroupLabels.alertname -}}\n{{- if .CommonLabels.service }} in {{ .CommonLabels.service -}}\n{{- else }} in {{ if gt (len .Alerts.Firing) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Firing }}{{ end -}}\n{{- if gt (len .Alerts.Resolved) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Resolved }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"dogeos_rulename_list\" -}}\n{{- range . }}{{ range .Labels.SortedPairs }}{{ if eq .Name \"rulename\" }}'{{ .Value }}' {{ end }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"slack.dogeos.text\" }}\nHere are details:\n{{ if gt (len .Alerts.Firing) 0 }}🔥🔥🔥 {{ len .Alerts.Firing }} FIRING 🔥🔥🔥\n{{ template \"dogeos_text_alert_list\" .Alerts.Firing }}{{ if gt (len .Alerts.Resolved) 0 }}\n{{ end }}{{ end }}{{ if gt (len .Alerts.Resolved) 0 }}✅✅✅ {{ len .Alerts.Resolved }} RESOLVED ✅✅✅\n{{ template \"dogeos_text_alert_list\" .Alerts.Resolved }}{{ end }}{{ end }}\n\n\n{{ define \"dogeos_text_alert_list\" }}{{ range . }}\nLabels:\n{{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}Annotations:\n{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}\n{{ end }}{{ if gt (len .SilenceURL) 0 }}Silence: {{ .SilenceURL }}\n{{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}\n{{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}\n{{ end }}{{ end }}{{ end }}"
 
