@@ -52,10 +52,10 @@ command:
     echo ${L2GETH_NODEKEY} > /l2geth/data/geth/nodekey && \
     echo \"[Node.P2P] StaticNodes = $L2GETH_PEER_LIST\" > \"/l2geth/config.toml\" && \
     geth --datadir \"/l2geth/data\" \
-    --port \"$L2GETH_P2P_PORT\" --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" \
+    --port \"$L2GETH_P2P_PORT\" --nodiscover --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" \
     --bootnodes \"\" \
     --scroll-mpt \
-    --gcmode archive \
+    --gcmode full \
     --config \"/l2geth/config.toml\" \
     --cache.noprefetch \
     --verbosity 3 \
@@ -130,12 +130,26 @@ service:
     enabled: true
     ports:
       http:
-        enabled: true
+        enabled: false
         port: 30303
       metrics:
         enabled: true
         port: 6060
         targetPort: 6060
+  p2p:
+    enabled: true
+    type: LoadBalancer
+    ports:
+      p2p-tcp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: TCP
+      p2p-udp:
+        enabled: true
+        port: 30303
+        targetPort: 30303
+        protocol: UDP
 
 serviceMonitor:
   main:

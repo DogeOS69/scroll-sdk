@@ -1,0 +1,22 @@
+
+externalSecrets:
+  testnet-activity-helper-secret-env:
+    provider: "aws"
+    region: "us-west-2"
+    data:
+      - remoteRef:
+          key: "dogeos/testnet-activity-helper-secret-env"
+          property: "private-key"
+        secretKey: "ACTIVITY_HELPER_PRIVATE_KEY"
+    refreshInterval: "5m"
+    serviceAccount: "external-secrets"
+    secretRegion: "us-west-2"
+config:
+  externalRpcUriL2: "http://l2-rpc:8545"
+resources:
+  limits:
+    cpu: "200m"
+    memory: "512Mi"
+  requests:
+    cpu: "100m"
+    memory: "256Mi"

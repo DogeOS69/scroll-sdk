@@ -1,5 +1,15 @@
 NAMESPACE ?= default
 
+.PHONY: prepare install-dogecoin install-celestia install-l1-devnet install-scroll-core \
+	install-l2-sequencer install-l2-bootnode install-contracts install-dogeos-da \
+	install-rollup-node install-gas-oracle install-deposit-processor \
+	install-cubesigner-signers install-tso install-withdrawal-processor \
+	install-blockscout install-frontends install-testnet-activity-helper install-all \
+	delete-all delete-l1-devnet delete-dogecoin delete-celestia delete-frontends \
+	delete-blockscout delete-withdrawal-processor delete-deposit-processor delete-tso \
+	delete-dogeos-da delete-gas-oracle delete-rollup-node delete-cubesigner-signers \
+	delete-testnet-activity-helper
+
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
@@ -16,6 +26,7 @@ install-celestia:
 
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
+		--wait  \
 		--version=0.1.4 \
 		--values values/l1-devnet-production.yaml
 
@@ -36,9 +47,10 @@ install-scroll-core:
 		--version=0.1.6 \
 		--values values/metrics-exporter-production.yaml
 
+	$(MAKE) install-l2-sequencer
+
 	$(MAKE) install-l2-bootnode
 
-	$(MAKE) install-l2-sequencer
 
 	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
 		--version=0.1.5-dogeos \
@@ -68,12 +80,15 @@ install-contracts:
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
+	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=360s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
+		--wait  \
+		--set image.tag="v0.0.3" \
+		--set image.repository="dogeos69/da" \
 		--version=0.1.1 \
-		--values values/dogeos-da-production.yaml \
-		--set image.tag=v0.0.3 \
+		--values values/dogeos-da-production.yaml
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
@@ -96,6 +111,7 @@ install-gas-oracle:
 
 install-deposit-processor:
 	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
+		--set image.tag=060925-00 \
 		--version=0.1.4 \
 		--values values/dogeos-deposit-processor-production.yaml
 
@@ -142,17 +158,23 @@ install-frontends:
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
+
+install-testnet-activity-helper:
+	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
+		--version=0.1.0 \
+		--values values/testnet-activity-helper-production.yaml
+
 install-all:
-#	$(MAKE) install-dogecoin
-#	$(MAKE) install-celestia
-	$(MAKE) install-l1-devnet
+	$(MAKE) install-dogecoin
+	$(MAKE) install-celestia
+	$(MAKE) install-dogeos-da 
+	$(MAKE) install-l1-devnet 
 	$(MAKE) install-scroll-core
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
-
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-dogeos-da
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
 	$(MAKE) install-deposit-processor
@@ -161,11 +183,11 @@ install-all:
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
+	$(MAKE) install-testnet-activity-helper
 
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
-	helm delete -n $(NAMESPACE) l2-sequencer-0 || true
-	helm delete -n $(NAMESPACE) l2-sequencer-1 || true
+	$(MAKE) delete-l2-sequencer  || true
 	helm delete -n $(NAMESPACE) frontends || true
 	helm delete -n $(NAMESPACE) gas-oracle || true
 	helm delete -n $(NAMESPACE) l2-bootnode-0 || true
@@ -184,8 +206,8 @@ delete-all:
 	$(MAKE) delete-cubesigner-signers || true
 	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
-	helm delete -n $(NAMESPACE) grafana-alloy || true
-	helm delete -n $(NAMESPACE) l1-devnet
+	helm delete -n $(NAMESPACE) l1-devnet || true
+	$(MAKE) delete-testnet-activity-helper || true
 
 delete-l1-devnet:
 	helm delete -n $(NAMESPACE) l1-devnet
@@ -226,3 +248,17 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-1 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-2 || true
+	-kubectl delete pvc session-cache-0-cubesigner-signer-0-0
+	-kubectl delete pvc session-cache-1-cubesigner-signer-1-0
+	-kubectl delete pvc session-cache-2-cubesigner-signer-2-0
+
+delete-testnet-activity-helper:
+	helm delete -n $(NAMESPACE) testnet-activity-helper
+
+delete-l2-bootnode:
+	helm delete -n $(NAMESPACE) l2-bootnode-0 || true
+	helm delete -n $(NAMESPACE) l2-bootnode-1 || true
+
+delete-l2-sequencer:
+	helm delete -n $(NAMESPACE) l2-sequencer-0 || true
+	helm delete -n $(NAMESPACE) l2-sequencer-1 || true

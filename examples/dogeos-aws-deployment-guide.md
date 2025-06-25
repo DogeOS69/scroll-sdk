@@ -37,11 +37,17 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Configure TLS and HTTPS](#configure-tls-and-https)
 
+1. [Enable bootnode public internet p2p](#enable-bootnode-public-internet-p2p)
+
 1. [DogeOs Deployment](#dogeos-deployment)
 
 1. [Test After Deployment](#test-after-deployment)
 
+1. [Disable public access after testing](#disable-public-access-after-testing)
+
 1. [Verify Contracts](#verify-contracts)
+
+1. [Generate configuration files required for RPC package](#4-generate-configuration-files-required-for-rpc-package)
 
 1. [Re-Deployment from scratch](#re-deployment-from-scratch)
 
@@ -62,13 +68,15 @@ mkdir dogeos-aws-deploy && cd dogeos-aws-deploy && git init
 cp ../scroll-sdk/examples/config.toml.example ./config.toml
 cp ../scroll-sdk/examples/Makefile.example ./Makefile
 cp -r ../scroll-sdk/examples/values values
-cp ../scroll-sdk/examples/anvil-fund-accounts.sh .
 ```
 
+<<<<<<< HEAD
 The `anvil-fund-accounts.sh` script funds the default L1 accounts when using an Anvil devnet.
 
 
 
+=======
+>>>>>>> 7121a0d (improve makefile)
 ## Setup Domains
 Execute the following command to configure domain settings:
 
@@ -385,6 +393,29 @@ This command will:
 
 > Please refer to the official AWS deployment guide for the remaining configuration steps up to the Deployment section. 
 
+
+
+### Enable bootnode public internet p2p
+  This command allows nodes outside the k8s cluster (such as external RPC service providers) to connect to the bootnode's p2p network.
+  ```
+  scrollsdk setup bootnode-public-p2p
+  ```
+
+  #### EXAMPLES
+  ```
+    # Setup static IPs with interactive provider selection
+    $ scrollsdk setup bootnode-public-p2p
+
+
+    # Setup static IPs for AWS with specific cluster and region
+    $ scrollsdk setup bootnode-public-p2p --provider=aws --cluster-name=my-cluster --region=us-west-2
+
+
+    # Setup with custom values directory
+    $ scrollsdk setup bootnode-public-p2p --values-dir=./custom-values
+
+  ```
+
 ## DogeOs Deployment
 
 ### 1. Deploy `dogecoin` node
@@ -572,6 +603,34 @@ scrollsdk setup verify-contracts
 
 </br>
 
+
+### 4. Generate configuration files required for RPC package
+
+  Generate RPC package with external-accessible configuration files (l2geth.env and genesis.json) for cluster-external usage.
+
+  ```
+  $ scrollsdk setup gen-rpc-package
+  ```
+  #### EXAMPLES
+  ```
+  # Generate RPC package (dogeos-rpc-package directory is required)
+
+  $ scrollsdk setup gen-rpc-package -d ~/github/dogeos-rpc-package/
+
+
+
+  # Generate mainnet RPC package with specific config
+
+  $ scrollsdk setup gen-rpc-package --doge-config .data/doge-config-mainnet.toml -d ~/github/dogeos-rpc-package/
+
+
+
+  # First clone the project: git clone https://github.com/dogeos69/dogeos-rpc-package
+
+  $ scrollsdk setup gen-rpc-package -d ./dogeos-rpc-package/
+  ```
+After generating the RPC package, you can commit the dogeos-rpc-package to GitHub and create a release tag for distribution.
+
 ## Re-Deployment from scratch
 ### Delete all charts and release all resources
 ```bash
@@ -623,3 +682,4 @@ To enable and customize these alert rules, follow these steps:
    - Follow steps 1-3 for each alert rule you wish to enable
 
 This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
+

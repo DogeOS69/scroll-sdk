@@ -50,3 +50,7 @@ externalSecrets:
         secretKey: L2GETH_NODEKEY
     refreshInterval: 2m
     serviceAccount: external-secrets
+
+service:
+  p2p:
+    enabled: true

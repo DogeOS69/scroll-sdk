@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "testnet-activity-helper.fullname" . }}-config
+  labels:
+    {{- include "testnet-activity-helper.labels" . | nindent 4 }}
+data:
+  config.toml: |
+    [accounts]
+    # This will be overridden by init container
+    DEPLOYER_PRIVATE_KEY = ""
+    
+    [frontend]
+    EXTERNAL_RPC_URI_L2 = "{{ .Values.config.externalRpcUriL2 }}" 
