@@ -8,9 +8,9 @@ controller:
   strategy: RollingUpdate
 
 image:
-  repository: dogeos69/da
+  repository: dogeos69/da-publisher
   pullPolicy: IfNotPresent
-  tag: v0.0.2
+  tag: latest
 
 service:
   main:
