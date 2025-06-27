@@ -87,7 +87,7 @@ install-dogeos-da:
 		--wait  \
 		--set image.tag="062625-00" \
 		--set image.repository="dogeos69/da-publisher" \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/dogeos-da-production.yaml
 
 install-rollup-node:
