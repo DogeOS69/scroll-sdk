@@ -167,14 +167,15 @@ install-testnet-activity-helper:
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
-	$(MAKE) install-dogeos-da 
-	$(MAKE) install-l1-devnet 
+	$(MAKE) install-l1-devnet
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
+	$(MAKE) install-dogeos-da
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=dogeos-da -n $(NAMESPACE)
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
 	$(MAKE) install-deposit-processor
