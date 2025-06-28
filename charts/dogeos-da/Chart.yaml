@@ -2,7 +2,7 @@ apiVersion: v2
 name: dogeos-da
 description: A Helm chart for the dogeos-da
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "0.0.1"
 kubeVersion: ">=1.22.0-0"
 maintainers:

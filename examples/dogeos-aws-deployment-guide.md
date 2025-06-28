@@ -70,13 +70,6 @@ cp ../scroll-sdk/examples/Makefile.example ./Makefile
 cp -r ../scroll-sdk/examples/values values
 ```
 
-<<<<<<< HEAD
-The `anvil-fund-accounts.sh` script funds the default L1 accounts when using an Anvil devnet.
-
-
-
-=======
->>>>>>> 7121a0d (improve makefile)
 ## Setup Domains
 Execute the following command to configure domain settings:
 
@@ -403,11 +396,11 @@ This command will:
 
   #### EXAMPLES
   ```
-    # Setup static IPs with interactive provider selection
+    # Setup LoadBalancer with interactive provider selection
     $ scrollsdk setup bootnode-public-p2p
 
 
-    # Setup static IPs for AWS with specific cluster and region
+    # Setup LoadBalancer for AWS with specific cluster and region
     $ scrollsdk setup bootnode-public-p2p --provider=aws --cluster-name=my-cluster --region=us-west-2
 
 

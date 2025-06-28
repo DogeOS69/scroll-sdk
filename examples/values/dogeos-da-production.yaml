@@ -8,18 +8,21 @@ controller:
   strategy: RollingUpdate
 
 image:
-  repository: dogeos69/da
+  repository: dogeos69/da-publisher
   pullPolicy: IfNotPresent
   tag: latest
 
 env:
   - name: RUST_LOG
     value: "debug"
-  - name: CELESTIA_URL
+  - name: DOGEOS_DA_PUBLISHER_CELESTIA_RPC_URL
     value: "celestia-testnet-mocha:26658"
-  - name: CELESTIA_NAMESPACE
+  - name: DOGEOS_DA_PUBLISHER_CELESTIA_NAMESPACE
     value: "98E6DED48612C0B8E4FA"
-
+  - name: DOGEOS_DA_PUBLISHER_DOGEOS_L2_RPC_URL
+    value: "http://l2-rpc:8545"
+  - name: DOGEOS_DA_PUBLISHER_ENABLE_WITHDRAWAL_ROOT_FETCHING
+    value: "false"
 service:
   main:
     enabled: true

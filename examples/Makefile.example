@@ -85,9 +85,9 @@ install-contracts:
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
 		--wait  \
-		--set image.tag="v0.0.3" \
-		--set image.repository="dogeos69/da" \
-		--version=0.1.1 \
+		--set image.tag="062625-00" \
+		--set image.repository="dogeos69/da-publisher" \
+		--version=0.1.2 \
 		--values values/dogeos-da-production.yaml
 
 install-rollup-node:
@@ -141,7 +141,7 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.5 \
-		--set image.tag=061125-00 \
+		--set image.tag=v0.2.0-alex \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -167,14 +167,15 @@ install-testnet-activity-helper:
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
-	$(MAKE) install-dogeos-da 
-	$(MAKE) install-l1-devnet 
+	$(MAKE) install-l1-devnet
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
 	scrollsdk helper fund-accounts -i -f 2 -d
 	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
+	$(MAKE) install-dogeos-da
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=dogeos-da -n $(NAMESPACE)
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
 	$(MAKE) install-deposit-processor
