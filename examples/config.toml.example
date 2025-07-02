@@ -5,7 +5,7 @@ L1_RPC_ENDPOINT_WEBSOCKET = "ws://l1-devnet:8546"
 L2_RPC_ENDPOINT = "http://l2-rpc:8545"
 
 CHAIN_NAME_L1 = "Ethereum"
-CHAIN_NAME_L2 = "Scroll SDK"
+CHAIN_NAME_L2 = "DogeOS Devnet"
 CHAIN_ID_L1 = 111111
 CHAIN_ID_L2 = 221122
 
@@ -77,14 +77,19 @@ RELAY_MESSAGE_DEADLINE_SEC = 21_600
 
 [frontend]
 
-EXTERNAL_RPC_URI_L1 = "http://l1-devnet.scrollsdk"
+EXTERNAL_RPC_URI_L1 = "https://sochain.com/DOGETEST"
 EXTERNAL_RPC_URI_L2 = "http://rpc.scrollsdk"
 BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
 ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
-EXTERNAL_EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
+EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
 EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
 ADMIN_SYSTEM_DASHBOARD_URI = "http://admin-system-dashboard.scrollsdk"
 GRAFANA_URI = "http://grafana.scrollsdk"
+ 
+ETH_SYMBOL = "DOGE"
+BASE_CHAIN = "DOGE"
+CONNECT_WALLET_PROJECT_ID = "14efbaafcf5232a47d93a68229b71028"
+
 
 [genesis]
 
