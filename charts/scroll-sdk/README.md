@@ -1,6 +1,6 @@
 # scroll-sdk
 
-![Version: 0.1.15-dogeos](https://img.shields.io/badge/Version-0.1.15--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.16-dogeos](https://img.shields.io/badge/Version-0.1.16--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy scroll sdk for dogeos
 
@@ -18,7 +18,7 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.7-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.8-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.11 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.4 |
