@@ -4,12 +4,12 @@ ARCH_OTHER := $(shell if [ "$$(uname -m)" != "arm64" ] && [ "$$(uname -m)" != "a
 NAMESPACE ?= default
 L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
-SCROLL_CONTRACTS_TAG_SUFFIX := c94e1a901a9e4e98d83828bb1b2eda3c76d42333
+SCROLL_CONTRACTS_TAG_SUFFIX := 68493b496b21d98bdf432395b817d026a2a41e79
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
 
 bootstrap:
 		echo "Pulling helm chart..."
-		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.15-dogeos
+		helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-sdk --version 0.1.16-dogeos
 		echo "Extracting helm chart..."
 		tar -xvf *.tgz
 		$(MAKE) config
@@ -45,4 +45,4 @@ upgrade:
 
 verify:
 		echo "Verifing contracts..."
-		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume dogeos69/scroll-stack-contracts:verify-c94e1a901a9e4e98d83828bb1b2eda3c76d42333
+		cd scroll-sdk && time docker run --rm -it --network="host" -v .:/contracts/volume dogeos69/scroll-stack-contracts:verify-68493b496b21d98bdf432395b817d026a2a41e79

@@ -12,12 +12,12 @@ scrollConfig: |
   REACT_APP_ROLLUPSCAN_API_URI = "https://rollup-explorer-backend.scrollsdk/api"
   REACT_APP_EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
   REACT_APP_EXTERNAL_EXPLORER_URI_L2 = "https://blockscout.scrollsdk"
-  REACT_APP_EXTERNAL_DOCS_URI = "https://docs.dogeos.com/en/home"
+  
   ADMIN_SYSTEM_DASHBOARD_URI = "https://admin-system-dashboard.scrollsdk"
   GRAFANA_URI = "https://grafana.scrollsdk"
-  REACT_APP_FAUCET_URI = "https://faucet.scrollsdk"
+  
 
-  REACT_APP_DOGE_NETWORK = "testnet"
+  
   REACT_APP_DOGE_BRIDGE_ADDRESS = ""
   REACT_APP_MOAT_ADDRESS = ""
   REACT_APP_L1_CUSTOM_ERC20_GATEWAY_PROXY_ADDR = ""
@@ -54,3 +54,6 @@ scrollConfig: |
   REACT_APP_SCROLL_ORIGINS_NFT = ""
   REACT_APP_SCROLL_ORIGINS_NFT_V2 = ""
   REACT_APP_L1_BATCH_BRIDGE_GATEWAY_PROXY_ADDR = ""
+  REACT_APP_EXTERNAL_DOCS_URI = "https://docs.dogeos.com/en/home"
+  REACT_APP_FAUCET_URI = "https://faucet.scrollsdk"
+  REACT_APP_DOGE_NETWORK = "testnet"
