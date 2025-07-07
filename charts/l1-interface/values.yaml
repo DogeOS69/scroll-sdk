@@ -1,0 +1,86 @@
+global:
+  nameOverride: &app_name l1-interface
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/l1-interface
+  pullPolicy: Always
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      jsonrpc:
+        enabled: true
+        port: 8545
+        targetPort: 8545
+        protocol: TCP
+      beacon:
+        enabled: true
+        port: 5052
+        targetPort: 5052
+        protocol: TCP
+      http:
+        enabled: true
+        port: 9090
+        targetPort: 9090
+        protocol: TCP
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/health"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+
+# Resource configuration
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Persistent storage configuration
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 1Gi
+  genesis:
+    enabled: true
+    type: configMap
+    mountPath: /app/genesis/
+    name: genesis-config
+    readOnly: true
+
+command: ["/usr/local/bin/l1_interface"]
+
+# Monitoring configuration
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /api/v1/metrics
+        interval: 30s
+        scrapeTimeout: 10s

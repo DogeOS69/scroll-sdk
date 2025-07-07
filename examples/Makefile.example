@@ -24,6 +24,11 @@ install-celestia:
 		--version=0.1.5 \
 		--values values/celestia-node-production.yaml
 
+install-l1-interface:
+	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
+		--version=0.0.1 \
+		--values values/l1-interface-production.yaml
+
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
 		--wait  \
@@ -167,6 +172,7 @@ install-testnet-activity-helper:
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
+	$(MAKE) install-l1-interface
 	$(MAKE) install-l1-devnet
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
@@ -208,7 +214,12 @@ delete-all:
 	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) l1-devnet || true
+	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
+
+
+delete-l1-interface:
+	helm delete -n $(NAMESPACE) l1-interface
 
 delete-l1-devnet:
 	helm delete -n $(NAMESPACE) l1-devnet
