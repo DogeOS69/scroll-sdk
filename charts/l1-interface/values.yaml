@@ -74,6 +74,21 @@ persistence:
 
 command: ["/usr/local/bin/l1_interface"]
 
+configMaps:
+  env:
+    enabled: true
+    data:
+      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "0.0.0.0:8545"
+      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "0.0.0.0:5052"
+      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090"
+      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
+
+envFrom:
+  - secretRef:
+      name: "l1-interface-secret-env"
+  - configMapRef:
+      name: "l1-interface-env"
+
 # Monitoring configuration
 serviceMonitor:
   main:
