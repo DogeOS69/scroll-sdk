@@ -1,6 +1,6 @@
 # l1-interface
 
-![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.2](https://img.shields.io/badge/Version-0.0.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DogeOS L1 interface
 
@@ -24,6 +24,12 @@ Kubernetes: `>=1.22.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | command[0] | string | `"/usr/local/bin/l1_interface"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_API_BIND_ADDRESS | string | `"0.0.0.0:8545"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS | string | `"0.0.0.0:5052"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_DATABASE_URL | string | `"sqlite:///data/l1-interface.sqlite"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH | string | `"/app/genesis/genesis.json"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS | string | `"0.0.0.0:9090"` |  |
+| configMaps.env.enabled | bool | `true` |  |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
 | controller.type | string | `"statefulset"` |  |
@@ -31,6 +37,8 @@ Kubernetes: `>=1.22.0-0`
 | defaultProbes.enabled | bool | `true` |  |
 | defaultProbes.spec.httpGet.path | string | `"/health"` |  |
 | defaultProbes.spec.httpGet.port | string | `"http"` |  |
+| envFrom[0].secretRef.name | string | `"l1-interface-secret-env"` |  |
+| envFrom[1].configMapRef.name | string | `"l1-interface-env"` |  |
 | global.fullnameOverride | string | `"l1-interface"` |  |
 | global.nameOverride | string | `"l1-interface"` |  |
 | image.pullPolicy | string | `"Always"` |  |
