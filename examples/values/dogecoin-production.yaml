@@ -14,6 +14,7 @@ service:
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
   retainPvcOnUninstall: true
+  storageClassName: gp3
 # Enable ingress
 ingress:
   enabled: true
