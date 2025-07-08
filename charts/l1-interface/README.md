@@ -26,6 +26,7 @@ Kubernetes: `>=1.22.0-0`
 | command[0] | string | `"/usr/local/bin/l1_interface"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_API_BIND_ADDRESS | string | `"0.0.0.0:8545"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS | string | `"0.0.0.0:5052"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_DATABASE_URL | string | `"sqlite:///data/l1-interface.sqlite"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH | string | `"/app/genesis/genesis.json"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS | string | `"0.0.0.0:9090"` |  |
 | configMaps.env.enabled | bool | `true` |  |
