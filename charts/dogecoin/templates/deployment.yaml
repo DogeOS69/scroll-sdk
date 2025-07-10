@@ -28,9 +28,35 @@ spec:
             - /bin/sh
             - -c
             - |
+              set -e  # Exit on any error
+              echo "Starting Dogecoin container setup..."
+              
+              # Verify required files exist
+              if [ ! -f "/etc/dogecoin.conf" ]; then
+                echo "ERROR: dogecoin.conf not found"
+                exit 1
+              fi
+              
+              if [ ! -f "/etc/dogecoin-secrets/{{ .Values.rpcPassword.secretKey }}" ]; then
+                echo "ERROR: RPC password secret not found"
+                exit 1
+              fi
+              
+              # Copy configuration file
+              echo "Copying configuration file..."
               cp /etc/dogecoin.conf /tmp/dogecoin.conf
-              echo "rpcpassword=$(cat /etc/dogecoin-secrets/{{ .Values.rpcPassword.secretKey }})" >> /tmp/dogecoin.conf
-              /dogecoin/bin/dogecoind -conf=/tmp/dogecoin.conf -datadir=/dogecoin-data
+              
+              # Add RPC password from secret
+              echo "Adding RPC password..."
+              RPC_PASSWORD=$(cat /etc/dogecoin-secrets/{{ .Values.rpcPassword.secretKey }})
+              if [ -z "$RPC_PASSWORD" ]; then
+                echo "ERROR: RPC password is empty"
+                exit 1
+              fi
+              echo "rpcpassword=$RPC_PASSWORD" >> /tmp/dogecoin.conf
+              
+              echo "Configuration complete. Starting dogecoind..."
+              exec /dogecoin/bin/dogecoind -conf=/tmp/dogecoin.conf -datadir=/dogecoin-data
           lifecycle:
             preStop:
               exec:
@@ -49,8 +75,10 @@ spec:
           resources:
             requests:
               memory: "2Gi"
+              cpu: "1000m"
             limits:
               memory: "4Gi"
+              cpu: "2000m"
           ports:
             - name: dogecoind
               containerPort: {{ .Values.service.port }}
@@ -59,13 +87,15 @@ spec:
               containerPort: {{ .Values.service.rpcPort }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 120
-            periodSeconds: 30
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 30
             tcpSocket:
               port: rpc
           readinessProbe:
-            initialDelaySeconds: 60
+            initialDelaySeconds: 180
             periodSeconds: 30
+            timeoutSeconds: 10
             tcpSocket:
               port: rpc
       volumes:
