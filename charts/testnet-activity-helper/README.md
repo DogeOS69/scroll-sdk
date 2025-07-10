@@ -21,7 +21,6 @@ A Helm chart for DogeOS L2 testnet activity helper
 | affinity | object | `{}` |  |
 | config.ACTIVITY_HELPER_PRIVATE_KEY | string | `""` |  |
 | config.externalRpcUriL2 | string | `"http://l2-rpc:8545"` |  |
-| dependencies.waitFor.contracts.namespace | string | `"default"` |  |
 | dependencies.waitFor.contracts.podNamePattern | string | `"*-contracts-deployment"` |  |
 | dependencies.waitFor.enabled | bool | `true` |  |
 | dependencies.waitFor.timeout | int | `1800` |  |
@@ -36,7 +35,7 @@ A Helm chart for DogeOS L2 testnet activity helper
 | global.nameOverride | string | `"testnet-activity-helper"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/testnet-activity-helper"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
 | nodeSelector | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `1000` |  |

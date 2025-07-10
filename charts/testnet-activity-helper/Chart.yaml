@@ -2,7 +2,7 @@ apiVersion: v2
 name: testnet-activity-helper
 description: A Helm chart for DogeOS L2 testnet activity helper
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "1.0.0"
 keywords:
   - dogeos
@@ -15,3 +15,10 @@ maintainers:
     email: alex@dogeos.org
 sources:
   - https://github.com/dogeos/scroll-sdk
+dependencies:
+  - name: common
+    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
+    version: 1.5.2
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

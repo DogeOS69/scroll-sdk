@@ -166,7 +166,7 @@ install-frontends:
 
 install-testnet-activity-helper:
 	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--values values/testnet-activity-helper-production.yaml
 
 install-all:
