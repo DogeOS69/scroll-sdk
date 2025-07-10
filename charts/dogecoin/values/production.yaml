@@ -1,6 +1,7 @@
 dogecoinConf:
   rpcuser: user
   testnet: 1
+  txindex: 1
   rpcallowip:
     # Option 1: Allow all (NOT recommended for production)
     - 0.0.0.0/0
@@ -12,8 +13,8 @@ service:
 # Storage
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
-  storageClassName: gp3-immediate      # Storage class with immediate binding
   retainPvcOnUninstall: true
+  storageClassName: gp3
 # Enable ingress
 ingress:
   enabled: true

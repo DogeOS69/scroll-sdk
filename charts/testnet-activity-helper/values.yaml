@@ -1,22 +1,57 @@
+---
 global:
   nameOverride: &app_name testnet-activity-helper
   fullnameOverride: *app_name
 
-replicaCount: 1
+# Controller configuration (using common structure)
+controller:
+  enabled: true
+  type: deployment
+  replicas: 1
+  strategy: Recreate
 
+# Image configuration
 image:
   repository: dogeos69/testnet-activity-helper
   pullPolicy: IfNotPresent
-  tag: "latest"
+  # It is recommended to use a specific tag instead of latest.
+  tag: "devnet-06182025-01"  # Defaults to .Chart.AppVersion if not set
 
 imagePullSecrets: []
-# nameOverride: ""
-# fullnameOverride: ""
 
+# Service configuration (disabled for this app)
 service:
-  enabled: false  # This app doesn't need a service
+  main:
+    enabled: false
 
-# Dependencies configuration
+# ConfigMaps configuration (using common structure)
+configMaps:
+  config:
+    enabled: true
+    nameOverride: config
+    data:
+      config.toml: |
+        [accounts]
+        # This will be overridden by init container
+        DEPLOYER_PRIVATE_KEY = ""
+
+        [frontend]
+        EXTERNAL_RPC_URI_L2 = "{{ .Values.config.externalRpcUriL2 }}"
+
+# Secrets configuration (using common structure)
+secrets:
+  key:
+    enabled: true
+    nameOverride: key
+    stringData:
+      ACTIVITY_HELPER_PRIVATE_KEY: "{{ .Values.config.ACTIVITY_HELPER_PRIVATE_KEY }}"
+
+# Service Account (not needed for current functionality)
+serviceAccount:
+  create: false
+  name: ""
+
+# Dependencies configuration - when enabled, use custom deployment
 dependencies:
   # Runtime dependency checks - wait for any version of contracts to complete
   waitFor:
@@ -25,17 +60,10 @@ dependencies:
     contracts:
       # Match pods with this pattern (supports any release name)
       podNamePattern: "*-contracts-deployment"  # Pattern to match contracts deployment pods
-      namespace: default
 
+# Application-specific configuration
 config:
-  # DANGER: Don't put real private keys here in production!
-  # Use external secret management solutions
-  # deployerPrivateKey: ""  # Moved to externalSecrets
-
-  # Activity Helper Private Key - if provided and not empty, this will be used
-  # instead of the value from externalSecrets
   ACTIVITY_HELPER_PRIVATE_KEY: ""
-
   externalRpcUriL2: "http://l2-rpc:8545"
 
 # External Secrets configuration
@@ -51,18 +79,18 @@ externalSecrets:
     refreshInterval: 2m
     serviceAccount: external-secrets
 
+# Resources
 resources:
   limits:
-    cpu: 100m   # Allow burst capacity
+    cpu: 100m  # Allow burst capacity
     memory: 256Mi
   requests:
     cpu: 50m
     memory: 128Mi
 
+# Node selector, tolerations, affinity
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
 
 # Pod security context

@@ -1,6 +1,6 @@
 # testnet-activity-helper
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for DogeOS L2 testnet activity helper
 
@@ -14,6 +14,13 @@ A Helm chart for DogeOS L2 testnet activity helper
 
 * <https://github.com/dogeos/scroll-sdk>
 
+## Requirements
+
+| Repository | Name | Version |
+|------------|------|---------|
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
+| oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.2 |
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -21,7 +28,13 @@ A Helm chart for DogeOS L2 testnet activity helper
 | affinity | object | `{}` |  |
 | config.ACTIVITY_HELPER_PRIVATE_KEY | string | `""` |  |
 | config.externalRpcUriL2 | string | `"http://l2-rpc:8545"` |  |
-| dependencies.waitFor.contracts.namespace | string | `"default"` |  |
+| configMaps.config.data."config.toml" | string | `"[accounts]\n# This will be overridden by init container\nDEPLOYER_PRIVATE_KEY = \"\"\n\n[frontend]\nEXTERNAL_RPC_URI_L2 = \"{{ .Values.config.externalRpcUriL2 }}\"\n"` |  |
+| configMaps.config.enabled | bool | `true` |  |
+| configMaps.config.nameOverride | string | `"config"` |  |
+| controller.enabled | bool | `true` |  |
+| controller.replicas | int | `1` |  |
+| controller.strategy | string | `"Recreate"` |  |
+| controller.type | string | `"deployment"` |  |
 | dependencies.waitFor.contracts.podNamePattern | string | `"*-contracts-deployment"` |  |
 | dependencies.waitFor.enabled | bool | `true` |  |
 | dependencies.waitFor.timeout | int | `1800` |  |
@@ -36,23 +49,27 @@ A Helm chart for DogeOS L2 testnet activity helper
 | global.nameOverride | string | `"testnet-activity-helper"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/testnet-activity-helper"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"devnet-06182025-01"` |  |
 | imagePullSecrets | list | `[]` |  |
 | nodeSelector | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `1000` |  |
 | podSecurityContext.runAsNonRoot | bool | `true` |  |
 | podSecurityContext.runAsUser | int | `1000` |  |
-| replicaCount | int | `1` |  |
 | resources.limits.cpu | string | `"100m"` |  |
 | resources.limits.memory | string | `"256Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"128Mi"` |  |
+| secrets.key.enabled | bool | `true` |  |
+| secrets.key.nameOverride | string | `"key"` |  |
+| secrets.key.stringData.ACTIVITY_HELPER_PRIVATE_KEY | string | `"{{ .Values.config.ACTIVITY_HELPER_PRIVATE_KEY }}"` |  |
 | securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | securityContext.readOnlyRootFilesystem | bool | `false` |  |
 | securityContext.runAsNonRoot | bool | `true` |  |
 | securityContext.runAsUser | int | `1000` |  |
-| service.enabled | bool | `false` |  |
+| service.main.enabled | bool | `false` |  |
+| serviceAccount.create | bool | `false` |  |
+| serviceAccount.name | string | `""` |  |
 | tolerations | list | `[]` |  |
 
 ----------------------------------------------

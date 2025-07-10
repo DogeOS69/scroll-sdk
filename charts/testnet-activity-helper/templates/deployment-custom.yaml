@@ -1,0 +1,139 @@
+{{/*
+Custom deployment template for handling complex initContainers logic
+This template is used when dependencies.waitFor.enabled is true
+*/}}
+{{- if .Values.dependencies.waitFor.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "scroll.common.lib.chart.names.fullname" . }}
+  labels:
+    {{- include "scroll.common.lib.metadata.allLabels" . | nindent 4 }}
+  {{- with include "scroll.common.lib.metadata.globalAnnotations" . }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      {{- include "scroll.common.lib.metadata.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with include "scroll.common.lib.metadata.podAnnotations" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "scroll.common.lib.metadata.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      
+      # Custom initContainers for complex logic
+
+      {{- if or .Values.config.ACTIVITY_HELPER_PRIVATE_KEY .Values.externalSecrets }}
+      initContainers:
+      - name: config-merger
+        image: busybox:1.36
+        command: 
+        - sh
+        - -c
+        - |-
+          set -e
+          echo "Generating final config..."
+          # Start with the base config from the ConfigMap
+          cp /base-config/config.toml /app-config/config.toml
+
+          # Read the private key securely from the mounted secret file
+          if [ -f /key-from-secret/ACTIVITY_HELPER_PRIVATE_KEY ]; then
+            echo "Injecting private key from Kubernetes Secret"
+            PRIVATE_KEY=$(cat /key-from-secret/ACTIVITY_HELPER_PRIVATE_KEY)
+          elif [ -f /key-from-external-secret/ACTIVITY_HELPER_PRIVATE_KEY ]; then
+            echo "Injecting private key from ExternalSecret"
+            PRIVATE_KEY=$(cat /key-from-external-secret/ACTIVITY_HELPER_PRIVATE_KEY)
+          else
+            echo "ERROR: Private key secret not found!"
+            exit 1
+          fi
+
+          # Use sed to safely replace the placeholder in the config file
+          sed -i "s|DEPLOYER_PRIVATE_KEY =.*|DEPLOYER_PRIVATE_KEY = \"$PRIVATE_KEY\"|" /app-config/config.toml
+        volumeMounts:
+        - name: config-template
+          mountPath: /base-config
+        - name: app-config
+          mountPath: /app-config
+        {{- if and .Values.config.ACTIVITY_HELPER_PRIVATE_KEY (not .Values.externalSecrets) }}
+        - name: key-from-secret
+          mountPath: /key-from-secret
+          readOnly: true
+        {{- else if .Values.externalSecrets }}
+        - name: key-from-external-secret
+          mountPath: /key-from-external-secret
+          readOnly: true
+        {{- end }}
+      {{- end }}
+      
+      containers:
+      - name: {{ include "scroll.common.lib.chart.names.fullname" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["npm", "run", "start"]
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.env }}
+        env:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        volumeMounts:
+        - name: app-config
+          mountPath: /app/config.toml
+          subPath: config.toml
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      
+      volumes:
+      - name: config-template
+        configMap:
+          name: {{ include "scroll.common.lib.chart.names.fullname" . }}-config
+      - name: app-config
+        emptyDir: {}
+      
+      {{- if and .Values.config.ACTIVITY_HELPER_PRIVATE_KEY (not .Values.externalSecrets) }}
+      - name: key-from-secret
+        secret:
+          secretName: {{ include "scroll.common.lib.chart.names.fullname" . }}-key
+      {{- else if .Values.externalSecrets }}
+      {{- range $name, $config := .Values.externalSecrets }}
+      - name: key-from-external-secret
+        secret:
+          secretName: {{ $name }}
+      {{- end }}
+      {{- end }}
+      
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }} 
