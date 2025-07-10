@@ -15,7 +15,7 @@ image:
   repository: dogeos69/testnet-activity-helper
   pullPolicy: IfNotPresent
   # It is recommended to use a specific tag instead of latest.
-  tag: "devnet-06182025-01" # Defaults to .Chart.AppVersion if not set
+  tag: "devnet-06182025-01"  # Defaults to .Chart.AppVersion if not set
 
 imagePullSecrets: []
 
@@ -34,7 +34,7 @@ configMaps:
         [accounts]
         # This will be overridden by init container
         DEPLOYER_PRIVATE_KEY = ""
-        
+
         [frontend]
         EXTERNAL_RPC_URI_L2 = "{{ .Values.config.externalRpcUriL2 }}"
 
@@ -82,7 +82,7 @@ externalSecrets:
 # Resources
 resources:
   limits:
-    cpu: 100m   # Allow burst capacity
+    cpu: 100m  # Allow burst capacity
     memory: 256Mi
   requests:
     cpu: 50m
