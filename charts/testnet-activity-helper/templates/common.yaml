@@ -1,0 +1,18 @@
+---
+{{- include "scroll.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+# Set the nameOverride based on the release name if no override has been set
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: "{{ .Release.Name }}"
+{{ end }}
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{/* Render configMaps and secrets using common templates */}}
+{{- include "scroll.common.render.configmaps" . | nindent 0 -}}
+{{- include "scroll.common.render.secrets" . | nindent 0 -}}
+{{- include "scroll.common.render.serviceAccount" . | nindent 0 -}}
+---
+{{- include "scrolllib.externalsecrets.tpl" . }} 
