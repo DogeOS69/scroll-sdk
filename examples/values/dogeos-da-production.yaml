@@ -22,7 +22,7 @@ env:
   - name: DOGEOS_DA_PUBLISHER_DOGEOS_L2_RPC_URL
     value: "http://l2-rpc:8545"
   - name: DOGEOS_DA_PUBLISHER_ENABLE_WITHDRAWAL_ROOT_FETCHING
-    value: "false"
+    value: "true"
 service:
   main:
     enabled: true
