@@ -331,6 +331,17 @@ Follow the [AWS EKS Deployment](https://docs.scroll.io/en/sdk/guides/aws-deploym
 1. Set up the required ServiceAccount
 2. Create a SecretStore in AWS Secrets Manager
 
+>> If you want to use a specific namespace, you need to specify your own namespace instead of `default`:
+>>```
+>>eksctl create iamserviceaccount \
+>>   --name external-secrets \
+>>   --namespace <YOUR_NAMESPACE> \
+>>   --cluster <YOUR_CLUSTER_NAME> \
+>>   --attach-policy-arn arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:policy/ExternalSecretsPolicy \
+>>   --approve \
+>>   --region <YOUR_CLUSTER_REGION>
+>>```
+
 ### Push Secrets to AWS
 Execute the following command to begin the secret push process:
 
@@ -410,6 +421,8 @@ This command will:
   ```
 
 ## DogeOs Deployment
+
+
 
 ### 1. Deploy `dogecoin` node
 ```bash
