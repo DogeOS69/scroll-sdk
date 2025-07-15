@@ -26,7 +26,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.2 \
+		--version=0.0.3 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -117,7 +117,7 @@ install-gas-oracle:
 install-deposit-processor:
 	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
 		--set image.tag=060925-00 \
-		--version=0.1.4 \
+		--version=0.1.5 \
 		--values values/dogeos-deposit-processor-production.yaml
 
 install-cubesigner-signers:
@@ -145,7 +145,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.5 \
+		--version=0.1.6 \
 		--set image.tag=v0.2.0-alpha.44 \
 		--values values/withdrawal-processor-production.yaml
 
