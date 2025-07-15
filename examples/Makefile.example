@@ -90,15 +90,15 @@ install-contracts:
 install-dogeos-da:
 	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
 		--wait  \
-		--set image.tag="062625-00" \
 		--set image.repository="dogeos69/da-publisher" \
+		--set image.tag="v0.2.0-alpha.1" \
 		--version=0.1.2 \
 		--values values/dogeos-da-production.yaml
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
 		--version=0.1.5-dogeos \
-		--set image.tag=latest \
+		--set image.tag=v0.2.0-alpha.1 \
 		--set image.repository=dogeos69/rollup-relayer \
 		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
@@ -146,7 +146,7 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.5 \
-		--set image.tag=v0.2.0-alex \
+		--set image.tag=v0.2.0-alpha.44 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -260,9 +260,9 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-1 || true
 	helm delete -n $(NAMESPACE) cubesigner-signer-2 || true
-	-kubectl delete pvc session-cache-0-cubesigner-signer-0-0
-	-kubectl delete pvc session-cache-1-cubesigner-signer-1-0
-	-kubectl delete pvc session-cache-2-cubesigner-signer-2-0
+	-kubectl delete pvc -n $(NAMESPACE) session-cache-0-cubesigner-signer-0-0
+	-kubectl delete pvc -n $(NAMESPACE) session-cache-1-cubesigner-signer-1-0
+	-kubectl delete pvc -n $(NAMESPACE) session-cache-2-cubesigner-signer-2-0
 
 delete-testnet-activity-helper:
 	helm delete -n $(NAMESPACE) testnet-activity-helper
