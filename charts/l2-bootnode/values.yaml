@@ -20,10 +20,6 @@ env:
     value: "0x6"
   - name: L2GETH_P2P_PORT
     value: 30303
-  - name: L2GETH_CCC_FLAG
-    value: "--ccc"
-  - name: L2GETH_CCC_NUMWORKERS
-    value: "5"
   - name: L2GETH_MAX_PEERS
     value: 500
   - name: VERBOSITY
@@ -60,7 +56,6 @@ command:
     --cache.noprefetch \
     --verbosity 3 \
     --pprof --pprof.addr \"0.0.0.0\" --pprof.port 6060 \
-    $L2GETH_CCC_FLAG --ccc.numworkers \"$L2GETH_CCC_NUMWORKERS\" \
     $METRICS_FLAGS \
     --txpool.globalqueue \"$L2GETH_GLOBAL_QUEUE\" --txpool.accountqueue \"$L2GETH_ACCOUNT_QUEUE\" \
     --txpool.globalslots \"$L2GETH_GLOBAL_SLOTS\" --txpool.accountslots \"$L2GETH_ACCOUNT_SLOTS\" \
