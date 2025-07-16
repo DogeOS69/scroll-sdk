@@ -1,28 +1,25 @@
 global:
-  nameOverride: &app_name dogeos-da
-  fullnameOverride: *app_name
-
+  nameOverride: "dogeos-da"
+  fullnameOverride: "dogeos-da"
 controller:
-  type: statefulset
+  type: "statefulset"
   replicas: 1
-  strategy: RollingUpdate
-
+  strategy: "RollingUpdate"
 image:
-  repository: dogeos69/da-publisher
-  pullPolicy: IfNotPresent
-  tag: latest
-
+  repository: "dogeos69/da-publisher"
+  pullPolicy: "IfNotPresent"
+  tag: "v0.2.0-alpha.1"
 env:
-  - name: RUST_LOG
+  - name: "RUST_LOG"
     value: "debug"
-  - name: DOGEOS_DA_PUBLISHER_CELESTIA_RPC_URL
+  - name: "DOGEOS_DA_PUBLISHER_CELESTIA_RPC_URL"
     value: "celestia-testnet-mocha:26658"
-  - name: DOGEOS_DA_PUBLISHER_CELESTIA_NAMESPACE
-    value: "98E6DED48612C0B8E4FA"
-  - name: DOGEOS_DA_PUBLISHER_DOGEOS_L2_RPC_URL
+  - name: "DOGEOS_DA_PUBLISHER_CELESTIA_NAMESPACE"
+    value: ""
+  - name: "DOGEOS_DA_PUBLISHER_DOGEOS_L2_RPC_URL"
     value: "http://l2-rpc:8545"
-  - name: DOGEOS_DA_PUBLISHER_ENABLE_WITHDRAWAL_ROOT_FETCHING
-    value: "true"
+  - name: "DOGEOS_DA_PUBLISHER_ENABLE_WITHDRAWAL_ROOT_FETCHING"
+    value: "false"
 service:
   main:
     enabled: true
@@ -30,51 +27,35 @@ service:
       http:
         enabled: true
         port: 3000
-
-defaultProbes: &default_probes
+defaultProbes:
   enabled: true
   custom: true
   spec:
     httpGet:
       path: "/healthz"
       port: 3000
-
 probes:
   liveness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/healthz"
+        port: 3000
   readiness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/healthz"
+        port: 3000
   startup:
-    <<: *default_probes
-
-# Environment variables from ConfigMap
-# envFrom:
-#   - configMapRef:
-#       name: dogeos-da-env
-
-# ConfigMap for non-sensitive configuration
-# configMaps:
-#   env:
-#     enabled: true
-#     data:
-
-# External Secrets configuration
-# externalSecrets:
-#   dogeos-da-secrets:
-#     provider: aws
-#     data:
-#       - remoteRef:
-#           key: dogeos/withdrawal-processor/nownodes
-#           property: api-key
-#         secretKey: nownodes-api-key
-#       - remoteRef:
-#           key: dogeos/withdrawal-processor/doge
-#           property: signer-private-key
-#         secretKey: doge-signer-private-key
-#     refreshInterval: 2m
-#     serviceAccount: external-secrets
-
-# Resource configuration
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/healthz"
+        port: 3000
 resources:
   requests:
     memory: "128Mi"
@@ -82,17 +63,6 @@ resources:
   limits:
     memory: "512Mi"
     cpu: "500m"
-
-# Persistent storage configuration
-# persistence:
-#   data:
-#     enabled: true
-#     type: pvc
-#     mountPath: /data
-#     accessMode: ReadWriteOnce
-#     size: 1Gi
-
-# Monitoring configuration
 serviceMonitor:
   main:
     enabled: true

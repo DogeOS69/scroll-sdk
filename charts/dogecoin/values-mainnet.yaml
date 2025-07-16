@@ -1,5 +1,4 @@
 replicaCount: 1
-namespace: default
 
 dogecoinConf:
   disablewallet: 1
@@ -13,7 +12,10 @@ dogecoinConf:
     - 10.100.0.0/16
   listen: 0
 
-rpcPassword: password # override this with a secret
+# RPC password configuration - fixed to match values.yaml structure
+rpcPassword:
+  secretKey: "password"   # Key in the secret containing the password
+  value: "mainnet_secure_password_here"  # Use a secure password for mainnet
 
 image:
   repository: "docker.io/dogeos69/dogecoin"
@@ -29,7 +31,8 @@ service:
 # Storage
 storage:
   size: 250Gi # Should be > 200Gi for mainnet
-  storageClassName: gp3-immediate # Storage class with immediate binding
+  storageClassName: "" # Use cluster default storage class (more portable)
+  retainPvcOnUninstall: true # IMPORTANT: Keep PVC when uninstalling to prevent data loss
 
 nodeSelector: {}
 

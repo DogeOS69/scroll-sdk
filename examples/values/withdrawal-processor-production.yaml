@@ -15,24 +15,14 @@ env:
     value: "3000" # Typically remains the same unless specific need
   - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
     value: "https://your-mainnet-dogecoin-rpc-url" # FIXME: Update with production Dogecoin RPC URL
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
-  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
-  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
   - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
     value: "https://your-mainnet-blockbook-url" # FIXME: Update with production Blockbook URL (e.g., Nownodes mainnet)
-  # - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_API_KEY
-  #   value: "" # Sensitive: REQUIRED if your Blockbook needs an API key - Set via K8s secret
   - name: DOGEOS_WITHDRAWAL_TSO_URL
     value: "http://tso-service.your-namespace.svc.cluster.local:3000" # FIXME: Update with actual TSO service URL in K8s
   - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
     value: "your-mainnet-bridge-address" # FIXME: Update with your MAINNET bridge address
   - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
     value: "your-mainnet-bridge-script-hex" # FIXME: Update with your MAINNET bridge script hex
-  # - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
-  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
-  # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-  #   value: "" # Sensitive: REQUIRED - Set via K8s secret or direct deployment override
   - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
     value: "85" # Review if this needs adjustment for mainnet
   - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
@@ -77,13 +67,18 @@ env:
     value: "6" # Adjust based on chain finality
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS
     value: "60000"
+  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_TIMEOUT"
+    value: "60"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
     value: "your-mainnet-celestia-signer-address" # FIXME (Optional)
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
-  #   value: "your-mainnet-genesis-blob-commitment" # FIXME
+  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP"
+    value: "false"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
     value: "true"
-
+  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD"
+    value: "100"
+  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED"
+    value: "5"
   # UTXO Manager
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS
     value: "10000000000" # Example: 100 DOGE for mainnet, adjust as needed

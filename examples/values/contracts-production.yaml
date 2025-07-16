@@ -1,5 +1,3 @@
-image:
-  tag: deploy-68493b496b21d98bdf432395b817d026a2a41e79
 configMaps:
   contracts-deployment-env:
     enabled: true

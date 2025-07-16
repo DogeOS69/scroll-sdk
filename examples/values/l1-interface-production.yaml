@@ -15,59 +15,83 @@ configMaps:
   env:
     enabled: true
     data:
-      DOGEOS_L1_INTERFACE_NETWORK_STR: "testnet"                              # testnet, mainnet
-      DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS: ""                        # L1_SCROLL_MESSENGER_PROXY_ADDR
-      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "8208200"                         # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
-      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: ""                        # L2_MOAT_PROXY_ADDR
-      DOGEOS_L1_INTERFACE_DEPOSIT_GAS_LIMIT: "500000"                         # predefined
-      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"                            # predefined
-      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"                   # genesis.BASE_FEE_PER_GAS
-      DOGEOS_L1_INTERFACE_L1_MINER_ADDRESS: "0x0000000000000000000000000000000000000001"  # predefined
-      DOGEOS_L1_INTERFACE_L1_EXTRA_DATA: "DogeOS Local Test"                  # predefined
+      DOGEOS_L1_INTERFACE_NETWORK_STR: "testnet"  # testnet, mainnet
+      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "0.0.0.0:8545"
+      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "0.0.0.0:5052"
+      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090"
+      DOGEOS_L1_INTERFACE_L1_CHAIN_ID: ""
+      DOGEOS_L1_INTERFACE_CHAIN_ID: ""
+      DOGEOS_L1_INTERFACE_SCROLL_CHAIN_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_DEPLOYMENT_BLOCK: "0"
+      DOGEOS_L1_INTERFACE_NUM_L1_MESSAGES_PER_BLOCK: "10"
+      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "8208200"
+      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_L2_MOAT_PROXY_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_DEPOSIT_GAS_LIMIT: "500000"
+      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"
+      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"
+      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
+      DOGEOS_L1_INTERFACE_RUN_MIGRATIONS: "true"
 
-      DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: ""                           # sequencer.L2GETH_SIGNER_ADDRESS 
-      DOGEOS_L1_INTERFACE_WITHDRAWAL_QUERY_LIMIT: "100"                       # predefined
-      DOGEOS_L1_INTERFACE_MAX_WITHDRAWAL_QUERY_LIMIT: "1000"                  # predefined
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin-testnet:44555"
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_URL: ""
 
-      DOGEOS_L1_INTERFACE_RUN_MIGRATIONS: "true"                              # predefined
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "8208200"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "true"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_WITHDRAWALS: "true"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "true"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "1000"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: ""
 
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin-testnet:44555"  # DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_URL: ""                     # DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://celestia-testnet-mocha:26657"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_NAMESPACE: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "8200000"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "6"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "1000"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: ""
 
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "8208200"           # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6"                # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "false"              # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_WITHDRAWALS: "true"         # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "true"            # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000"         # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: ""                # DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
+      # Sensitive environment variables, will be put into external secrets later
+      DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1_interface.sqlite"
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER: ""
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS: ""
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY: ""
 
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://celestia-testnet-mocha:26658"  # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_NAMESPACE: ""                  # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "8200000"            # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"                # predefined
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "15000"         # predefined
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"       # predefined
+envFrom:
+  - secretRef:
+      name: "l1-interface-secret-env"
+  # - configMapRef:
+  #     name: "l1-interface-env"
 
 # External Secrets configuration for production
-externalSecrets:
-  l1-interface-secret-env:
-    provider: "aws"
-    data:
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
-    refreshInterval: "2m"
-    serviceAccount: "external-secrets"
+# externalSecrets:
+#   l1-interface-secret-env:
+#     provider: "aws"
+#     data:
+#       - remoteRef:
+#           key: "dogeos/l1-interface-secret-env"
+#           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
+#         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
+#       - remoteRef:
+#           key: "dogeos/l1-interface-secret-env"
+#           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
+#         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
+#       - remoteRef:
+#           key: "dogeos/l1-interface-secret-env"
+#           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
+#         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
+#         refreshInterval: "2m"
+#       - remoteRef:
+#           key: "dogeos/l1-interface-secret-env"
+#           property: "DOGEOS_L1_INTERFACE_DATABASE_URL"
+#         secretKey: "DOGEOS_L1_INTERFACE_DATABASE_URL"
+#     refreshInterval: "2m"
+#     serviceAccount: "external-secrets"
 
 # Production resource limits
 resources:

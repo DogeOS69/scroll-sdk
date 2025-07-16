@@ -13,10 +13,9 @@ persistence:
     name: l1-devnet-env
   data:
     enabled: true
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /data
-
+    accessMode: "ReadWriteOnce"
+    size: "10Gi"
+    mountPath: "/data"
 configMaps:
   env:
     enabled: true
@@ -31,7 +30,13 @@ image:
 securityContext:
   runAsUser: 0
   fsGroup: 0
-
+resources:
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
 command:
   - bash
   - -c

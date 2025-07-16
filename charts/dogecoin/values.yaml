@@ -1,5 +1,4 @@
 replicaCount: 1
-namespace: default
 
 dogecoinConf:
   disablewallet: 1
@@ -49,8 +48,8 @@ service:
 # Storage
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
-  storageClassName: gp3-immediate      # Storage class with immediate binding
-  retainPvcOnUninstall: false          # Set to true to keep the PVC when the Helm chart is uninstalled.
+  storageClassName: ""    # Use cluster default storage class (more portable)
+  retainPvcOnUninstall: true           # IMPORTANT: Keep PVC when uninstalling to prevent data loss
 
 nodeSelector: {}
 
@@ -64,12 +63,13 @@ ingress:
   className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment for SSL
   hosts:
-    - host: dogecoin.testnet.dogeos.com
+    - host: dogecoin.example.com  # Replace with your domain
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: dogecoin-tls
       hosts:
-        - dogecoin.testnet.dogeos.com
+        - dogecoin.example.com  # Replace with your domain
