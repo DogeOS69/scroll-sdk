@@ -1,6 +1,6 @@
 # l2-rpc
 
-![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.7-dogeos](https://img.shields.io/badge/Version-0.1.7--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-rpc helm chart
 
@@ -40,8 +40,6 @@ Kubernetes: `>=1.22.0-0`
 | env[10].value | string | `"40960"` |  |
 | env[11].name | string | `"L2GETH_ACCOUNT_SLOTS"` |  |
 | env[11].value | string | `"128"` |  |
-| env[12].name | string | `"L2GETH_EXTRA_PARAMS"` |  |
-| env[12].value | string | `""` |  |
 | env[1].name | string | `"L2GETH_L1_WATCHER_CONFIRMATIONS"` |  |
 | env[1].value | string | `"0x6"` |  |
 | env[2].name | string | `"L2GETH_RPC_HTTP_PORT"` |  |

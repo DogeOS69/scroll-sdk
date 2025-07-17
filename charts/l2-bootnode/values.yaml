@@ -14,8 +14,6 @@ image:
   tag: scroll-v5.8.36
 
 env:
-  - name: L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK
-    value: "0"
   - name: L2GETH_L1_WATCHER_CONFIRMATIONS
     value: "0x6"
   - name: L2GETH_P2P_PORT
@@ -34,8 +32,6 @@ env:
     value: "40960"
   - name: L2GETH_ACCOUNT_SLOTS
     value: "128"
-  - name: L2GETH_EXTRA_PARAMS
-    value: ""
 
 envFrom:
   - configMapRef:

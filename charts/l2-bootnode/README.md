@@ -1,6 +1,6 @@
 # l2-bootnode
 
-![Version: 0.1.7-dogeos](https://img.shields.io/badge/Version-0.1.7--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.8-dogeos](https://img.shields.io/badge/Version-0.1.8--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-bootnode helm chart
 
@@ -34,28 +34,24 @@ Kubernetes: `>=1.22.0-0`
 | defaultProbes.spec.httpGet.path | string | `"/"` |  |
 | defaultProbes.spec.httpGet.port | int | `8545` |  |
 | envFrom[0].configMapRef.name | string | `"l2-bootnode-env"` |  |
-| env[0].name | string | `"L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK"` |  |
-| env[0].value | string | `"0"` |  |
-| env[10].name | string | `"L2GETH_EXTRA_PARAMS"` |  |
-| env[10].value | string | `""` |  |
-| env[1].name | string | `"L2GETH_L1_WATCHER_CONFIRMATIONS"` |  |
-| env[1].value | string | `"0x6"` |  |
-| env[2].name | string | `"L2GETH_P2P_PORT"` |  |
-| env[2].value | int | `30303` |  |
-| env[3].name | string | `"L2GETH_MAX_PEERS"` |  |
-| env[3].value | int | `500` |  |
-| env[4].name | string | `"VERBOSITY"` |  |
-| env[4].value | int | `3` |  |
-| env[5].name | string | `"L2GETH_MIN_GAS_PRICE"` |  |
-| env[5].value | string | `"1000000"` |  |
-| env[6].name | string | `"L2GETH_GLOBAL_QUEUE"` |  |
-| env[6].value | string | `"4096"` |  |
-| env[7].name | string | `"L2GETH_ACCOUNT_QUEUE"` |  |
-| env[7].value | string | `"256"` |  |
-| env[8].name | string | `"L2GETH_GLOBAL_SLOTS"` |  |
-| env[8].value | string | `"40960"` |  |
-| env[9].name | string | `"L2GETH_ACCOUNT_SLOTS"` |  |
-| env[9].value | string | `"128"` |  |
+| env[0].name | string | `"L2GETH_L1_WATCHER_CONFIRMATIONS"` |  |
+| env[0].value | string | `"0x6"` |  |
+| env[1].name | string | `"L2GETH_P2P_PORT"` |  |
+| env[1].value | int | `30303` |  |
+| env[2].name | string | `"L2GETH_MAX_PEERS"` |  |
+| env[2].value | int | `500` |  |
+| env[3].name | string | `"VERBOSITY"` |  |
+| env[3].value | int | `3` |  |
+| env[4].name | string | `"L2GETH_MIN_GAS_PRICE"` |  |
+| env[4].value | string | `"1000000"` |  |
+| env[5].name | string | `"L2GETH_GLOBAL_QUEUE"` |  |
+| env[5].value | string | `"4096"` |  |
+| env[6].name | string | `"L2GETH_ACCOUNT_QUEUE"` |  |
+| env[6].value | string | `"256"` |  |
+| env[7].name | string | `"L2GETH_GLOBAL_SLOTS"` |  |
+| env[7].value | string | `"40960"` |  |
+| env[8].name | string | `"L2GETH_ACCOUNT_SLOTS"` |  |
+| env[8].value | string | `"128"` |  |
 | global.fullnameOverride | string | `"l2-bootnode"` |  |
 | global.nameOverride | string | `"l2-bootnode"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |

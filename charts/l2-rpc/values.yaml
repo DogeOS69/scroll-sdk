@@ -69,8 +69,6 @@ env:
     value: "40960"
   - name: L2GETH_ACCOUNT_SLOTS
     value: "128"
-  - name: L2GETH_EXTRA_PARAMS
-    value: ""
 
 envFrom:
   - configMapRef:
