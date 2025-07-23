@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/rollup-relayer
   pullPolicy: IfNotPresent
-  tag: v4.5.7
+  tag: v4.5.31
 
 env:
   - name: METRICS_PORT
@@ -94,7 +94,7 @@ initContainers:
       - configMapRef:
           name: rollup-node-env
   2-migrate-db:
-    image: scrolltech/rollup-db-cli:v4.4.71
+    image: scrolltech/rollup-db-cli:v4.5.31
     command: ["/bin/sh", "-c", "db_cli migrate --config /config/migrate-db.json"]
     volumeMounts:
       - name: migrate-db

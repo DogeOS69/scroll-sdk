@@ -1,6 +1,8 @@
 [submodule "scroll-contracts"]
 	path = scroll-contracts
-	url = https://github.com/scroll-tech/scroll-contracts.git
+	url = https://github.com/DogeOS69/scroll-contracts.git
+	branch = try_merge_v3.0.0
 [submodule "scroll-sdk-cli"]
 	path = scroll-sdk-cli
-	url = https://github.com/scroll-tech/scroll-sdk-cli.git
+	url = https://github.com/DogeOS69/scroll-sdk-cli.git
+	branch = feat/fenyman

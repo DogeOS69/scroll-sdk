@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.8.36
+  tag: scroll-v5.8.74
 
 env:
   - name: L2GETH_L1_WATCHER_CONFIRMATIONS
@@ -71,6 +71,7 @@ command:
     --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" --gpo.percentile 20 --gpo.blocks 100 \
     --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" \
     --metrics --metrics.expensive \
+    --gossip.disabletxbroadcast \
     $L2GETH_EXTRA_PARAMS"
 
 initContainers:
