@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 | envFrom[0].configMapRef.name | string | `"contracts-deployment-env"` |  |
 | global.isStandalone | bool | `false` |  |
 | image.repository | string | `"dogeos69/scroll-stack-contracts"` |  |
-| image.tag | string | `"deploy-v0.2.0-debug"` |  |
+| image.tag | string | `"deploy-20250725-01"` |  |
 | scrollConfig | string | `"{}\n"` |  |
 | scrollConfigContracts | string | `"{}\n"` |  |
 
