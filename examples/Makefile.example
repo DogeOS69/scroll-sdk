@@ -96,7 +96,7 @@ install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
 		--version=0.1.7-dogeos \
 		--set image.tag=v4.5.31 \
-		--set image.repository=scroll-tech/rollup-relayer \
+		--set image.repository=scrolltech/rollup-relayer \
 		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
