@@ -1,13 +1,13 @@
 NAMESPACE ?= default
 
 .PHONY: prepare install-dogecoin install-celestia install-l1-devnet install-scroll-core \
-	install-l2-sequencer install-l2-bootnode install-contracts install-dogeos-da \
+	install-l2-sequencer install-l2-bootnode install-contracts install-da-publisher \
 	install-rollup-node install-gas-oracle install-deposit-processor \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-l1-devnet delete-dogecoin delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-deposit-processor delete-tso \
-	delete-dogeos-da delete-gas-oracle delete-rollup-node delete-cubesigner-signers \
+	delete-da-publisher delete-gas-oracle delete-rollup-node delete-cubesigner-signers \
 	delete-testnet-activity-helper
 
 prepare:
@@ -27,6 +27,7 @@ install-celestia:
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
 		--version=0.0.5 \
+		--set image.tag=073125-00 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -89,19 +90,18 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=360s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
-install-dogeos-da:
-	helm upgrade -i dogeos-da oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-da -n $(NAMESPACE) \
-		--wait  \
-		--set image.repository="dogeos69/da-publisher" \
-		--set image.tag="v0.2.0-alpha.1" \
-		--version=0.1.2 \
-		--values values/dogeos-da-production.yaml
+install-da-publisher:
+	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
+		--version=0.0.1 \
+		--set image.tag="073125-00" \
+		--values values/da-publisher-production.yaml \
+		--wait
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
 		--version=0.1.5-dogeos \
-		--set image.tag=v0.2.0-alpha.1 \
-		--set image.repository=dogeos69/rollup-relayer \
+		--set image.tag=v4.5.31 \
+		--set image.repository=scroll-tech/rollup-relayer \
 		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
@@ -116,11 +116,11 @@ install-gas-oracle:
 		--values values/gas-oracle-production.yaml \
 		--values values/gas-oracle-config.yaml
 
-install-deposit-processor:
-	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
-		--set image.tag=060925-00 \
-		--version=0.1.5 \
-		--values values/dogeos-deposit-processor-production.yaml
+# install-deposit-processor:
+# 	helm upgrade -i dogeos-deposit-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-deposit-processor -n $(NAMESPACE) \
+# 		--set image.tag=060925-00 \
+# 		--version=0.1.5 \
+# 		--values values/dogeos-deposit-processor-production.yaml
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
@@ -143,12 +143,13 @@ install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
 		--set image.tag=v0.1.0-beta \
-		--values values/tso-service-production.yaml
+		--values values/tso-service-production.yaml \
+		--wait
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.6 \
-		--set image.tag=v0.2.0-alpha.44 \
+		--set image.tag=073125-00 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -178,21 +179,19 @@ start-l1-sync:
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
-	$(MAKE) install-l1-devnet
+#	$(MAKE) install-l1-devnet
 	$(MAKE) install-scroll-core
-	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
-	scrollsdk helper fund-accounts -i -f 2 -d
-	scrollsdk helper fund-accounts -l 1 -f 2 -d
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
+#	scrollsdk helper fund-accounts -i -f 2 -d
+#	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-dogeos-da
-	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=dogeos-da -n $(NAMESPACE)
+	$(MAKE) install-da-publisher
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
-#    $(MAKE) install-deposit-processor
+#	$(MAKE) install-deposit-processor
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
-	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=tso-service -n $(NAMESPACE)
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
@@ -218,9 +217,9 @@ delete-all:
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true
-#    helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
-	helm delete -n $(NAMESPACE) dogeos-da || true
-	helm delete -n $(NAMESPACE) l1-devnet || true
+#	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
+	helm delete -n $(NAMESPACE) da-publisher || true
+#	helm delete -n $(NAMESPACE) l1-devnet || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
 
@@ -253,8 +252,8 @@ delete-deposit-processor:
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
 
-delete-dogeos-da:
-	helm delete -n $(NAMESPACE) dogeos-da
+delete-da-publisher:
+	helm delete -n $(NAMESPACE) da-publisher
 
 delete-gas-oracle:
 	helm delete -n $(NAMESPACE) gas-oracle

@@ -1,0 +1,74 @@
+global:
+  nameOverride: &app_name da-publisher
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/da-publisher
+  pullPolicy: Always
+  tag: latest
+
+service:
+  main:
+    enabled: false
+    ports:
+      http:
+        enabled: true
+        port: 3000
+      jsonrpc:
+        enabled: true
+        port: 3001
+        targetPort: 8545
+        protocol: TCP
+
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/healthz"
+      port: 3000
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+
+env:
+  - name: "RUST_LOG"
+    value: "info"
+
+configMaps:
+  env:
+    enabled: true
+    data:
+      DOGEOS_DA_PUBLISHER_JSON_RPC_ADDRESS: "0.0.0.0"
+      DOGEOS_DA_PUBLISHER_JSON_RPC_PORT: "3001"
+      DOGEOS_DA_PUBLISHER_LISTEN_ADDRESS: "0.0.0.0"
+      DOGEOS_DA_PUBLISHER_LISTEN_PORT: "3000"
+
+envFrom:
+  - configMapRef:
+      name: "da-publisher-env"
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+
+serviceMonitor:
+  main:
+    enabled: true
