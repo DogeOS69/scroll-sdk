@@ -1,6 +1,6 @@
 # l1-interface
 
-![Version: 0.0.4](https://img.shields.io/badge/Version-0.0.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.5](https://img.shields.io/badge/Version-0.0.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DogeOS L1 interface
 
@@ -29,6 +29,7 @@ Kubernetes: `>=1.22.0-0`
 | configMaps.env.data.DOGEOS_L1_INTERFACE_DATABASE_URL | string | `"sqlite:///data/l1-interface.sqlite"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH | string | `"/app/genesis/genesis.json"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS | string | `"0.0.0.0:9090"` |  |
+| configMaps.env.data.DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE | string | `"true"` |  |
 | configMaps.env.enabled | bool | `true` |  |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
@@ -71,6 +72,10 @@ Kubernetes: `>=1.22.0-0`
 | resources.requests.cpu | string | `"200m"` |  |
 | resources.requests.memory | string | `"256Mi"` |  |
 | service.main.enabled | bool | `true` |  |
+| service.main.ports.admin.enabled | bool | `true` |  |
+| service.main.ports.admin.port | int | `9091` |  |
+| service.main.ports.admin.protocol | string | `"TCP"` |  |
+| service.main.ports.admin.targetPort | int | `9091` |  |
 | service.main.ports.beacon.enabled | bool | `true` |  |
 | service.main.ports.beacon.port | int | `5052` |  |
 | service.main.ports.beacon.protocol | string | `"TCP"` |  |

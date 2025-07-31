@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "071425-00"
+  tag: "072425-01"
 
 # Direct environment variables
 env:
@@ -19,6 +19,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS: ""                        # L1_SCROLL_MESSENGER_PROXY_ADDR
       DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "8208200"                         # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
       DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: ""                        # L2_MOAT_PROXY_ADDR
+      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: ""                            # L2_DOGEOS_MESSENGER_PROXY_ADDR
       DOGEOS_L1_INTERFACE_DEPOSIT_GAS_LIMIT: "500000"                         # predefined
       DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"                            # predefined
       DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"                   # genesis.BASE_FEE_PER_GAS

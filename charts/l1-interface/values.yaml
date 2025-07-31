@@ -31,6 +31,11 @@ service:
         port: 9090
         targetPort: 9090
         protocol: TCP
+      admin:
+        enabled: true
+        port: 9091
+        targetPort: 9091
+        protocol: TCP
 
 defaultProbes: &default_probes
   enabled: true
@@ -84,6 +89,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090"
       DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
       DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite"
+      DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true"
 
 envFrom:
   - secretRef:

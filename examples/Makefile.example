@@ -26,7 +26,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.4 \
+		--version=0.0.5 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -43,6 +43,8 @@ install-scroll-core:
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
 		--version=0.1.1-dogeos \
 		--values values/genesis.yaml
+
+	$(MAKE) install-l1-interface
 
 	helm upgrade -i grafana-alloy grafana/alloy -n $(NAMESPACE) \
 		--version=1.0.2 \
@@ -169,10 +171,13 @@ install-testnet-activity-helper:
 		--version=0.1.1 \
 		--values values/testnet-activity-helper-production.yaml
 
+start-l1-sync:
+	kubectl exec -n $(NAMESPACE) $$(kubectl get pod -n $(NAMESPACE) -l app.kubernetes.io/name=rollup-node -o jsonpath='{.items[0].metadata.name}') -- \
+		curl -X POST http://l1-interface:9091/disable-genesis-hold
+
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
-	$(MAKE) install-l1-interface
 	$(MAKE) install-l1-devnet
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-devnet -n $(NAMESPACE)
@@ -184,13 +189,15 @@ install-all:
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=dogeos-da -n $(NAMESPACE)
 	$(MAKE) install-rollup-node
 	$(MAKE) install-gas-oracle
-	$(MAKE) install-deposit-processor
+#    $(MAKE) install-deposit-processor
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
+	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=tso-service -n $(NAMESPACE)
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
 	$(MAKE) install-testnet-activity-helper
+	$(MAKE) start-l1-sync
 
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
@@ -211,7 +218,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true
-	helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
+#    helm delete -n $(NAMESPACE) dogeos-deposit-processor || true
 	helm delete -n $(NAMESPACE) dogeos-da || true
 	helm delete -n $(NAMESPACE) l1-devnet || true
 	helm delete -n $(NAMESPACE) l1-interface || true
