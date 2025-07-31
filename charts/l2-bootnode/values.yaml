@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.8.36
+  tag: scroll-v5.8.74
 
 env:
   - name: L2GETH_L1_WATCHER_CONFIRMATIONS
@@ -60,6 +60,7 @@ command:
     --miner.gasprice \"$L2GETH_MIN_GAS_PRICE\" --rpc.gascap 0 \
     --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" \
     --metrics --metrics.expensive \
+    --gossip.enablebroadcasttoall	\
     $L2GETH_EXTRA_PARAMS"
 
 initContainers:
