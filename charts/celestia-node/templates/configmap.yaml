@@ -70,8 +70,9 @@ data:
       AdvertiseInterval = "1h0m0s"
 
     [Header]
-    TrustedHash = ""
-    TrustedPeers = []
+    TrustedHash = "{{ .Values.share.light.trustedHash }}"
+    TrustedPeers = {{ .Values.share.light.trustedPeers | toJson }}
+    TrustedHeight = {{ printf "%d" (int .Values.share.light.trustedHeight) }}
     [Header.Store]
       StoreCacheSize = 512
       IndexCacheSize = 2048
@@ -90,5 +91,9 @@ data:
     SamplingRange = {{ default 128 .Values.share.samplingRange }}
     ConcurrencyLimit = {{ default 8 .Values.share.discovery.concurrencyLimit }}
     BackgroundStoreInterval = "10m0s"
+    {{- if and .Values.share.light.trustedHeight (gt (int .Values.share.light.trustedHeight) 0) }}
+    SampleFrom = {{ printf "%d" (int .Values.share.light.trustedHeight) }}
+    {{- else }}
     SampleFrom = 1
+    {{- end }}
     SampleTimeout = "2m40s"
