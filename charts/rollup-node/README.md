@@ -1,6 +1,6 @@
 # rollup-node
 
-![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.7-dogeos](https://img.shields.io/badge/Version-0.1.7--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 rollup-node helm charts
 
@@ -61,14 +61,6 @@ Kubernetes: `>=1.22.0-0`
 | initContainers.3-wait-for-l1.volumeMounts[0].mountPath | string | `"/wait-for-l1.sh"` |  |
 | initContainers.3-wait-for-l1.volumeMounts[0].name | string | `"wait-for-l1-script"` |  |
 | initContainers.3-wait-for-l1.volumeMounts[0].subPath | string | `"wait-for-l1.sh"` |  |
-| initContainers.4-wait-for-contract.command[0] | string | `"/bin/sh"` |  |
-| initContainers.4-wait-for-contract.command[1] | string | `"-c"` |  |
-| initContainers.4-wait-for-contract.command[2] | string | `"/wait-for-contract.sh $L1_RPC_ENDPOINT $L1_SCROLL_CHAIN_PROXY_ADDR"` |  |
-| initContainers.4-wait-for-contract.envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
-| initContainers.4-wait-for-contract.image | string | `"scrolltech/scroll-alpine:v0.0.1"` |  |
-| initContainers.4-wait-for-contract.volumeMounts[0].mountPath | string | `"/wait-for-contract.sh"` |  |
-| initContainers.4-wait-for-contract.volumeMounts[0].name | string | `"wait-for-contracts-script"` |  |
-| initContainers.4-wait-for-contract.volumeMounts[0].subPath | string | `"wait-for-contract.sh"` |  |
 | persistence.app_name.enabled | bool | `true` |  |
 | persistence.app_name.mountPath | string | `"/app/conf/"` |  |
 | persistence.app_name.name | string | `"rollup-config"` |  |
