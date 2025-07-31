@@ -21,6 +21,8 @@ share:
     concurrencyLimit: 8
   light:
     trustedPeers: []
+    # The trusted hash of the light node, corresponding to the trusted height.
+    trustedHash: null
     trustedHeight: 0
     samplingRange: 128
     samplingPeriod: "1s"
@@ -28,7 +30,7 @@ share:
 
 image:
   repository: "ghcr.io/celestiaorg/celestia-node"
-  tag: "v0.22.2-mocha"
+  tag: "v0.24.1-mocha"
   pullPolicy: IfNotPresent
 
 storage:

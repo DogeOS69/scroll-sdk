@@ -21,15 +21,11 @@ share:
     concurrencyLimit: 8
   light:
     trustedPeers: []
-    trustedHeight: 0
+    trustedHeight: 7410000
+    trustedHash: "3A23865AE9BDB52D775259431B114552F02DECBB0C56D799FDFB6DFB21534285"
     samplingRange: 128
     samplingPeriod: "1s"
     waitForCheckpoint: false
-
-image:
-  repository: "ghcr.io/celestiaorg/celestia-node"
-  tag: "v0.23.3-mocha"
-  pullPolicy: IfNotPresent
 
 storage:
   size: "220Gi"
