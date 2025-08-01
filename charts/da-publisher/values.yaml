@@ -14,15 +14,14 @@ image:
 
 service:
   main:
-    enabled: false
+    enabled: true
     ports:
       http:
         enabled: true
         port: 3000
       jsonrpc:
         enabled: true
-        port: 3001
-        targetPort: 8545
+        port: 8545
         protocol: TCP
 
 
@@ -51,7 +50,7 @@ configMaps:
     enabled: true
     data:
       DOGEOS_DA_PUBLISHER_JSON_RPC_ADDRESS: "0.0.0.0"
-      DOGEOS_DA_PUBLISHER_JSON_RPC_PORT: "3001"
+      DOGEOS_DA_PUBLISHER_JSON_RPC_PORT: "8545"
       DOGEOS_DA_PUBLISHER_LISTEN_ADDRESS: "0.0.0.0"
       DOGEOS_DA_PUBLISHER_LISTEN_PORT: "3000"
 

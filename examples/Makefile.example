@@ -59,6 +59,11 @@ install-scroll-core:
 	$(MAKE) install-l2-bootnode
 	$(MAKE) install-l2-rpc
 
+install-l2-rpc:
+	helm upgrade -i l2-rpc ${CHARTS}/l2-rpc -n $(NAMESPACE) \
+		--version=0.1.8-dogeos \
+		--values values/l2-rpc-production.yaml
+
 install-l2-sequencer:
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
 		--version=0.1.8-dogeos \
@@ -87,16 +92,16 @@ install-contracts:
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.1 \
-		--set image.tag="073125-00" \
+		--version=0.0.2 \
+		--set image.tag="080125-01" \
 		--values values/da-publisher-production.yaml \
 		--wait
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
-		--version=0.1.5-dogeos \
+		--version=0.1.7-dogeos \
 		--set image.tag=v4.5.31 \
-		--set image.repository=scroll-tech/rollup-relayer \
+		--set image.repository=scrolltech/rollup-relayer \
 		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
@@ -279,7 +284,3 @@ delete-l2-rpc:
 	helm delete -n $(NAMESPACE) l2-rpc
 	kubectl delete pvc -n $(NAMESPACE) data-l2-rpc-0
 
-install-l2-rpc:
-	helm upgrade -i l2-rpc ${CHARTS}/l2-rpc -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
-		--values values/l2-rpc-production.yaml
