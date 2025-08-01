@@ -1,6 +1,6 @@
 # da-publisher
 
-![Version: 0.0.1](https://img.shields.io/badge/Version-0.0.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.2](https://img.shields.io/badge/Version-0.0.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DA Publisher
 
@@ -23,7 +23,7 @@ Kubernetes: `>=1.22.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | configMaps.env.data.DOGEOS_DA_PUBLISHER_JSON_RPC_ADDRESS | string | `"0.0.0.0"` |  |
-| configMaps.env.data.DOGEOS_DA_PUBLISHER_JSON_RPC_PORT | string | `"3001"` |  |
+| configMaps.env.data.DOGEOS_DA_PUBLISHER_JSON_RPC_PORT | string | `"8545"` |  |
 | configMaps.env.data.DOGEOS_DA_PUBLISHER_LISTEN_ADDRESS | string | `"0.0.0.0"` |  |
 | configMaps.env.data.DOGEOS_DA_PUBLISHER_LISTEN_PORT | string | `"3000"` |  |
 | configMaps.env.enabled | bool | `true` |  |
@@ -58,11 +58,11 @@ Kubernetes: `>=1.22.0-0`
 | resources.limits.memory | string | `"512Mi"` |  |
 | resources.requests.cpu | string | `"100m"` |  |
 | resources.requests.memory | string | `"128Mi"` |  |
-| service.main.enabled | bool | `false` |  |
+| service.main.enabled | bool | `true` |  |
 | service.main.ports.http.enabled | bool | `true` |  |
 | service.main.ports.http.port | int | `3000` |  |
 | service.main.ports.jsonrpc.enabled | bool | `true` |  |
-| service.main.ports.jsonrpc.port | int | `3001` |  |
+| service.main.ports.jsonrpc.port | int | `8545` |  |
 | service.main.ports.jsonrpc.protocol | string | `"TCP"` |  |
 | service.main.ports.jsonrpc.targetPort | int | `8545` |  |
 | serviceMonitor.main.enabled | bool | `true` |  |

@@ -87,7 +87,7 @@ install-contracts:
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.1 \
+		--version=0.0.2 \
 		--set image.tag="073125-00" \
 		--values values/da-publisher-production.yaml \
 		--wait
