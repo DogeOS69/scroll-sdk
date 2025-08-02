@@ -60,7 +60,7 @@ install-scroll-core:
 	$(MAKE) install-l2-rpc
 
 install-l2-rpc:
-	helm upgrade -i l2-rpc ${CHARTS}/l2-rpc -n $(NAMESPACE) \
+	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
 		--version=0.1.8-dogeos \
 		--values values/l2-rpc-production.yaml
 
@@ -85,6 +85,7 @@ install-l2-bootnode:
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
 		--version=0.1.15 \
+		--set image.tag="deploy-08012503" \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
