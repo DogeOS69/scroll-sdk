@@ -84,7 +84,7 @@ install-l2-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.15 \
+		--version=0.1.16 \
 		--set image.tag="deploy-08012503" \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
@@ -149,8 +149,8 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.6 \
-		--set image.tag=073125-00 \
+		--version=0.1.7 \
+		--set image.tag=080225-00 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
