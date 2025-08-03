@@ -84,7 +84,7 @@ install-l2-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.15 \
+		--version=0.1.16 \
 		--set image.tag="deploy-08012503" \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
