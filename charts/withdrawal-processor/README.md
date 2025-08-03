@@ -78,8 +78,8 @@ Kubernetes: `>=1.22.0-0`
 | env[2].value | string | `"3000"` |  |
 | env[30].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS"` |  |
 | env[30].value | string | `"1000000000"` |  |
-| env[31].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__MIN_AGE_SECS"` |  |
-| env[31].value | string | `"3600"` |  |
+| env[31].name | string | `"DOGEOS_WITHDRAWAL_UTXO_MANAGER__BRIDGE_MIN_CONFIRMATIONS"` |  |
+| env[31].value | string | `"10"` |  |
 | env[32].name | string | `"DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT"` |  |
 | env[32].value | string | `"0"` |  |
 | env[33].name | string | `"DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID"` |  |
