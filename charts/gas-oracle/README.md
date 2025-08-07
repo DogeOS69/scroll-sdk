@@ -23,11 +23,12 @@ Kubernetes: `>=1.22.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| command[0] | string | `"bash"` |  |
-| command[1] | string | `"-c"` |  |
-| command[2] | string | `"gas_oracle --config /app/conf/rollup-config.json --genesis /app/genesis/genesis.json --metrics --metrics.addr 0.0.0.0 --metrics.port ${METRICS_PORT} --log.debug"` |  |
-| configMaps.migrate-db.data."migrate-db.json" | string | `"{\n    \"driver_name\": \"postgres\",\n    \"dsn\": \"\"\n}\n"` |  |
-| configMaps.migrate-db.enabled | bool | `true` |  |
+| command[0] | string | `"/usr/local/bin/fee_oracle"` |  |
+| command[1] | string | `"--config"` |  |
+| command[2] | string | `"/config/fee_oracle.toml"` |  |
+| configMaps.env.data.SCROLL_L1_RPC | string | `""` |  |
+| configMaps.env.data.SCROLL_L2_RPC | string | `""` |  |
+| configMaps.env.enabled | bool | `true` |  |
 | defaultProbes.custom | bool | `true` |  |
 | defaultProbes.enabled | bool | `true` |  |
 | defaultProbes.spec.httpGet.path | string | `"/health"` |  |
@@ -35,53 +36,32 @@ Kubernetes: `>=1.22.0-0`
 | envFrom[0].configMapRef.name | string | `"gas-oracle-env"` |  |
 | env[0].name | string | `"METRICS_PORT"` |  |
 | env[0].value | int | `8090` |  |
+| feeOracleConfig | string | `"# Fee Oracle Configuration\n# Override this configuration in your values file\n"` |  |
 | global.fullnameOverride | string | `"gas-oracle"` |  |
 | global.nameOverride | string | `"gas-oracle"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"scrolltech/gas-oracle"` |  |
-| image.tag | string | `"v4.5.31"` |  |
-| initContainers.1-check-postgres-connection.args[0] | string | `"postgresql"` |  |
-| initContainers.1-check-postgres-connection.args[1] | string | `"$(SCROLL_ROLLUP_DB_CONFIG_DSN)"` |  |
-| initContainers.1-check-postgres-connection.args[2] | string | `"--timeout"` |  |
-| initContainers.1-check-postgres-connection.args[3] | string | `"0"` |  |
-| initContainers.1-check-postgres-connection.envFrom[0].configMapRef.name | string | `"gas-oracle-env"` |  |
-| initContainers.1-check-postgres-connection.image | string | `"atkrad/wait4x:latest"` |  |
-| initContainers.2-migrate-db.command[0] | string | `"/bin/sh"` |  |
-| initContainers.2-migrate-db.command[1] | string | `"-c"` |  |
-| initContainers.2-migrate-db.command[2] | string | `"db_cli migrate --config /config/migrate-db.json"` |  |
-| initContainers.2-migrate-db.envFrom[0].configMapRef.name | string | `"gas-oracle-env"` |  |
-| initContainers.2-migrate-db.image | string | `"scrolltech/rollup-db-cli:v4.5.7"` |  |
-| initContainers.2-migrate-db.volumeMounts[0].mountPath | string | `"/config/migrate-db.json"` |  |
-| initContainers.2-migrate-db.volumeMounts[0].name | string | `"migrate-db"` |  |
-| initContainers.2-migrate-db.volumeMounts[0].subPath | string | `"migrate-db.json"` |  |
-| initContainers.3-wait-for-l1.command[0] | string | `"/bin/sh"` |  |
-| initContainers.3-wait-for-l1.command[1] | string | `"-c"` |  |
-| initContainers.3-wait-for-l1.command[2] | string | `"/wait-for-l1.sh $SCROLL_L1_RPC"` |  |
-| initContainers.3-wait-for-l1.envFrom[0].configMapRef.name | string | `"gas-oracle-env"` |  |
-| initContainers.3-wait-for-l1.image | string | `"scrolltech/scroll-alpine:v0.0.1"` |  |
-| initContainers.3-wait-for-l1.volumeMounts[0].mountPath | string | `"/wait-for-l1.sh"` |  |
-| initContainers.3-wait-for-l1.volumeMounts[0].name | string | `"wait-for-l1-script"` |  |
-| initContainers.3-wait-for-l1.volumeMounts[0].subPath | string | `"wait-for-l1.sh"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[0] | string | `"http"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[1] | string | `"http://l2-sequencer:8545"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[2] | string | `"--expect-status-code"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[3] | string | `"200"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[4] | string | `"--timeout"` |  |
-| initContainers.4-wait-for-l2-sequencer.args[5] | string | `"0"` |  |
-| initContainers.4-wait-for-l2-sequencer.image | string | `"atkrad/wait4x:latest"` |  |
-| persistence.app_name.enabled | bool | `true` |  |
-| persistence.app_name.mountPath | string | `"/app/conf/"` |  |
-| persistence.app_name.name | string | `"gas-oracle-config"` |  |
-| persistence.app_name.type | string | `"configMap"` |  |
-| persistence.genesis.enabled | bool | `true` |  |
-| persistence.genesis.mountPath | string | `"/app/genesis/"` |  |
-| persistence.genesis.name | string | `"genesis-config"` |  |
-| persistence.genesis.type | string | `"configMap"` |  |
-| persistence.migrate-db.defaultMode | string | `"0777"` |  |
-| persistence.migrate-db.enabled | bool | `true` |  |
-| persistence.migrate-db.mountPath | string | `"/config/migrate-db.json"` |  |
-| persistence.migrate-db.name | string | `"gas-oracle-migrate-db"` |  |
-| persistence.migrate-db.type | string | `"configMap"` |  |
+| image.repository | string | `"dogeos69/fee-oracle"` |  |
+| image.tag | string | `"080625-0"` |  |
+| initContainers.1-wait-for-l1.command[0] | string | `"/bin/sh"` |  |
+| initContainers.1-wait-for-l1.command[1] | string | `"-c"` |  |
+| initContainers.1-wait-for-l1.command[2] | string | `"/wait-for-l1.sh $SCROLL_L1_RPC"` |  |
+| initContainers.1-wait-for-l1.envFrom[0].configMapRef.name | string | `"gas-oracle-env"` |  |
+| initContainers.1-wait-for-l1.image | string | `"scrolltech/scroll-alpine:v0.0.1"` |  |
+| initContainers.1-wait-for-l1.volumeMounts[0].mountPath | string | `"/wait-for-l1.sh"` |  |
+| initContainers.1-wait-for-l1.volumeMounts[0].name | string | `"wait-for-l1-script"` |  |
+| initContainers.1-wait-for-l1.volumeMounts[0].subPath | string | `"wait-for-l1.sh"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[0] | string | `"http"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[1] | string | `"http://l2-sequencer:8545"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[2] | string | `"--expect-status-code"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[3] | string | `"200"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[4] | string | `"--timeout"` |  |
+| initContainers.2-wait-for-l2-sequencer.args[5] | string | `"0"` |  |
+| initContainers.2-wait-for-l2-sequencer.image | string | `"atkrad/wait4x:latest"` |  |
+| persistence.fee-oracle-config.enabled | bool | `true` |  |
+| persistence.fee-oracle-config.mountPath | string | `"/config/fee_oracle.toml"` |  |
+| persistence.fee-oracle-config.name | string | `"fee-oracle-config"` |  |
+| persistence.fee-oracle-config.subPath | string | `"fee_oracle.toml"` |  |
+| persistence.fee-oracle-config.type | string | `"configMap"` |  |
 | persistence.wait-for-l1-script.defaultMode | string | `"0777"` |  |
 | persistence.wait-for-l1-script.enabled | bool | `true` |  |
 | persistence.wait-for-l1-script.name | string | `"wait-for-l1-script"` |  |
@@ -104,7 +84,6 @@ Kubernetes: `>=1.22.0-0`
 | resources.limits.memory | string | `"500Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"100Mi"` |  |
-| scrollConfig | string | `"{}\n"` |  |
 | service.main.enabled | bool | `true` |  |
 | service.main.ports.http.enabled | bool | `true` |  |
 | service.main.ports.http.port | int | `80` |  |

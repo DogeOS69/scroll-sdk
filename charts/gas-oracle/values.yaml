@@ -4,14 +4,14 @@ global:
   fullnameOverride: *app_name
 
 image:
-  repository: scrolltech/gas-oracle
+  repository: dogeos69/fee-oracle
   pullPolicy: IfNotPresent
-  tag: v4.5.31
+  tag: 080625-0
 
 command:
-  - "bash"
-  - "-c"
-  - "gas_oracle --config /app/conf/rollup-config.json --genesis /app/genesis/genesis.json --metrics --metrics.addr 0.0.0.0 --metrics.port ${METRICS_PORT} --log.debug"
+  - "/usr/local/bin/fee_oracle"
+  - "--config"
+  - "/config/fee_oracle.toml"
 
 podLabels:
   app: *app_name
@@ -26,27 +26,17 @@ resources:
     cpu: "100m"
 
 persistence:
-  *app_name:
-    enabled: true
-    type: configMap
-    mountPath: /app/conf/
-    name: gas-oracle-config
-  genesis:
-    enabled: true
-    type: configMap
-    mountPath: /app/genesis/
-    name: genesis-config
-  migrate-db:
-    enabled: true
-    type: configMap
-    mountPath: /config/migrate-db.json
-    name: gas-oracle-migrate-db
-    defaultMode: "0777"
   wait-for-l1-script:
     enabled: true
     type: configMap
     name: wait-for-l1-script
     defaultMode: "0777"
+  fee-oracle-config:
+    enabled: true
+    type: configMap
+    mountPath: /config/fee_oracle.toml
+    name: fee-oracle-config
+    subPath: fee_oracle.toml
 
 service:
   main:
@@ -85,27 +75,7 @@ envFrom:
       name: gas-oracle-env
 
 initContainers:
-  1-check-postgres-connection:
-    image: atkrad/wait4x:latest
-    args:
-      - postgresql
-      - $(SCROLL_ROLLUP_DB_CONFIG_DSN)
-      - --timeout
-      - "0"
-    envFrom:
-      - configMapRef:
-          name: gas-oracle-env
-  2-migrate-db:
-    image: scrolltech/rollup-db-cli:v4.5.7
-    command: ["/bin/sh", "-c", "db_cli migrate --config /config/migrate-db.json"]
-    volumeMounts:
-      - name: migrate-db
-        mountPath: /config/migrate-db.json
-        subPath: migrate-db.json
-    envFrom:
-      - configMapRef:
-          name: gas-oracle-env
-  3-wait-for-l1:
+  1-wait-for-l1:
     image: scrolltech/scroll-alpine:v0.0.1
     command:
       - /bin/sh
@@ -118,7 +88,7 @@ initContainers:
       - name: wait-for-l1-script
         mountPath: /wait-for-l1.sh
         subPath: wait-for-l1.sh
-  4-wait-for-l2-sequencer:
+  2-wait-for-l2-sequencer:
     image: atkrad/wait4x:latest
     args:
       - http
@@ -129,14 +99,11 @@ initContainers:
       - "0"
 
 configMaps:
-  migrate-db:
+  env:
     enabled: true
     data:
-      migrate-db.json: |
-        {
-            "driver_name": "postgres",
-            "dsn": ""
-        }
+      SCROLL_L1_RPC: ""
+      SCROLL_L2_RPC: ""
 
 serviceMonitor:
   main:
@@ -149,5 +116,6 @@ serviceMonitor:
         interval: 1m
         scrapeTimeout: 10s
 
-scrollConfig: |
-  {}
+feeOracleConfig: |
+  # Fee Oracle Configuration
+  # Override this configuration in your values file
