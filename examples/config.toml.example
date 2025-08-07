@@ -3,6 +3,7 @@
 DA_PUBLISHER_ENDPOINT = "http://da-publisher:8545"
 L1_RPC_ENDPOINT = "http://l1-interface:8545"
 L1_RPC_ENDPOINT_WEBSOCKET = "ws://l1-devnet:8546"
+BEACON_RPC_ENDPOINT = "http://l1-interface:5052"
 L2_RPC_ENDPOINT = "http://l2-rpc:8545"
 
 CHAIN_NAME_L1 = "DOGE"

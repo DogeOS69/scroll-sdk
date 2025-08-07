@@ -47,6 +47,7 @@ command:
     --port \"$L2GETH_P2P_PORT\" --nodiscover --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" \
     --bootnodes \"\" \
     --scroll-mpt \
+    --rollup.verify --da.blob.beaconnode \"$L2GETH_DA_BLOB_BEACON_NODE\" \
     --gcmode full \
     --config \"/l2geth/config.toml\" \
     --cache.noprefetch \
