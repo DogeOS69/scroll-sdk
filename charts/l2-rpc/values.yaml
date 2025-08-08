@@ -88,6 +88,7 @@ command:
     --ws --ws.port \"$L2GETH_RPC_WS_PORT\" --ws.addr \"0.0.0.0\" --ws.api \"eth,scroll,net,web3,debug\" \
     $METRICS_FLAGS \
     --scroll-mpt \
+    --rollup.verify --da.blob.beaconnode \"$L2GETH_DA_BLOB_BEACON_NODE\" \
     --gcmode archive \
     --cache.noprefetch \
     --verbosity 3 \
