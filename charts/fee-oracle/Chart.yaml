@@ -1,0 +1,18 @@
+apiVersion: v2
+name: fee-oracle
+description: A Helm chart for the DogeOS fee oracle
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+kubeVersion: ">=1.22.0-0"
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com
+
+dependencies:
+  - name: common
+    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
+    version: 1.5.1
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4
