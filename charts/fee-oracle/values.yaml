@@ -1,0 +1,87 @@
+global:
+  nameOverride: &app_name fee-oracle
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/fee-oracle
+  pullPolicy: Always
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 8080
+      metrics:
+        enabled: true
+        port: 9090
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/health"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+
+# Resource configuration
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "50m"
+  limits:
+    memory: "512Mi"
+    cpu: "200m"
+
+# Persistent storage configuration
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+command: ["/usr/local/bin/fee_oracle"]
+
+configMaps:
+  env:
+    enabled: true
+    data:
+      DOGEOS_FEE_ORACLE_DATABASE__SQLITE_PATH: "/data/fee_oracle.db"
+      DOGEOS_FEE_ORACLE_MONITORING__METRICS_PORT: "9090"
+      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_CHECK_PORT: "8080"
+      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_BIND_ADDRESS: "0.0.0.0"
+      DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY_ENV: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
+
+envFrom:
+  - secretRef:
+      name: "fee-oracle-secret-env"
+  - configMapRef:
+      name: "fee-oracle-env"
+
+# Monitoring configuration
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: metrics
+        scheme: http
+        path: /metrics
+        interval: 30s
+        scrapeTimeout: 10s
