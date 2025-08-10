@@ -1,6 +1,6 @@
 # blockscout-sc-verifier
 
-![Version: 0.1.3-dogeos](https://img.shields.io/badge/Version-0.1.3--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.4-dogeos](https://img.shields.io/badge/Version-0.1.4--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout-sc-verifier helm charts
 
@@ -78,6 +78,10 @@ Kubernetes: `>=1.22.0-0`
 | probes.liveness.enabled | bool | `false` |  |
 | probes.readiness.enabled | bool | `false` |  |
 | probes.startup.enabled | bool | `false` |  |
+| resources.limits.cpu | string | `"200m"` |  |
+| resources.limits.memory | string | `"512Mi"` |  |
+| resources.requests.cpu | string | `"100m"` |  |
+| resources.requests.memory | string | `"128Mi"` |  |
 | service.main.enabled | bool | `true` |  |
 | service.main.ports.http.enabled | bool | `true` |  |
 | service.main.ports.http.port | int | `8080` |  |

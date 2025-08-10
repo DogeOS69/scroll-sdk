@@ -10,6 +10,15 @@ service:
   port: 44556             # 44556 for testnet, 22556 for mainnet
   rpcPort: 44555          # 44555 for testnet, 22555 for mainnet
 
+# Resource configuration
+resources:
+  requests:
+    memory: "4Gi"
+    cpu: "500m"
+  limits:
+    memory: "6Gi"
+    cpu: "2000m"
+
 # Storage
 storage:
   size: 50Gi              # Should be > 200Gi for mainnet
