@@ -144,6 +144,15 @@ service:
         targetPort: 30303
         protocol: UDP
 
+# Resource configuration
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "100m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
 serviceMonitor:
   main:
     enabled: true

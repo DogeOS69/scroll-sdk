@@ -16,7 +16,7 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.6 \
+		--version=0.1.7 \
 		--values values/dogecoin-production.yaml
 
 install-celestia:
@@ -26,7 +26,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.5 \
+		--version=0.0.6 \
 		--set image.tag=073125-00 \
 		--values values/l1-interface-production.yaml
 
@@ -38,7 +38,7 @@ install-l1-devnet:
 
 install-scroll-core:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.5-dogeos \
+		--version=0.1.6-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
@@ -52,7 +52,7 @@ install-scroll-core:
 		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
-		--version=0.1.6 \
+		--version=0.1.7 \
 		--values values/metrics-exporter-production.yaml
 
 	$(MAKE) install-l2-sequencer
@@ -61,7 +61,7 @@ install-scroll-core:
 
 install-l2-rpc:
 	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
-		--version=0.1.9-dogeos \
+		--version=0.1.10-dogeos \
 		--values values/l2-rpc-production.yaml
 
 install-l2-sequencer:
@@ -75,11 +75,11 @@ install-l2-sequencer:
 
 install-l2-bootnode:
 	helm upgrade -i l2-bootnode-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.10-dogeos \
+		--version=0.1.11-dogeos \
 		--values values/l2-bootnode-production-0.yaml
 
 	helm upgrade -i l2-bootnode-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.10-dogeos \
+		--version=0.1.11-dogeos \
 		--values values/l2-bootnode-production-1.yaml
 
 install-contracts:
@@ -100,7 +100,7 @@ install-da-publisher:
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
-		--version=0.1.7-dogeos \
+		--version=0.1.8-dogeos \
 		--set image.tag=v4.5.31 \
 		--set image.repository=scrolltech/rollup-relayer \
 		--set image.pullPolicy=Always \
@@ -153,7 +153,7 @@ install-blockscout:
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-	 	--version=0.1.3-dogeos
+	 	--version=0.1.4-dogeos
 
 install-frontends:
 	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
@@ -164,7 +164,7 @@ install-frontends:
 
 install-testnet-activity-helper:
 	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/testnet-activity-helper-production.yaml
 
 start-l1-sync:

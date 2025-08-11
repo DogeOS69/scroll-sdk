@@ -28,6 +28,15 @@ service:
         port: 6060
         targetPort: 6060
 
+# Resource configuration
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "100m"
+  limits:
+    memory: "4Gi"
+    cpu: "1000m"
+
 defaultProbes: &default_probes
   enabled: true
   custom: true

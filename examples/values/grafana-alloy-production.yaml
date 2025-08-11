@@ -3,7 +3,16 @@ controller:
   replicas: 1
   autoscaling:
     enabled: false
+
 alloy:
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
   extraPorts:
     - name: celestia
       port: 4318

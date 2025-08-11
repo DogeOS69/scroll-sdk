@@ -1,6 +1,6 @@
 # l2-rpc
 
-![Version: 0.1.9-dogeos](https://img.shields.io/badge/Version-0.1.9--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.10-dogeos](https://img.shields.io/badge/Version-0.1.10--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-rpc helm chart
 
@@ -109,6 +109,10 @@ Kubernetes: `>=1.22.0-0`
 | probes.startup.<<.enabled | bool | `true` |  |
 | probes.startup.<<.spec.httpGet.path | string | `"/"` |  |
 | probes.startup.<<.spec.httpGet.port | int | `8545` |  |
+| resources.limits.cpu | string | `"1000m"` |  |
+| resources.limits.memory | string | `"4Gi"` |  |
+| resources.requests.cpu | string | `"100m"` |  |
+| resources.requests.memory | string | `"1Gi"` |  |
 | service.main.enabled | bool | `true` |  |
 | service.main.ports.http.enabled | bool | `true` |  |
 | service.main.ports.http.port | int | `8545` |  |

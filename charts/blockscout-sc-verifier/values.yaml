@@ -78,3 +78,12 @@ probes:
     enabled: false
   startup:
     enabled: false
+
+# Resource configuration
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "200m"

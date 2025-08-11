@@ -32,11 +32,11 @@ command:
 
 resources:
   requests:
-    memory: "50Mi"
-    cpu: "50m"
+    memory: "256Mi"
+    cpu: "500m"
   limits:
-    memory: "200Mi"
-    cpu: "100m"
+    memory: "1Gi"
+    cpu: "1000m"
 
 service:
   main:
