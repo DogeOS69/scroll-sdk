@@ -1,6 +1,6 @@
 # l2-bootnode
 
-![Version: 0.1.11-dogeos](https://img.shields.io/badge/Version-0.1.11--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.12-dogeos](https://img.shields.io/badge/Version-0.1.12--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-bootnode helm chart
 
@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 |-----|------|---------|-------------|
 | command[0] | string | `"bash"` |  |
 | command[1] | string | `"-c"` |  |
-| command[2] | string | `"geth --datadir \"/l2geth/data\" init /l2geth/genesis/genesis.json && echo ${L2GETH_NODEKEY} > /l2geth/data/geth/nodekey && echo \"[Node.P2P] StaticNodes = $L2GETH_PEER_LIST\" > \"/l2geth/config.toml\" && geth --datadir \"/l2geth/data\" --port \"$L2GETH_P2P_PORT\" --nodiscover --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" --bootnodes \"\" --scroll-mpt --rollup.verify --da.blob.beaconnode \"$L2GETH_DA_BLOB_BEACON_NODE\" --gcmode full --config \"/l2geth/config.toml\" --cache.noprefetch --verbosity 3 --pprof --pprof.addr \"0.0.0.0\" --pprof.port 6060 $METRICS_FLAGS --txpool.globalqueue \"$L2GETH_GLOBAL_QUEUE\" --txpool.accountqueue \"$L2GETH_ACCOUNT_QUEUE\" --txpool.globalslots \"$L2GETH_GLOBAL_SLOTS\" --txpool.accountslots \"$L2GETH_ACCOUNT_SLOTS\" --txpool.pricelimit \"$L2GETH_MIN_GAS_PRICE\" $LOCALS_FLAG --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" --miner.gasprice \"$L2GETH_MIN_GAS_PRICE\" --rpc.gascap 0 --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" --metrics --metrics.expensive --gossip.enablebroadcasttoall\t$L2GETH_EXTRA_PARAMS"` |  |
+| command[2] | string | `"geth --datadir \"/l2geth/data\" init /l2geth/genesis/genesis.json && echo ${L2GETH_NODEKEY} > /l2geth/data/geth/nodekey && echo \"[Node.P2P] StaticNodes = $L2GETH_PEER_LIST\" > \"/l2geth/config.toml\" && geth --datadir \"/l2geth/data\" --port \"$L2GETH_P2P_PORT\" --nodiscover --syncmode full --networkid \"$CHAIN_ID\" --maxpeers \"$L2GETH_MAX_PEERS\" --netrestrict \"$L2GETH_NETRESTRICT\" --nat \"$L2GETH_NAT\" --bootnodes \"\" --scroll-mpt --rollup.verify --da.blob.beaconnode \"$L2GETH_DA_BLOB_BEACON_NODE\" --gcmode archive --config \"/l2geth/config.toml\" --cache.noprefetch --cache.snapshot=0 --snapshot=false --gpo.maxprice 500000000 --verbosity 3 --pprof --pprof.addr \"0.0.0.0\" --pprof.port 6060 $METRICS_FLAGS --txpool.globalqueue \"$L2GETH_GLOBAL_QUEUE\" --txpool.accountqueue \"$L2GETH_ACCOUNT_QUEUE\" --txpool.globalslots \"$L2GETH_GLOBAL_SLOTS\" --txpool.accountslots \"$L2GETH_ACCOUNT_SLOTS\" $LOCALS_FLAG --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" --miner.gasprice \"$L2GETH_MIN_GAS_PRICE\" --rpc.gascap 0 --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" --metrics --metrics.expensive --gossip.enablebroadcasttoall\t$L2GETH_EXTRA_PARAMS"` |  |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
 | controller.type | string | `"statefulset"` |  |
@@ -56,7 +56,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"l2-bootnode"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/l2geth"` |  |
-| image.tag | string | `"scroll-v5.8.74"` |  |
+| image.tag | string | `"scroll-v5.9.2"` |  |
 | initContainers.wait-for-l1.command[0] | string | `"/bin/sh"` |  |
 | initContainers.wait-for-l1.command[1] | string | `"-c"` |  |
 | initContainers.wait-for-l1.command[2] | string | `"/wait-for-l1.sh $L2GETH_L1_ENDPOINT"` |  |

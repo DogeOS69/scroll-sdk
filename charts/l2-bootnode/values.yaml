@@ -11,7 +11,7 @@ controller:
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.8.74
+  tag: scroll-v5.9.2
 
 env:
   - name: L2GETH_L1_WATCHER_CONFIRMATIONS
@@ -48,15 +48,16 @@ command:
     --bootnodes \"\" \
     --scroll-mpt \
     --rollup.verify --da.blob.beaconnode \"$L2GETH_DA_BLOB_BEACON_NODE\" \
-    --gcmode full \
+    --gcmode archive \
     --config \"/l2geth/config.toml\" \
-    --cache.noprefetch \
+    --cache.noprefetch --cache.snapshot=0 --snapshot=false \
+    --gpo.maxprice 500000000 \
     --verbosity 3 \
     --pprof --pprof.addr \"0.0.0.0\" --pprof.port 6060 \
     $METRICS_FLAGS \
     --txpool.globalqueue \"$L2GETH_GLOBAL_QUEUE\" --txpool.accountqueue \"$L2GETH_ACCOUNT_QUEUE\" \
     --txpool.globalslots \"$L2GETH_GLOBAL_SLOTS\" --txpool.accountslots \"$L2GETH_ACCOUNT_SLOTS\" \
-    --txpool.pricelimit \"$L2GETH_MIN_GAS_PRICE\" $LOCALS_FLAG \
+    $LOCALS_FLAG \
     --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" \
     --miner.gasprice \"$L2GETH_MIN_GAS_PRICE\" --rpc.gascap 0 \
     --gpo.ignoreprice \"$L2GETH_MIN_GAS_PRICE\" \
