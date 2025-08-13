@@ -61,7 +61,7 @@ command:
     --ws --ws.port \"$L2GETH_RPC_WS_PORT\" --ws.addr \"0.0.0.0\" --ws.api \"eth,scroll,net,web3,debug\" \
     --unlock \"$L2GETH_SIGNER_ADDRESS\" --password \"/l2geth/password\" --allow-insecure-unlock --mine \
     --scroll-mpt \
-    --gcmode full \
+    --gcmode archive \
     --cache.noprefetch \
     --verbosity ${VERBOSITY} \
     --txpool.globalqueue \"$L2GETH_GLOBAL_QUEUE\" --txpool.accountqueue \"$L2GETH_ACCOUNT_QUEUE\" \
@@ -72,6 +72,7 @@ command:
     --l1.endpoint \"$L2GETH_L1_ENDPOINT\" --l1.confirmations \"$L2GETH_L1_WATCHER_CONFIRMATIONS\" --l1.sync.startblock \"$L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK\" \
     --metrics --metrics.expensive \
     --gossip.disabletxbroadcast \
+    --cache.snapshot=0 --snapshot=false \
     $L2GETH_EXTRA_PARAMS"
 
 initContainers:
