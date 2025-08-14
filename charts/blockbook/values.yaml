@@ -1,0 +1,65 @@
+---
+replicaCount: 1
+
+# Blockbook configuration for Dogecoin Testnet
+blockbook:
+  network: testnet
+  rpcUrl: "http://dogecoin-testnet:44556"
+  rpcUser: "user"
+
+# RPC password configuration
+# Primary method: Use External Secrets Operator (recommended for production)
+# Fallback: Auto-create secret with provided value (for development)
+rpcPassword:
+  secretKey: "password"   # Key in the secret containing the password
+  value: "password_test"  # Fallback value for development
+
+# External Secrets configuration (recommended for production)
+externalSecrets: {}
+
+image:
+  repository: "docker.io/dogeos69/blockbook"
+  tag: "testnet"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  publicPort: 19139        # Blockbook public API port
+  internalPort: 19039      # Blockbook internal/metrics port
+
+# Storage for blockchain data
+storage:
+  size: 100Gi              # Blockbook database storage
+  storageClassName: ""     # Use cluster default storage class
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: blockbook.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: blockbook-tls
+      hosts:
+        - blockbook.example.com

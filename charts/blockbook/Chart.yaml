@@ -1,0 +1,15 @@
+---
+apiVersion: v2
+name: blockbook
+description: Deploy Blockbook for Dogecoin in Kubernetes
+type: application
+version: 0.1.0
+appVersion: "latest"
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com
+
+dependencies:
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

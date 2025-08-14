@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "blockbook.fullname" . }}
+  labels:
+    {{- include "blockbook.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0  # No extra pods during update
+      maxUnavailable: 1  # Allow one pod to be down
+  selector:
+    matchLabels:
+      {{- include "blockbook.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "blockbook.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: RPC_URL
+              value: {{ .Values.blockbook.rpcUrl | quote }}
+            - name: RPC_USER
+              value: {{ .Values.blockbook.rpcUser | quote }}
+            - name: RPC_PASS
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.externalSecrets }}
+                  {{- $secretName := "" }}
+                  {{- range $key, $value := .Values.externalSecrets }}
+                  {{- $secretName = $key }}
+                  {{- break }}
+                  {{- end }}
+                  name: {{ $secretName }}
+                  {{- else }}
+                  name: {{ include "blockbook.fullname" . }}-rpc-secret
+                  {{- end }}
+                  key: {{ .Values.rpcPassword.secretKey }}
+          volumeMounts:
+            - name: blockbook-data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - name: public
+              containerPort: {{ .Values.service.publicPort }}
+              protocol: TCP
+            - name: internal
+              containerPort: {{ .Values.service.internalPort }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 30
+            httpGet:
+              path: /status
+              port: internal
+          readinessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            httpGet:
+              path: /status
+              port: internal
+      volumes:
+        - name: blockbook-data
+          persistentVolumeClaim:
+            claimName: {{ include "blockbook.fullname" . }}-data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
