@@ -4,42 +4,16 @@
 # Blockbook configuration for production
 blockbook:
   network: testnet
-  rpcUrl: "http://dogecoin-testnet:44556"  # Internal K8s service for testnet
+  rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
   rpcUser: "user"                          # Production RPC username
-
-# Container image configuration
-image:
-  repository: "docker.io/dogeos69/blockbook"
-  tag: "testnet"                           # Use testnet image for production testnet
-  pullPolicy: Always
-
-# Service configuration
-service:
-  type: ClusterIP
-  publicPort: 19139        # Blockbook public API port
-  internalPort: 19039      # Blockbook internal/metrics port
-
-# Resource configuration for production
-resources:
-  requests:
-    memory: "2Gi"
-    cpu: "1000m"
-  limits:
-    memory: "4Gi"
-    cpu: "2000m"
-
-# Storage configuration for production
-storage:
-  size: 100Gi              # Adequate for Dogecoin testnet blockchain data
-  retainPvcOnUninstall: true
 
 # Enable ingress for external access
 ingress:
   enabled: true
   className: "nginx"
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment for SSL
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:
     - host: blockbook.testnet.dogeos.com
       paths:

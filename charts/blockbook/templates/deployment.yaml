@@ -31,17 +31,13 @@ spec:
             - name: RPC_PASS
               valueFrom:
                 secretKeyRef:
-                  {{- if .Values.externalSecrets }}
                   {{- $secretName := "" }}
                   {{- range $key, $value := .Values.externalSecrets }}
                   {{- $secretName = $key }}
                   {{- break }}
                   {{- end }}
                   name: {{ $secretName }}
-                  {{- else }}
-                  name: {{ include "blockbook.fullname" . }}-rpc-secret
-                  {{- end }}
-                  key: {{ .Values.rpcPassword.secretKey }}
+                  key: password
           volumeMounts:
             - name: blockbook-data
               mountPath: /data
