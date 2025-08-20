@@ -6,6 +6,7 @@ blockbook:
   network: testnet
   rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
   rpcUser: "user"                          # Production RPC username
+  blockHeight: "10150000" # Starting block height for syncing
 
 # Enable ingress for external access
 ingress:

@@ -23,12 +23,28 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/entrypoint.sh"]
+          args:
+            - "/usr/bin/blockbook"
+            - "-blockchaincfg=/blockchaincfg.json"
+            - "-datadir=/data"
+            - "-sync"
+            - "-public=:{{ .Values.service.publicPort }}"
+            - "-internal=:{{ .Values.service.internalPort }}"
+            - "-logtostderr"
+            - "-debug"
+            {{- if .Values.blockbook.blockHeight }}
+            - "-blockheight={{ .Values.blockbook.blockHeight }}"
+            {{- end }}
           env:
             - name: RPC_URL
               value: {{ .Values.blockbook.rpcUrl | quote }}
             - name: RPC_USER
               value: {{ .Values.blockbook.rpcUser | quote }}
             - name: RPC_PASS
+              {{- if .Values.blockbook.rpcPassword }}
+              value: {{ .Values.blockbook.rpcPassword | quote }}
+              {{- else }}
               valueFrom:
                 secretKeyRef:
                   {{- $secretName := "" }}
@@ -38,6 +54,7 @@ spec:
                   {{- end }}
                   name: {{ $secretName }}
                   key: password
+              {{- end }}
           volumeMounts:
             - name: blockbook-data
               mountPath: /data
