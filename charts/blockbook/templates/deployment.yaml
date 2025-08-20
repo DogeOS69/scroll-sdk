@@ -41,6 +41,10 @@ spec:
               value: {{ .Values.blockbook.rpcUrl | quote }}
             - name: RPC_USER
               value: {{ .Values.blockbook.rpcUser | quote }}
+            {{- if .Values.blockbook.messageQueueBinding }}
+            - name: MESSAGE_QUEUE_BINDING
+              value: {{ .Values.blockbook.messageQueueBinding | quote }}
+            {{- end }}
             - name: RPC_PASS
               {{- if .Values.blockbook.rpcPassword }}
               value: {{ .Values.blockbook.rpcPassword | quote }}
