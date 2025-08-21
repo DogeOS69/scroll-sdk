@@ -1,11 +1,11 @@
 NAMESPACE ?= default
 
-.PHONY: prepare install-dogecoin install-celestia install-scroll-core \
+.PHONY: prepare install-dogecoin install-blockbook install-celestia install-scroll-core \
 	install-l2-sequencer install-l2-bootnode install-contracts install-da-publisher \
 	install-rollup-node install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin delete-celestia delete-frontends \
+	delete-all delete-dogecoin delete-blockbook delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-da-publisher delete-fee-oracle delete-rollup-node delete-cubesigner-signers \
 	delete-testnet-activity-helper
@@ -18,6 +18,11 @@ install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
 		--version=0.1.7 \
 		--values values/dogecoin-production.yaml
+
+install-blockbook:
+	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
+		--version=0.1.1 \
+		--values values/blockbook-production.yaml
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
@@ -221,6 +226,9 @@ delete-l1-devnet:
 
 delete-dogecoin:
 	helm delete -n $(NAMESPACE) dogecoin-testnet
+
+delete-blockbook:
+	helm delete -n $(NAMESPACE) blockbook-testnet
 
 delete-celestia:
 	helm delete -n $(NAMESPACE) celestia-testnet

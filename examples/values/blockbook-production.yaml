@@ -1,0 +1,39 @@
+# Blockbook Production Configuration
+# This file overrides the default values for production deployment
+
+# Blockbook configuration for production
+blockbook:
+  network: testnet
+  rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
+  rpcUser: "user"                          # Production RPC username
+  blockHeight: "10150000" # Starting block height for syncing
+
+# Enable ingress for external access
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: blockbook.testnet.dogeos.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: blockbook-tls
+      hosts:
+        - blockbook.testnet.dogeos.com
+
+# RPC Password Configuration for Production
+# Use External Secrets to fetch password from AWS Secrets Manager
+externalSecrets:
+  dogecoin-production:
+    provider: aws
+    serviceAccount: external-secrets
+    refreshInterval: 2m
+    data:
+      - remoteRef:
+          key: dogecoin/rpc-credentials
+          property: DOGECOIN_RPC_PASSWORD
+        secretKey: password
