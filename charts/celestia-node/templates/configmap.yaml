@@ -82,13 +82,13 @@ data:
     [Header.Server]
       WriteDeadline = "8s"
       ReadDeadline = "1m0s"
-      RangeRequestTimeout = "10s"
+      RequestTimeout = "10s"
     [Header.Client]
       MaxHeadersPerRangeRequest = 64
-      RangeRequestTimeout = "8s"
+      RequestTimeout = "8s"
 
     [DASer]
-    SamplingRange = {{ default 128 .Values.share.samplingRange }}
+    SamplingRange = {{ default 128 .Values.share.light.samplingRange }}
     ConcurrencyLimit = {{ default 8 .Values.share.discovery.concurrencyLimit }}
     BackgroundStoreInterval = "10m0s"
     {{- if and .Values.share.light.trustedHeight (gt (int .Values.share.light.trustedHeight) 0) }}

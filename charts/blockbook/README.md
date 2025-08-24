@@ -1,6 +1,6 @@
 # blockbook
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 Deploy Blockbook for Dogecoin in Kubernetes
 
@@ -8,7 +8,7 @@ Deploy Blockbook for Dogecoin in Kubernetes
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| Dogeos | <support@dogeos.com> |  |
+| DogeOS69 | <support@dogeos.com> |  |
 
 ## Requirements
 
@@ -28,7 +28,8 @@ Deploy Blockbook for Dogecoin in Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/blockbook"` |  |
 | image.tag | string | `"testnet"` |  |
-| ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"HTTP"` |  |
+| ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
+| ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
 | ingress.className | string | `"nginx"` |  |
 | ingress.enabled | bool | `false` |  |
 | ingress.hosts[0].host | string | `"blockbook.example.com"` |  |
@@ -38,17 +39,14 @@ Deploy Blockbook for Dogecoin in Kubernetes
 | ingress.tls[0].secretName | string | `"blockbook-tls"` |  |
 | nodeSelector | object | `{}` |  |
 | replicaCount | int | `1` |  |
-| resources.limits.cpu | string | `"2"` |  |
-| resources.limits.memory | string | `"4Gi"` |  |
-| resources.requests.cpu | string | `"1"` |  |
-| resources.requests.memory | string | `"2Gi"` |  |
-| rpcPassword.secretKey | string | `"password"` |  |
-| rpcPassword.value | string | `"password_test"` |  |
+| resources.limits.cpu | string | `"3"` |  |
+| resources.limits.memory | string | `"8Gi"` |  |
+| resources.requests.cpu | string | `"2"` |  |
+| resources.requests.memory | string | `"4Gi"` |  |
 | service.internalPort | int | `19039` |  |
 | service.publicPort | int | `19139` |  |
 | service.type | string | `"ClusterIP"` |  |
-| storage.retainPvcOnUninstall | bool | `true` |  |
-| storage.size | string | `"100Gi"` |  |
+| storage.size | string | `"200Gi"` |  |
 | storage.storageClassName | string | `""` |  |
 | tolerations | list | `[]` |  |
 

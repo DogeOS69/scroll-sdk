@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.6](https://img.shields.io/badge/Version-0.1.6-informational?style=flat-square) ![AppVersion: v0.22.2-mocha](https://img.shields.io/badge/AppVersion-v0.22.2--mocha-informational?style=flat-square)
+![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![AppVersion: v0.25.2-mocha](https://img.shields.io/badge/AppVersion-v0.25.2--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -24,7 +24,7 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | core.rpc_url | string | `"rpc-mocha.pops.one"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/celestiaorg/celestia-node"` |  |
-| image.tag | string | `"v0.24.1-mocha"` |  |
+| image.tag | string | `"v0.25.2-mocha"` |  |
 | ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
 | ingress.annotations."nginx.ingress.kubernetes.io/ssl-redirect" | string | `"true"` |  |
 | ingress.className | string | `"nginx"` |  |
