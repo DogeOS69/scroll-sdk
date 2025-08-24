@@ -26,13 +26,13 @@ install-blockbook:
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.6 \
+		--version=0.1.7 \
 		--values values/celestia-node-production.yaml
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
 		--version=0.0.6 \
-		--set image.tag=081225-00 \
+		--set image.tag=082025-01 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -98,14 +98,14 @@ install-contracts:
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
 		--version=0.0.2 \
-		--set image.tag="080125-01" \
+		--set image.tag=082025-01 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
 		--version=0.1.8-dogeos \
-		--set image.tag=v4.5.31 \
+		--set image.tag=v4.5.41 \
 		--set image.repository=scrolltech/rollup-relayer \
 		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
@@ -118,7 +118,7 @@ install-rollup-node:
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
 		--version=0.0.1 \
-		--set image.tag=080825-03 \
+		--set image.tag=082025-00 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -148,7 +148,7 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.7 \
-		--set image.tag=080725-02 \
+		--set image.tag=082325-00 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -200,8 +200,8 @@ delete-all:
 	$(MAKE) delete-l2-sequencer  || true
 	helm delete -n $(NAMESPACE) frontends || true
 	helm delete -n $(NAMESPACE) fee-oracle || true
-	$(MAKE) delete-l2-bootnode
-	$(MAKE) delete-l2-rpc
+	$(MAKE) delete-l2-bootnode || true
+	$(MAKE) delete-l2-rpc || true
 	helm delete -n $(NAMESPACE) rollup-explorer-backend || true
 	helm delete -n $(NAMESPACE) rollup-node || true
 	helm delete -n $(NAMESPACE) contracts || true
