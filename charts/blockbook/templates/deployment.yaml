@@ -29,8 +29,8 @@ spec:
             - "-blockchaincfg=/blockchaincfg.json"
             - "-datadir=/data"
             - "-sync"
-            - "-public=:{{ .Values.service.publicPort }}"
-            - "-internal=:{{ .Values.service.internalPort }}"
+            - "-public=0.0.0.0:{{ .Values.service.publicPort }}"
+            - "-internal=0.0.0.0:{{ .Values.service.internalPort }}"
             - "-logtostderr"
             - "-debug"
             {{- if .Values.blockbook.blockHeight }}

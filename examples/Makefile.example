@@ -21,7 +21,7 @@ install-dogecoin:
 
 install-blockbook:
 	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--values values/blockbook-production.yaml
 
 install-celestia:
