@@ -32,7 +32,7 @@ install-celestia:
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
 		--version=0.0.6 \
-		--set image.tag=082025-01 \
+		--set image.tag=082425-00 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -98,7 +98,7 @@ install-contracts:
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
 		--version=0.0.2 \
-		--set image.tag=082025-01 \
+		--set image.tag=082425-00 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
@@ -148,7 +148,7 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.7 \
-		--set image.tag=082325-00 \
+		--set image.tag=082525-03 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
