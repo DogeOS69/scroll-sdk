@@ -1,6 +1,6 @@
 # blockbook
 
-![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 Deploy Blockbook for Dogecoin in Kubernetes
 
@@ -23,7 +23,6 @@ Deploy Blockbook for Dogecoin in Kubernetes
 | affinity | object | `{}` |  |
 | blockbook.network | string | `"testnet"` |  |
 | blockbook.rpcUrl | string | `"http://dogecoin-testnet:44555"` |  |
-| blockbook.rpcUser | string | `"user"` |  |
 | externalSecrets | object | `{}` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/blockbook"` |  |

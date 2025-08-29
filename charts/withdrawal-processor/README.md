@@ -1,6 +1,6 @@
 # withdrawal-processor
 
-![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
@@ -87,7 +87,7 @@ Kubernetes: `>=1.22.0-0`
 | env[3].name | string | `"DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL"` |  |
 | env[3].value | string | `"https://testnet.doge.xyz"` |  |
 | env[4].name | string | `"DOGEOS_WITHDRAWAL_BLOCKBOOK_URL"` |  |
-| env[4].value | string | `"https://dogebook-testnet.nownodes.io"` |  |
+| env[4].value | string | `"http://blockbook-testnet:19139"` |  |
 | env[5].name | string | `"DOGEOS_WITHDRAWAL_TSO_URL"` |  |
 | env[5].value | string | `"http://127.0.0.1:3001"` |  |
 | env[6].name | string | `"DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS"` |  |

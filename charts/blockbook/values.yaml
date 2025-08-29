@@ -5,7 +5,6 @@ replicaCount: 1
 blockbook:
   network: testnet
   rpcUrl: "http://dogecoin-testnet:44555"
-  rpcUser: "user"
 
 # External Secrets configuration (recommended for production)
 externalSecrets: {}

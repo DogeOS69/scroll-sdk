@@ -39,12 +39,24 @@ spec:
           env:
             - name: RPC_URL
               value: {{ .Values.blockbook.rpcUrl | quote }}
-            - name: RPC_USER
-              value: {{ .Values.blockbook.rpcUser | quote }}
             {{- if .Values.blockbook.messageQueueBinding }}
             - name: MESSAGE_QUEUE_BINDING
               value: {{ .Values.blockbook.messageQueueBinding | quote }}
             {{- end }}
+            - name: RPC_USER
+              {{- if .Values.blockbook.rpcUser }}
+              value: {{ .Values.blockbook.rpcUser | quote }}
+              {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  {{- $secretName := "" }}
+                  {{- range $key, $value := .Values.externalSecrets }}
+                  {{- $secretName = $key }}
+                  {{- break }}
+                  {{- end }}
+                  name: {{ $secretName }}
+                  key: DOGECOIN_RPC_USER
+              {{- end }}
             - name: RPC_PASS
               {{- if .Values.blockbook.rpcPassword }}
               value: {{ .Values.blockbook.rpcPassword | quote }}
@@ -57,7 +69,7 @@ spec:
                   {{- break }}
                   {{- end }}
                   name: {{ $secretName }}
-                  key: password
+                  key: DOGECOIN_RPC_PASSWORD
               {{- end }}
           volumeMounts:
             - name: blockbook-data
