@@ -5,7 +5,6 @@
 blockbook:
   network: testnet
   rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
-  rpcUser: "user"                          # Production RPC username
   blockHeight: "10150000" # Starting block height for syncing
 
 # Enable ingress for external access
@@ -28,12 +27,17 @@ ingress:
 # RPC Password Configuration for Production
 # Use External Secrets to fetch password from AWS Secrets Manager
 externalSecrets:
-  dogecoin-production:
-    provider: aws
-    serviceAccount: external-secrets
-    refreshInterval: 2m
+  blockbook-secret-env:
     data:
       - remoteRef:
-          key: dogecoin/rpc-credentials
-          property: DOGECOIN_RPC_PASSWORD
-        secretKey: password
+          key: "dogeos/blockbook-secret-env"
+          property: "DOGECOIN_RPC_USER"
+        secretKey: "DOGECOIN_RPC_USER"
+      - remoteRef:
+          key: "dogeos/blockbook-secret-env"
+          property: "DOGECOIN_RPC_PASSWORD"
+        secretKey: "DOGECOIN_RPC_PASSWORD"
+    provider: "aws"
+    serviceAccount: "external-secrets"
+    refreshInterval: "2m"
+

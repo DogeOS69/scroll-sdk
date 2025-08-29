@@ -21,7 +21,7 @@ install-dogecoin:
 
 install-blockbook:
 	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
-		--version=0.1.3 \
+		--version=0.1.4 \
 		--values values/blockbook-production.yaml
 
 install-celestia:
@@ -31,8 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.6 \
-		--set image.tag=082425-00 \
+		--version=0.0.7 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -147,8 +146,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.7 \
-		--set image.tag=082625-00 \
+		--version=0.1.8 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -178,6 +176,7 @@ start-l1-sync:
 install-all:
 	$(MAKE) install-dogecoin
 	$(MAKE) install-celestia
+	$(MAKE) install-blockbook
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 #	scrollsdk helper fund-accounts -i -f 2 -d

@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "072425-01"
+  tag: "082725-00"
 
 # Direct environment variables
 env:
@@ -33,7 +33,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_RUN_MIGRATIONS: "true"                              # predefined
 
       DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin-testnet:44555"  # DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_URL: ""                     # DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_URL: "http://blockbook-testnet:19139"      # default
 
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "8208200"           # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6"                # predefined
@@ -63,10 +63,6 @@ externalSecrets:
           key: "dogeos/l1-interface-secret-env"
           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 
