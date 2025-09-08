@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/da-publisher
   pullPolicy: Always
-  tag: latest
+  tag: 090425-01
 
 service:
   main:

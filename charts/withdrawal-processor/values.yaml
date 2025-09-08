@@ -9,8 +9,8 @@ controller:
 
 image:
   repository: dogeos69/withdrawal-processor
-  pullPolicy: IfNotPresent
-  tag: latest
+  pullPolicy: Always
+  tag: 090425-01
 
 service:
   main:

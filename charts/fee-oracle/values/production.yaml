@@ -1,9 +1,9 @@
 ---
 # Production environment overrides
 image:
-  repository: "dogeos69/fee-oracle"
-  pullPolicy: "Always"
-  tag: "080825-03"
+  repository: dogeos69/fee-oracle
+  pullPolicy: Always
+  tag: 082025-00
 
 # Direct environment variables
 env:

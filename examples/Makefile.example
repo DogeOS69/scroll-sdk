@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.7 \
+		--version=0.0.8 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -96,17 +96,13 @@ install-contracts:
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.2 \
-		--set image.tag=082425-00 \
+		--version=0.0.3 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
-		--set image.tag=v4.5.41 \
-		--set image.repository=scrolltech/rollup-relayer \
-		--set image.pullPolicy=Always \
+		--version=0.1.9-dogeos \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
 
@@ -116,37 +112,29 @@ install-rollup-node:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.1 \
-		--set image.tag=082025-00 \
+		--version=0.0.2 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
+	 	--version=0.1.5 \
 		--values values/cubesigner-signer-production-0.yaml
 	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
+		--version=0.1.5 \
 		--values values/cubesigner-signer-production-1.yaml
 	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
+		--version=0.1.5 \
 		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.0 \
-		--set image.tag=v0.1.0-beta \
+		--version=0.1.1 \
 		--values values/tso-service-production.yaml \
 		--wait
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.8 \
+		--version=0.1.9 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -179,8 +167,6 @@ install-all:
 	$(MAKE) install-blockbook
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
-#	scrollsdk helper fund-accounts -i -f 2 -d
-#	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) install-da-publisher
