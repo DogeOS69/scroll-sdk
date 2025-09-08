@@ -38,7 +38,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"rollup-node"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/rollup-relayer"` |  |
-| image.tag | string | `"v4.5.31"` |  |
+| image.tag | string | `"v4.5.41"` |  |
 | initContainers.1-check-postgres-connection.args[0] | string | `"postgresql"` |  |
 | initContainers.1-check-postgres-connection.args[1] | string | `"$(SCROLL_ROLLUP_DB_CONFIG_DSN)"` |  |
 | initContainers.1-check-postgres-connection.args[2] | string | `"--timeout"` |  |

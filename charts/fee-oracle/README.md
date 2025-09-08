@@ -43,7 +43,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"fee-oracle"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/fee-oracle"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"082025-00"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/data"` |  |

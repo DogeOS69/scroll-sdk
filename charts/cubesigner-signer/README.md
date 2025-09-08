@@ -48,7 +48,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"cubesigner-signer"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/cubesigner-signer"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"060925-00"` |  |
 | persistence.session.enabled | bool | `true` |  |
 | persistence.session.mountPath | string | `"/etc/cubesigner"` |  |
 | persistence.session.name | string | `"cubesigner-session-secret-vol"` |  |

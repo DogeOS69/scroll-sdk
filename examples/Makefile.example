@@ -97,16 +97,12 @@ install-contracts:
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
 		--version=0.0.2 \
-		--set image.tag=082425-00 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
 		--version=0.1.8-dogeos \
-		--set image.tag=v4.5.41 \
-		--set image.repository=scrolltech/rollup-relayer \
-		--set image.pullPolicy=Always \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
 
@@ -117,30 +113,22 @@ install-rollup-node:
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
 		--version=0.0.1 \
-		--set image.tag=082025-00 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
 	 	--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-0.yaml
 	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
 		--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-1.yaml
 	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
 		--version=0.1.4 \
-		--set image.tag=060925-00 \
-		--set image.pullPolicy=Always \
 		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
 		--version=0.1.0 \
-		--set image.tag=v0.1.0-beta \
 		--values values/tso-service-production.yaml \
 		--wait
 

@@ -40,7 +40,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"tso-service"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/tso-service"` |  |
-| image.tag | string | `"latest"` |  |
+| image.tag | string | `"090425-01"` |  |
 | ingress.main.annotations | object | `{}` |  |
 | ingress.main.enabled | bool | `true` |  |
 | ingress.main.hosts[0].host | string | `"tso.scrollsdk"` |  |

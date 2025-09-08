@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: 060925-00
 
 service:
   main:
