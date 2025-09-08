@@ -1,6 +1,6 @@
 image:
   repository: dogeos69/tso-service
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: 090425-01
 
 env:

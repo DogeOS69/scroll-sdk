@@ -1,6 +1,6 @@
 # tso-service
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS TSO Service
 
@@ -38,7 +38,7 @@ Kubernetes: `>=1.22.0-0`
 | env[2].value | string | `"http://withdrawal-processor:3000"` |  |
 | global.fullnameOverride | string | `"tso-service"` |  |
 | global.nameOverride | string | `"tso-service"` |  |
-| image.pullPolicy | string | `"IfNotPresent"` |  |
+| image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/tso-service"` |  |
 | image.tag | string | `"090425-01"` |  |
 | ingress.main.annotations | object | `{}` |  |
