@@ -167,8 +167,6 @@ install-all:
 	$(MAKE) install-blockbook
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
-#	scrollsdk helper fund-accounts -i -f 2 -d
-#	scrollsdk helper fund-accounts -l 1 -f 2 -d
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) install-da-publisher
