@@ -41,7 +41,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"da-publisher"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/da-publisher"` |  |
-| image.tag | string | `"082425-00"` |  |
+| image.tag | string | `"090425-01"` |  |
 | probes.liveness.<<.custom | bool | `true` |  |
 | probes.liveness.<<.enabled | bool | `true` |  |
 | probes.liveness.<<.spec.httpGet.path | string | `"/healthz"` |  |
