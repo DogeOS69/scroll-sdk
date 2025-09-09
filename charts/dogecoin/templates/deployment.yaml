@@ -81,6 +81,18 @@ spec:
             - name: rpc
               containerPort: {{ .Values.service.rpcPort }}
               protocol: TCP
+            - name: zmq-rawblock
+              containerPort: {{ .Values.service.zmqRawBlockPort }}
+              protocol: TCP
+            - name: zmq-rawtx
+              containerPort: {{ .Values.service.zmqRawTxPort }}
+              protocol: TCP
+            - name: zmq-hashtx
+              containerPort: {{ .Values.service.zmqHashTxPort }}
+              protocol: TCP
+            - name: zmq-hashblock
+              containerPort: {{ .Values.service.zmqHashBlockPort }}
+              protocol: TCP
           livenessProbe:
             initialDelaySeconds: 300
             periodSeconds: 60

@@ -11,6 +11,11 @@ dogecoinConf:
     - 192.168.0.0/16
     - 10.100.0.0/16
   listen: 0
+  # ZMQ configuration for real-time blockchain data streaming
+  zmqpubrawblock: "tcp://0.0.0.0:28332"
+  zmqpubrawtx: "tcp://0.0.0.0:28333"
+  zmqpubhashtx: "tcp://0.0.0.0:28334"
+  zmqpubhashblock: "tcp://0.0.0.0:28335"
 
 # RPC password configuration - fixed to match values.yaml structure
 rpcPassword:
@@ -27,6 +32,11 @@ service:
   type: ClusterIP
   port: 22556 # 44556 for testnet, 22556 for mainnet
   rpcPort: 22555  # 44555 for testnet, 22555 for mainnet
+  # ZMQ ports for real-time blockchain data streaming
+  zmqRawBlockPort: 28332
+  zmqRawTxPort: 28333
+  zmqHashTxPort: 28334
+  zmqHashBlockPort: 28335
 
 # Storage
 storage:

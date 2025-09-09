@@ -5,10 +5,20 @@ dogecoinConf:
   rpcallowip:
     # Option 1: Allow all (NOT recommended for production)
     - 0.0.0.0/0
+  # ZMQ configuration for real-time blockchain data streaming
+  zmqpubrawblock: "tcp://0.0.0.0:28332"
+  zmqpubrawtx: "tcp://0.0.0.0:28333"
+  zmqpubhashtx: "tcp://0.0.0.0:28334"
+  zmqpubhashblock: "tcp://0.0.0.0:28335"
 
 service:
   port: 44556             # 44556 for testnet, 22556 for mainnet
   rpcPort: 44555          # 44555 for testnet, 22555 for mainnet
+  # ZMQ ports for real-time blockchain data streaming
+  zmqRawBlockPort: 28332
+  zmqRawTxPort: 28333
+  zmqHashTxPort: 28334
+  zmqHashBlockPort: 28335
 
 # Resource configuration
 resources:
