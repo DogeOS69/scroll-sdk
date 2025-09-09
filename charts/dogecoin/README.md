@@ -1,6 +1,6 @@
 # dogecoin
 
-![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
+![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
 
 Deploy a Dogecoin FullNode in Kubernetes
 
@@ -30,6 +30,10 @@ Deploy a Dogecoin FullNode in Kubernetes
 | dogecoinConf.rpcuser | string | `"user"` |  |
 | dogecoinConf.server | int | `1` |  |
 | dogecoinConf.testnet | int | `1` |  |
+| dogecoinConf.zmqpubhashblock | string | `"tcp://0.0.0.0:28335"` |  |
+| dogecoinConf.zmqpubhashtx | string | `"tcp://0.0.0.0:28334"` |  |
+| dogecoinConf.zmqpubrawblock | string | `"tcp://0.0.0.0:28332"` |  |
+| dogecoinConf.zmqpubrawtx | string | `"tcp://0.0.0.0:28333"` |  |
 | externalSecrets | object | `{}` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/dogecoin"` |  |
@@ -48,6 +52,10 @@ Deploy a Dogecoin FullNode in Kubernetes
 | service.port | int | `44556` |  |
 | service.rpcPort | int | `44555` |  |
 | service.type | string | `"ClusterIP"` |  |
+| service.zmqHashBlockPort | int | `28335` |  |
+| service.zmqHashTxPort | int | `28334` |  |
+| service.zmqRawBlockPort | int | `28332` |  |
+| service.zmqRawTxPort | int | `28333` |  |
 | storage.retainPvcOnUninstall | bool | `true` |  |
 | storage.size | string | `"50Gi"` |  |
 | storage.storageClassName | string | `""` |  |

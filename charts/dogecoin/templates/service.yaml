@@ -15,5 +15,21 @@ spec:
       port: {{ .Values.service.rpcPort }}
       targetPort: rpc  # Matches Deployment's named port
       protocol: TCP
+    - name: zmq-rawblock
+      port: {{ .Values.service.zmqRawBlockPort }}
+      targetPort: zmq-rawblock  # Matches Deployment's named port
+      protocol: TCP
+    - name: zmq-rawtx
+      port: {{ .Values.service.zmqRawTxPort }}
+      targetPort: zmq-rawtx  # Matches Deployment's named port
+      protocol: TCP
+    - name: zmq-hashtx
+      port: {{ .Values.service.zmqHashTxPort }}
+      targetPort: zmq-hashtx  # Matches Deployment's named port
+      protocol: TCP
+    - name: zmq-hashblock
+      port: {{ .Values.service.zmqHashBlockPort }}
+      targetPort: zmq-hashblock  # Matches Deployment's named port
+      protocol: TCP
   selector:
     {{- include "dogecoin.selectorLabels" . | nindent 4 }}

@@ -10,6 +10,8 @@ data:
     {{- range $val }}
     {{ $key }}={{ . }}
     {{- end }}
+    {{- else if or (eq $key "zmqpubrawblock") (eq $key "zmqpubrawtx") (eq $key "zmqpubhashtx") (eq $key "zmqpubhashblock") }}
+    {{ $key }}={{ $val }}
     {{- else }}
     {{ $key }}={{ $val }}
     {{- end }}

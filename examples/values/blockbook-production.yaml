@@ -5,6 +5,8 @@
 blockbook:
   network: testnet
   rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
+  # Enable ZMQ for real-time blockchain data streaming
+  messageQueueBinding: "tcp://dogecoin-testnet:28332"  # ZMQ raw block endpoint
   blockHeight: "10150000" # Starting block height for syncing
 
 # Enable ingress for external access
