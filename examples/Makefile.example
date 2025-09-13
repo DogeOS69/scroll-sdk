@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.8 \
+		--version=0.0.9 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -65,7 +65,7 @@ install-scroll-core:
 
 install-l2-rpc:
 	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
-		--version=0.1.11-dogeos \
+		--version=0.1.12-dogeos \
 		--values values/l2-rpc-production.yaml
 
 install-l2-sequencer:
@@ -102,7 +102,7 @@ install-da-publisher:
 
 install-rollup-node:
 	helm upgrade -i rollup-node oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-node -n $(NAMESPACE) \
-		--version=0.1.9-dogeos \
+		--version=0.1.10-dogeos \
 		--values values/rollup-node-production.yaml \
 		--values values/rollup-node-config.yaml
 
@@ -112,7 +112,7 @@ install-rollup-node:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.2 \
+		--version=0.0.3 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
