@@ -80,4 +80,4 @@ resources:
     cpu: "50m"
   limits:
     memory: "512Mi"
-    cpu: "200m"
+    cpu: "1"

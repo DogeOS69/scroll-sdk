@@ -71,7 +71,7 @@ resources:
     cpu: "1000m"
     memory: "2Gi"
   limits:
-    cpu: "1500m"
+    cpu: "2"
     memory: "4Gi"
 
 rpc:

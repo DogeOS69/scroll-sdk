@@ -1,6 +1,6 @@
 # cubesigner-signer
 
-![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.6](https://img.shields.io/badge/Version-0.1.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS CubeSigner Attestation Signer
 
@@ -44,11 +44,13 @@ Kubernetes: `>=1.22.0-0`
 | env[5].value | string | `""` |  |
 | env[6].name | string | `"DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH"` |  |
 | env[6].value | string | `"/etc/cubesigner/session.json"` |  |
+| env[7].name | string | `"DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"` |  |
+| env[7].value | string | `"5mb"` |  |
 | global.fullnameOverride | string | `"cubesigner-signer"` |  |
 | global.nameOverride | string | `"cubesigner-signer"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/cubesigner-signer"` |  |
-| image.tag | string | `"060925-00"` |  |
+| image.tag | string | `"091025-01"` |  |
 | persistence.session.enabled | bool | `true` |  |
 | persistence.session.mountPath | string | `"/etc/cubesigner"` |  |
 | persistence.session.name | string | `"cubesigner-session-secret-vol"` |  |
