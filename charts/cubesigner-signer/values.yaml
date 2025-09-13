@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: 060925-00
+  tag: 091025-01
 
 service:
   main:
@@ -59,7 +59,8 @@ env:
     value: ""
   - name: DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH
     value: "/etc/cubesigner/session.json"
-
+  - name: DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT
+    value: "5mb"
 persistence:
   # Mount session file from a Secret
   session:

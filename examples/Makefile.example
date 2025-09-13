@@ -117,24 +117,24 @@ install-fee-oracle:
 
 install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.5 \
+	 	--version=0.1.6 \
 		--values values/cubesigner-signer-production-0.yaml
 	helm upgrade -i cubesigner-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.5 \
+		--version=0.1.6 \
 		--values values/cubesigner-signer-production-1.yaml
 	helm upgrade -i cubesigner-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.5 \
+		--version=0.1.6 \
 		--values values/cubesigner-signer-production-2.yaml
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/tso-service-production.yaml \
 		--wait
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.9 \
+		--version=0.1.10 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:

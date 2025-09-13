@@ -18,6 +18,9 @@ env:
         key: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
   - name: "DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH"
     value: "/etc/cubesigner/session.json"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"
+    value: "5mb"
+
 persistence:
   session:
     name: "cubesigner-signer-__INSTANCE_INDEX__-session"
