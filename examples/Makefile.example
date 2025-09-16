@@ -158,6 +158,7 @@ start-l1-sync:
 
 install-all:
 	$(MAKE) install-dogecoin
+	scrollsdk setup dogecoin_wallet_import
 	$(MAKE) install-celestia
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
