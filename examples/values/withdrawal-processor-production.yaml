@@ -15,8 +15,6 @@ env:
     value: "3000" # Typically remains the same unless specific need
   - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
     value: "https://your-mainnet-dogecoin-rpc-url" # FIXME: Update with production Dogecoin RPC URL
-  - name: DOGEOS_WITHDRAWAL_BLOCKBOOK_URL
-    value: "http://blockbook-testnet:19139"    # default
   - name: DOGEOS_WITHDRAWAL_TSO_URL
     value: "http://tso-service.your-namespace.svc.cluster.local:3000" # FIXME: Update with actual TSO service URL in K8s
   - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS

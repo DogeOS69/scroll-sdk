@@ -12,6 +12,8 @@ image:
   pullPolicy: Always
   tag: 090425-01
 
+args:
+
 service:
   main:
     enabled: true
@@ -90,7 +92,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
       DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite"
       DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true"
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY: ""
+
 
 envFrom:
   - secretRef:
