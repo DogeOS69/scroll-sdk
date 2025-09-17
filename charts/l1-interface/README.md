@@ -1,6 +1,6 @@
 # l1-interface
 
-![Version: 0.0.9](https://img.shields.io/badge/Version-0.0.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.10](https://img.shields.io/badge/Version-0.0.10-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DogeOS L1 interface
 
@@ -23,11 +23,11 @@ Kubernetes: `>=1.22.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| args | string | `nil` |  |
 | command[0] | string | `"/usr/local/bin/l1_interface"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_API_BIND_ADDRESS | string | `"0.0.0.0:8545"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS | string | `"0.0.0.0:5052"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_DATABASE_URL | string | `"sqlite:///data/l1-interface.sqlite"` |  |
-| configMaps.env.data.DOGEOS_L1_INTERFACE_DOGECOIN_RPC__BLOCKBOOK_API_KEY | string | `""` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH | string | `"/app/genesis/genesis.json"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS | string | `"0.0.0.0:9090"` |  |
 | configMaps.env.data.DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE | string | `"true"` |  |

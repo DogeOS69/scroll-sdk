@@ -3,6 +3,8 @@ dogecoinConf:
   testnet: 1
   txindex: 1
   server: 1
+  disablewallet: 0
+  rpcworkqueue: 128
   rpcallowip:
     # Option 1: Allow all (NOT recommended for production)
     - 0.0.0.0/0
