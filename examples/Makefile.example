@@ -112,7 +112,7 @@ install-rollup-node:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.3 \
+		--version=0.0.4 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
