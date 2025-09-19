@@ -73,6 +73,7 @@ cp -r ../scroll-sdk/examples/values values
 ## Setup Domains
 Execute the following command to configure domain settings:
 
+
 ```bash
 scrollsdk setup domains
 ```
@@ -258,6 +259,22 @@ Then re-run this script.
 ...
 ...
 ```
+
+Please transfer about 70 Dogecoin to the helper address. Then, find the txid and vout of this transaction and write them into the file:
+
+```
+./crates/test_utils/config/setup_defaults.toml
+```
+The format is as follows:
+
+```toml
+[[base_funding_utxos]]
+txid = "" # The txid of the transaction you just made
+vout = 0  # The vout index where the helper address received this transaction, usually 0
+amount_sats = 50_000_000_000 # The amount received by the helper address in this transaction, in Satoshi or Koinu
+```
+
+Then run `scrollsdk doge bridge-init` again with the same seed string.
 
 ## Generate Service Configuration Files
 
@@ -688,4 +705,3 @@ To enable and customize these alert rules, follow these steps:
    - Follow steps 1-3 for each alert rule you wish to enable
 
 This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
-
