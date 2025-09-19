@@ -30,9 +30,9 @@ configMaps:
       DOGEOS_FEE_ORACLE_DOGECOIN__EMPTY_MEMPOOL_FEE_RATE: "1500000"                # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__POLL_INTERVAL: "60"                              # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID
-      DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000000"                   # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000000"                # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000000"               # predefined
+      DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000"                   # predefined
+      DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000"                # predefined
+      DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000"               # predefined
       DOGEOS_FEE_ORACLE_THRESHOLDS__DOGECOIN_FEE_CHANGE_PERCENT: "5.0"             # predefined
       DOGEOS_FEE_ORACLE_THRESHOLDS__CELESTIA_FEE_CHANGE_PERCENT: "10.0"            # predefined
       DOGEOS_FEE_ORACLE_THRESHOLDS__MIN_UPDATE_INTERVAL: "300"                     # predefined
