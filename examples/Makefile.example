@@ -19,6 +19,11 @@ install-dogecoin:
 		--version=0.1.9 \
 		--values values/dogecoin-production.yaml
 
+install-blockbook:
+	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
+		--version=0.1.4 \
+		--values values/blockbook-production.yaml
+
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
 		--version=0.1.7 \
@@ -206,6 +211,9 @@ delete-l1-devnet:
 
 delete-dogecoin:
 	helm delete -n $(NAMESPACE) dogecoin-testnet
+
+delete-blockbook:
+	helm delete -n $(NAMESPACE) blockbook-testnet
 
 delete-celestia:
 	helm delete -n $(NAMESPACE) celestia-testnet

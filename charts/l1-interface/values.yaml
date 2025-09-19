@@ -12,8 +12,6 @@ image:
   pullPolicy: Always
   tag: 090425-01
 
-args:
-
 service:
   main:
     enabled: true
