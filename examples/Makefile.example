@@ -1,11 +1,11 @@
 NAMESPACE ?= default
 
-.PHONY: prepare install-dogecoin install-blockbook install-celestia install-scroll-core \
+.PHONY: prepare install-dogecoin install-celestia install-scroll-core \
 	install-l2-sequencer install-l2-bootnode install-contracts install-da-publisher \
 	install-rollup-node install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin delete-blockbook delete-celestia delete-frontends \
+	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-da-publisher delete-fee-oracle delete-rollup-node delete-cubesigner-signers \
 	delete-testnet-activity-helper
@@ -16,7 +16,7 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.8 \
+		--version=0.1.9 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:
@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.9 \
+		--version=0.0.10 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -112,7 +112,7 @@ install-rollup-node:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.3 \
+		--version=0.0.4 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -134,7 +134,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.10 \
+		--version=0.1.11 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -163,8 +163,8 @@ start-l1-sync:
 
 install-all:
 	$(MAKE) install-dogecoin
+	scrollsdk setup dogecoin_wallet_import
 	$(MAKE) install-celestia
-	$(MAKE) install-blockbook
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=360s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
@@ -263,4 +263,3 @@ delete-l2-sequencer:
 delete-l2-rpc:
 	helm delete -n $(NAMESPACE) l2-rpc
 	kubectl delete pvc -n $(NAMESPACE) data-l2-rpc-0
-
