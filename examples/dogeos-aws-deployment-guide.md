@@ -654,8 +654,12 @@ scrollsdk setup verify-contracts
   ```
 After generating the RPC package, you can commit the dogeos-rpc-package to GitHub and create a release tag for distribution.
 
+***Warning: Do not delete the l2-bootnode Helm release from the cluster. This will cause EKS to reassign the IP address, which in turn will invalidate the enode in the dogeos-rpc-package.***
+
 ## Re-Deployment from scratch
+
 ### Delete all charts and release all resources
+
 ```bash
 # delete all charts
 make delete-all
