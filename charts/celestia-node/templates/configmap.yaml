@@ -97,11 +97,11 @@ data:
       RequestTimeout = "8s"
 
     [DASer]
-    Enabled = {{ default true .Values.daser.enabled }}
+    Enabled = {{ .Values.daser.enabled }}
     SamplingRange = {{ default 128 .Values.daser.samplingRange }}
     ConcurrencyLimit = {{ default 8 .Values.share.concurrencyLimit }}
     BackgroundStoreInterval = "10m0s"
     SampleTimeout = "2m40s"
 
     [Pruner]
-    EnableService = {{ default true .Values.pruner.enableService }}
+    EnableService = {{ default false .Values.pruner.enableService }}
