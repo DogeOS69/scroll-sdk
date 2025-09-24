@@ -85,9 +85,11 @@ data:
       IndexCacheSize = 2048
       WriteBatchSize = 512
     [Header.Syncer]
+{{- if eq .Values.node_type "light" }}
       SyncFromHash = "{{ .Values.header.syncFromHash }}"
-      TrustingPeriod = "336h0m0s"
       PruningWindow = "721h0m0s"
+{{- end }}
+      TrustingPeriod = "336h0m0s"
     [Header.Server]
       WriteDeadline = "8s"
       ReadDeadline = "1m0s"
