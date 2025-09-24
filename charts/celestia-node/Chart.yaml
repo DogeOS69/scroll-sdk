@@ -1,8 +1,8 @@
 apiVersion: v2
 name: celestia-node
 description: A Helm chart for deploying Celestia light node on Kubernetes
-version: 0.1.7
-appVersion: "v0.25.2-mocha"
+version: 0.1.8
+appVersion: "v0.26.1-mocha"
 maintainers:
   - name: Celestia
     email: support@celestia.org
