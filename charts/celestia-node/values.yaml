@@ -24,6 +24,7 @@ header:
   syncFromHash: null
 
 daser:
+  enabled: true
   samplingRange: 128
 
 image:
