@@ -1,5 +1,5 @@
 network: "mocha"
-node_type: "full"
+node_type: "light"
 core:
   rpc_url: rpc-mocha.pops.one
   grpc_port: 9090
