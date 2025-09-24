@@ -132,10 +132,12 @@ spec:
             - "{{ .Values.network }}"
             - "--keyring.backend"
             - "test"
+{{- if ne .Values.node_type "bridge" }}
             - "--metrics.tls=false"
             - "--metrics"
             - "--metrics.endpoint"
             - "grafana-alloy:4318"
+{{- end }}
           lifecycle:
             preStop:
               exec:

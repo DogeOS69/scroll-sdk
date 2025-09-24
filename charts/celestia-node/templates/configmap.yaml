@@ -102,3 +102,6 @@ data:
     ConcurrencyLimit = {{ default 8 .Values.share.concurrencyLimit }}
     BackgroundStoreInterval = "10m0s"
     SampleTimeout = "2m40s"
+
+    [Pruner]
+    EnableService = {{ default true .Values.pruner.enableService }}

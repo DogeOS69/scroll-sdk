@@ -27,6 +27,9 @@ daser:
   enabled: true
   samplingRange: 128
 
+pruner:
+  enableService: false
+
 image:
   repository: "ghcr.io/celestiaorg/celestia-node"
   tag: "v0.26.1-mocha"
