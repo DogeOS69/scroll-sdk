@@ -1,5 +1,5 @@
 network: "mocha"
-node_type: "light"
+node_type: "full"
 core:
   rpc_url: rpc-mocha.pops.one
   grpc_port: 9090
@@ -11,26 +11,24 @@ mnemonic: ""
 
 share:
   useExchange: true
-  discovery:
-    enabled: true
-    # Number of peers to sample for data availability sampling
-    sampleSize: 8
-    # Minimum number of successful responses required
-    minSamples: 2
-    # Concurrency limit for data availability sampling
-    concurrencyLimit: 8
-  light:
-    trustedPeers: []
-    # The trusted hash of the light node, corresponding to the trusted height.
-    trustedHash: null
-    trustedHeight: 0
-    samplingRange: 128
-    samplingPeriod: "1s"
-    waitForCheckpoint: false
+  # Number of peers to sample for data availability sampling
+  sampleSize: 8
+  # Minimum number of successful responses required
+  minSamples: 2
+  # Concurrency limit for data availability sampling
+  concurrencyLimit: 8
+
+header:
+  trustedPeers: []
+  trustedHeight: 0
+  syncFromHash: null
+
+daser:
+  samplingRange: 128
 
 image:
   repository: "ghcr.io/celestiaorg/celestia-node"
-  tag: "v0.25.2-mocha"
+  tag: "v0.26.1-mocha"
   pullPolicy: IfNotPresent
 
 storage:

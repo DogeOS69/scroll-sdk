@@ -9,23 +9,9 @@ core:
 # use --set mnemonic="<your mnemonic here>" to set the mnemonic via helm install
 mnemonic: ""
 
-share:
-  useExchange: true
-  discovery:
-    enabled: true
-    # Number of peers to sample for data availability sampling
-    sampleSize: 8
-    # Minimum number of successful responses required
-    minSamples: 2
-    # Concurrency limit for data availability sampling
-    concurrencyLimit: 8
-  light:
-    trustedPeers: []
-    trustedHeight: 7410000
-    trustedHash: "3A23865AE9BDB52D775259431B114552F02DECBB0C56D799FDFB6DFB21534285"
-    samplingRange: 128
-    samplingPeriod: "1s"
-    waitForCheckpoint: false
+header:
+  trustedHeight: 7410000
+  syncFromHash: "3A23865AE9BDB52D775259431B114552F02DECBB0C56D799FDFB6DFB21534285"
 
 storage:
   size: "220Gi"
