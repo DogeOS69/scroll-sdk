@@ -58,6 +58,14 @@ data:
       ServerWriteTimeout = "1m0s"
       HandleRequestTimeout = "1m0s"
       ConcurrencyLimit = {{ default 8 .Values.share.concurrencyLimit }}
+    [Share.ShrexClient]
+      ReadTimeout = "2m0s"
+      WriteTimeout = "5s"
+    [Share.ShrexServer]
+      ReadTimeout = "5s"
+      WriteTimeout = "1m0s"
+      HandleRequestTimeout = "1m0s"
+      ConcurrencyLimit = 10
     [Share.PeerManagerParams]
       PoolValidationTimeout = "2m0s"
       PeerCooldown = "3s"
