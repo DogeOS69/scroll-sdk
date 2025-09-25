@@ -88,11 +88,11 @@ install-l2-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.17 \
+		--version=0.1.18 \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
-	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=360s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
+	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
