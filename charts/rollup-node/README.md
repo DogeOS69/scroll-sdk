@@ -1,6 +1,6 @@
 # rollup-node
 
-![Version: 0.1.10-dogeos](https://img.shields.io/badge/Version-0.1.10--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.11-dogeos](https://img.shields.io/badge/Version-0.1.11--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 rollup-node helm charts
 
@@ -38,7 +38,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"rollup-node"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/rollup-relayer"` |  |
-| image.tag | string | `"v4.5.41"` |  |
+| image.tag | string | `"v4.5.47"` |  |
 | initContainers.1-check-postgres-connection.args[0] | string | `"postgresql"` |  |
 | initContainers.1-check-postgres-connection.args[1] | string | `"$(SCROLL_ROLLUP_DB_CONFIG_DSN)"` |  |
 | initContainers.1-check-postgres-connection.args[2] | string | `"--timeout"` |  |
@@ -49,7 +49,7 @@ Kubernetes: `>=1.22.0-0`
 | initContainers.2-migrate-db.command[1] | string | `"-c"` |  |
 | initContainers.2-migrate-db.command[2] | string | `"db_cli migrate --config /config/migrate-db.json"` |  |
 | initContainers.2-migrate-db.envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
-| initContainers.2-migrate-db.image | string | `"scrolltech/rollup-db-cli:v4.5.31"` |  |
+| initContainers.2-migrate-db.image | string | `"scrolltech/rollup-db-cli:v4.5.47"` |  |
 | initContainers.2-migrate-db.volumeMounts[0].mountPath | string | `"/config/migrate-db.json"` |  |
 | initContainers.2-migrate-db.volumeMounts[0].name | string | `"migrate-db"` |  |
 | initContainers.2-migrate-db.volumeMounts[0].subPath | string | `"migrate-db.json"` |  |
