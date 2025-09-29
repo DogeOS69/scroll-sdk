@@ -29,7 +29,7 @@ resources:
     memory: "4Gi"
     cpu: "500m"
   limits:
-    memory: "6Gi"
+    memory: "8Gi"
     cpu: "2000m"
 
 # Storage

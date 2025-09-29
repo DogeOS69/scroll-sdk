@@ -16,7 +16,7 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.9 \
+		--version=0.1.10 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:
@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.11 \
+		--version=0.0.12 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -42,7 +42,7 @@ install-l1-devnet:
 
 install-scroll-core:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.6-dogeos \
+		--version=0.1.7-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
