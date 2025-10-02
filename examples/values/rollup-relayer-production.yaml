@@ -8,7 +8,7 @@ initContainers:
       - "0"
     envFrom:
       - secretRef:
-          name: rollup-node-secret-env
+          name: rollup-relayer-secret-env
   2-migrate-db:
     image: scrolltech/rollup-db-cli:v4.5.7
     command: ["/bin/sh", "-c", "db_cli migrate --config /config/migrate-db.json"]
@@ -18,7 +18,7 @@ initContainers:
         subPath: migrate-db.json
     envFrom:
       - secretRef:
-          name: rollup-node-secret-env
+          name: rollup-relayer-secret-env
 
 resources:
   requests:
@@ -30,14 +30,14 @@ resources:
 
 envFrom:
   - secretRef:
-      name: rollup-node-secret-env
+      name: rollup-relayer-secret-env
 
 persistence:
   migrate-db:
     enabled: true
     type: secret
     mountPath: /config/migrate-db.json
-    name: rollup-node-migrate-db
+    name: rollup-relayer-migrate-db
     defaultMode: "0777"
 
 configMaps:
@@ -49,28 +49,28 @@ configMaps:
       L1_SCROLL_CHAIN_PROXY_ADDR: ""
 
 externalSecrets:
-  rollup-node-secret-env:
+  rollup-relayer-secret-env:
     provider: aws
     data:
       - remoteRef:
-          key: scroll/rollup-node-secret-env
+          key: scroll/rollup-relayer-secret-env
           property: SCROLL_ROLLUP_DB_CONFIG_DSN
         secretKey: SCROLL_ROLLUP_DB_CONFIG_DSN
       - remoteRef:
-          key: scroll/rollup-node-secret-env
+          key: scroll/rollup-relayer-secret-env
           property: SCROLL_ROLLUP_L2_CONFIG_RELAYER_CONFIG_COMMIT_SENDER_SIGNER_CONFIG_PRIVATE_KEY_SIGNER_CONFIG_PRIVATE_KEY
         secretKey: SCROLL_ROLLUP_L2_CONFIG_RELAYER_CONFIG_COMMIT_SENDER_SIGNER_CONFIG_PRIVATE_KEY_SIGNER_CONFIG_PRIVATE_KEY
       - remoteRef:
-          key: scroll/rollup-node-secret-env
+          key: scroll/rollup-relayer-secret-env
           property: SCROLL_ROLLUP_L2_CONFIG_RELAYER_CONFIG_FINALIZE_SENDER_SIGNER_CONFIG_PRIVATE_KEY_SIGNER_CONFIG_PRIVATE_KEY
         secretKey: SCROLL_ROLLUP_L2_CONFIG_RELAYER_CONFIG_FINALIZE_SENDER_SIGNER_CONFIG_PRIVATE_KEY_SIGNER_CONFIG_PRIVATE_KEY
     refreshInterval: 2m
     serviceAccount: external-secrets
-  rollup-node-migrate-db:
+  rollup-relayer-migrate-db:
     provider: aws
     data:
       - remoteRef:
-          key: scroll/rollup-node-migrate-db
+          key: scroll/rollup-relayer-migrate-db
         secretKey: migrate-db.json
     refreshInterval: 2m
     serviceAccount: external-secrets

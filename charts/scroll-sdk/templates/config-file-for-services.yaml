@@ -156,16 +156,16 @@ data:
 {{ .Files.Get "configs/l2-sequencer.env" | indent 2 }}
 ---
 {{- end }}
-{{- if index .Values "rollup-node" "enabled" }}
+{{- if index .Values "rollup-relayer" "enabled" }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
     {{- include "scroll-sdk.labels" $ | nindent 4 }}
-  name: rollup-node-env
+  name: rollup-relayer-env
 data:
-{{ .Files.Get "configs/rollup-node.env" | indent 2 }}
+{{ .Files.Get "configs/rollup-relayer.env" | indent 2 }}
 ---
 {{- end }}
 {{- if index .Values "admin-system-backend" "enabled" }}

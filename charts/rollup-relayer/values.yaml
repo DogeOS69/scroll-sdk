@@ -1,6 +1,6 @@
 ---
 global:
-  nameOverride: &app_name rollup-node
+  nameOverride: &app_name rollup-relayer
   fullnameOverride: *app_name
 
 controller:
@@ -19,7 +19,7 @@ env:
 
 envFrom:
   - configMapRef:
-      name: rollup-node-env
+      name: rollup-relayer-env
 
 command:
   - "sh"
@@ -69,7 +69,7 @@ persistence:
     enabled: true
     type: configMap
     mountPath: /config/migrate-db.json
-    name: rollup-node-migrate-db
+    name: rollup-relayer-migrate-db
     defaultMode: "0777"
   wait-for-l1-script:
     enabled: true
@@ -87,7 +87,7 @@ initContainers:
       - "0"
     envFrom:
       - configMapRef:
-          name: rollup-node-env
+          name: rollup-relayer-env
   2-migrate-db:
     image: scrolltech/rollup-db-cli:v4.5.47
     command: ["/bin/sh", "-c", "db_cli migrate --config /config/migrate-db.json"]
@@ -97,7 +97,7 @@ initContainers:
         subPath: migrate-db.json
     envFrom:
       - configMapRef:
-          name: rollup-node-env
+          name: rollup-relayer-env
   3-wait-for-l1:
     image: scrolltech/scroll-alpine:v0.0.1
     command:
@@ -106,7 +106,7 @@ initContainers:
       - /wait-for-l1.sh $L1_RPC_ENDPOINT
     envFrom:
       - configMapRef:
-          name: rollup-node-env
+          name: rollup-relayer-env
     volumeMounts:
       - name: wait-for-l1-script
         mountPath: /wait-for-l1.sh

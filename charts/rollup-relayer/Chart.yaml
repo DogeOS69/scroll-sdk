@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
-description: rollup-node helm charts
-name: rollup-node
+description: rollup-relayer helm charts
+name: rollup-relayer
 version: 0.1.11-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"

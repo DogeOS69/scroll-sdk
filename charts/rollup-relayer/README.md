@@ -1,8 +1,8 @@
-# rollup-node
+# rollup-relayer
 
 ![Version: 0.1.11-dogeos](https://img.shields.io/badge/Version-0.1.11--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
-rollup-node helm charts
+rollup-relayer helm charts
 
 ## Maintainers
 
@@ -31,11 +31,11 @@ Kubernetes: `>=1.22.0-0`
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"Recreate"` |  |
 | controller.type | string | `"deployment"` |  |
-| envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
+| envFrom[0].configMapRef.name | string | `"rollup-relayer-env"` |  |
 | env[0].name | string | `"METRICS_PORT"` |  |
 | env[0].value | int | `8090` |  |
-| global.fullnameOverride | string | `"rollup-node"` |  |
-| global.nameOverride | string | `"rollup-node"` |  |
+| global.fullnameOverride | string | `"rollup-relayer"` |  |
+| global.nameOverride | string | `"rollup-relayer"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/rollup-relayer"` |  |
 | image.tag | string | `"v4.5.47"` |  |
@@ -43,12 +43,12 @@ Kubernetes: `>=1.22.0-0`
 | initContainers.1-check-postgres-connection.args[1] | string | `"$(SCROLL_ROLLUP_DB_CONFIG_DSN)"` |  |
 | initContainers.1-check-postgres-connection.args[2] | string | `"--timeout"` |  |
 | initContainers.1-check-postgres-connection.args[3] | string | `"0"` |  |
-| initContainers.1-check-postgres-connection.envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
+| initContainers.1-check-postgres-connection.envFrom[0].configMapRef.name | string | `"rollup-relayer-env"` |  |
 | initContainers.1-check-postgres-connection.image | string | `"atkrad/wait4x:latest"` |  |
 | initContainers.2-migrate-db.command[0] | string | `"/bin/sh"` |  |
 | initContainers.2-migrate-db.command[1] | string | `"-c"` |  |
 | initContainers.2-migrate-db.command[2] | string | `"db_cli migrate --config /config/migrate-db.json"` |  |
-| initContainers.2-migrate-db.envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
+| initContainers.2-migrate-db.envFrom[0].configMapRef.name | string | `"rollup-relayer-env"` |  |
 | initContainers.2-migrate-db.image | string | `"scrolltech/rollup-db-cli:v4.5.47"` |  |
 | initContainers.2-migrate-db.volumeMounts[0].mountPath | string | `"/config/migrate-db.json"` |  |
 | initContainers.2-migrate-db.volumeMounts[0].name | string | `"migrate-db"` |  |
@@ -56,7 +56,7 @@ Kubernetes: `>=1.22.0-0`
 | initContainers.3-wait-for-l1.command[0] | string | `"/bin/sh"` |  |
 | initContainers.3-wait-for-l1.command[1] | string | `"-c"` |  |
 | initContainers.3-wait-for-l1.command[2] | string | `"/wait-for-l1.sh $L1_RPC_ENDPOINT"` |  |
-| initContainers.3-wait-for-l1.envFrom[0].configMapRef.name | string | `"rollup-node-env"` |  |
+| initContainers.3-wait-for-l1.envFrom[0].configMapRef.name | string | `"rollup-relayer-env"` |  |
 | initContainers.3-wait-for-l1.image | string | `"scrolltech/scroll-alpine:v0.0.1"` |  |
 | initContainers.3-wait-for-l1.volumeMounts[0].mountPath | string | `"/wait-for-l1.sh"` |  |
 | initContainers.3-wait-for-l1.volumeMounts[0].name | string | `"wait-for-l1-script"` |  |
@@ -72,7 +72,7 @@ Kubernetes: `>=1.22.0-0`
 | persistence.migrate-db.defaultMode | string | `"0777"` |  |
 | persistence.migrate-db.enabled | bool | `true` |  |
 | persistence.migrate-db.mountPath | string | `"/config/migrate-db.json"` |  |
-| persistence.migrate-db.name | string | `"rollup-node-migrate-db"` |  |
+| persistence.migrate-db.name | string | `"rollup-relayer-migrate-db"` |  |
 | persistence.migrate-db.type | string | `"configMap"` |  |
 | persistence.wait-for-l1-script.defaultMode | string | `"0777"` |  |
 | persistence.wait-for-l1-script.enabled | bool | `true` |  |

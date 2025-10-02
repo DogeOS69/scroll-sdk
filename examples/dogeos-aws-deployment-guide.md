@@ -509,7 +509,7 @@ make install-dogeos-da
 
 ### 7. Deploy rollup node and explorer
 ```bash
-make install-rollup-node
+make install-rollup-relayer
 ```
 
 ### 8. Deploy Gas Oracle

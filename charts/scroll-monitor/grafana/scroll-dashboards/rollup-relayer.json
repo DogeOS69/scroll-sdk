@@ -116,7 +116,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "sum(rate(rollup_propose_chunk_circle_total{service=\"rollup-node\"}[$__rate_interval]))",
+              "expr": "sum(rate(rollup_propose_chunk_circle_total{service=\"rollup-relayer\"}[$__rate_interval]))",
               "hide": false,
               "legendFormat": "run rate",
               "range": true,
@@ -208,7 +208,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_chunk_failure_circle_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_chunk_failure_circle_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -300,7 +300,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_tx_num{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_tx_num{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -392,7 +392,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_chunk_update_info_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_chunk_update_info_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -484,7 +484,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_l2_block_l1_commit_calldata_size{service=\"rollup-node\"}",
+              "expr": "rollup_l2_block_l1_commit_calldata_size{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -576,7 +576,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_total_l1_commit_blob_size{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_total_l1_commit_blob_size{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -668,7 +668,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_total_l1_commit_call_data_size{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_total_l1_commit_call_data_size{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -760,7 +760,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_chunk_update_info_failure_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_chunk_update_info_failure_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -852,7 +852,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_max_tx_consumption{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_max_tx_consumption{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -944,7 +944,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_chunk_block_number{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_chunk_block_number{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -1036,7 +1036,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_chunk_blocks_propose_not_enough_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_chunk_blocks_propose_not_enough_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -1128,7 +1128,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_chunk_first_block_timeout_reached_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_chunk_first_block_timeout_reached_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -1220,7 +1220,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_chunk_estimate_l1_commit_gas{service=\"rollup-node\"}",
+              "expr": "rollup_propose_chunk_estimate_l1_commit_gas{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}",
               "range": true,
@@ -1317,7 +1317,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_batch_circle_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_batch_circle_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1399,7 +1399,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_propose_batch_failure_circle_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_propose_batch_failure_circle_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1481,7 +1481,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_batch_update_info_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_batch_update_info_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1563,7 +1563,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_propose_batch_update_info_failure_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_propose_batch_update_info_failure_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1649,7 +1649,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_batch_total_l1_commit_gas{service=\"rollup-node\"}",
+              "expr": "rollup_propose_batch_total_l1_commit_gas{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1736,7 +1736,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_batch_total_l1_call_data_size{service=\"rollup-node\"}",
+              "expr": "rollup_propose_batch_total_l1_call_data_size{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1823,7 +1823,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_batch_total_l1_commit_blob_size{service=\"rollup-node\"}",
+              "expr": "rollup_propose_batch_total_l1_commit_blob_size{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1909,7 +1909,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_propose_batch_first_block_timeout_reached_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_propose_batch_first_block_timeout_reached_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1995,7 +1995,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_propose_batch_chunks_number{service=\"rollup-node\"}",
+              "expr": "rollup_propose_batch_chunks_number{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2101,7 +2101,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_l2_watcher_fetch_running_missing_blocks_height{service=\"rollup-node\"}",
+              "expr": "rollup_l2_watcher_fetch_running_missing_blocks_height{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}-total",
               "range": true,
@@ -2193,7 +2193,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_l2_watcher_blocks_fetched_gap{service=\"rollup-node\"}",
+              "expr": "rollup_l2_watcher_blocks_fetched_gap{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "${instance}-total",
               "range": true,
@@ -2294,7 +2294,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_layer2_process_pending_batch_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_layer2_process_pending_batch_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2380,7 +2380,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_layer2_process_pending_batch_success_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_layer2_process_pending_batch_success_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2466,7 +2466,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_committed_batches_finalized_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_committed_batches_finalized_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2552,7 +2552,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_committed_batches_finalized_success_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_committed_batches_finalized_success_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2638,7 +2638,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_committed_batches_confirmed_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_committed_batches_confirmed_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2724,7 +2724,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_committed_batches_confirmed_failed_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_committed_batches_confirmed_failed_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2810,7 +2810,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_finalized_batches_confirmed_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_finalized_batches_confirmed_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2896,7 +2896,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_process_finalized_batches_confirmed_failed_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_process_finalized_batches_confirmed_failed_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -2982,7 +2982,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_chain_monitor_latest_failed_batch_call{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_chain_monitor_latest_failed_batch_call{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -3068,7 +3068,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rate(rollup_layer2_chain_monitor_latest_failed_batch_status{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "rate(rollup_layer2_chain_monitor_latest_failed_batch_status{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -3166,7 +3166,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_sender_send_transaction_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_sender_send_transaction_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3250,7 +3250,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_sender_send_transaction_resubmit_send_transaction_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_sender_send_transaction_resubmit_send_transaction_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3334,7 +3334,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_send_transaction_full_tx_failure_total{service=\"rollup-node\"}",
+              "expr": "rollup_sender_send_transaction_full_tx_failure_total{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}-{{name}}-channel-full",
               "range": true,
               "refId": "A"
@@ -3342,7 +3342,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_send_transaction_full_tx_failure_total{service=\"rollup-node\"}",
+              "expr": "rollup_sender_send_transaction_full_tx_failure_total{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "{{instance}}-{{name}}-repeat-transaction",
               "range": true,
@@ -3351,7 +3351,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_send_transaction_get_fee_failure_total{service=\"rollup-node\"}",
+              "expr": "rollup_sender_send_transaction_get_fee_failure_total{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "{{instance}}-{{name}}-get-fee-failure",
               "range": true,
@@ -3360,7 +3360,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_send_transaction_send_tx_failure_total{service=\"rollup-node\"}",
+              "expr": "rollup_sender_send_transaction_send_tx_failure_total{service=\"rollup-relayer\"}",
               "hide": false,
               "legendFormat": "{{instance}}-{{name}}-send-tx-failure",
               "range": true,
@@ -3445,7 +3445,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "irate(rollup_sender_send_transaction_resubmit_send_transaction_failed_total{service=\"rollup-node\"}[$__rate_interval])",
+              "expr": "irate(rollup_sender_send_transaction_resubmit_send_transaction_failed_total{service=\"rollup-relayer\"}[$__rate_interval])",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3529,7 +3529,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_gas_tip_cap{service=\"rollup-node\"}",
+              "expr": "rollup_sender_gas_tip_cap{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3613,7 +3613,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_gas_fee_cap{service=\"rollup-node\"}",
+              "expr": "rollup_sender_gas_fee_cap{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3697,7 +3697,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_blob_gas_fee_cap{service=\"rollup-node\"}",
+              "expr": "rollup_sender_blob_gas_fee_cap{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3781,7 +3781,7 @@
             {
               "datasource": "Prometheus",
               "editorMode": "code",
-              "expr": "rollup_sender_gas_limit{service=\"rollup-node\"}",
+              "expr": "rollup_sender_gas_limit{service=\"rollup-relayer\"}",
               "legendFormat": "{{instance}}-{{name}}",
               "range": true,
               "refId": "A"
@@ -3804,8 +3804,8 @@
       {
         "current": {
           "selected": false,
-          "text": "rollup-node",
-          "value": "rollup-node"
+          "text": "rollup-relayer",
+          "value": "rollup-relayer"
         },
         "datasource": "Prometheus",
         "definition": "label_values(service)",
@@ -3819,7 +3819,7 @@
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
-        "regex": "/.*rollup-node.*/",
+        "regex": "/.*rollup-relayer.*/",
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
