@@ -1,6 +1,6 @@
 # da-publisher
 
-![Version: 0.0.3](https://img.shields.io/badge/Version-0.0.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.4](https://img.shields.io/badge/Version-0.0.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DA Publisher
 
@@ -32,7 +32,7 @@ Kubernetes: `>=1.22.0-0`
 | controller.type | string | `"statefulset"` |  |
 | defaultProbes.custom | bool | `true` |  |
 | defaultProbes.enabled | bool | `true` |  |
-| defaultProbes.spec.httpGet.path | string | `"/healthz"` |  |
+| defaultProbes.spec.httpGet.path | string | `"/health"` |  |
 | defaultProbes.spec.httpGet.port | int | `3000` |  |
 | envFrom[0].configMapRef.name | string | `"da-publisher-env"` |  |
 | env[0].name | string | `"RUST_LOG"` |  |
@@ -41,18 +41,18 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"da-publisher"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/da-publisher"` |  |
-| image.tag | string | `"090425-01"` |  |
+| image.tag | string | `"100225-00"` |  |
 | probes.liveness.<<.custom | bool | `true` |  |
 | probes.liveness.<<.enabled | bool | `true` |  |
-| probes.liveness.<<.spec.httpGet.path | string | `"/healthz"` |  |
+| probes.liveness.<<.spec.httpGet.path | string | `"/health"` |  |
 | probes.liveness.<<.spec.httpGet.port | int | `3000` |  |
 | probes.readiness.<<.custom | bool | `true` |  |
 | probes.readiness.<<.enabled | bool | `true` |  |
-| probes.readiness.<<.spec.httpGet.path | string | `"/healthz"` |  |
+| probes.readiness.<<.spec.httpGet.path | string | `"/health"` |  |
 | probes.readiness.<<.spec.httpGet.port | int | `3000` |  |
 | probes.startup.<<.custom | bool | `true` |  |
 | probes.startup.<<.enabled | bool | `true` |  |
-| probes.startup.<<.spec.httpGet.path | string | `"/healthz"` |  |
+| probes.startup.<<.spec.httpGet.path | string | `"/health"` |  |
 | probes.startup.<<.spec.httpGet.port | int | `3000` |  |
 | resources.limits.cpu | string | `"500m"` |  |
 | resources.limits.memory | string | `"512Mi"` |  |
