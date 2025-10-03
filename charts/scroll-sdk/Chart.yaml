@@ -98,7 +98,7 @@ dependencies:
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: rollup-explorer-backend.enabled
   - name: rollup-relayer
-    version: 0.1.4-dogeos
+    version: 0.1.11-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: rollup-relayer.enabled
   # - name: rpc-gateway
