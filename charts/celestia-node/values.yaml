@@ -17,6 +17,8 @@ share:
   minSamples: 2
   # Concurrency limit for data availability sampling
   concurrencyLimit: 8
+  # Max size of discovered candidate peers pool for shrex/share discovery
+  peersLimit: 32
 
 header:
   trustedPeers: []

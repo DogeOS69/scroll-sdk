@@ -74,7 +74,7 @@ data:
     [Share.LightAvailability]
       SampleAmount = {{ default 8 .Values.share.sampleSize }}
     [Share.Discovery]
-      PeersLimit = {{ default 5 .Values.share.minSamples }}
+      PeersLimit = {{ default 32 .Values.share.peersLimit }}
       AdvertiseInterval = "1h0m0s"
 
     [Header]
