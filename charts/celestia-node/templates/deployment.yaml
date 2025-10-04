@@ -28,8 +28,11 @@ spec:
             - |
               mkdir -p /home/celestia
               mkdir -p /home/celestia/keys
+              # Ensure auth directory exists for core xtoken
+              mkdir -p /home/celestia/celestia-auth
               chmod 777 /home/celestia
               chmod 777 /home/celestia/keys
+              chmod 755 /home/celestia/celestia-auth
           volumeMounts:
             - name: node-store
               mountPath: /home/celestia
@@ -101,6 +104,33 @@ spec:
             - name: node-config
               mountPath: /config
               readOnly: true
+        {{- if .Values.externalSecrets }}
+        - name: write-xtoken
+          image: "busybox:latest"
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              TOKEN_PATH="/xtoken/x-token"
+              if [ ! -f "$TOKEN_PATH" ]; then
+                echo "ERROR: x-token not found in secret at $TOKEN_PATH" >&2
+                exit 1
+              fi
+              TOKEN=$(cat "$TOKEN_PATH")
+              if [ -z "$TOKEN" ]; then
+                echo "ERROR: x-token is empty" >&2
+                exit 1
+              fi
+              echo "{ \"x-token\": \"$TOKEN\" }" > /home/celestia/celestia-auth/xtoken.json
+              chmod 644 /home/celestia/celestia-auth/xtoken.json
+          volumeMounts:
+            - name: node-store
+              mountPath: /home/celestia
+            - name: xtoken-secret
+              mountPath: /xtoken
+              readOnly: true
+        {{- end }}
         {{- if not .Values.rpc.auth.skipAuth }}
         - name: generate-auth-token
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -128,6 +158,9 @@ spec:
             - "{{ .Values.core.rpc_url }}"
             - "--core.port"
             - "{{ .Values.core.grpc_port }}"
+            - "--core.tls"
+            - "--core.xtoken.path"
+            - "/home/celestia/celestia-auth"
             - "--p2p.network"
             - "{{ .Values.network }}"
             - "--keyring.backend"
@@ -164,6 +197,15 @@ spec:
         - name: node-config
           configMap:
             name: {{ include "celestia-node.fullname" . }}-config
+        {{- if .Values.externalSecrets }}
+        {{- $secretName := "" }}
+        {{- range $key, $val := .Values.externalSecrets }}
+        {{- $secretName = $key }}
+        {{- end }}
+        - name: xtoken-secret
+          secret:
+            secretName: {{ $secretName }}
+        {{- end }}
         {{- if .Values.mnemonic }}
         - name: mnemonic
           secret:

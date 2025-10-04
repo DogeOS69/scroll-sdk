@@ -7,7 +7,7 @@ metadata:
 data:
   config.toml: |
     [Node]
-    StartupTimeout = "20s"
+    StartupTimeout = "2m0s"
     ShutdownTimeout = "20s"
     Store = "/home/celestia"
 
