@@ -26,7 +26,7 @@ Kubernetes: `>=1.22.0-0`
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.3-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-node | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-relayer | 0.1.11-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | scroll-monitor | 0.1.4-dogeos |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-common | 0.1.0 |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 15.5.0 |
@@ -123,7 +123,7 @@ Kubernetes: `>=1.22.0-0`
 | rollup-explorer-backend.ingress.main.ingressClassName | string | `"nginx"` |  |
 | rollup-explorer-backend.ingress.main.labels | object | `{}` |  |
 | rollup-explorer-backend.ingress.main.primary | bool | `true` |  |
-| rollup-node.enabled | bool | `false` |  |
+| rollup-relayer.enabled | bool | `false` |  |
 | rpc-gateway.enabled | bool | `false` |  |
 | rpc-gateway.ingress.main.enabled | bool | `true` |  |
 | rpc-gateway.ingress.main.hosts[0].host | string | `"l2-rpc-gateway.scrollsdk"` |  |

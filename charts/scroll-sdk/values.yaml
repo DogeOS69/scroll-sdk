@@ -78,7 +78,7 @@ rollup-explorer-backend:
             - path: /
               pathType: Prefix
 
-rollup-node:
+rollup-relayer:
   enabled: false
 
 l1-explorer:
