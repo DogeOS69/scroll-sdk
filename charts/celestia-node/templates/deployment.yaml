@@ -132,10 +132,6 @@ spec:
             - "{{ .Values.network }}"
             - "--keyring.backend"
             - "test"
-            - "--metrics.tls=false"
-            - "--metrics"
-            - "--metrics.endpoint"
-            - "grafana-alloy:4318"
           lifecycle:
             preStop:
               exec:
