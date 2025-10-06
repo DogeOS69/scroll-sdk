@@ -85,10 +85,14 @@ rpc:
 externalSecrets:
   celestia-node-secret-env:
     provider: aws
+    refreshInterval: 2m
+    serviceAccount: external-secrets
     data:
       - remoteRef:
           key: scroll/celestia-node-secret-env
           property: mnemonic
         secretKey: mnemonic
-    refreshInterval: 2m
-    serviceAccount: external-secrets
+      - remoteRef:
+          key: scroll/celestia-node-secret-env
+          property: x-token
+        secretKey: x-token
