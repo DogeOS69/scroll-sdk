@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![AppVersion: v0.27.3-mocha](https://img.shields.io/badge/AppVersion-v0.25.2--mocha-informational?style=flat-square)
+![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![AppVersion: v0.27.3-mocha](https://img.shields.io/badge/AppVersion-v0.27.3--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -22,9 +22,14 @@ A Helm chart for deploying Celestia light node on Kubernetes
 |-----|------|---------|-------------|
 | core.grpc_port | int | `9090` |  |
 | core.rpc_url | string | `"rpc-mocha.pops.one"` |  |
+| daser.enabled | bool | `true` |  |
+| daser.samplingRange | int | `128` |  |
+| header.syncFromHash | string | `nil` |  |
+| header.trustedHeight | int | `0` |  |
+| header.trustedPeers | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/celestiaorg/celestia-node"` |  |
-| image.tag | string | `"v0.25.2-mocha"` |  |
+| image.tag | string | `"v0.27.3-mocha"` |  |
 | ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
 | ingress.annotations."nginx.ingress.kubernetes.io/ssl-redirect" | string | `"true"` |  |
 | ingress.className | string | `"nginx"` |  |
@@ -37,6 +42,7 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | mnemonic | string | `""` |  |
 | network | string | `"mocha"` |  |
 | node_type | string | `"light"` |  |
+| pruner.enableService | bool | `false` |  |
 | resources.limits.cpu | string | `"1000m"` |  |
 | resources.limits.memory | string | `"4Gi"` |  |
 | resources.requests.cpu | string | `"500m"` |  |
@@ -55,16 +61,10 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | service.ports.rpc.protocol | string | `"TCP"` |  |
 | service.ports.rpc.targetPort | int | `26658` |  |
 | service.type | string | `"ClusterIP"` |  |
-| share.discovery.concurrencyLimit | int | `8` |  |
-| share.discovery.enabled | bool | `true` |  |
-| share.discovery.minSamples | int | `2` |  |
-| share.discovery.sampleSize | int | `8` |  |
-| share.light.samplingPeriod | string | `"1s"` |  |
-| share.light.samplingRange | int | `128` |  |
-| share.light.trustedHash | string | `nil` |  |
-| share.light.trustedHeight | int | `0` |  |
-| share.light.trustedPeers | list | `[]` |  |
-| share.light.waitForCheckpoint | bool | `false` |  |
+| share.concurrencyLimit | int | `8` |  |
+| share.minSamples | int | `2` |  |
+| share.peersLimit | int | `32` |  |
+| share.sampleSize | int | `8` |  |
 | share.useExchange | bool | `true` |  |
 | storage.retainPvcOnUninstall | bool | `true` |  |
 | storage.size | string | `"200Gi"` |  |
