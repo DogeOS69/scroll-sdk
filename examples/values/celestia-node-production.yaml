@@ -129,9 +129,9 @@ configToml: |
   GracePeriod = "1m0s"
 
   [RPC]
-  Address = "localhost"
+  Address = "0.0.0.0"
   Port = "26658"
-  SkipAuth = false
+  SkipAuth = true
 
   [RPC.CORS]
   Enabled = false
