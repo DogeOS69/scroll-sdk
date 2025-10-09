@@ -77,6 +77,8 @@ env:
     value: "100"
   - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED"
     value: "5"
+  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL"
+    value: ""
   # UTXO Manager
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS
     value: "10000000000" # Example: 100 DOGE for mainnet, adjust as needed
@@ -119,6 +121,10 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
         secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
+      - remoteRef:
+          key: dogeos/withdrawal-processor
+          property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN
+        secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
