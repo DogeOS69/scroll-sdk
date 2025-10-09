@@ -11,7 +11,7 @@ mnemonic: ""
 
 image:
   repository: "ghcr.io/celestiaorg/celestia-node"
-  tag: "v0.27.3-mocha"
+  tag: "v0.27.5-mocha"
   pullPolicy: IfNotPresent
 
 storage:

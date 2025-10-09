@@ -25,7 +25,7 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | core.rpc_url | string | `"rpc-mocha.pops.one"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/celestiaorg/celestia-node"` |  |
-| image.tag | string | `"v0.27.3-mocha"` |  |
+| image.tag | string | `"v0.27.5-mocha"` |  |
 | ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
 | ingress.annotations."nginx.ingress.kubernetes.io/ssl-redirect" | string | `"true"` |  |
 | ingress.className | string | `"nginx"` |  |
