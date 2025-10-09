@@ -44,7 +44,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"l1-interface"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/l1-interface"` |  |
-| image.tag | string | `"100225-00"` |  |
+| image.tag | string | `"100825-00"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/data"` |  |

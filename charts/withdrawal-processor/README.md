@@ -100,7 +100,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"withdrawal-processor"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/withdrawal-processor"` |  |
-| image.tag | string | `"100225-00"` |  |
+| image.tag | string | `"100825-00"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.annotations.placeholder | string | `"annotation"` |  |
 | persistence.data.enabled | bool | `false` |  |

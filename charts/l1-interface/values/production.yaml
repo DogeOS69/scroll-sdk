@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "100225-00"
+  tag: "100825-00"
 
 # Direct environment variables
 env:
