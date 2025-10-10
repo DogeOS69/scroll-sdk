@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "100225-00"
+  tag: "101025-00"
 
 # Direct environment variables
 env:
@@ -48,6 +48,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"                # predefined
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "15000"         # predefined
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"       # predefined
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: ""              
 
 # External Secrets configuration for production
 externalSecrets:
@@ -62,6 +63,10 @@ externalSecrets:
           key: "dogeos/l1-interface-secret-env"
           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
+      - remoteRef:
+          key: "dogeos/l1-interface-secret-env"
+          property: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
+        secretKey: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 

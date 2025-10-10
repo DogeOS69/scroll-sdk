@@ -165,6 +165,8 @@ spec:
             - "{{ .Values.network }}"
             - "--keyring.backend"
             - "test"
+            - "--log.level"
+            - "DEBUG"
           lifecycle:
             preStop:
               exec:

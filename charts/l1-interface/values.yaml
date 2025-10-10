@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/l1-interface
   pullPolicy: Always
-  tag: 100225-00
+  tag: 101025-00
 
 service:
   main:

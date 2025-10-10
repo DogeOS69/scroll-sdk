@@ -26,12 +26,12 @@ install-blockbook:
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.8 \
+		--version=0.1.9 \
 		--values values/celestia-node-production.yaml
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.13 \
+		--version=0.0.14 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -88,7 +88,7 @@ install-l2-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.20 \
+		--version=0.1.21 \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
@@ -96,7 +96,7 @@ install-contracts:
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.4 \
+		--version=0.0.5 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
@@ -134,7 +134,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.12 \
+		--version=0.1.13 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
