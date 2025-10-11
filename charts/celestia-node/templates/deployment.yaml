@@ -166,7 +166,7 @@ spec:
             - "--keyring.backend"
             - "test"
             - "--log.level"
-            - "DEBUG"
+            - "{{ .Values.logLevel }}"
           lifecycle:
             preStop:
               exec:
