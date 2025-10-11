@@ -1,3 +1,4 @@
+logLevel: "INFO"
 network: "mocha"
 node_type: "light"
 core:
