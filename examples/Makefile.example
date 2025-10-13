@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.14 \
+		--version=0.0.15 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
