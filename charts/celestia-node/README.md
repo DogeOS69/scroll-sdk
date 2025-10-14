@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.10](https://img.shields.io/badge/Version-0.1.10-informational?style=flat-square) ![AppVersion: v0.27.5-mocha](https://img.shields.io/badge/AppVersion-v0.27.5--mocha-informational?style=flat-square)
+![Version: 0.1.11](https://img.shields.io/badge/Version-0.1.11-informational?style=flat-square) ![AppVersion: v0.27.5-mocha](https://img.shields.io/badge/AppVersion-v0.27.5--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 

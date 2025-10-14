@@ -167,6 +167,10 @@ spec:
             - "test"
             - "--log.level"
             - "{{ .Values.logLevel }}"
+            - "--metrics.tls=false"
+            - "--metrics"
+            - "--metrics.endpoint"
+            - "grafana-alloy:4318"
           lifecycle:
             preStop:
               exec:
