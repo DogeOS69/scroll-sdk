@@ -1,6 +1,6 @@
 # l1-interface
 
-![Version: 0.0.15](https://img.shields.io/badge/Version-0.0.15-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: l1-interface:101325-00](https://img.shields.io/badge/AppVersion-l1--interface:101325--00-informational?style=flat-square)
+![Version: 0.0.16](https://img.shields.io/badge/Version-0.0.16-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS L1 interface
 
@@ -44,7 +44,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"l1-interface"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/l1-interface"` |  |
-| image.tag | string | `"101325-00"` |  |
+| image.tag | string | `"101425-01"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/data"` |  |

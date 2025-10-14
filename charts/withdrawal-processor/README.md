@@ -1,6 +1,6 @@
 # withdrawal-processor
 
-![Version: 0.1.13](https://img.shields.io/badge/Version-0.1.13-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.14](https://img.shields.io/badge/Version-0.1.14-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
@@ -102,7 +102,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"withdrawal-processor"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/withdrawal-processor"` |  |
-| image.tag | string | `"101025-00"` |  |
+| image.tag | string | `"101425-01"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.annotations.placeholder | string | `"annotation"` |  |
 | persistence.data.enabled | bool | `false` |  |
