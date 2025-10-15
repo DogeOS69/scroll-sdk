@@ -3,7 +3,7 @@
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: Always
-  tag: 101025-00
+  tag: 101425-01
 
 env:
   # Top-level settings
@@ -22,7 +22,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
     value: "your-mainnet-bridge-script-hex" # FIXME: Update with your MAINNET bridge script hex
   - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
-    value: "85" # Review if this needs adjustment for mainnet
+    value: "1024" # Review if this needs adjustment for mainnet
   - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
     value: "1000000" # Review and set appropriate mainnet fee rate
   - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS
