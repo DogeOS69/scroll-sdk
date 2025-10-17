@@ -162,9 +162,7 @@ start-l1-sync:
 		curl -X POST http://l1-interface:9091/disable-genesis-hold
 
 install-all:
-	$(MAKE) install-dogecoin
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet && scrollsdk setup dogecoin-wallet-import
-	$(MAKE) install-celestia
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
