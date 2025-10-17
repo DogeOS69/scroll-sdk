@@ -271,7 +271,7 @@ The format is as follows:
 [[base_funding_utxos]]
 txid = "" # The txid of the transaction you just made
 vout = 0  # The vout index where the helper address received this transaction, usually 0
-amount_sats = 50_000_000_000 # The amount received by the helper address in this transaction, in Satoshi or Koinu
+amount_sats = 70_000_000_000 # The amount received by the helper address in this transaction, in Satoshi or Koinu
 ```
 
 Then run `scrollsdk doge bridge-init` again with the same seed string.
@@ -370,7 +370,7 @@ scrollsdk setup push-secrets
 When prompted, provide the following information:
 1. Secret Service: `AWS`
 2. Secret Prefix Name: `dogeos`
-3. AWS Secret Region: `us-west-2`
+3. AWS Secret Region: for example `us-west-2` 
 4. AWS Service Account: `external-secrets`
 
 > **Important**: The service account name must match the one created in the prerequisite step.
@@ -439,124 +439,22 @@ This command will:
 
 ## DogeOs Deployment
 
+### Deploy dogecoin and celestia
 
-
-### 1. Deploy `dogecoin` node
-```bash
-make install-dogecoin
-```
-
-### 2. Deploy `celestia` node
-```bash
+```shell
+make install-dogecoin 
 make install-celestia
 ```
 
-### 3. Deploy `l1-devnet`
+Wait for dogecoin and celestia to finish syncing
 
-```bash
-make install-l1-devnet
-```
+### Deploy other services
 
-#### 3.1. Fund the Deployer
-
-```bash
-scrollsdk helper fund-accounts -i -f 2 -d
-scrollsdk helper fund-accounts -l 1 -f 2 -d
-```
-
-### 4. Deploy Scroll Core Services
-
-Execute the following command to deploy the core scroll services:
-
-```bash
-make install-scroll-core
-```
-
-#### Components Deployed
-The deployment process installs the following core components:
-* Core Infrastructure
-   - Sequencer
-   - Bootnode
-   - L2 RPC services
-
-* Monitoring Stack
-   - Scroll monitoring services
-   - Grafana Alloy for log/metrics collection
-   - Metrics Exporter to create metrics from http calls
-
-#### Deployment Verification
-Monitor the deployment progress using either:
-- `kubectl get pods -n <namespace>`
-- The recommended `k9s` terminal UI tool
-
-> **Important**: Verify successful deployment by ensuring all pods transition to the "Running" state without any error conditions.
-
-> **Note**: The deployment process may take several minutes to complete. Allow sufficient time for all components to initialize properly.
-
-
-### 5. Deploy contracts
-
-```bash
-make install-contracts
-```
-> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 3.1`.
-
-
-### 6. Deploy Dogeos DA service
-```bash
-make install-dogeos-da
-```
-
-### 7. Deploy rollup node and explorer
-```bash
-make install-rollup-relayer
-```
-
-### 8. Deploy Gas Oracle
-```bash
-make install-gas-oracle
-```
-We need to fund our L1 Gas Oracle Sender (an account on L2 😅) with some funds.
-
-```bash
-scrollsdk helper fund-accounts -f 0.2 -l 2
+```shell
+make install-all
 ```
 
 When prompted, select the `Directly fund L2 wallet` option to complete the transfer.
-
-### 9. Deploy Dogeos Deposit Processor
-```bash
-make install-deposit-processor
-```
-
-### 10. Deploy Cubesigner Signers
-```bash
-make install-cubesigner-signers
-```
-
-### 11. Deploy TSO service
-```bash
-make install-tso
-```
-
-### 12. Deploy Withdrawal Processor
-```bash
-make install-withdrawal-processor
-```
-
-### 13. Deploy Blockscout services
-```bash
-make install-blockscout
-```
-The script will install:
-- Blockscout stack and  explorer
-- Smart contract verification service
-
-
-### 14. Deploy Frontends
-```bash
-make install-frontends
-```
 
 ## Test After Deployment
 
@@ -566,13 +464,14 @@ After all the required services are deployed successfully, run the following tes
 scrollsdk test ingress
 scrollsdk test contracts
 scrollsdk setup verify-contracts
-scrollsdk test e2e
 ```
+
 ## Disable public access after testing
-The following 3 services will be restricted from public access:
+
+The following services will be restricted from public access:
   - celestia
   - dogecoin
-  - l1-devnet
+
 ```bash
 scrollsdk setup disable-internal
 ```
@@ -580,37 +479,6 @@ scrollsdk setup disable-internal
 </br>
 
 ## Verify Contracts
-
-### 1. Check Contract Verification Parameters
-
-```toml
-[contracts.verification]
-VERIFIER_TYPE_L1 = "blockscout"
-VERIFIER_TYPE_L2 = "blockscout"
-EXPLORER_URI_L1 = "https://blockscout.scrollsdk.<your domain>"
-EXPLORER_URI_L2 = "https://blockscout.scrollsdk.<your domain>"
-RPC_URI_L1 = "https://l1-devnet.scrollsdk.<your domain>"
-RPC_URI_L2 = "https://l2-rpc.scrollsdk.<your domain>"
-EXPLORER_API_KEY_L1 = ""
-EXPLORER_API_KEY_L2 = ""
-```
-> Note:
-> - Remove the leading space if any
-> - Ensure all URI addresses are correctly configured and replace `<your domain>` with your actual domain name.
-
-
-### 2. Configure Chain IDs
-
-In the `config.toml` file, ensure chain IDs are in the correct numeric format:
-
-```yaml
-CHAIN_ID_L1 = 31337
-CHAIN_ID_L2 = 221122
-```
-
-> Important: Chain IDs must be in pure numeric format without quotes or underscores.
-
-### 3. Execute Contract Verification
 
 Run the following command to verify contracts:
 
@@ -622,7 +490,6 @@ scrollsdk setup verify-contracts
 > - Contract verification can only be performed successfully once, all the consequent verification will fail after that.
 > - If contracts are required to be verified again, blockscout database must be deleted and blockscout/blockscout-sc-verifier services must be redeployed.
 > - After successful verification, results can be viewed in the Blockscout explorer
-> - There is a known issue in blockscout explorer which won't update the number of the verified contracts, reployment of blockscout services will fix the issue.
 
 </br>
 

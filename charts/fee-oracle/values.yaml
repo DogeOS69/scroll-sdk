@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: Always
-  tag: 082025-00
+  tag: 101625-00
 
 service:
   main:
