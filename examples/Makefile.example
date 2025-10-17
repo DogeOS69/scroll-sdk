@@ -96,7 +96,7 @@ install-contracts:
 
 install-da-publisher:
 	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.5 \
+		--version=0.0.6 \
 		--values values/da-publisher-production.yaml \
 		--wait
 
@@ -112,7 +112,7 @@ install-rollup-relayer:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.4 \
+		--version=0.0.5 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -134,7 +134,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.14 \
+		--version=0.1.15 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
