@@ -22,7 +22,7 @@ groups:
                     type: loki
                     uid: P8E80F9AEF21F6940
                 editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~".*(dogeos-deposit-processor|cubesigner).*", level=~"(?i)warn|error"} | pattern "<_>{<message>}"[10m]))
+                expr: sum by (service, level, message)(count_over_time({service=~".*(l1-interface|cubesigner).*", level=~"(?i)warn|error"} | pattern "<_>{<message>}"[10m]))
                 intervalMs: 1000
                 maxDataPoints: 43200
                 queryType: instant
@@ -135,7 +135,7 @@ groups:
               model:
                 editorMode: code
                 exemplar: false
-                expr: sum by(service) (label_replace(dogecoin_synced_headers_total, "service", "dogeos-deposit-processor", "", ""))
+                expr: sum by(service) (label_replace(dogecoin_synced_headers_total, "service", "l1-interface", "", ""))
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
