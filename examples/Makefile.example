@@ -42,7 +42,7 @@ install-l1-devnet:
 
 install-scroll-core:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
+		--version=0.1.9-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
@@ -56,7 +56,7 @@ install-scroll-core:
 		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
-		--version=0.1.7 \
+		--version=0.1.8 \
 		--values values/metrics-exporter-production.yaml
 
 	$(MAKE) install-l2-sequencer
