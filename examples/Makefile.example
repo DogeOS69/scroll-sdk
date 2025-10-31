@@ -112,7 +112,7 @@ install-rollup-relayer:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.5 \
+		--version=0.0.6 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -128,7 +128,7 @@ install-cubesigner-signers:
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.3 \
+		--version=0.1.4 \
 		--values values/tso-service-production.yaml \
 		--wait
 
