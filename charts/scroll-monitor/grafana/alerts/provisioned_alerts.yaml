@@ -630,6 +630,7 @@ groups:
               model:
                 editorMode: code
                 exemplar: false
+                #rollup_last_batch_index from metrics exporter
                 expr: sum by(service) (label_replace(rollup_last_batch_index, "service", "withdrawal-processor", "", ""))
                 instant: true
                 intervalMs: 1000
@@ -647,7 +648,8 @@ groups:
                     type: prometheus
                     uid: PBFA97CFB590B2093
                 editorMode: code
-                expr: sum by(service) (withdrawal_processor_next_batch_height)
+                #withdrawal_processor_next_batch_height outdate, use withdrawal_processor_last_processed_batch_height
+                expr: sum by(service) (withdrawal_processor_last_processed_batch_height)
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
