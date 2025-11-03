@@ -8,6 +8,7 @@ groups:
       interval: 1m
       rules:
         - uid: eemuhs8xgrjlsf
+          #OK
           title: Error Json Log Alert(Paused)
           condition: B
           data:
@@ -66,6 +67,7 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: een2zs3umqscga
+          #OK
           title: Error Log Alert(Paused)
           condition: B
           data:
@@ -80,7 +82,7 @@ groups:
                     type: loki
                     uid: P8E80F9AEF21F6940
                 editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~"(dogeos-da)|(withdrawal-processor)|(tso-service)"} | decolorize | detected_level=~`warn|error` | regexp ".*?(?P<level>(WARN|ERROR)).*? (?P<message>.*)"[10m]))
+                expr: sum by (service, level, message)(count_over_time({service=~"(da-publisher)|(withdrawal-processor)|(tso-service)"} | decolorize | detected_level=~`warn|error` | regexp ".*?(?P<level>(WARN|ERROR)).*? (?P<message>.*)"[10m]))
                 intervalMs: 1000
                 maxDataPoints: 43200
                 queryType: instant
@@ -124,6 +126,7 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: den31ekvqabr4a
+          #OK
           title: Low Indexing Height(Paused)
           condition: D
           data:
@@ -135,6 +138,7 @@ groups:
               model:
                 editorMode: code
                 exemplar: false
+                # dogecoin_synced_headers_total is exported by metrics-exporter from getblockchaininfo.headers
                 expr: sum by(service) (label_replace(dogecoin_synced_headers_total, "service", "l1-interface", "", ""))
                 instant: true
                 intervalMs: 1000
@@ -152,7 +156,8 @@ groups:
                     type: prometheus
                     uid: PBFA97CFB590B2093
                 editorMode: code
-                expr: sum by(service) (dogeos_deposit_processor_current_indexer_height)
+                #rename dogeos_deposit_processor_current_indexer_height=>indexer_dogecoin_last_synced_block
+                expr: sum by(service) (indexer_dogecoin_last_synced_block)
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
@@ -230,6 +235,7 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: aeni86j0olzpce
+          #OK
           title: No blobs posted in 5 minutes(Paused)
           condition: C
           data:
@@ -334,7 +340,8 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: fenjo4h3lr18ga
-          title: Low Wallet Balance(Paused)
+          #Celestia signer wallet balance
+          title: Low Celestia Wallet Balance(Paused)
           condition: C
           data:
             - refId: A
@@ -384,7 +391,7 @@ groups:
           for: 0s
           annotations:
             summary: |-
-                Wallet balance is low!
+               Celestia Wallet balance is low!
 
                 Current wallet balance: {{ printf "%.0f" $values.A.Value }}
           labels: {}
@@ -393,6 +400,7 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: eenjodcbu3jlsb
+          #OK
           title: No withdrawal processed in 5 minutes(Paused)
           condition: C
           data:
@@ -515,6 +523,7 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: fenjrsinwhhq8e
+          # wait test
           title: High latency for TEE signers(Paused)
           condition: C
           data:
@@ -803,4 +812,3 @@ templates:
     name: template.dogeos.provisioned
     # <string, required> content of the template
     template: "{{ define \"slack.dogeos.title\" -}}\n[{{ if eq .Status \"firing\" }}🔥{{ end }}{{ if eq .Status \"resolved\" }}✅{{ end }}{{ .Status | toUpper -}}\n{{- if eq .Status \"firing\" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, ✅RESOLVED{{ end }}{{ end -}}\n{{- if gt (.Alerts.Resolved | len) 0 }}:{{ .Alerts.Resolved | len }}{{ end }}] {{ .GroupLabels.alertname -}}\n{{- if .CommonLabels.service }} in {{ .CommonLabels.service -}}\n{{- else }} in {{ if gt (len .Alerts.Firing) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Firing }}{{ end -}}\n{{- if gt (len .Alerts.Resolved) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Resolved }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"dogeos_rulename_list\" -}}\n{{- range . }}{{ range .Labels.SortedPairs }}{{ if eq .Name \"rulename\" }}'{{ .Value }}' {{ end }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"slack.dogeos.text\" }}\nHere are details:\n{{ if gt (len .Alerts.Firing) 0 }}🔥🔥🔥 {{ len .Alerts.Firing }} FIRING 🔥🔥🔥\n{{ template \"dogeos_text_alert_list\" .Alerts.Firing }}{{ if gt (len .Alerts.Resolved) 0 }}\n{{ end }}{{ end }}{{ if gt (len .Alerts.Resolved) 0 }}✅✅✅ {{ len .Alerts.Resolved }} RESOLVED ✅✅✅\n{{ template \"dogeos_text_alert_list\" .Alerts.Resolved }}{{ end }}{{ end }}\n\n\n{{ define \"dogeos_text_alert_list\" }}{{ range . }}\nLabels:\n{{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}Annotations:\n{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}\n{{ end }}{{ if gt (len .SilenceURL) 0 }}Silence: {{ .SilenceURL }}\n{{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}\n{{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}\n{{ end }}{{ end }}{{ end }}"
-
