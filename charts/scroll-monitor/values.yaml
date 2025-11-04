@@ -76,6 +76,13 @@ grafana:
       mountPath: /etc/grafana/provisioning/alerting/provisioned_alerts.yaml
       subPath: provisioned_alerts.yaml
       configMap: grafana-alerts-config
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClassName: ""
 
 loki:
   enabled: false
@@ -139,6 +146,7 @@ kube-prometheus-stack:
     enabled: true
   grafana:
     enabled: false
+
   prometheus-node-exporter:
     nameOverride: node-exporter
     fullnameOverride: node-exporter
