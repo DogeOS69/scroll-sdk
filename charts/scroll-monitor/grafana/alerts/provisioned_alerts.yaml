@@ -742,7 +742,7 @@ groups:
               datasourceUid: PBFA97CFB590B2093
               model:
                 editorMode: code
-                expr: fee_wallet_total_unredeemed_utxo_amount
+                expr: fee_wallet_total_unredeemed_utxo_amount{service="withdrawal-processor"}
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
@@ -783,15 +783,13 @@ groups:
           annotations:
             summary: |-
                 Fee Wallet UTXOs amount is low!
-
-                Current fee wallet utxo amount(DOGE): {{ printf "%.5f" $values.A.Value/100000000 }}
+                  Current fee wallet balance(STAOSHI): {{ printf "%.0f" $values.A.Value }}
           isPaused: true
           notification_settings:
             receiver: dogeos default slack alert
             group_wait: 1s
             group_interval: 1s
             repeat_interval: 1m
-
 
 # List of contact points to import or update
 contactPoints:
