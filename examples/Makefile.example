@@ -26,7 +26,7 @@ install-blockbook:
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.11 \
+		--version=0.1.12 \
 		--values values/celestia-node-production.yaml
 
 install-l1-interface:
