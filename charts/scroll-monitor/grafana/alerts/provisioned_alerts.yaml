@@ -235,8 +235,8 @@ groups:
             receiver: dogeos default slack alert
             repeat_interval: 5m
         - uid: aeni86j0olzpce
-          #OK
-          title: No blobs posted in 5 minutes(Paused)
+          #From experience, it’s more practical to wait an hour without any blob submissions before firing the alert.
+          title: No blobs posted in 60 minutes(Paused)
           condition: C
           data:
             - refId: A
@@ -279,7 +279,7 @@ groups:
                 conditions:
                     - evaluator:
                         params:
-                            - 300
+                            - 3600
                         type: gt
                       operator:
                         type: and
@@ -401,7 +401,7 @@ groups:
             repeat_interval: 5m
         - uid: eenjodcbu3jlsb
           #OK
-          title: No withdrawal processed in 5 minutes(Paused)
+          title: No withdrawal processed in 60 minutes(Paused)
           condition: C
           data:
             - refId: A
@@ -461,7 +461,7 @@ groups:
                 conditions:
                     - evaluator:
                         params:
-                            - 300
+                            - 3600
                         type: gt
                       operator:
                         type: and
@@ -609,7 +609,6 @@ groups:
           annotations:
             description: |-
                 High latency for TEE signers in past 15 minutes
-
                 Average latency: {{ humanize $values.A.Value }} seconds
                 Max latency: {{ humanize $values.B.Value }} seconds
                 Min latency: {{ humanize $values.D.Value }} seconds
