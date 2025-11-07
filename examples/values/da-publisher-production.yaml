@@ -1,4 +1,9 @@
 
+image:
+  repository: dogeos69/da-publisher
+  pullPolicy: Always
+  tag: 101625-00
+
 env:
   - name: "RUST_LOG"
     value: "info"

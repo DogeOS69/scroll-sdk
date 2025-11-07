@@ -1,3 +1,8 @@
+image:
+  repository: "ghcr.io/celestiaorg/celestia-node"
+  tag: "v0.28.2-mocha"
+  pullPolicy: IfNotPresent
+
 #DEBUG, INFO, WARN, ERROR, DPANIC, PANIC, FATAL
 logLevel: "INFO"
 network: "mocha"
