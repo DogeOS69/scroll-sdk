@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/tso-service
   pullPolicy: Always
-  tag: 100225-00
+  tag: 0.2.0-rc.0
 
 env:
   - name: PORT

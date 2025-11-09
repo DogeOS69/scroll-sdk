@@ -107,7 +107,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "avg(dogeos_deposit_processor_current_indexer_height{service=\"dogeos-deposit-processor\"})",
+          "expr": "avg(dogeos_deposit_processor_current_indexer_height{service=\"l1-interface\"})",
           "instant": false,
           "legendFormat": "Current",
           "range": true,
@@ -119,7 +119,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "avg(dogeos_deposit_processor_current_chain_height{service=\"dogeos-deposit-processor\"})",
+          "expr": "avg(dogeos_deposit_processor_current_chain_height{service=\"l1-interface\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "Chain",
@@ -311,7 +311,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg(dogeos_deposit_processor_error_total{service=\"dogeos-deposit-processor\", errors!=\"\"})",
+          "expr": "avg(dogeos_deposit_processor_error_total{service=\"l1-interface\", errors!=\"\"})",
           "instant": false,
           "legendFormat": "Total Errors",
           "range": true,
@@ -321,101 +321,7 @@
       "title": "Total Errors",
       "type": "stat"
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(dogeos_deposit_processor_deposit_count{}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "deposit rate",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Deposit Count (overall per-second rate)",
-      "type": "timeseries"
-    },
+   
     {
       "datasource": {
         "type": "prometheus",
@@ -501,7 +407,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "avg(dogeos_deposit_processor_queue_height{service=\"dogeos-deposit-processor\"})",
+          "expr": "avg(dogeos_deposit_processor_queue_height{service=\"l1-interface\"})",
           "instant": false,
           "legendFormat": "deposit queue",
           "range": true,
@@ -540,9 +446,9 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
+            "barAlignment": 1,
+            "drawStyle": "bars",
+            "fillOpacity": 20,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -551,7 +457,7 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "log": 10,
@@ -610,7 +516,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(dogeos_deposit_processor_deposit_bucket{}[$__rate_interval]))) / 1e18",
+          "expr": "l1_interface_deposit_amount_satoshis{quantile=\"0.99\"} / 1e8",
           "interval": "",
           "legendFormat": "99th Percentile",
           "range": true,
@@ -622,7 +528,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(dogeos_deposit_processor_deposit_bucket{}[$__rate_interval]))) / 1e18",
+          "expr": "l1_interface_deposit_amount_satoshis{quantile=\"0.9\"} / 1e8",
           "interval": "",
           "legendFormat": "90th Percentile",
           "range": true,
@@ -634,14 +540,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(dogeos_deposit_processor_deposit_bucket{}[$__rate_interval]))) / 1e18",
+          "expr": "l1_interface_deposit_amount_satoshis{quantile=\"0.5\"} / 1e8",
           "interval": "",
           "legendFormat": "50th Percentile",
           "range": true,
           "refId": "Percentile50"
         }
       ],
-      "title": "Deposit Distribution (Unit: ETH)",
+      "title": "Deposit Distribution (Unit: DOGE)",
       "type": "timeseries"
     },
     {
@@ -762,6 +668,74 @@
         }
       ],
       "title": "Balance Distribution (Unit: ETH)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "seconds",
+            "axisPlacement": "left"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.99\"}",
+          "legendFormat": "P99",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.95\"}",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.5\"}",
+          "legendFormat": "P50",
+          "refId": "C"
+        }
+      ],
+      "title": "Deposit Processing Latency",
       "type": "timeseries"
     }
   ],

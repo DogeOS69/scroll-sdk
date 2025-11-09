@@ -134,6 +134,19 @@
               "legendFormat": "Latest block",
               "range": true,
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "indexer_dogecoin_last_synced_block",
+              "hide": false,
+              "instant": false,
+              "legendFormat": "Dogecoin last synced block",
+              "range": true,
+              "refId": "C"
             }
           ],
           "title": "Block Height on Indexer Dogeos",
@@ -329,45 +342,45 @@
           "sort": "none"
         }
       },
-      "targets": [
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_withdrawals_per_tx{quantile=\"0.99\"})",
+              "interval": "",
+              "legendFormat": "99th Percentile",
+              "range": true,
+              "refId": "Percentile99"
+            },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(withdrawal_processor_withdrawals_per_tx{}[$__rate_interval])))",
-          "interval": "",
-          "legendFormat": "99th Percentile",
-          "range": true,
-          "refId": "Percentile99"
-        },
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_withdrawals_per_tx{quantile=\"0.9\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "90th Percentile",
+              "range": true,
+              "refId": "Percentile90"
+            },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(withdrawal_processor_withdrawals_per_tx{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "90th Percentile",
-          "range": true,
-          "refId": "Percentile90"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(withdrawal_processor_withdrawals_per_tx{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "50th Percentile",
-          "range": true,
-          "refId": "Percentile50"
-        }
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_withdrawals_per_tx{quantile=\"0.5\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "50th Percentile",
+              "range": true,
+              "refId": "Percentile50"
+            }
       ],
       "title": "Average withdrawals per withdrawal fulfillment transaction",
       "type": "timeseries"
@@ -413,7 +426,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^Last posted blob timestamp$/",
+          "fields": "/^Last processed timestamp$/",
           "values": false
         },
         "showPercentChange": false,
@@ -424,20 +437,20 @@
         "wideLayout": true
       },
       "pluginVersion": "11.1.5",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "withdrawal_processor_last_processed_timestamp{}*1000",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "Last processed timestamp",
-          "range": false,
-          "refId": "A"
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "max without (component, instance, job) (withdrawal_processor_last_processed_timestamp)*1000",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "Last processed timestamp",
+              "range": false,
+              "refId": "A"
         }
       ],
       "title": "Last Withdrawal Processed Time",
@@ -512,7 +525,7 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -527,14 +540,40 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "fee_wallet_total_unredeemed_utxo_amount/1e+8",
+          "expr": "withdrawal_processor_active_tasks",
           "instant": false,
-          "legendFormat": "Total utxo",
+          "legendFormat": "Active tasks",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "withdrawal_processor_pending_tasks",
+          "instant": false,
+          "legendFormat": "Pending tasks",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "withdrawal_processor_event_publisher_active",
+          "instant": false,
+          "legendFormat": "Event publisher active",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "Fee Wallet Total UTXOs (unit: DOGE)",
+      "title": "Processor Tasks & Publisher State",
       "type": "timeseries"
     },
     {
@@ -616,19 +655,19 @@
           "sort": "none"
         }
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "withdrawal_processor_last_processed_mq_index",
-          "instant": false,
-          "legendFormat": "Processed Queue height",
-          "range": true,
-          "refId": "A"
-        }
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_last_processed_mq_index)",
+              "instant": false,
+              "legendFormat": "Processed Queue height",
+              "range": true,
+              "refId": "A"
+            }
       ],
       "title": "Processed Queue Height on DogeOS",
       "type": "timeseries"
@@ -711,45 +750,45 @@
           "sort": "none"
         }
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(withdrawal_processor_tso_signing_duration_seconds{}[$__rate_interval])))",
-          "interval": "",
-          "legendFormat": "99th Percentile",
-          "range": true,
-          "refId": "Percentile99"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(withdrawal_processor_tso_signing_duration_seconds{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "90th Percentile",
-          "range": true,
-          "refId": "Percentile90"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(withdrawal_processor_tso_signing_duration_seconds{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "50th Percentile",
-          "range": true,
-          "refId": "Percentile50"
-        }
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (instance, job) (withdrawal_processor_tso_signing_duration_seconds{quantile=\"0.99\"})",
+              "interval": "",
+              "legendFormat": "99th Percentile",
+              "range": true,
+              "refId": "Percentile99"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (instance, job) (withdrawal_processor_tso_signing_duration_seconds{quantile=\"0.9\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "90th Percentile",
+              "range": true,
+              "refId": "Percentile90"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (instance, job) (withdrawal_processor_tso_signing_duration_seconds{quantile=\"0.5\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "50th Percentile",
+              "range": true,
+              "refId": "Percentile50"
+            }
       ],
       "title": "Propose-to-signed Latency (unit: second)",
       "type": "timeseries"
@@ -841,9 +880,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "withdrawal_processor_next_batch_height",
+          "expr": "sum without (trigger) (rate(withdrawal_processor_batch_started_total[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "Next Batch Height",
+          "legendFormat": "Batches started rate",
           "range": true,
           "refId": "A"
         },
@@ -854,15 +893,15 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rollup_last_batch_index",
+          "expr": "sum without (result) (rate(withdrawal_processor_batch_completed_total[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "legendFormat": "Rollup Committed Index",
+          "legendFormat": "Batches completed rate",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Withdrawal Next Batch Height vs Rollup Committed Batch Index",
+      "title": "Withdrawal batches started vs completed (rate)",
       "type": "timeseries"
     },
     {
@@ -952,9 +991,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "dogeos_l2_tx_fee_vault_balance/1e+8",
+          "expr": "sum without (source) (rate(withdrawal_processor_tso_proposals_total[$__rate_interval]))",
           "instant": false,
-          "legendFormat": "L2 Tx Fee Vault",
+          "legendFormat": "TSO proposals rate",
           "range": true,
           "refId": "A"
         },
@@ -965,15 +1004,15 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "dogeos_l2_bridge_fee_recipient_balance/1e+8",
+          "expr": "sum without (source) (rate(withdrawal_processor_tso_finalized_total[$__rate_interval]))",
           "hide": false,
           "instant": false,
-          "legendFormat": "L2 Bridge Fee Recipient",
+          "legendFormat": "TSO finalizations rate",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "DogeOS L2 Tx Fee Vault & Bridge Fee Recipient Balance",
+      "title": "TSO proposals vs finalizations (rate)",
       "type": "timeseries"
     },
     {
@@ -1054,19 +1093,19 @@
           "sort": "none"
         }
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "withdrawal_processor_last_processed_batch_height",
-          "instant": false,
-          "legendFormat": "Processed Queue height",
-          "range": true,
-          "refId": "A"
-        }
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_last_processed_batch_height)",
+              "instant": false,
+              "legendFormat": "Processed Queue height",
+              "range": true,
+              "refId": "A"
+            }
       ],
       "title": "Processed Bundle Height on DogeOS",
       "type": "timeseries"
@@ -1148,45 +1187,45 @@
           "sort": "none"
         }
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(withdrawal_processor_txs_per_bundle{}[$__rate_interval])))",
-          "interval": "",
-          "legendFormat": "99th Percentile",
-          "range": true,
-          "refId": "Percentile99"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(withdrawal_processor_txs_per_bundle{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "90th Percentile",
-          "range": true,
-          "refId": "Percentile90"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(withdrawal_processor_txs_per_bundle{}[$__rate_interval])))",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "50th Percentile",
-          "range": true,
-          "refId": "Percentile50"
-        }
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_txs_per_bundle{quantile=\"0.99\"})",
+              "interval": "",
+              "legendFormat": "99th Percentile",
+              "range": true,
+              "refId": "Percentile99"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_txs_per_bundle{quantile=\"0.9\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "90th Percentile",
+              "range": true,
+              "refId": "Percentile90"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "expr": "max without (component, instance, job) (withdrawal_processor_txs_per_bundle{quantile=\"0.5\"})",
+              "instant": true,
+              "interval": "",
+              "legendFormat": "50th Percentile",
+              "range": true,
+              "refId": "Percentile50"
+            }
       ],
       "title": "Average withdrawal fulfillment transactions per bundle",
       "type": "timeseries"
@@ -1381,15 +1420,15 @@
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum by (error_type) (celestia_indexer_errors_total)",
+              "expr": "sum by (namespace, pod) (celestia_indexer_stored_blob_total)",
               "instant": false,
               "interval": "",
-              "legendFormat": "{{error_type}}",
+              "legendFormat": "Stored blobs {{namespace}}/{{pod}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "Celestia Indexer Errors by Type",
+          "title": "Celestia Indexer Stored Blobs",
           "type": "timeseries"
         },
         {
@@ -1476,7 +1515,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "editorMode": "code",
-              "expr": "histogram_quantile(0.99, sum by(le) (rate(celestia_indexer_sequencer_run_duration_seconds{}[$__rate_interval])))",
+              "expr": "max without (instance, job) (celestia_indexer_blob_fetch_duration_seconds{quantile=\"0.99\"})",
               "interval": "",
               "legendFormat": "99th Percentile",
               "range": true,
@@ -1488,7 +1527,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "editorMode": "code",
-              "expr": "histogram_quantile(0.9, sum by(le) (rate(celestia_indexer_sequencer_run_duration_seconds{}[$__rate_interval])))",
+              "expr": "max without (instance, job) (celestia_indexer_blob_fetch_duration_seconds{quantile=\"0.9\"})",
               "instant": true,
               "interval": "",
               "legendFormat": "90th Percentile",
@@ -1501,7 +1540,7 @@
                 "uid": "PBFA97CFB590B2093"
               },
               "editorMode": "code",
-              "expr": "histogram_quantile(0.5, sum by(le) (rate(celestia_indexer_sequencer_run_duration_seconds{}[$__rate_interval])))",
+              "expr": "max without (instance, job) (celestia_indexer_blob_fetch_duration_seconds{quantile=\"0.5\"})",
               "instant": true,
               "interval": "",
               "legendFormat": "50th Percentile",
@@ -1509,7 +1548,7 @@
               "refId": "Percentile50"
             }
           ],
-          "title": "Average Celestia Indexer Sequencer Run Duration (unit: second)",
+          "title": "Celestia Indexer Blob Fetch Duration (unit: second)",
           "type": "timeseries"
         },
         {
@@ -1589,47 +1628,21 @@
               "sort": "none"
             }
           },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "histogram_quantile(0.99, sum by(le) (rate(celestia_indexer_blob_fetch_duration_seconds{}[$__rate_interval])))",
-              "interval": "",
-              "legendFormat": "99th Percentile",
-              "range": true,
-              "refId": "Percentile99"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "histogram_quantile(0.9, sum by(le) (rate(celestia_indexer_blob_fetch_duration_seconds{}[$__rate_interval])))",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "90th Percentile",
-              "range": true,
-              "refId": "Percentile90"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "histogram_quantile(0.5, sum by(le) (rate(celestia_indexer_blob_fetch_duration_seconds{}[$__rate_interval])))",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "50th Percentile",
-              "range": true,
-              "refId": "Percentile50"
-            }
-          ],
-          "title": "Average Celestia Indexer Blob Fetch Duration (unit: second)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(celestia_indexer_stored_blob_total[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Stored blobs / s",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Celestia Indexer Stored Blob Rate (per second)",
           "type": "timeseries"
         },
         {
@@ -1710,21 +1723,21 @@
               "sort": "none"
             }
           },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "sum(rate(celestia_indexer_processed_tx_total{}[$__rate_interval]))",
-              "interval": "",
-              "legendFormat": "processed tx rate",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Celestia Indexer Processed Transaction (overall per-second rate)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (event) (rate(withdrawal_processor_events_processed_total[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "{{event}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Withdrawal processor events processed rate",
           "type": "timeseries"
         },
         {
@@ -1805,21 +1818,21 @@
               "sort": "none"
             }
           },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "sum(rate(celestia_indexer_sequenced_batch_total{}[$__rate_interval]))",
-              "interval": "",
-              "legendFormat": "sequenced batch rate",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Celestia Indexer Sequenced Batch (overall per-second rate)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (source) (rate(withdrawal_processor_task_created_total[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "{{source}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Withdrawal processor tasks created rate",
           "type": "timeseries"
         },
         {
@@ -1900,21 +1913,21 @@
               "sort": "none"
             }
           },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "sum(rate(celestia_indexer_stored_blob_total{}[$__rate_interval]))",
-              "interval": "",
-              "legendFormat": "stored blobs rate",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Celestia Indexer Stored Blob Total (overall per-second rate)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (source) (rate(withdrawal_processor_tso_proposals_total[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "{{source}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "TSO proposals rate by source",
           "type": "timeseries"
         },
         {
@@ -1995,25 +2008,25 @@
               "sort": "none"
             }
           },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-              },
-              "editorMode": "code",
-              "expr": "sum(rate(celestia_indexer_invalid_blob_decode_total{}[$__rate_interval]))",
-              "interval": "",
-              "legendFormat": "stored blobs rate",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Celestia Indexer Invalid Blob Decode Total (overall per-second rate)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (result) (rate(withdrawal_processor_batch_completed_total[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "{{result}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Batches completed rate by result",
           "type": "timeseries"
         }
       ],
-      "title": "Celestia Indexer",
+      "title": "Celestia & Processor Throughput",
       "type": "row"
     }
   ],

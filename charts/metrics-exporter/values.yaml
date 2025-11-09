@@ -49,8 +49,8 @@ serviceMonitor:
     serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
     endpoints:
       - port: http
-        interval: 30s
-        scrapeTimeout: 10s
+        interval: 10s
+        scrapeTimeout: 5s
 
 
 envFrom:

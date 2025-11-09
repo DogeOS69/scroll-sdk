@@ -3,7 +3,7 @@
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: Always
-  tag: 101625-00
+  tag: 0.2.0-rc.0
 
 # Direct environment variables
 env:

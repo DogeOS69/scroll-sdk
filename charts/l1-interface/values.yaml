@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/l1-interface
   pullPolicy: Always
-  tag: 101425-01
+  tag: 110625-00
 
 service:
   main:
@@ -106,5 +106,5 @@ serviceMonitor:
       - port: http
         scheme: http
         path: /api/v1/metrics
-        interval: 30s
-        scrapeTimeout: 10s
+        interval: 10s
+        scrapeTimeout: 5s
