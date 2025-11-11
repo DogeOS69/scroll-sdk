@@ -114,15 +114,6 @@ initContainers:
       limits:
         memory: "8Gi"
         cpu: "2"
-  assets-download:
-    image: ubuntu
-    command: ["sh", "-c", "/download-params.sh assets"]
-    volumeMounts:
-      - name: verifier
-        mountPath: /verifier
-      - name: download-params
-        mountPath: /download-params.sh
-        subPath: download-params.sh
 
 configMaps:
   download-params:
