@@ -156,6 +156,17 @@ install-testnet-activity-helper:
 	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
 		--version=0.1.2 \
 		--values values/testnet-activity-helper-production.yaml
+		
+install-coordinator:
+	helm upgrade -i coordinator-api oci://ghcr.io/dogeos69/scroll-sdk/helm/coordinator-api -n $(NAMESPACE) \
+		--version=0.1.4 \
+		--values values/coordinator-api-production.yaml \
+		--values values/coordinator-api-config.yaml
+
+	helm upgrade -i coordinator-cron oci://ghcr.io/dogeos69/scroll-sdk/helm/coordinator-cron -n $(NAMESPACE) \
+		--version=0.1.4 \
+		--values values/coordinator-cron-production.yaml \
+		--values values/coordinator-cron-config.yaml
 
 start-l1-sync:
 	kubectl exec -n $(NAMESPACE) $$(kubectl get pod -n $(NAMESPACE) -l app.kubernetes.io/name=rollup-relayer -o jsonpath='{.items[0].metadata.name}') -- \
