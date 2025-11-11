@@ -187,6 +187,7 @@ install-all:
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
 	$(MAKE) install-testnet-activity-helper
+	$(MAKE) install-coordinator
 	$(MAKE) start-l1-sync
 
 delete-all:
