@@ -2,7 +2,7 @@
 image:
   repository: dogeos69/da-publisher
   pullPolicy: Always
-  tag: 0.2.0-rc.0
+  tag: 0.2.0-rc.1
 
 env:
   - name: "RUST_LOG"
