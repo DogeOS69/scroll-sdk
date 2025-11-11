@@ -1,3 +1,11 @@
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "50m"
+  limits:
+    memory: "24Gi"
+    cpu: "200m"
+
 controller:
   replicas: 2
 
