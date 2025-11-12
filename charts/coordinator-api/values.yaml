@@ -153,9 +153,6 @@ configMaps:
 
         main
 
-
-
-
 serviceMonitor:
   main:
     enabled: true
