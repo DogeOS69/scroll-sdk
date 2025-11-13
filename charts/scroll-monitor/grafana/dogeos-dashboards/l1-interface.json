@@ -692,7 +692,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_final_rpc_head_height - indexer_dogecoin_last_synced_block",
+          "expr": "indexer_dogecoin_last_synced_block - l1_interface_final_rpc_head_height",
           "legendFormat": "Sync Lag",
           "refId": "A"
         }

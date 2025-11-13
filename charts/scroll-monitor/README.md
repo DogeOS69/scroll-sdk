@@ -1,6 +1,6 @@
 # scroll-monitor
 
-![Version: 0.1.9-dogeos](https://img.shields.io/badge/Version-0.1.9--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.10-dogeos](https://img.shields.io/badge/Version-0.1.10--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 helm chart to deploy grafana, prometheus and loki to monitor scroll-sdk
 
@@ -85,6 +85,11 @@ Kubernetes: `>=1.22.0-0`
 | grafana.ingress.hosts[0] | string | `"grafana.scrollsdk"` |  |
 | grafana.ingress.ingressClassName | string | `"nginx"` |  |
 | grafana.nameOverride | string | `"grafana"` |  |
+| grafana.persistence.accessModes[0] | string | `"ReadWriteOnce"` |  |
+| grafana.persistence.enabled | bool | `true` |  |
+| grafana.persistence.size | string | `"10Gi"` |  |
+| grafana.persistence.storageClassName | string | `""` |  |
+| grafana.persistence.type | string | `"pvc"` |  |
 | kube-prometheus-stack.alertmanager.enabled | bool | `true` |  |
 | kube-prometheus-stack.enabled | bool | `true` |  |
 | kube-prometheus-stack.fullnameOverride | string | `"prometheus"` |  |

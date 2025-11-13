@@ -23,7 +23,7 @@ groups:
                     type: loki
                     uid: P8E80F9AEF21F6940
                 editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~".*(l1-interface|cubesigner).*", level=~"(?i)warn|error"} | pattern "<_>{<message>}"[10m]))
+                expr: sum by (service, level, message)(count_over_time({service=~".*(cubesigner).*", level=~"(?i)warn|error"} | pattern "<_>{<message>}"[10m]))
                 intervalMs: 1000
                 maxDataPoints: 43200
                 queryType: instant
@@ -82,7 +82,7 @@ groups:
                     type: loki
                     uid: P8E80F9AEF21F6940
                 editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~"(da-publisher)|(withdrawal-processor)|(tso-service)"} | decolorize | detected_level=~`warn|error` | regexp ".*?(?P<level>(WARN|ERROR)).*? (?P<message>.*)"[10m]))
+                expr: sum by (service, level, message)(count_over_time({service=~"(da-publisher)|(withdrawal-processor)|(tso-service)|(l1-interface)|(fee-oracle)"} | decolorize | detected_level=~`warn|error` | regexp ".*?(?P<level>(WARN|ERROR)).*? (?P<message>.*)"[10m]))
                 intervalMs: 1000
                 maxDataPoints: 43200
                 queryType: instant
