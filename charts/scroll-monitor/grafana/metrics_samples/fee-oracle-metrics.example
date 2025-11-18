@@ -1,0 +1,3 @@
+# HELP fee_oracle_uptime_seconds Service uptime
+# TYPE fee_oracle_uptime_seconds gauge
+fee_oracle_uptime_seconds 2030
