@@ -40,11 +40,13 @@ install-l1-devnet:
 		--version=0.1.4 \
 		--values values/l1-devnet-production.yaml
 
-install-scroll-core:
+install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.10-dogeos \
+		--version=0.1.11-dogeos \
 		--values values/scroll-monitor-production.yaml
 
+install-scroll-core:
+	$(MAKE) install-scroll-monitor
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
 		--version=0.1.1-dogeos \
 		--values values/genesis.yaml
