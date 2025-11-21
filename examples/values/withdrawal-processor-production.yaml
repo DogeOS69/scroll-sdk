@@ -88,7 +88,8 @@ env:
     value: "0"
   - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID
     value: "0x0000000000000000000000000000000000000000000000000000000000000000"
-
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_RETRY_ATTEMPTS
+    value: 5
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
