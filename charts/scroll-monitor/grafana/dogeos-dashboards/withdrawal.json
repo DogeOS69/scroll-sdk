@@ -548,8 +548,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "fixedColor": "yellow",
-            "mode": "fixed"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -1736,8 +1735,7 @@
           "fieldConfig": {
             "defaults": {
               "color": {
-                "fixedColor": "semi-dark-purple",
-                "mode": "fixed"
+                "mode": "palette-classic"
               },
               "custom": {
                 "axisBorderShow": false,

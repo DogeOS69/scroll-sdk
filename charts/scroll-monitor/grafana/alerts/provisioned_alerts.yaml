@@ -534,7 +534,7 @@ groups:
               datasourceUid: PBFA97CFB590B2093
               model:
                 editorMode: code
-                expr: avg(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                expr: sum(rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum(rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m]))
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
@@ -551,7 +551,7 @@ groups:
                     type: prometheus
                     uid: PBFA97CFB590B2093
                 editorMode: code
-                expr: max(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                expr: max( sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m])) )
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
@@ -568,7 +568,7 @@ groups:
                     type: prometheus
                     uid: PBFA97CFB590B2093
                 editorMode: code
-                expr: min(sum_over_time (tso_core_signer_response_latency_seconds[$__range]) / sum_over_time (tso_core_signer_response_latency_seconds[$__range]))
+                expr: min( sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m])) )
                 instant: true
                 intervalMs: 1000
                 legendFormat: __auto
