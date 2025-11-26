@@ -2,7 +2,7 @@ apiVersion: v2
 name: l1-interface
 description: A Helm chart for the DogeOS L1 interface
 type: application
-version: 0.0.17
+version: 0.0.18
 appVersion: "v0.1.0"
 kubeVersion: ">=1.22.0-0"
 maintainers:

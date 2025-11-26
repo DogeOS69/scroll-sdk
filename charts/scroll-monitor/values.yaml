@@ -88,13 +88,6 @@ loki:
   enabled: false
   fullnameOverride: loki
   deploymentMode: SingleBinary
-  persistence:
-    enabled: true
-    # storageClassName:
-    accessModes:
-      - ReadWriteOnce
-    size: 10Gi
-    name: loki-pvc
   loki:
     commonConfig:
       replication_factor: 1
@@ -111,6 +104,11 @@ loki:
           schema: v13
   singleBinary:
     replicas: 1
+    persistence:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
   read:
     replicas: 0
   backend:

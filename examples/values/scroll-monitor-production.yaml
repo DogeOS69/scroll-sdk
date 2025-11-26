@@ -28,12 +28,6 @@ loki:
   enabled: true
   fullnameOverride: loki
   deploymentMode: SingleBinary
-  # persistence:
-  #   enabled: true
-  #   accessModes:
-  #     - ReadWriteOnce
-  #   size: 200Gi
-  #   name: loki-pvc
   loki:
     commonConfig:
       replication_factor: 1
