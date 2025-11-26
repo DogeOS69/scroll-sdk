@@ -94,6 +94,14 @@ kube-prometheus-stack:
   prometheus:
     prometheusSpec:
       enableRemoteWriteReceiver: true
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 100Gi
       resources:
         requests:
           cpu: 500m
@@ -119,6 +127,15 @@ kube-prometheus-stack:
         routes:
         - matchers: []
           receiver: "slack-alerts"
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 20Gi
   prometheusOperator:
     resources:
       requests:
