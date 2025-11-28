@@ -22,30 +22,38 @@ service:
     annotations: {placeholder: "annotation"}
 
 probes:
-  startupProbe:
-    httpGet:
-      path: /healthz/live
-      port: http
-    periodSeconds: 10
-    failureThreshold: 60
-    timeoutSeconds: 2
-
-  livenessProbe:
-    httpGet:
-      path: /healthz/live
-      port: http
-    periodSeconds: 15
-    failureThreshold: 3
-    timeoutSeconds: 2
-
-  readinessProbe:
+  startup:
     enabled: true
-    httpGet:
-      path: /healthz/ready
-      port: http
-    periodSeconds: 10
-    failureThreshold: 3
-    timeoutSeconds: 2
+    custom: true
+    spec:
+      httpGet:
+        path: /healthz/live
+        port: http
+      periodSeconds: 10
+      failureThreshold: 60
+      timeoutSeconds: 2
+
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: /healthz/live
+        port: http
+      periodSeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 2
+
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: /healthz/ready
+        port: http
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 2
 
 
 # Direct environment variables for CubeSigner Signer configuration
