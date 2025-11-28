@@ -68,7 +68,7 @@ probes:
       initialDelaySeconds: 10
       periodSeconds: 10
       timeoutSeconds: 3
-      failureThreshold: 30   # ~5m window for process to become responsive; adjust if needed
+      failureThreshold: 60
 
 # Resource configuration
 resources:

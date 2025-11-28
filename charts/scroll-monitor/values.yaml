@@ -4,6 +4,13 @@ grafana:
   nameOverride: grafana
   adminUser: admin
   adminPassword: scroll-sdk
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      jsonData:
+        maxLines: 5000
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -83,6 +90,8 @@ grafana:
       - ReadWriteOnce
     size: 10Gi
     storageClassName: ""
+    annotations:
+      "helm.sh/resource-policy": keep
 
 loki:
   enabled: false
@@ -93,6 +102,13 @@ loki:
       replication_factor: 1
     storage:
       type: 'filesystem'
+    limits_config:
+      retention_period: 14d
+    compactor:
+      retention_enabled: true
+      compaction_interval: 10m
+      delete_request_store: filesystem
+      retention_delete_delay: 2h
     schemaConfig:
       configs:
         - from: "2024-01-01"
@@ -109,6 +125,7 @@ loki:
       accessModes:
         - ReadWriteOnce
       size: 10Gi
+      enableStatefulSetAutoDeletePVC: false
   read:
     replicas: 0
   backend:

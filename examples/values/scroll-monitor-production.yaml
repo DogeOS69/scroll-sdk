@@ -9,7 +9,6 @@ grafana:
     hosts:
       - ""
 
-
   additionalDataSources:
     - name: Loki
       type: loki
@@ -24,6 +23,10 @@ grafana:
     limits:
       cpu: 500m
       memory: 1Gi
+  persistence:
+    size: 10Gi
+    annotations:
+      "helm.sh/resource-policy": keep
 loki:
   enabled: true
   fullnameOverride: loki
@@ -35,6 +38,11 @@ loki:
       type: filesystem
     limits_config:
       retention_period: 14d
+    compactor:
+      retention_enabled: true
+      compaction_interval: 10m
+      delete_request_store: filesystem
+      retention_delete_delay: 2h
     schemaConfig:
       configs:
         - from: '2024-01-01'
@@ -56,6 +64,7 @@ loki:
     persistence:
       enabled: true
       size: 200Gi
+      enableStatefulSetAutoDeletePVC: false
       accessModes:
         - ReadWriteOnce
   gateway:
@@ -64,7 +73,7 @@ loki:
         cpu: 50m
         memory: 128Mi
       limits:
-        cpu: 200m
+        cpu: 500m
         memory: 512Mi
   read:
     replicas: 0
@@ -87,6 +96,7 @@ promtail:
 kube-prometheus-stack:
   prometheus:
     prometheusSpec:
+      retention: 30d
       enableRemoteWriteReceiver: true
       storageSpec:
         volumeClaimTemplate:
@@ -129,7 +139,7 @@ kube-prometheus-stack:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 20Gi
+                storage: 10Gi
   prometheusOperator:
     resources:
       requests:

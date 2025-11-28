@@ -24,10 +24,10 @@ service:
 probes:
   startupProbe:
     httpGet:
-      path: /healthz/ready
+      path: /healthz/live
       port: http
     periodSeconds: 10
-    failureThreshold: 30
+    failureThreshold: 60
     timeoutSeconds: 2
 
   livenessProbe:
@@ -39,6 +39,7 @@ probes:
     timeoutSeconds: 2
 
   readinessProbe:
+    enabled: true
     httpGet:
       path: /healthz/ready
       port: http

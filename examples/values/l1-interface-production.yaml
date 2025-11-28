@@ -82,4 +82,4 @@ resources:
 # Storage size override for production
 persistence:
   data:
-    size: "100Gi"
+    size: "1000Gi"
