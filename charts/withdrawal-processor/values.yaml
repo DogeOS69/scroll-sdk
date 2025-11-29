@@ -166,6 +166,7 @@ persistence:
     accessMode: ReadWriteOnce
     size: 1Gi
     annotations: {placeholder: "annotation"}
+    retain: true
 
   # Configuration for mounting the TSO signers ConfigMap
   tso-signers-config:

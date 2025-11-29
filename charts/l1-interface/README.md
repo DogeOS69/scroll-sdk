@@ -44,6 +44,7 @@ Kubernetes: `>=1.22.0-0`
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/data"` |  |
+| persistence.data.retain | bool | `true` |  |
 | persistence.data.size | string | `"1Gi"` |  |
 | persistence.data.type | string | `"pvc"` |  |
 | persistence.genesis.enabled | bool | `true` |  |
@@ -67,7 +68,7 @@ Kubernetes: `>=1.22.0-0`
 | probes.readiness.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.custom | bool | `true` |  |
 | probes.startup.enabled | bool | `true` |  |
-| probes.startup.spec.failureThreshold | int | `30` |  |
+| probes.startup.spec.failureThreshold | int | `60` |  |
 | probes.startup.spec.httpGet.path | string | `"/api/v1/health/live"` |  |
 | probes.startup.spec.httpGet.port | string | `"http"` |  |
 | probes.startup.spec.initialDelaySeconds | int | `10` |  |

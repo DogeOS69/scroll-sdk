@@ -87,6 +87,7 @@ persistence:
     mountPath: /data
     accessMode: ReadWriteOnce
     size: 1Gi
+    retain: true
   genesis:
     enabled: true
     type: configMap

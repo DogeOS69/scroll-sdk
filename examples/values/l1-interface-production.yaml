@@ -83,3 +83,4 @@ resources:
 persistence:
   data:
     size: "1000Gi"
+    retain: true

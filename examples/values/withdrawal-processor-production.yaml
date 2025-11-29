@@ -157,6 +157,7 @@ persistence:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
     size: "1000Gi"
+    retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
 
 # Resource configuration for production
