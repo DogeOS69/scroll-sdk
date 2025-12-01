@@ -50,6 +50,9 @@ persistence:
     enabled: true
     type: configMap
     name: l2-sequencer-__INSTANCE_INDEX__-env
+  data:
+    size: 1000Gi
+    retain: true
 
 externalSecrets:
   l2-sequencer-__INSTANCE_INDEX__-secret-env:

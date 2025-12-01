@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "0.2.0-rc.2"
+  tag: "0.2.0-rc.4"
 
 # Direct environment variables
 env:
@@ -82,4 +82,5 @@ resources:
 # Storage size override for production
 persistence:
   data:
-    size: "10Gi"
+    size: "1000Gi"
+    retain: true

@@ -31,7 +31,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.17 \
+		--version=0.0.18 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -42,7 +42,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.11-dogeos \
+		--version=0.1.12-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-core:
@@ -114,7 +114,7 @@ install-rollup-relayer:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.6 \
+		--version=0.0.7 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -136,7 +136,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.16 \
+		--version=0.1.17 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -213,7 +213,8 @@ delete-all:
 	helm delete -n $(NAMESPACE) da-publisher || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
-
+	helm delete -n $(NAMESPACE) coordinator-api || true
+	helm delete -n $(NAMESPACE) coordinator-cron || true
 
 delete-l1-interface:
 	helm delete -n $(NAMESPACE) l1-interface
@@ -274,4 +275,3 @@ delete-l2-sequencer:
 
 delete-l2-rpc:
 	helm delete -n $(NAMESPACE) l2-rpc
-	kubectl delete pvc -n $(NAMESPACE) data-l2-rpc-0

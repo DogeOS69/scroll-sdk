@@ -33,6 +33,9 @@ persistence:
     type: configMap
     mountPath: /config/
     name: "l2-bootnode-__INSTANCE_INDEX__-env"
+  data:
+    size: 1000Gi
+    retain: true
 
 configMaps:
   env:

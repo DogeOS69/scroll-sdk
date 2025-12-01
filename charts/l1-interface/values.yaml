@@ -37,21 +37,38 @@ service:
         targetPort: 9091
         protocol: TCP
 
-defaultProbes: &default_probes
-  enabled: true
-  custom: true
-  spec:
-    httpGet:
-      path: "/health"
-      port: http
-
 probes:
   liveness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/api/v1/health/live"
+        port: http
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
   readiness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
   startup:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/api/v1/health/live"
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 60
 
 # Resource configuration
 resources:
@@ -70,6 +87,7 @@ persistence:
     mountPath: /data
     accessMode: ReadWriteOnce
     size: 1Gi
+    retain: true
   genesis:
     enabled: true
     type: configMap
