@@ -53,6 +53,7 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Setting Up Grafana Alert Rules](#setting-up-grafana-alert-rules)
 
+1. [Dynamic PVC Expansion](#dynamic-pvc-expansion)
 
 ## Setup your local deployment repository
 
@@ -576,3 +577,122 @@ To enable and customize these alert rules, follow these steps:
    - Follow steps 1-3 for each alert rule you wish to enable
 
 This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
+
+
+## Dynamic PVC Expansion
+
+This guide explains how to dynamically expand Persistent Volume Claims (PVCs) for your DogeOS deployment on AWS.
+
+### Prerequisites
+
+Before expanding volumes, ensure your StorageClass allows volume expansion.
+
+1. **Check if your StorageClass is expandable:**
+   ```bash
+   kubectl get sc gp3 -o jsonpath='{.allowVolumeExpansion}'
+   ```
+   If it returns `true`, you are good to go.
+
+2. **Enable expansion if needed:**
+   You can patch the existing `gp3` StorageClass:
+   ```bash
+   kubectl patch storageclass gp3 -p '{"allowVolumeExpansion": true}'
+   ```
+   *Note: This change applies to all new and existing PVCs using this StorageClass.*
+
+> [!WARNING]
+> **AWS EBS Volume Modification Rate Limit**
+> 
+> AWS EBS has a strict limitation: **each volume can only be modified once every 6 hours**. If you attempt to resize a volume multiple times within this window, you will encounter a `VolumeModificationRateExceeded` error:
+> 
+> ```
+> VolumeModificationRateExceeded: You've reached the maximum modification rate per volume limit. 
+> Wait at least 6 hours between modifications per EBS volume.
+> ```
+> 
+> If you see this error, you must wait the full 6 hours before attempting another resize. This is an AWS limitation, not a Kubernetes restriction.
+
+### Method 1: Using Helm (Recommended)
+
+This method works for components that use standalone PVCs managed by Helm, including:
+- **Deployments** (e.g., `frontends`, `bridge-history-api`)
+- **StatefulSets with standalone PVCs** (e.g., `l1-interface`, `l2-sequencer`)
+
+1. **Update your values file** (e.g., `values/l1-interface-production.yaml`):
+   ```yaml
+   persistence:
+     data:
+       size: "200Gi" # Update to the new desired size
+       retain: true
+   ```
+
+2. **Apply the changes:**
+   ```bash
+   make install-l1-interface
+   # Or for other components:
+   # make install-l2-sequencer
+   ```
+
+3. **Verify the expansion:**
+   ```bash
+   kubectl describe pvc <pvc-name>
+   ```
+   You should see the `CAPACITY` update after a few minutes.
+   
+   **Example output:**
+   ```bash
+   kubectl describe pvc l1-interface-data
+   Name:          l1-interface-data
+   Namespace:     default
+   StorageClass:  gp3
+   Status:        Bound
+   Capacity:      200Gi  <-- Updated capacity
+   Access Modes:  RWO
+   Used By:       l1-interface-0
+   Events:
+     Type    Reason                      Age    From                              Message
+     ----    ------                      ----   ----                              -------
+     Normal  Resizing                    2m56s  external-resizer ebs.csi.aws.com  External resizer is resizing volume...
+     Normal  ExternalExpanding           2m56s  volume_expand                     waiting for an external controller to expand this PVC
+     Normal  FileSystemResizeRequired    2m50s  external-resizer ebs.csi.aws.com  Require file system resize of volume on node
+     Normal  FileSystemResizeSuccessful  2m32s  kubelet                           MountVolume.NodeExpandVolume succeeded...
+   ```
+
+### Method 2: Manual Patching (Required for `l2-rpc`)
+
+For components like `l2-rpc` that use `volumeClaimTemplates` in their StatefulSet definition, the PVC size is immutable via Helm. Changing the size in `values.yaml` and running `helm upgrade` will **fail** with a `Forbidden` error (because `volumeClaimTemplates` cannot be updated). You must manually patch the PVCs.
+
+1. **Identify the PVC to expand:**
+   ```bash
+   kubectl get pvc -n default
+   # Example output:
+   # NAME            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS
+   # data-l2-rpc-0   Bound    pvc-d4b585c0-f00e-491a-bbb5-7a38b3073836   12Gi       RWO            gp3
+   ```
+
+2. **Patch the PVC with the new size:**
+   ```bash
+   # Expand to 22Gi
+   kubectl patch pvc data-l2-rpc-0 -n default -p '{"spec":{"resources":{"requests":{"storage":"22Gi"}}}}'
+   ```
+
+3. **Verify the expansion:**
+   ```bash
+   kubectl describe pvc data-l2-rpc-0
+   ```
+   Look for `FileSystemResizePending` or `Resizing` in the status/conditions.
+
+   **Example Output:**
+   ```yaml
+   Name:          data-l2-rpc-0
+   Status:        Bound
+   Capacity:      22Gi  <-- Updated Capacity
+   ...
+   Events:
+     Type    Reason                      Age   From                              Message
+     ----    ------                      ----  ----                              -------
+     Normal  Resizing                    21m   external-resizer ebs.csi.aws.com  External resizer is resizing volume...
+     Normal  FileSystemResizeRequired    21m   external-resizer ebs.csi.aws.com  Require file system resize of volume on node
+     Normal  FileSystemResizeSuccessful  20m   kubelet                           MountVolume.NodeExpandVolume succeeded...
+   ```
+   *Note: If the expansion is successful, you will see `FileSystemResizeSuccessful` in the events. If it is still in progress, you might see `Resizing` or `FileSystemResizePending` in the Conditions section.*
