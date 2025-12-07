@@ -93,6 +93,10 @@ env:
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
+  - name: DOGEOS_WITHDRAWAL_BLOB_RETENTION
+    value: "1000"
+  - name: DOGEOS_WITHDRAWAL_BLOB_PRUNING_INTERVAL_SECS
+    value: "3600"
 
 envFrom:
   - secretRef:

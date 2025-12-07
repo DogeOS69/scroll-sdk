@@ -49,7 +49,8 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "15000"         # predefined
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"       # predefined
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: ""              
-
+      DOGEOS_L1_INTERFACE_BLOB_RETENTION: "1000"
+      DOGEOS_L1_INTERFACE_BLOB_PRUNING_INTERVAL_SECS: "3600"
 # External Secrets configuration for production
 externalSecrets:
   l1-interface-secret-env:
