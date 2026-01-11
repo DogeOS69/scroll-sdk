@@ -3,7 +3,7 @@
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "Always"
-  tag: "0.2.0-rc.4"
+  tag: "0.2.0-rc.5"
 
 # Direct environment variables
 env:
@@ -51,6 +51,8 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: ""              
       DOGEOS_L1_INTERFACE_BLOB_RETENTION: "1000"
       DOGEOS_L1_INTERFACE_BLOB_PRUNING_INTERVAL_SECS: "3600"
+      DOGEOS_L1_INTERFACE_REPAIR_CODEC_VERSIONS: "true"
+
 # External Secrets configuration for production
 externalSecrets:
   l1-interface-secret-env:
