@@ -1,6 +1,6 @@
 # l2-bootnode
 
-![Version: 0.1.15](https://img.shields.io/badge/Version-0.1.15-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.16](https://img.shields.io/badge/Version-0.1.16-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-bootnode helm chart
 
@@ -68,6 +68,7 @@ Kubernetes: `>=1.22.0-0`
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/l2geth/data"` |  |
+| persistence.data.retain | bool | `true` |  |
 | persistence.data.size | string | `"10Gi"` |  |
 | persistence.data.type | string | `"pvc"` |  |
 | persistence.env.enabled | bool | `true` |  |
