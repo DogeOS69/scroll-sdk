@@ -145,7 +145,7 @@ install-blockscout:
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-	 	--version=0.1.4-dogeos
+	 	--version=0.1.5-dogeos
 
 install-frontends:
 	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
@@ -158,7 +158,7 @@ install-testnet-activity-helper:
 	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
 		--version=0.1.2 \
 		--values values/testnet-activity-helper-production.yaml
-		
+
 install-coordinator:
 	helm upgrade -i coordinator-api oci://ghcr.io/dogeos69/scroll-sdk/helm/coordinator-api -n $(NAMESPACE) \
 		--version=0.1.4 \
