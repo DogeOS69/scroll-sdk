@@ -72,20 +72,20 @@ install-l2-rpc:
 
 install-l2-sequencer:
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
-		--version=0.1.13 \
+		--version=0.1.14 \
 		--values values/l2-sequencer-production-0.yaml
 
 	helm upgrade -i l2-sequencer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
-		--version=0.1.13 \
+		--version=0.1.14 \
 		--values values/l2-sequencer-production-1.yaml
 
 install-l2-bootnode:
 	helm upgrade -i l2-bootnode-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.15 \
+		--version=0.1.16 \
 		--values values/l2-bootnode-production-0.yaml
 
 	helm upgrade -i l2-bootnode-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-bootnode -n $(NAMESPACE) \
-		--version=0.1.15 \
+		--version=0.1.16 \
 		--values values/l2-bootnode-production-1.yaml
 
 install-contracts:

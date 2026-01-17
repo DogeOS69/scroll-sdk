@@ -1,6 +1,6 @@
 # l2-sequencer
 
-![Version: 0.1.13](https://img.shields.io/badge/Version-0.1.13-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.14](https://img.shields.io/badge/Version-0.1.14-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-sequencer helm charts
 
@@ -75,6 +75,7 @@ Kubernetes: `>=1.22.0-0`
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/l2geth/data/"` |  |
 | persistence.data.name | string | `"l2geth-data"` |  |
+| persistence.data.retain | bool | `true` |  |
 | persistence.data.size | string | `"10Gi"` |  |
 | persistence.data.type | string | `"pvc"` |  |
 | persistence.env.enabled | bool | `true` |  |
