@@ -1,0 +1,14 @@
+# TYPE gas_used gauge
+gas_used 0
+
+# HELP last_posted_blob_timestamp Unix timestamp of the last successfully posted blob
+# TYPE last_posted_blob_timestamp gauge
+last_posted_blob_timestamp 1762136013.9535487
+
+# HELP last_blob_height Height of the last successfully posted blob
+# TYPE last_blob_height gauge
+last_blob_height 8677614
+
+# HELP wallet_balance Current wallet balance
+# TYPE wallet_balance gauge
+wallet_balance 8804074

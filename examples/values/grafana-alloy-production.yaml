@@ -52,7 +52,7 @@ alloy:
 
       loki.process "process_logs" {
         stage.match {
-          selector = "{service=\"dogeos-deposit-processor\"}"
+          selector = "{service=\"l1-interface\"}"
 
           stage.json {
             expressions = {

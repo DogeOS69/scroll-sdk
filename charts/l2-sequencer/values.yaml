@@ -146,6 +146,7 @@ persistence:
     name: l2geth-data
     size: 10Gi
     accessMode: ReadWriteOnce
+    retain: true
   env:
     enabled: true
     type: configMap

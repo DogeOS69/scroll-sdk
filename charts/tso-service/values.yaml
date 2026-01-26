@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/tso-service
   pullPolicy: Always
-  tag: 100225-00
+  tag: 110625-00
 
 service:
   main:

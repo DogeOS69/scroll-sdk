@@ -104,6 +104,7 @@ persistence:
     mountPath: /l2geth/data
     accessMode: ReadWriteOnce
     size: 10Gi
+    retain: true
   env:
     enabled: true
     type: configMap

@@ -53,6 +53,7 @@ This document provides comprehensive instructions for deploying DogeOS services 
 
 1. [Setting Up Grafana Alert Rules](#setting-up-grafana-alert-rules)
 
+1. [Dynamic PVC Expansion](#dynamic-pvc-expansion)
 
 ## Setup your local deployment repository
 
@@ -271,7 +272,7 @@ The format is as follows:
 [[base_funding_utxos]]
 txid = "" # The txid of the transaction you just made
 vout = 0  # The vout index where the helper address received this transaction, usually 0
-amount_sats = 50_000_000_000 # The amount received by the helper address in this transaction, in Satoshi or Koinu
+amount_sats = 70_000_000_000 # The amount received by the helper address in this transaction, in Satoshi or Koinu
 ```
 
 Then run `scrollsdk doge bridge-init` again with the same seed string.
@@ -370,7 +371,7 @@ scrollsdk setup push-secrets
 When prompted, provide the following information:
 1. Secret Service: `AWS`
 2. Secret Prefix Name: `dogeos`
-3. AWS Secret Region: `us-west-2`
+3. AWS Secret Region: for example `us-west-2` 
 4. AWS Service Account: `external-secrets`
 
 > **Important**: The service account name must match the one created in the prerequisite step.
@@ -439,124 +440,22 @@ This command will:
 
 ## DogeOs Deployment
 
+### Deploy dogecoin and celestia
 
-
-### 1. Deploy `dogecoin` node
-```bash
-make install-dogecoin
-```
-
-### 2. Deploy `celestia` node
-```bash
+```shell
+make install-dogecoin 
 make install-celestia
 ```
 
-### 3. Deploy `l1-devnet`
+Wait for dogecoin and celestia to finish syncing
 
-```bash
-make install-l1-devnet
-```
+### Deploy other services
 
-#### 3.1. Fund the Deployer
-
-```bash
-scrollsdk helper fund-accounts -i -f 2 -d
-scrollsdk helper fund-accounts -l 1 -f 2 -d
-```
-
-### 4. Deploy Scroll Core Services
-
-Execute the following command to deploy the core scroll services:
-
-```bash
-make install-scroll-core
-```
-
-#### Components Deployed
-The deployment process installs the following core components:
-* Core Infrastructure
-   - Sequencer
-   - Bootnode
-   - L2 RPC services
-
-* Monitoring Stack
-   - Scroll monitoring services
-   - Grafana Alloy for log/metrics collection
-   - Metrics Exporter to create metrics from http calls
-
-#### Deployment Verification
-Monitor the deployment progress using either:
-- `kubectl get pods -n <namespace>`
-- The recommended `k9s` terminal UI tool
-
-> **Important**: Verify successful deployment by ensuring all pods transition to the "Running" state without any error conditions.
-
-> **Note**: The deployment process may take several minutes to complete. Allow sufficient time for all components to initialize properly.
-
-
-### 5. Deploy contracts
-
-```bash
-make install-contracts
-```
-> Note: Contract deployment requires sufficient funds in the deployer account. If the account balance was insufficient during initial deployment, you may need to redeploy the contracts after funding the account in `step 3.1`.
-
-
-### 6. Deploy Dogeos DA service
-```bash
-make install-dogeos-da
-```
-
-### 7. Deploy rollup node and explorer
-```bash
-make install-rollup-relayer
-```
-
-### 8. Deploy Gas Oracle
-```bash
-make install-gas-oracle
-```
-We need to fund our L1 Gas Oracle Sender (an account on L2 😅) with some funds.
-
-```bash
-scrollsdk helper fund-accounts -f 0.2 -l 2
+```shell
+make install-all
 ```
 
 When prompted, select the `Directly fund L2 wallet` option to complete the transfer.
-
-### 9. Deploy Dogeos Deposit Processor
-```bash
-make install-deposit-processor
-```
-
-### 10. Deploy Cubesigner Signers
-```bash
-make install-cubesigner-signers
-```
-
-### 11. Deploy TSO service
-```bash
-make install-tso
-```
-
-### 12. Deploy Withdrawal Processor
-```bash
-make install-withdrawal-processor
-```
-
-### 13. Deploy Blockscout services
-```bash
-make install-blockscout
-```
-The script will install:
-- Blockscout stack and  explorer
-- Smart contract verification service
-
-
-### 14. Deploy Frontends
-```bash
-make install-frontends
-```
 
 ## Test After Deployment
 
@@ -566,13 +465,14 @@ After all the required services are deployed successfully, run the following tes
 scrollsdk test ingress
 scrollsdk test contracts
 scrollsdk setup verify-contracts
-scrollsdk test e2e
 ```
+
 ## Disable public access after testing
-The following 3 services will be restricted from public access:
+
+The following services will be restricted from public access:
   - celestia
   - dogecoin
-  - l1-devnet
+
 ```bash
 scrollsdk setup disable-internal
 ```
@@ -580,37 +480,6 @@ scrollsdk setup disable-internal
 </br>
 
 ## Verify Contracts
-
-### 1. Check Contract Verification Parameters
-
-```toml
-[contracts.verification]
-VERIFIER_TYPE_L1 = "blockscout"
-VERIFIER_TYPE_L2 = "blockscout"
-EXPLORER_URI_L1 = "https://blockscout.scrollsdk.<your domain>"
-EXPLORER_URI_L2 = "https://blockscout.scrollsdk.<your domain>"
-RPC_URI_L1 = "https://l1-devnet.scrollsdk.<your domain>"
-RPC_URI_L2 = "https://l2-rpc.scrollsdk.<your domain>"
-EXPLORER_API_KEY_L1 = ""
-EXPLORER_API_KEY_L2 = ""
-```
-> Note:
-> - Remove the leading space if any
-> - Ensure all URI addresses are correctly configured and replace `<your domain>` with your actual domain name.
-
-
-### 2. Configure Chain IDs
-
-In the `config.toml` file, ensure chain IDs are in the correct numeric format:
-
-```yaml
-CHAIN_ID_L1 = 31337
-CHAIN_ID_L2 = 221122
-```
-
-> Important: Chain IDs must be in pure numeric format without quotes or underscores.
-
-### 3. Execute Contract Verification
 
 Run the following command to verify contracts:
 
@@ -622,7 +491,6 @@ scrollsdk setup verify-contracts
 > - Contract verification can only be performed successfully once, all the consequent verification will fail after that.
 > - If contracts are required to be verified again, blockscout database must be deleted and blockscout/blockscout-sc-verifier services must be redeployed.
 > - After successful verification, results can be viewed in the Blockscout explorer
-> - There is a known issue in blockscout explorer which won't update the number of the verified contracts, reployment of blockscout services will fix the issue.
 
 </br>
 
@@ -709,3 +577,122 @@ To enable and customize these alert rules, follow these steps:
    - Follow steps 1-3 for each alert rule you wish to enable
 
 This process allows you to customize and activate the pre-configured alert rules while maintaining their core functionality.
+
+
+## Dynamic PVC Expansion
+
+This guide explains how to dynamically expand Persistent Volume Claims (PVCs) for your DogeOS deployment on AWS.
+
+### Prerequisites
+
+Before expanding volumes, ensure your StorageClass allows volume expansion.
+
+1. **Check if your StorageClass is expandable:**
+   ```bash
+   kubectl get sc gp3 -o jsonpath='{.allowVolumeExpansion}'
+   ```
+   If it returns `true`, you are good to go.
+
+2. **Enable expansion if needed:**
+   You can patch the existing `gp3` StorageClass:
+   ```bash
+   kubectl patch storageclass gp3 -p '{"allowVolumeExpansion": true}'
+   ```
+   *Note: This change applies to all new and existing PVCs using this StorageClass.*
+
+> [!WARNING]
+> **AWS EBS Volume Modification Rate Limit**
+> 
+> AWS EBS has a strict limitation: **each volume can only be modified once every 6 hours**. If you attempt to resize a volume multiple times within this window, you will encounter a `VolumeModificationRateExceeded` error:
+> 
+> ```
+> VolumeModificationRateExceeded: You've reached the maximum modification rate per volume limit. 
+> Wait at least 6 hours between modifications per EBS volume.
+> ```
+> 
+> If you see this error, you must wait the full 6 hours before attempting another resize. This is an AWS limitation, not a Kubernetes restriction.
+
+### Method 1: Using Helm (Recommended)
+
+This method works for components that use standalone PVCs managed by Helm, including:
+- **Deployments** (e.g., `frontends`, `bridge-history-api`)
+- **StatefulSets with standalone PVCs** (e.g., `l1-interface`, `l2-sequencer`)
+
+1. **Update your values file** (e.g., `values/l1-interface-production.yaml`):
+   ```yaml
+   persistence:
+     data:
+       size: "200Gi" # Update to the new desired size
+       retain: true
+   ```
+
+2. **Apply the changes:**
+   ```bash
+   make install-l1-interface
+   # Or for other components:
+   # make install-l2-sequencer
+   ```
+
+3. **Verify the expansion:**
+   ```bash
+   kubectl describe pvc <pvc-name>
+   ```
+   You should see the `CAPACITY` update after a few minutes.
+   
+   **Example output:**
+   ```bash
+   kubectl describe pvc l1-interface-data
+   Name:          l1-interface-data
+   Namespace:     default
+   StorageClass:  gp3
+   Status:        Bound
+   Capacity:      200Gi  <-- Updated capacity
+   Access Modes:  RWO
+   Used By:       l1-interface-0
+   Events:
+     Type    Reason                      Age    From                              Message
+     ----    ------                      ----   ----                              -------
+     Normal  Resizing                    2m56s  external-resizer ebs.csi.aws.com  External resizer is resizing volume...
+     Normal  ExternalExpanding           2m56s  volume_expand                     waiting for an external controller to expand this PVC
+     Normal  FileSystemResizeRequired    2m50s  external-resizer ebs.csi.aws.com  Require file system resize of volume on node
+     Normal  FileSystemResizeSuccessful  2m32s  kubelet                           MountVolume.NodeExpandVolume succeeded...
+   ```
+
+### Method 2: Manual Patching (Required for `l2-rpc`)
+
+For components like `l2-rpc` that use `volumeClaimTemplates` in their StatefulSet definition, the PVC size is immutable via Helm. Changing the size in `values.yaml` and running `helm upgrade` will **fail** with a `Forbidden` error (because `volumeClaimTemplates` cannot be updated). You must manually patch the PVCs.
+
+1. **Identify the PVC to expand:**
+   ```bash
+   kubectl get pvc -n default
+   # Example output:
+   # NAME            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS
+   # data-l2-rpc-0   Bound    pvc-d4b585c0-f00e-491a-bbb5-7a38b3073836   12Gi       RWO            gp3
+   ```
+
+2. **Patch the PVC with the new size:**
+   ```bash
+   # Expand to 22Gi
+   kubectl patch pvc data-l2-rpc-0 -n default -p '{"spec":{"resources":{"requests":{"storage":"22Gi"}}}}'
+   ```
+
+3. **Verify the expansion:**
+   ```bash
+   kubectl describe pvc data-l2-rpc-0
+   ```
+   Look for `FileSystemResizePending` or `Resizing` in the status/conditions.
+
+   **Example Output:**
+   ```yaml
+   Name:          data-l2-rpc-0
+   Status:        Bound
+   Capacity:      22Gi  <-- Updated Capacity
+   ...
+   Events:
+     Type    Reason                      Age   From                              Message
+     ----    ------                      ----  ----                              -------
+     Normal  Resizing                    21m   external-resizer ebs.csi.aws.com  External resizer is resizing volume...
+     Normal  FileSystemResizeRequired    21m   external-resizer ebs.csi.aws.com  Require file system resize of volume on node
+     Normal  FileSystemResizeSuccessful  20m   kubelet                           MountVolume.NodeExpandVolume succeeded...
+   ```
+   *Note: If the expansion is successful, you will see `FileSystemResizeSuccessful` in the events. If it is still in progress, you might see `Resizing` or `FileSystemResizePending` in the Conditions section.*

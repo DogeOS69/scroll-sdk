@@ -1,3 +1,8 @@
+image:
+  repository: scrolltech/l2geth
+  pullPolicy: IfNotPresent
+  tag: scroll-v5.9.6
+
 global:
   fullnameOverride: l2-rpc
 
@@ -20,12 +25,11 @@ initContainers:
         mountPath: /wait-for-l1.sh
         subPath: wait-for-l1.sh
 
-persistence:
-  env:
-    enabled: true
-    type: configMap
-    mountPath: /config/
-    name: l2-rpc-env
+volumeClaimTemplates:
+  - name: data
+    accessMode: "ReadWriteOnce"
+    size: "1000Gi"
+    mountPath: "/l2geth/data"
 
 configMaps:
   env:

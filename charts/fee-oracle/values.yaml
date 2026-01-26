@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: Always
-  tag: 082025-00
+  tag: 102925-00
 
 service:
   main:
@@ -35,9 +35,21 @@ probes:
   liveness:
     <<: *default_probes
   readiness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/ready"
+        port: http
   startup:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/ready"
+        port: http
+      failureThreshold: 30
+      periodSeconds: 10
 
 # Resource configuration
 resources:

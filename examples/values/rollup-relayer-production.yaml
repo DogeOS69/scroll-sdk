@@ -1,3 +1,8 @@
+image:
+  repository: scrolltech/rollup-relayer
+  pullPolicy: IfNotPresent
+  tag: v4.5.47
+
 initContainers:
   1-check-postgres-connection:
     image: atkrad/wait4x:latest

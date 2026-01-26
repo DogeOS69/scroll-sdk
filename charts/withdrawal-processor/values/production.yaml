@@ -3,7 +3,7 @@
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: Always
-  tag: 101425-01
+  tag: 110525-00
 
 env:
   # Top-level settings
