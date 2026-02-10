@@ -25,10 +25,12 @@ bridge:
   # DO NOT use this in production!
   mnemonic: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon blade"
   # Fixed P2P key for deterministic peer ID (Ed25519 private key, base64 encoded)
-  # This generates peer ID: 12D3KooWRTeCqHNrpYEWBXVxQNRYGZGJwQhvP2AAADWV2CtjP9jg
-  p2pKey: "CAESQG0cAy8EF0E8xBKKNsR1iDQnNlXjQVEQ0bqyZiQDCw4qPNBB0JlEUhEv3EqR0WPzQNFPCbNRH0eDADrqQ0xLXYs="
+  
+  p2pKey: ""
+  # JWT Secret for API authentication
+  jwtSecret: ""
   # Pre-calculated peer ID from the above p2p key
-  peerId: "12D3KooWRTeCqHNrpYEWBXVxQNRYGZGJwQhvP2AAADWV2CtjP9jg"
+  peerId: ""
 
 global:
   chainId: private

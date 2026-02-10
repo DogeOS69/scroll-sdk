@@ -99,47 +99,56 @@ data:
     # --force-no-bbr is required in container environments where BBR is not available
     celestia-appd start --home "$DATA_DIR" --api.enable --grpc.enable --grpc-web.enable --pruning nothing --force-no-bbr
 
+  init-bridge.sh: |
+    #!/bin/sh
+    set -e
+    set -x
+
+    BRIDGE_DIR="/home/celestia/bridge"
+    
+    echo "Starting bridge node initialization..."
+
+    # Check if bridge node is already initialized
+    if [ ! -f "$BRIDGE_DIR/config.toml" ]; then
+        echo "Initializing bridge node for private network..."
+        # Ensure we don't have partial state
+        rm -rf "$BRIDGE_DIR"
+        celestia bridge init --p2p.network private --node.store "$BRIDGE_DIR"
+    else
+        echo "Bridge directory already initialized."
+    fi
+
+    # ALWAYS overwrite keys
+    echo "Enforcing fixed keys..."
+    mkdir -p "$BRIDGE_DIR/keys"
+    
+    P2P_KEY_FILE="$BRIDGE_DIR/keys/OAZHALLLMV4Q"
+    JWT_FILE="$BRIDGE_DIR/keys/NJ3XILLTMVRXEZLUFZVHO5A"
+    
+    # Write Fixed Keys
+    echo '{"body":"{{ .Values.bridge.p2pKey }}"}' > "$P2P_KEY_FILE"
+    echo '{"body":"{{ .Values.bridge.jwtSecret }}"}' > "$JWT_FILE"
+    
+    chmod 600 "$P2P_KEY_FILE" "$JWT_FILE"
+    
+    # Reset PruningWindow to 0s
+    if [ -f "$BRIDGE_DIR/config.toml" ]; then
+        sed -i 's#PruningWindow = ".*"#PruningWindow = "0s"#g' "$BRIDGE_DIR/config.toml"
+    fi
+    
+    echo "Initialization complete."
+
   start-bridge.sh: |
     #!/bin/sh
     set -e
+    set -x
 
     # Bridge node configuration
     BRIDGE_DIR="/home/celestia/bridge"
     CORE_IP="${CORE_IP:-{{ .Values.bridge.coreIp }}}"
     CORE_GRPC_PORT="${CORE_GRPC_PORT:-{{ .Values.bridge.coreGrpcPort }}}"
 
-    echo "Waiting for validator to be ready at $CORE_IP:$CORE_GRPC_PORT..."
-    # A simple wait loop could be added here if needed, or rely on k8s restarts.
-    # ideally we use an initContainer or just let it crashloop until ready.
-    sleep 5
-
-    # Check if bridge node is already initialized
-    if [ ! -d "$BRIDGE_DIR" ]; then
-        echo "Initializing bridge node for private network..."
-        celestia bridge init --p2p.network private --node.store "$BRIDGE_DIR"
-        
-        # Import fixed mnemonic for deterministic key
-        echo "Importing bridge key from fixed mnemonic..."
-        echo "{{ .Values.bridge.mnemonic }}" | cel-key add my_celes_key --recover --keyring-backend test --node.type bridge --node.store "$BRIDGE_DIR"
-        
-        # Write fixed P2P key for deterministic peer ID
-        # The key file name is base32 encoding of "libp2p-key"
-        echo "Writing fixed P2P key..."
-        P2P_KEY_FILE="$BRIDGE_DIR/keys/NJ3XILLTMVRXEZLUFZVHO5A"
-        echo '{"body":"{{ .Values.bridge.p2pKey }}"}' > "$P2P_KEY_FILE"
-        chmod 600 "$P2P_KEY_FILE"
-        echo "Fixed P2P key written. Expected peer ID: {{ .Values.bridge.peerId }}"
-    fi
-
     echo "Starting bridge node..."
-    echo "Connecting to validator at $CORE_IP:$CORE_GRPC_PORT"
-
-    # Reset PruningWindow to 0s to fix crash caused by previous modification
-    if [ -f "$BRIDGE_DIR/config.toml" ]; then
-        sed -i 's#PruningWindow = ".*"#PruningWindow = "0s"#g' "$BRIDGE_DIR/config.toml"
-    fi
-
-    # Start bridge node with proper configuration
     celestia bridge start \
         --archival \
         --p2p.network private \

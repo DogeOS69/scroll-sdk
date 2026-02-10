@@ -16,6 +16,8 @@ spec:
       {{- include "celestia-node.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "celestia-node.selectorLabels" . | nindent 8 }}
     spec:
@@ -155,10 +157,12 @@ spec:
             - "{{ .Values.node_type }}"
             - "start"
             - "--core.ip"
-            - "{{ .Values.core.rpc_url }}"
+            - "{{ tpl .Values.core.rpc_url . }}"
             - "--core.port"
-            - "{{ .Values.core.grpc_port }}"
+            - "{{ tpl (toString .Values.core.grpc_port) . }}"
+            {{- if .Values.core.tls }}
             - "--core.tls"
+            {{- end }}
             - "--core.xtoken.path"
             - "/home/celestia/celestia-auth"
             - "--p2p.network"
@@ -167,10 +171,12 @@ spec:
             - "test"
             - "--log.level"
             - "{{ .Values.logLevel }}"
-            - "--metrics.tls=false"
+            {{- if .Values.metrics.enabled }}
+            - "--metrics.tls={{ .Values.metrics.tls }}"
             - "--metrics"
             - "--metrics.endpoint"
-            - "grafana-alloy:4318"
+            - "{{ .Values.metrics.endpoint }}"
+            {{- end }}
           lifecycle:
             preStop:
               exec:

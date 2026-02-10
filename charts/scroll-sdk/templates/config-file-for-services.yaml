@@ -101,17 +101,7 @@ data:
 {{ .Files.Get "configs/gas-oracle.env" | indent 2 }}
 ---
 {{- end }}
-{{- if index .Values "l1-devnet" "enabled" }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    {{- include "scroll-sdk.labels" $ | nindent 4 }}
-  name: l1-devnet-env
-data:
-{{ .Files.Get "configs/l1-devnet.env" | indent 2 }}
----
-{{- end }}
+
 {{- if index .Values "l1-explorer" "enabled" }}
 apiVersion: v1
 kind: ConfigMap

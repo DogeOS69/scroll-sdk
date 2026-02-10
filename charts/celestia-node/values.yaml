@@ -4,6 +4,12 @@ node_type: "light"
 core:
   rpc_url: rpc-mocha.pops.one
   grpc_port: 9090
+  # Set to false when connecting to local devnet (no TLS)
+  tls: true
+
+header:
+  trustedPeers: []
+  syncFromHash: ""
 
 # Optional: Your wallet's mnemonic phrase for key restoration
 # If not provided, a random key will be generated on first startup and persisted
@@ -67,11 +73,18 @@ rpc:
   auth:
     skipAuth: true
 
+# Metrics configuration
+# Set enabled to false to disable OTLP metrics (recommended for devnet)
+metrics:
+  enabled: true
+  endpoint: "grafana-alloy:4318"
+  tls: false
+
 # Full celestia-node config.toml content. You can override this field to replace the entire TOML.
 # Helm's tpl is used in the ConfigMap to render any go-template expressions inside the TOML.
 configToml: |
   [Node]
-  StartupTimeout = "20s"
+  StartupTimeout = "10m"
   ShutdownTimeout = "20s"
 
   [Core]
@@ -122,7 +135,7 @@ configToml: |
   GracePeriod = "1m0s"
 
   [RPC]
-  Address = "localhost"
+  Address = "0.0.0.0"
   Port = "26658"
   SkipAuth = false
 
@@ -164,7 +177,7 @@ configToml: |
   AdvertiseInterval = "1h0m0s"
 
   [Header]
-  TrustedPeers = []
+  TrustedPeers = [{{ range $i, $e := .Values.header.trustedPeers }}{{ if $i }}, {{ end }}"{{ tpl $e $ }}"{{ end }}]
 
   [Header.Store]
   StoreCacheSize = 512
@@ -174,7 +187,7 @@ configToml: |
   [Header.Syncer]
   PruningWindow = "169h0m0s"
   # Set to a trusted hash to start syncing from a specific point. Leave empty to sync from genesis.
-  SyncFromHash = ""
+  SyncFromHash = "{{ .Values.header.syncFromHash | default "" }}"
   # Set to a trusted height to start syncing from. Use 0 to disable.
   SyncFromHeight = 0
 

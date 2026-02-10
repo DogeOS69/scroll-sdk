@@ -1,0 +1,36 @@
+network = "testnet"
+#seed_string = "${SEED_STRING}"
+dogecoin_rpc_url = "${DOGECOIN_RPC_URL}"
+dogecoin_rpc_user = "${DOGECOIN_RPC_USER}"
+dogecoin_rpc_pass = "${DOGECOIN_RPC_PASS}"
+sequencer_threshold = 1
+correctness_threshold = 2
+attestation_threshold = 2
+recovery_threshold = 2
+correctness_key_count = 3
+attestation_key_count = 3
+recovery_key_count = 3
+timelock_seconds = 3_600
+fee_rate_sat_per_kvb = 1_000_000
+sequencer_target_amount = 420_690_000
+fee_wallet_target_amount = 500_000_000
+bridge_target_amount = 5_000_000_000
+confirmations_required = 1
+dogecoin_blockbook_url = "https://dogebook-testnet.nownodes.io"
+dogecoin_blockbook_api_key = "abcdefg"
+correctness_pubkeys = [
+  "026bd4cb33eb4f44a419e53348eeebd3c4a4f23880ed6425dfb01a5172e67615dd",
+  "02a4f649a27223e8560ebfdf31d8a00b7b786bd0a60f7c1cf8c2e3beb951d83532",
+  "03c4abac521620f3b8f15413c57edbc67c9d21e0bef017f46c9f77fc717a819f57"
+]
+attestation_pubkeys = [
+  "046716f668104494575f12de507404408b72ec4ce69eb332047c5558ed963a5e05bc9aa6fc44c898e0840de23ceee410ecc4a9814f6272585ad46418ccb6391472",
+  "04bc68c163dcb8f48cd19ed23deed49622ed54d130a00009241c308550f1be4c8ac7260b38c54786a0cdb3ba73b16a89ef561724d0af96ba2a2ffaa6643a1ed3b6",
+  "04a402375ab85a045d9a0c20aa82548054f94bd739236da1f5bce84d1b9b1d88be2a84ce5ad5e190263b1f9f04c700cdf4dff2ac53acafed077bcb12fd2b76dfd5"
+]
+deposit_eth_recipient_address_hex = "0x42Bace2FAf3b5B5A96466cC1B665fAA3a9f476Df"
+
+[[base_funding_utxos]]
+txid = "${BRIDGE_TXID}"
+vout = ${BRIDGE_VOUT}
+amount_sats = ${BRIDGE_VALUE}

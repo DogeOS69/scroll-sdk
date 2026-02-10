@@ -8,7 +8,7 @@ image:
 # Direct environment variables
 env:
   - name: "RUST_LOG"
-    value: "info"     # info,l1_interface=debug
+    value: "trace"     # info,l1_interface=debug
 
 # ConfigMap overrides for production
 configMaps:
@@ -87,3 +87,13 @@ persistence:
   data:
     size: "1000Gi"
     retain: true
+
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /api/v1/metrics
+        interval: 10s
+        scrapeTimeout: 5s

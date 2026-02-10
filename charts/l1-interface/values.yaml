@@ -117,12 +117,12 @@ envFrom:
       name: "l1-interface-env"
 
 # Monitoring configuration
-serviceMonitor:
-  main:
-    enabled: true
-    endpoints:
-      - port: http
-        scheme: http
-        path: /api/v1/metrics
-        interval: 10s
-        scrapeTimeout: 5s
+# serviceMonitor:
+#   main:
+#     enabled: true
+#     endpoints:
+#       - port: http
+#         scheme: http
+#         path: /api/v1/metrics
+#         interval: 10s
+#         scrapeTimeout: 5s

@@ -27,6 +27,16 @@ spec:
         - name: wait-for-validator
           image: busybox
           command: ['sh', '-c', 'until nc -z {{ .Release.Name }}-validator 9090; do echo waiting for validator; sleep 2; done']
+        - name: init-bridge
+          image: "{{ .Values.bridge.image.repository }}:{{ .Values.bridge.image.tag }}"
+          imagePullPolicy: {{ .Values.bridge.image.pullPolicy }}
+          command: ["/bin/sh", "/opt/init-bridge.sh"]
+          volumeMounts:
+            - name: data
+              mountPath: /home/celestia
+            - name: scripts
+              mountPath: /opt/init-bridge.sh
+              subPath: init-bridge.sh
       containers:
         - name: bridge
           image: "{{ .Values.bridge.image.repository }}:{{ .Values.bridge.image.tag }}"
