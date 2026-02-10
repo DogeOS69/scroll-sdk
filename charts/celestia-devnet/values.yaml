@@ -1,0 +1,34 @@
+validator:
+  image:
+    repository: ghcr.io/celestiaorg/celestia-app
+    tag: v6.3.0-mocha
+    pullPolicy: IfNotPresent
+  storage:
+    size: 10Gi
+  resources: {}
+  # Fixed mnemonic for deterministic key generation in devnet
+  # DO NOT use this in production!
+  mnemonic: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+bridge:
+  image:
+    repository: ghcr.io/celestiaorg/celestia-node
+    tag: v0.28.4-mocha
+    pullPolicy: IfNotPresent
+  storage:
+    size: 10Gi
+  resources: {}
+  # Note: This is overridden in the template to use {{ .Release.Name }}-validator
+  coreIp: ""
+  coreGrpcPort: 9090
+  # Fixed mnemonic for deterministic key generation in devnet
+  # DO NOT use this in production!
+  mnemonic: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon blade"
+  # Fixed P2P key for deterministic peer ID (Ed25519 private key, base64 encoded)
+  # This generates peer ID: 12D3KooWRTeCqHNrpYEWBXVxQNRYGZGJwQhvP2AAADWV2CtjP9jg
+  p2pKey: "CAESQG0cAy8EF0E8xBKKNsR1iDQnNlXjQVEQ0bqyZiQDCw4qPNBB0JlEUhEv3EqR0WPzQNFPCbNRH0eDADrqQ0xLXYs="
+  # Pre-calculated peer ID from the above p2p key
+  peerId: "12D3KooWRTeCqHNrpYEWBXVxQNRYGZGJwQhvP2AAADWV2CtjP9jg"
+
+global:
+  chainId: private

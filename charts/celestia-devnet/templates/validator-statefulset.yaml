@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-validator
+  labels:
+    app: {{ .Release.Name }}-validator
+spec:
+  serviceName: "{{ .Release.Name }}-validator"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-validator
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-validator
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /home/celestia/.celestia-app/data
+              mkdir -p /home/celestia/.celestia-app/config
+              chmod -R 777 /home/celestia
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /home/celestia
+      containers:
+        - name: validator
+          image: "{{ .Values.validator.image.repository }}:{{ .Values.validator.image.tag }}"
+          imagePullPolicy: {{ .Values.validator.image.pullPolicy }}
+          command: ["/bin/sh", "/opt/start-validator.sh"]
+          ports:
+            - containerPort: 26657
+              name: rpc
+            - containerPort: 9090
+              name: grpc
+            - containerPort: 26656
+              name: p2p
+          volumeMounts:
+            - name: data
+              mountPath: /home/celestia
+            - name: scripts
+              mountPath: /opt/start-validator.sh
+              subPath: start-validator.sh
+          resources:
+            {{- toYaml .Values.validator.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ .Release.Name }}-scripts
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.validator.storage.size }}

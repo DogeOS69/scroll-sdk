@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-bridge
+  labels:
+    app: {{ .Release.Name }}-bridge
+spec:
+  serviceName: "{{ .Release.Name }}-bridge"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-bridge
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-bridge
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 10001:10001 /home/celestia"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /home/celestia
+        - name: wait-for-validator
+          image: busybox
+          command: ['sh', '-c', 'until nc -z {{ .Release.Name }}-validator 9090; do echo waiting for validator; sleep 2; done']
+      containers:
+        - name: bridge
+          image: "{{ .Values.bridge.image.repository }}:{{ .Values.bridge.image.tag }}"
+          imagePullPolicy: {{ .Values.bridge.image.pullPolicy }}
+          command: ["/bin/sh", "/opt/start-bridge.sh"]
+          env:
+            - name: CORE_IP
+              value: "{{ .Release.Name }}-validator"
+            - name: CORE_GRPC_PORT
+              value: "{{ .Values.bridge.coreGrpcPort }}"
+          ports:
+            - containerPort: 26658
+              name: rpc
+          volumeMounts:
+            - name: data
+              mountPath: /home/celestia
+            - name: scripts
+              mountPath: /opt/start-bridge.sh
+              subPath: start-bridge.sh
+          resources:
+            {{- toYaml .Values.bridge.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ .Release.Name }}-scripts
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.bridge.storage.size }}

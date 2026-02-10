@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scripts
+data:
+  start-validator.sh: |
+    #!/bin/sh
+    set -e
+
+    # Validator/chain configuration
+    DATA_DIR="/home/celestia/.celestia-app"
+    CHAIN_ID="{{ .Values.global.chainId }}"
+    KEY_NAME="validator"
+    KEYRING_BACKEND="test"
+    KEYRING_DIR="$DATA_DIR/keyring-$KEYRING_BACKEND"
+    GENESIS="$DATA_DIR/config/genesis.json"
+    CONFIG="$DATA_DIR/config/config.toml"
+    APP_TOML="$DATA_DIR/config/app.toml"
+    STATE_FILE="$DATA_DIR/data/priv_validator_state.json"
+
+    echo "Using data directory: $DATA_DIR"
+
+    # If a previous run left an empty validator set, wipe state and keyring so we can re-init cleanly,
+    # but keep data if we've already produced blocks.
+    if [ -f "$GENESIS" ] && grep -q '"validators": *\[\s*\]' "$GENESIS"; then
+        STATE_HEIGHT=0
+        if [ -f "$STATE_FILE" ]; then
+            STATE_HEIGHT=$(sed -n 's/.*"height":[^0-9]*\([0-9]\+\).*/\1/p' "$STATE_FILE" | head -n 1)
+            STATE_HEIGHT=${STATE_HEIGHT:-0}
+        fi
+
+        if [ "$STATE_HEIGHT" -gt 0 ]; then
+            echo "Genesis shows empty validators but chain height $STATE_HEIGHT exists; preserving state."
+        else
+            echo "Genesis has no validators; resetting state for re-init..."
+            rm -rf "$DATA_DIR/config" "$DATA_DIR/data" "$KEYRING_DIR"
+        fi
+    fi
+
+    if [ ! -f "$GENESIS" ]; then
+        echo "Initializing validator node..."
+        mkdir -p "$DATA_DIR"
+        celestia-appd init "$CHAIN_ID" --chain-id "$CHAIN_ID" --home "$DATA_DIR" >/dev/null
+
+        echo "Ensuring validator key exists..."
+        if ! celestia-appd keys show "$KEY_NAME" --keyring-backend "$KEYRING_BACKEND" --home "$DATA_DIR" >/dev/null 2>&1; then
+            echo "Recovering validator key from fixed mnemonic..."
+            echo "{{ .Values.validator.mnemonic }}" | celestia-appd keys add "$KEY_NAME" --recover --keyring-backend "$KEYRING_BACKEND" --home "$DATA_DIR" --output json
+        else
+            echo "Validator key already present."
+        fi
+
+        echo "Adding genesis account..."
+        ADDR=$(celestia-appd keys show "$KEY_NAME" -a --keyring-backend "$KEYRING_BACKEND" --home "$DATA_DIR")
+        celestia-appd genesis add-genesis-account "$ADDR" 1000000000000000utia --home "$DATA_DIR"
+
+        echo "Creating genesis transaction..."
+        celestia-appd genesis gentx "$KEY_NAME" 5000000000utia \
+            --fees 500utia \
+            --keyring-backend "$KEYRING_BACKEND" \
+            --chain-id "$CHAIN_ID" \
+            --home "$DATA_DIR" \
+            --commission-rate=0.05 \
+            --commission-max-rate=1.0 \
+            --commission-max-change-rate=1.0 >/dev/null
+
+        echo "Collecting genesis transactions..."
+        celestia-appd genesis collect-gentxs --home "$DATA_DIR" >/dev/null
+    else
+        echo "Validator node already initialized."
+    fi
+
+    # Ensure config is friendly for container exposure and local dev.
+    if [ -f "$CONFIG" ]; then
+        sed -i 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' "$CONFIG"
+        sed -i 's#"null"#"kv"#g' "$CONFIG"
+        sed -i 's#discard_abci_responses = true#discard_abci_responses = false#g' "$CONFIG"
+        sed -i 's#log_level = "info"#log_level = "*:error,p2p:info,state:info"#g' "$CONFIG"
+        sed -i 's#timeout_commit = ".*"#timeout_commit = "3s"#g' "$CONFIG"
+    fi
+
+    # Ensure gRPC binds to all interfaces for bridge node access inside the compose network.
+    if [ -f "$APP_TOML" ]; then
+        sed -i 's#"127.0.0.1:9090"#"0.0.0.0:9090"#g' "$APP_TOML"
+        sed -i 's#"localhost:9090"#"0.0.0.0:9090"#g' "$APP_TOML"
+        sed -i 's#^grpc.address *=.*#grpc.address = "0.0.0.0:9090"#g' "$APP_TOML" 2>/dev/null || true
+        sed -i 's#"127.0.0.1:9091"#"0.0.0.0:9091"#g' "$APP_TOML"
+        sed -i 's#"localhost:9091"#"0.0.0.0:9091"#g' "$APP_TOML"
+        sed -i 's#grpc-web.address *=.*#grpc-web.address = "0.0.0.0:9091"#g' "$APP_TOML" 2>/dev/null || true
+    fi
+
+    if [ -f "$GENESIS" ]; then
+        sed -i 's#"604800s"#"30s"#g' "$GENESIS"
+    fi
+
+    echo "Starting validator node..."
+    # We must not use 'exec' if we want signal handling or post-steps, but here it's fine.
+    # However, k8s might restart the container if the process exits.
+    # --force-no-bbr is required in container environments where BBR is not available
+    celestia-appd start --home "$DATA_DIR" --api.enable --grpc.enable --grpc-web.enable --pruning nothing --force-no-bbr
+
+  start-bridge.sh: |
+    #!/bin/sh
+    set -e
+
+    # Bridge node configuration
+    BRIDGE_DIR="/home/celestia/bridge"
+    CORE_IP="${CORE_IP:-{{ .Values.bridge.coreIp }}}"
+    CORE_GRPC_PORT="${CORE_GRPC_PORT:-{{ .Values.bridge.coreGrpcPort }}}"
+
+    echo "Waiting for validator to be ready at $CORE_IP:$CORE_GRPC_PORT..."
+    # A simple wait loop could be added here if needed, or rely on k8s restarts.
+    # ideally we use an initContainer or just let it crashloop until ready.
+    sleep 5
+
+    # Check if bridge node is already initialized
+    if [ ! -d "$BRIDGE_DIR" ]; then
+        echo "Initializing bridge node for private network..."
+        celestia bridge init --p2p.network private --node.store "$BRIDGE_DIR"
+        
+        # Import fixed mnemonic for deterministic key
+        echo "Importing bridge key from fixed mnemonic..."
+        echo "{{ .Values.bridge.mnemonic }}" | cel-key add my_celes_key --recover --keyring-backend test --node.type bridge --node.store "$BRIDGE_DIR"
+        
+        # Write fixed P2P key for deterministic peer ID
+        # The key file name is base32 encoding of "libp2p-key"
+        echo "Writing fixed P2P key..."
+        P2P_KEY_FILE="$BRIDGE_DIR/keys/NJ3XILLTMVRXEZLUFZVHO5A"
+        echo '{"body":"{{ .Values.bridge.p2pKey }}"}' > "$P2P_KEY_FILE"
+        chmod 600 "$P2P_KEY_FILE"
+        echo "Fixed P2P key written. Expected peer ID: {{ .Values.bridge.peerId }}"
+    fi
+
+    echo "Starting bridge node..."
+    echo "Connecting to validator at $CORE_IP:$CORE_GRPC_PORT"
+
+    # Reset PruningWindow to 0s to fix crash caused by previous modification
+    if [ -f "$BRIDGE_DIR/config.toml" ]; then
+        sed -i 's#PruningWindow = ".*"#PruningWindow = "0s"#g' "$BRIDGE_DIR/config.toml"
+    fi
+
+    # Start bridge node with proper configuration
+    celestia bridge start \
+        --archival \
+        --p2p.network private \
+        --core.ip "$CORE_IP" \
+        --core.port "$CORE_GRPC_PORT" \
+        --rpc.addr 0.0.0.0 \
+        --rpc.port 26658 \
+        --node.store "$BRIDGE_DIR"
