@@ -1,0 +1,13 @@
+---
+apiVersion: v2
+description: Deploys the standard preinstalled contracts (Multicall3, CreateX, Permit2, Safe v1.3.0, ERC-4337) to a freshly launched DogeOS L2.
+name: preinstalls
+version: 0.1.0-dogeos
+appVersion: v0.1.0
+kubeVersion: ">=1.22.0-0"
+maintainers:
+  - name: dogeos69
+dependencies:
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

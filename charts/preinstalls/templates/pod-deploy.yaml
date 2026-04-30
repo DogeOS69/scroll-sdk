@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-preinstalls-deploy
+  labels:
+    {{- include "preinstalls.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: OnFailure
+  initContainers:
+    - name: 1-wait-for-l2-sequencer
+      image: atkrad/wait4x:latest
+      args:
+        - http
+        - $(L2_RPC_ENDPOINT)
+        - --expect-status-code
+        - "200"
+        - --timeout
+        - "0"
+      envFrom:
+        {{- toYaml .Values.envFrom | nindent 8 }}
+  containers:
+    - name: preinstalls-deploy
+      image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+      args:
+        - $(L2_RPC_ENDPOINT)
+      envFrom:
+        {{- toYaml .Values.envFrom | nindent 8 }}
