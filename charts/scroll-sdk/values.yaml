@@ -167,6 +167,22 @@ admin-system-dashboard:
             - path: /
               pathType: Prefix
 
+preinstalls:
+  enabled: true
+  image:
+    repository: ghcr.io/dogeos69/preinstalls
+    tag: deploy-20260430
+  verify:
+    enabled: true
+    image:
+      repository: ghcr.io/dogeos69/preinstalls
+      tag: deploy-20260430
+    blockscoutApiUrl: http://blockscout-backend:80/api
+    blockscoutHealthUrl: http://blockscout-backend:80/api/v1/health
+    scVerifierUrl: http://blockscout-sc-verifier:8080
+  waits:
+    l2RpcEndpoint: http://l2-rpc:8545
+
 postgresql:
   enabled: true
   nameOverride: postgresql

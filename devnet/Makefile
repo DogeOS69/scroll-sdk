@@ -6,6 +6,7 @@ L2_IMAGE_TAG := $(ARCH_OTHER)v5.8.36$(ARCH_ARM64)
 L1_RPC_HOST := l1-devnet.scrollsdk
 SCROLL_CONTRACTS_TAG_SUFFIX := v0.2.0-debug
 SC_VERIFIER_TAG := $(if $(ARCH_ARM64),v1.7.0-arm,v1.7.0)
+PREINSTALLS_TAG := deploy-20260430
 
 bootstrap:
 		echo "Pulling helm chart..."
@@ -27,6 +28,8 @@ install:
 			--set l2-sequencer.image.tag=$(L2_IMAGE_TAG) \
 			--set l2-bootnode.image.tag=$(L2_IMAGE_TAG) \
 			--set contracts.image.tag=deploy-$(SCROLL_CONTRACTS_TAG_SUFFIX) \
+			--set preinstalls.image.tag=$(PREINSTALLS_TAG) \
+			--set preinstalls.verify.image.tag=$(PREINSTALLS_TAG) \
 			--set l1-devnet.ingress.main.hosts[0].host=$(L1_RPC_HOST) \
 			--set l1-devnet.ingress.main.hosts[0].paths[0].path=/ \
 			--set l1-devnet.ingress.main.hosts[0].paths[0].pathType=Prefix \

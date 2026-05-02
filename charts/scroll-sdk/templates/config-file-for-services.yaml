@@ -192,3 +192,16 @@ data:
 {{ .Files.Get "configs/admin-system-backend.env" | indent 2 }}
 ---
 {{- end }}
+{{- if index .Values "preinstalls" "enabled" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "scroll-sdk.labels" $ | nindent 4 }}
+  name: preinstalls-env
+data:
+{{ .Files.Get "configs/preinstalls.env" | indent 2 }}
+  ETHERSCAN_API_KEY: "dummy"
+---
+{{- end }}

@@ -26,14 +26,14 @@ image:
 
 envFrom:
   - configMapRef:
-      name: preinstalls-deployment-env   # supplied by parent scroll-sdk chart
+      name: preinstalls-env   # supplied by parent scroll-sdk chart
 
 verify:
   blockscoutApiUrl: http://blockscout-backend:80/api
   blockscoutHealthUrl: http://blockscout-backend:80/api/v1/health
 ```
 
-The configmap `preinstalls-deployment-env` must provide:
+The configmap `preinstalls-env` must provide:
 - `L2_RPC_ENDPOINT` — used by both pods (RPC URL + URL passed as arg).
 - `PRIV_KEY` — deployer private key. Reuse the existing scroll-sdk L2 deployer
   (the EOA preallocated via `[genesis] L2_DEPLOYER_INITIAL_BALANCE` in

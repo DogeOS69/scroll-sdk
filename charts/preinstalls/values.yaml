@@ -7,11 +7,12 @@ image:
   tag: deploy-20260430
 
 # The deploy pod (presigned + Foundry CREATE2) and the verify pod (Blockscout
-# source verification) share this configmap. RPC, addresses, and the Blockscout
-# API URL flow in here.
+# source verification) share this configmap. The parent scroll-sdk chart
+# generates `preinstalls-env` from config.toml via create-env-files.sh,
+# matching the per-chart `<name>-env` convention used by the rest of the repo.
 envFrom:
   - configMapRef:
-      name: preinstalls-deployment-env
+      name: preinstalls-env
 
 # Verify is intentionally a separate Pod with a higher Helm hook weight so it
 # only runs after Blockscout is up; the deploy itself doesn't depend on it.
