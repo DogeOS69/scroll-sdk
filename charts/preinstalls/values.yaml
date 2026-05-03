@@ -23,8 +23,11 @@ verify:
     # `forge verify-contract`.
     repository: ghcr.io/dogeos69/preinstalls
     tag: deploy-20260430
-  blockscoutApiUrl: http://blockscout-backend:80/api
-  blockscoutHealthUrl: http://blockscout-backend:80/api/v1/health
+  # Defaults match the in-cluster service shipped by the parent scroll-sdk
+  # chart (`blockscout-blockscout-svc`). The wait4x readiness check uses
+  # `/api/v2/stats` because `/api/v1/health` returns 400 on this Blockscout.
+  blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
+  blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
   scVerifierUrl: http://blockscout-sc-verifier:8080
 
 # Pre-flight gates. Both pods wait for the L2 sequencer; the verify pod also

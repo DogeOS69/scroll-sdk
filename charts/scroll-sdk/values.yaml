@@ -177,8 +177,8 @@ preinstalls:
     image:
       repository: ghcr.io/dogeos69/preinstalls
       tag: deploy-20260430
-    blockscoutApiUrl: http://blockscout-backend:80/api
-    blockscoutHealthUrl: http://blockscout-backend:80/api/v1/health
+    blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
+    blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
     scVerifierUrl: http://blockscout-sc-verifier:8080
   waits:
     l2RpcEndpoint: http://l2-rpc:8545
