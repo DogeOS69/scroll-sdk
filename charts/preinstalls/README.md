@@ -21,8 +21,8 @@ post-launch instead.
 
 ```yaml
 image:
-  repository: ghcr.io/dogeos69/preinstalls
-  tag: deploy-YYYYMMDD
+  repository: dogeos69/preinstalls
+  tag: v0.1.0
 
 envFrom:
   - configMapRef:

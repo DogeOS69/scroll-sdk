@@ -170,13 +170,13 @@ admin-system-dashboard:
 preinstalls:
   enabled: true
   image:
-    repository: ghcr.io/dogeos69/preinstalls
-    tag: deploy-20260430
+    repository: dogeos69/preinstalls
+    tag: v0.1.0
   verify:
     enabled: true
     image:
-      repository: ghcr.io/dogeos69/preinstalls
-      tag: deploy-20260430
+      repository: dogeos69/preinstalls
+      tag: v0.1.0
     blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
     blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
     scVerifierUrl: http://blockscout-sc-verifier:8080
