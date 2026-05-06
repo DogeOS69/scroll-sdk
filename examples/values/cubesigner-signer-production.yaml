@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: 0.2.0-rc.4
+  tag: 0.2.0-rc.6
 
 global:
   fullnameOverride: "cubesigner-signer-__INSTANCE_INDEX__"
