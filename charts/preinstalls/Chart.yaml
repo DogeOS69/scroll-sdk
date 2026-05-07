@@ -2,7 +2,7 @@
 apiVersion: v2
 description: Deploys the standard preinstalled contracts (Multicall3, CreateX, Permit2, Safe v1.3.0, ERC-4337) to a freshly launched DogeOS L2.
 name: preinstalls
-version: 0.1.0-dogeos
+version: 0.1.1-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
