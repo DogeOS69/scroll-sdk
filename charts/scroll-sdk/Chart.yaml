@@ -94,7 +94,7 @@ dependencies:
     version: 15.5.0
     condition: postgresql.enabled
   - name: preinstalls
-    version: 0.1.0-dogeos
+    version: 0.1.1-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: preinstalls.enabled
   - name: rollup-explorer-backend
