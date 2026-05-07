@@ -1,2 +1,8 @@
 scrollConfig: |
   {}
+
+protocolContext:
+  enabled: false
+  name: protocol-context-config
+  data: |
+    {}
