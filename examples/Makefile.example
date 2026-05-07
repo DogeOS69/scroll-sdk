@@ -150,7 +150,7 @@ install-blockscout:
 
 install-preinstalls:
 	helm upgrade -i preinstalls oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls -n $(NAMESPACE) \
-		--version=0.1.0-dogeos \
+		--version=0.1.1-dogeos \
 		--values values/preinstalls-production.yaml
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=preinstalls -n $(NAMESPACE)
 
