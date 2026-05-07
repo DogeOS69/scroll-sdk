@@ -40,6 +40,12 @@ configMaps:
       L2GETH_DA_BLOB_BEACON_NODE: ""
       L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
       L2GETH_PEER_LIST: ""
+      # Required during preinstalls bring-up: Multicall3 + CreateX deploy via
+      # pre-EIP-155 legacy txs which geth rejects by default. Recommended to
+      # remove this flag once preinstalls have been deployed and verified —
+      # leaving it on permanently exposes any future legacy tx to cross-chain
+      # replay risk.
+      L2GETH_EXTRA_PARAMS: "--rpc.allow-unprotected-txs"
 
 ingress:
   main:

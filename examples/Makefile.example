@@ -4,7 +4,7 @@ NAMESPACE ?= default
 	install-l2-sequencer install-l2-bootnode install-contracts install-da-publisher \
 	install-rollup-relayer install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
-	install-blockscout install-frontends install-testnet-activity-helper install-all \
+	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-da-publisher delete-fee-oracle delete-rollup-relayer delete-cubesigner-signers \
@@ -48,7 +48,7 @@ install-scroll-monitor:
 install-scroll-core:
 	$(MAKE) install-scroll-monitor
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
-		--version=0.1.2-dogeos \
+		--version=0.3.0-dogeos \
 		--values values/genesis.yaml \
 		--values values/protocol-context.yaml
 
@@ -148,6 +148,12 @@ install-blockscout:
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
 	 	--version=0.1.5-dogeos
 
+install-preinstalls:
+	helm upgrade -i preinstalls oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls -n $(NAMESPACE) \
+		--version=0.1.0-dogeos \
+		--values values/preinstalls-production.yaml
+	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=preinstalls -n $(NAMESPACE)
+
 install-frontends:
 	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
 		--version=0.1.2-dogeos \
@@ -188,6 +194,7 @@ install-all:
 	$(MAKE) install-tso
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-blockscout
+	$(MAKE) install-preinstalls
 	$(MAKE) install-frontends
 	$(MAKE) install-testnet-activity-helper
 	$(MAKE) install-coordinator
@@ -208,6 +215,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) grafana-alloy || true
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
+	helm delete -n $(NAMESPACE) preinstalls || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true

@@ -1,0 +1,38 @@
+image:
+  repository: dogeos69/preinstalls
+  tag: v0.1.0
+
+configMaps:
+  preinstalls-env:
+    data:
+      L2_RPC_ENDPOINT: "http://l2-rpc:8545"
+      ETHERSCAN_API_KEY: ""
+
+envFrom:
+  - secretRef:
+      name: preinstalls-secret-env
+  - configMapRef:
+      name: preinstalls-env
+
+verify:
+  enabled: true
+  image:
+    repository: dogeos69/preinstalls
+    tag: v0.1.0
+  blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
+  blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
+  scVerifierUrl: http://blockscout-sc-verifier:8080
+
+waits:
+  l2RpcEndpoint: http://l2-rpc:8545
+
+externalSecrets:
+  preinstalls-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: scroll/contracts-secret-env
+          property: DEPLOYER_PRIVATE_KEY
+        secretKey: PRIV_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets

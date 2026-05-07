@@ -1,0 +1,39 @@
+{{- if .Values.verify.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-preinstalls-verify
+  labels:
+    {{- include "preinstalls.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: OnFailure
+  initContainers:
+    - name: 1-wait-for-blockscout
+      image: alpine/curl:latest
+      command:
+        - /bin/sh
+        - -c
+        - /wait-for-blockscout.sh {{ .Values.verify.blockscoutHealthUrl }}
+      volumeMounts:
+        - name: wait-for-blockscout-script
+          mountPath: /wait-for-blockscout.sh
+          subPath: wait-for-blockscout.sh
+  containers:
+    - name: preinstalls-verify
+      image: {{ .Values.verify.image.repository }}:{{ .Values.verify.image.tag }}
+      command:
+        - bash
+        - /app/lib/verify-blockscout.sh
+        - {{ .Values.verify.blockscoutApiUrl }}
+      envFrom:
+        {{- toYaml .Values.envFrom | nindent 8 }}
+  volumes:
+    - configMap:
+        name: wait-for-blockscout-script
+        defaultMode: 0777
+      name: wait-for-blockscout-script
+{{- end }}

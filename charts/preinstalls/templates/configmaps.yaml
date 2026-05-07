@@ -1,0 +1,32 @@
+{{- range $key, $values := .Values.configMaps }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $key }}
+  labels:
+    {{- include "preinstalls.labels" $ | nindent 4 }}
+data:
+{{- toYaml $values.data | nindent 2 }}
+---
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wait-for-blockscout-script
+  labels:
+    {{- include "preinstalls.labels" $ | nindent 4 }}
+data:
+  wait-for-blockscout.sh: |
+    #!/bin/sh
+    URL=$1
+    while true; do
+      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+      if [ "$CODE" = "200" ]; then
+        echo "Blockscout up at $URL"
+        exit 0
+      fi
+      echo "Blockscout not ready (code=$CODE), retrying in 5s..."
+      sleep 5
+    done
