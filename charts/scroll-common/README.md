@@ -1,6 +1,6 @@
 # scroll-common
 
-![Version: 0.3.0-dogeos](https://img.shields.io/badge/Version-0.3.0--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.3.1-dogeos](https://img.shields.io/badge/Version-0.3.1--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy common scripts and configuration
 
@@ -25,7 +25,7 @@ Kubernetes: `>=1.22.0-0`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | protocolContext.data | string | `"{}\n"` |  |
-| protocolContext.enabled | bool | `false` |  |
+| protocolContext.enabled | bool | `true` |  |
 | protocolContext.name | string | `"protocol-context-config"` |  |
 | scrollConfig | string | `"{}\n"` |  |
 

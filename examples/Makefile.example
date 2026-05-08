@@ -48,7 +48,7 @@ install-scroll-monitor:
 install-scroll-core:
 	$(MAKE) install-scroll-monitor
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
-		--version=0.3.0-dogeos \
+		--version=0.3.1-dogeos \
 		--values values/genesis.yaml \
 		--values values/protocol-context.yaml
 
