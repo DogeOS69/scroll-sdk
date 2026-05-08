@@ -2,7 +2,7 @@ scrollConfig: |
   {}
 
 protocolContext:
-  enabled: false
+  enabled: true
   name: protocol-context-config
   data: |
     {}
