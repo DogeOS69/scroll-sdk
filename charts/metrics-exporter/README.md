@@ -60,9 +60,9 @@ Kubernetes: `>=1.22.0-0`
 | service.main.ports.http.port | int | `8801` |  |
 | service.main.ports.http.targetPort | int | `8801` |  |
 | serviceMonitor.main.enabled | bool | `true` |  |
-| serviceMonitor.main.endpoints[0].interval | string | `"30s"` |  |
+| serviceMonitor.main.endpoints[0].interval | string | `"10s"` |  |
 | serviceMonitor.main.endpoints[0].port | string | `"http"` |  |
-| serviceMonitor.main.endpoints[0].scrapeTimeout | string | `"10s"` |  |
+| serviceMonitor.main.endpoints[0].scrapeTimeout | string | `"5s"` |  |
 | serviceMonitor.main.labels.release | string | `"scroll-sdk"` |  |
 | serviceMonitor.main.serviceName | string | `"{{ include \"scroll.common.lib.chart.names.fullname\" $ }}"` |  |
 
