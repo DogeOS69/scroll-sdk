@@ -74,7 +74,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"blockscout-sc-verifier"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/blockscout/smart-contract-verifier"` |  |
-| image.tag | string | `"v1.10.3"` |  |
+| image.tag | string | `"v1.9.3"` |  |
 | probes.liveness.enabled | bool | `false` |  |
 | probes.readiness.enabled | bool | `false` |  |
 | probes.startup.enabled | bool | `false` |  |
