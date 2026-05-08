@@ -40,14 +40,14 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --excluded-charts scroll-sdk --target-branch ${{ github.event.repository.default_branch }} )
+          changed=$(ct list-changed --excluded-charts scroll-sdk --target-branch v0.3.0-develop )
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --config ct.yaml --excluded-charts scroll-sdk --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --config ct.yaml --excluded-charts scroll-sdk --target-branch v0.3.0-develop
 
   publish-ghcr-not-scroll-sdk:
     name: publish-to-github-without-scroll-sdk
@@ -64,7 +64,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: ${{ github.event.repository.default_branch }}
+          base: v0.3.0-develop
           list-files: shell
           filters: |
             addedOrModified:
@@ -137,14 +137,14 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --chart-dirs charts/scroll-sdk --target-branch ${{ github.event.repository.default_branch }} )
+          changed=$(ct list-changed --chart-dirs charts/scroll-sdk --target-branch v0.3.0-develop )
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --config ct.yaml --charts scroll-sdk --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --config ct.yaml --charts scroll-sdk --target-branch v0.3.0-develop
 
   publish-ghcr-scroll-sdk:
     name: publish-scroll-sdk-to-github
@@ -161,7 +161,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: ${{ github.event.repository.default_branch }}
+          base: v0.3.0-develop
           list-files: shell
           filters: |
             addedOrModified:
