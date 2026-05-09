@@ -1,8 +1,5 @@
 scrollConfig: |
   {}
 
-protocolContext:
-  enabled: true
-  name: protocol-context-config
-  data: |
-    {}
+protocolContext: |
+  {}

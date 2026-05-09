@@ -1,11 +1,11 @@
-{{- if .Values.protocolContext.enabled }}
+{{- if and .Values.protocolContext (ne (trim .Values.protocolContext) "{}") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
     {{- include "scroll-common.labels" $ | nindent 4 }}
-  name: {{ .Values.protocolContext.name | default "protocol-context-config" }}
+  name: protocol-context-config
 data:
   protocol_context.json: |
-{{ .Values.protocolContext.data | indent 4 }}
+{{ .Values.protocolContext | indent 4 }}
 {{- end }}
