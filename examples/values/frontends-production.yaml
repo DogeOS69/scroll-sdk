@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/scroll-sdk-frontends
   pullPolicy: Always
-  tag: 3.0.2-beta.1
+  tag: 0.3.0-dogeos
 
 persistence:
   frontends:
