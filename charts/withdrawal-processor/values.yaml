@@ -58,29 +58,12 @@ probes:
 
 # Direct environment variables for CubeSigner Signer configuration
 env:
-  # Top-level settings from WithdrawalProcessor.toml
-  - name: DOGEOS_WITHDRAWAL_NETWORK_STR
-    value: "testnet"
+  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # 可选路径；与 replay_sqlite_path 同生灭；启用 protocol-lane 模式时强制要求 fetch_and_decode_blobs=true 且 discovery_mode≠fulfillment_driven
+    value: "/app/protocol_context.json"
   - name: DOGEOS_WITHDRAWAL_DATABASE_URL
     value: "sqlite:///app/data/withdrawal_processor.db"
   - name: DOGEOS_WITHDRAWAL_API_PORT
     value: "3000"
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
-    value: "https://testnet.doge.xyz"
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
-  #   value: ""    # Sensitive: Override in production, preferably via secrets
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
-  #   value: ""    # Sensitive: Override in production, preferably via secrets
-  - name: DOGEOS_WITHDRAWAL_TSO_URL
-    value: "http://127.0.0.1:3001"    # This should point to the tso-service
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
-    value: "2NFNonsBJC8ba8z9Xg7uZFboJ5mTrTzZMFQ"
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
-    value: "63512102e30c3b1c8f3eb848ecf30b5cb6ad4e79ed597f466616e00100d16d098e4f565651af522102a47661bca3a89f9ac7ee2a741ac8634ff2199ffb33699455d10f7bf8c10750bd210209d3f1f5ca8576897d1590d4393c74c7cdfa06c6c2870dfc2aa503d5e8287bbf210260441f93ba89660e3ea7048e8b18d9681e8e46ed5c4656121b65ff81388f4a0a53af52210322bd1125af285ee62b405a2b4a8ad77ae4240b6319ee12c4f3e2365717f6f0702102dca26da747dc83a4d55012a48dc08d28affe12584bc940d0adeed634c527f6c22102160ecf32a1928a761d39c29d35534ff272221b58e9af23b29d28ec2107d89bbe53ae6702100eb175522102464328dc87e7424975d3042fd5469f6623dc1d3b46fe14f9caeb8d67481c0383210389379affeb45dff7a77ccd9afc98e9d359921c5803f5344f6fbc8c248b619a8d21039abe97bd966b9195f6034d309c395cd76836bd896524c69e85b63b81cd28a37d53ae68"
-  # - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
-  #   value: ""    # Sensitive: Override in production, preferably via secrets
-  # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-  #   value: ""    # Sensitive: Override in production, preferably via secrets
   - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
     value: "85"
   - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
@@ -115,20 +98,10 @@ env:
     value: "10000"
 
   # Celestia Indexer
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
-    value: "http://celestia-testnet-mocha:26658"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
-    value: "D06305735700"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
-    value: "5965461"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS
     value: "3"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS
     value: "15000"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
-    value: "celestia1n4m4rxllc55kaf2t7hzl9vuuzjtszakww8xcvn"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT
-    value: "XWcGNcRS7gHrv3sfEqQY6oJpm8V1PT7vH2RfwYHv830="
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
     value: "true"
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL
@@ -139,10 +112,8 @@ env:
     value: "1000000000"
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__BRIDGE_MIN_CONFIRMATIONS
     value: "10"
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT
-    value: "0"
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID
-    value: "0x0000000000000000000000000000000000000000000000000000000000000000"
+  - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # 可选路径；rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height 任一启用时必填且文件须存在
+    value: "/app/data/replay.sqlite"
 
   # Fulfillment Processor (defaults are usually fine, typically not set via env vars unless overriding specific fields)
   # - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__MAX_RETRIES

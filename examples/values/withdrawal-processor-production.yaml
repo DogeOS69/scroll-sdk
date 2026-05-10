@@ -6,98 +6,351 @@ image:
   tag: 0.2.0-rc.6
 
 env:
-  # Top-level settings
-  - name: DOGEOS_WITHDRAWAL_NETWORK_STR
-    value: "mainnet"
-  - name: DOGEOS_WITHDRAWAL_DATABASE_URL
-    value: "postgres://user:password@host:port/dbname" # FIXME: Update with your production DB connection string
-  - name: DOGEOS_WITHDRAWAL_API_PORT
-    value: "3000" # Typically remains the same unless specific need
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
-    value: "https://your-mainnet-dogecoin-rpc-url" # FIXME: Update with production Dogecoin RPC URL
-  - name: DOGEOS_WITHDRAWAL_TSO_URL
-    value: "http://tso-service.your-namespace.svc.cluster.local:3000" # FIXME: Update with actual TSO service URL in K8s
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
-    value: "your-mainnet-bridge-address" # FIXME: Update with your MAINNET bridge address
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_SCRIPT_HEX
-    value: "your-mainnet-bridge-script-hex" # FIXME: Update with your MAINNET bridge script hex
-  - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX
-    value: "1024" # Review if this needs adjustment for mainnet
-  - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB
-    value: "1000000" # Review and set appropriate mainnet fee rate
-  - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS
-    value: "10"
-  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_BROADCAST
+  # ===========================================================================
+  # Top-level required fields (no default; missing values cause startup failure)
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_NETWORK_STR # Required, Dogecoin network string (mainnet/testnet/regtest), used for Network::from_str
+    value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB # Required, u64, withdrawal tx fee rate (sat/kvB); validator enforces min=1
+    value: "1000000"
+  - name: DOGEOS_WITHDRAWAL_DATABASE_URL # Required, primary database connection string (PostgreSQL/SQLite)
+    value: "sqlite:///app/data/withdrawal_processor.db"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL
+    value: "<TODO>"
+  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER # Required, Dogecoin RPC username
+  #   value: "<TODO>"
+  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS # Required, Dogecoin RPC password
+  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_TSO_URL # Required, TSO (Threshold Signer Orchestrator) service URL
+    value: "<TODO>"
+  # - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY # Required, fee signer key (non-empty)
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY # Required, sequencer signer key (non-empty)
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS # Required, bridge address; at startup must be derivable from initial_bridge_redeem_script_hex
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_INITIAL_BRIDGE_REDEEM_SCRIPT_HEX # Required, initial/genesis bridge redeem script (hex); alias: bridge_script_hex; after RotateKey provided by replay+wf_bridge_contexts, bootstrap-only
+    value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_API_PORT # Required, u16, this service's API listening port
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID # Required, genesis sequencer UTXO txid (hex), used for validation
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT # Required, u32, genesis sequencer UTXO vout
+    value: "<TODO>"
+
+  # ===========================================================================
+  # Top-level fields with default values
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX # Optional, usize, max outputs per withdrawal tx; default 85
+    value: "85"
+
+  - name: DOGEOS_WITHDRAWAL_TSO_TIMEOUT_MINUTES # Optional, u32, TSO polling timeout (minutes), range 1..=1440; default 30
+    value: "30"
+
+  # [NO LONGER USED] DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS: only defined in config and used as a test/mock placeholder; not read by the production code path (the actual one in use is reconciler_abandoned_cleanup_timeout_secs). Can be removed.
+  # - name: DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS # [DEPRECATED / DEAD FIELD] not read in production; refer to reconciler_abandoned_cleanup_timeout_secs
+  #   value: "3600"
+
+  - name: DOGEOS_WITHDRAWAL_RECONCILER_BUILDING_TIMEOUT_SECS # Optional, u64, reconciler Building stage timeout; default 180 (tuned for local tests; production should override)
+    value: "180"
+
+  - name: DOGEOS_WITHDRAWAL_RECONCILER_PROPOSED_TIMEOUT_SECS # Optional, u64, reconciler Proposed stage timeout; default 90 (production should override)
+    value: "90"
+
+  - name: DOGEOS_WITHDRAWAL_RECONCILER_BROADCASTING_GRACE_SECS # Optional, u64, reconciler Broadcasting grace period; default 120 (production should override)
+    value: "120"
+
+  - name: DOGEOS_WITHDRAWAL_RECONCILER_ABANDONED_CLEANUP_TIMEOUT_SECS # Optional, u64, abandoned task cleanup timeout; default 600 (production should override)
+    value: "600"
+
+  - name: DOGEOS_WITHDRAWAL_MAX_DEPOSITS_PER_ADVANCE_L1 # Optional, u16, max deposit inputs per AdvanceL1 (operational throttle, not part of protocol identity); default 32
+    value: "32"
+
+  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_BROADCAST # Optional, bool, debug only: skip broadcast; default false
     value: "false"
 
-  # Dogecoin Indexer
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
-    value: "0" # FIXME: Set to a recent block height for mainnet, or 0 to sync from genesis
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS
-    value: "6" # Typical mainnet confirmations
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__POLL_INTERVAL_MS
-    value: "60000" # e.g., 1 minute for mainnet
-
-  # DogeOS Indexer (update URLs and addresses for mainnet)
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL
-    value: "https://your-mainnet-dogeos-compatible-rpc-url" # FIXME
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK
-    value: "0" # FIXME: Set to a recent block height for mainnet
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS
-    value: "12" # Adjust based on chain finality
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS
-    value: "60000"
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSENGER_ADDRESS
-    value: "your-mainnet-messenger-address" # FIXME
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS
-    value: "your-mainnet-message-queue-address" # FIXME
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE
-    value: "10000" # May need adjustment based on RPC provider limits
-
-  # Celestia Indexer (update URLs and addresses for mainnet)
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
-    value: "https://your-mainnet-celestia-da-rpc-url" # FIXME
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
-    value: "your-mainnet-da-namespace" # FIXME
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
-    value: "0" # FIXME: Set to a recent block height for mainnet
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS
-    value: "6" # Adjust based on chain finality
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS
-    value: "60000"
-  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_TIMEOUT"
-    value: "60"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS
-    value: "your-mainnet-celestia-signer-address" # FIXME (Optional)
-  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP"
+  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_TSO_POLLING # Optional, bool, debug only: skip TSO polling; default false
     value: "false"
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS
+
+  - name: DOGEOS_WITHDRAWAL_ROTATE_KEY_V2 # Optional, bool, enable RotateKey v2 path (when enabled, requires replay_sqlite_path + protocol_context_json); default false
     value: "true"
-  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD"
-    value: "100"
-  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED"
-    value: "5"
-  - name: "DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL"
-    value: ""
-  # UTXO Manager
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__HIGH_THRESH_SATS
-    value: "10000000000" # Example: 100 DOGE for mainnet, adjust as needed
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER__BRIDGE_MIN_CONFIRMATIONS
-    value: "10"
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT
-    value: "0"
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID
-    value: "0x0000000000000000000000000000000000000000000000000000000000000000"
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_RETRY_ATTEMPTS
-    value: 5
-  # Logging
-  - name: RUST_LOG
-    value: "info,withdrawal_processor=info"
-  - name: DOGEOS_WITHDRAWAL_BLOB_RETENTION
-    value: "1000"
-  - name: DOGEOS_WITHDRAWAL_BLOB_PRUNING_INTERVAL_SECS
-    value: "3600"
 
+  - name: DOGEOS_WITHDRAWAL_ADVANCE_L1_BUILDER_V2 # Optional, bool, enable AdvanceL1 builder v2 (when enabled, requires replay_sqlite_path + protocol_context_json); default false
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_ADVANCE_L2_BUILDER_V2 # Optional, bool, enable AdvanceL2 builder v2 (when enabled, requires celestia_indexer.fetch_and_decode_blobs=true and replay/protocol context); default false
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_WF_WITHDRAWAL_PARITY_V1 # Optional, bool, enable wf withdrawal parity v1 (requires at least one of rotate_key_v2 / advance_l1_builder_v2 / advance_l2_builder_v2 to be enabled); default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_REQUIRE_CHANGE_TRACKING # Optional, bool, whether to enforce change-tracking; default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_STRICT_L2_VALIDATION # Optional, bool, strict L2 fork validation (false = lenient); default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_STRICT_L1_VALIDATION # Optional, bool, strict L1 confirmation validation (false = lenient); default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_LEAF_VERIFICATION_REQUIRED # Optional, bool, whether leaf verification is required; default false
+    value: "false"
+
+  # ===========================================================================
+  # Top-level Option fields (default None; enable as needed)
+  # ===========================================================================
+  # - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; when protocol-lane mode is enabled, requires fetch_and_decode_blobs=true and discovery_mode≠fulfillment_driven
+    value: "/app/protocol_context.json"
+
+  # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional, u64, next starting block height for L2 bootstrap; if set, must be >=1 and requires replay_sqlite_path + protocol_context_json
+  #   value: "<TODO>"
+
+  # [NO LONGER USED] DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS: only defined in config and used as a test/mock placeholder; not read by the production code path. Can be removed.
+  # - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS # [DEPRECATED / DEAD FIELD] not read in production; kept only to pass figment parsing
+  #   value: ""
+
+  # ===========================================================================
+  # [dogecoin_indexer]
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT # Required, u64, indexer start height
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
+    value: "6"
+
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
+    value: "60000"
+
+  # ===========================================================================
+  # [dogeos_indexer]
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL # Required, DogeOS (L2) RPC URL
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK # Required, u64, indexer start block
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
+    value: "12"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
+    value: "30000"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSENGER_ADDRESS # Required, L2 Messenger contract address (non-empty)
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS # Required, L2 MessageQueue contract address (non-empty)
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE # Required, u64, eth_getLogs batch size (>=1)
+    value: "10000"
+
+  # ===========================================================================
+  # [celestia_indexer]
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL # Required, Celestia DA node RPC URL
+    value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL # Optional; required for TxSearch mode or signer validation
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE # Required, Celestia namespace (hex string, non-empty)
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK # Required, u64, Celestia scan start height
+    value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS # Optional, expected blob signer address
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
+    value: "6"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
+    value: "60000"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS # Required, bool; must be true when advance_l2_builder_v2 or protocol_context_json is enabled
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; protocol-lane mode disables fulfillment_driven; default namespace_scan
+    value: "namespace_scan"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT # Optional, bool, whether to validate signer via Tendermint; default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC # Optional, bool, whether to enable fulfillment-driven historical sync optimization; default true (differs from l1_interface)
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP # Optional, bool, whether to repair gaps at startup (avoid blocking startup); default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__AUTO_GAP_REPAIR_ENABLED # Optional, bool, runtime automatic gap repair (enabled by default for continuous-running scenarios); default true
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD # Optional, i64, gap detection threshold (>=1); default 100
+    value: "100"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED # Optional, i64, minimum orphan count to trigger gap repair (>=1); default 5
+    value: "5"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL # Optional, blob_get_all fallback endpoint URL
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token
+  #   value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION # Optional, blob artifact compression enum: none/zstd; default none
+    value: "zstd"
+
+  # ===========================================================================
+  # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
+  # ===========================================================================
+  # [NO LONGER USED] HIGH_THRESH_SATS: the "change too large" threshold from the early simple change logic; the current production path has migrated to bridge_strategy (Band/Greedy), and UtxoConfig.high_thresh is no longer read by production code (only used as a test placeholder). The validator still requires >=1, so a non-zero value must be provided to pass startup validation.
+  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__HIGH_THRESH_SATS # [DEPRECATED / DEAD FIELD] only kept to satisfy the validator; actual coin selection is controlled by bridge_strategy.*
+  #   value: "100"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_MIN_CONFIRMATIONS # Required (when this section is enabled), u32, bridge UTXO minimum confirmations, range 1..=1000
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__ALLOW_INFLIGHT_BRIDGE_OUTPUTS # Optional, bool, whether to allow using in-flight bridge outputs; default true
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__PREFER_INFLIGHT_BRIDGE_OUTPUTS # Optional, bool, whether to prefer in-flight bridge outputs; default false
+    value: "false"
+
+  # ---------------------------------------------------------------------------
+  # [utxo_manager_intermediate.bridge_strategy] (Option; uses default Band strategy if unset)
+  # ---------------------------------------------------------------------------
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__STRATEGY # Optional, bridge UTXO strategy: band/greedy; default band
+    value: "band"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAX_INPUTS # Optional, usize, max inputs per tx, range 1..=500; default 60
+    value: "60"
+
+  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__DUST_FLOOR_SATS # Optional, u64, dust floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
+  #   value: "<TODO>" # Derived from dogecoin_constants::DUST_AMOUNT_SATS
+
+  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAINTENANCE_TARGET_SATS # Optional, u64, target value (sats) for zero-withdrawal consolidation; derived from strategy when None
+  #   value: "<TODO>"
+
+  # band sub-strategy
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__TARGET_ACTIVE_UTXOS # Optional, usize, target active UTXO count, range 1..=5000; default 100
+    value: "100"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__TARGET_SIZE_RATIO # Optional, f64, target size ratio; default 1.0
+    value: "1.0"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__SWEEP_FLOOR_RATIO # Optional, f64, sweep floor ratio; default 0.5
+    value: "0.5"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__BALANCE_BAND_RATIO # Optional, f64, balance band width ratio; default 0.10
+    value: "0.10"
+
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__MAX_BALANCE_ADDITIONS # Optional, usize, max balance additions, range 0..=20; default 3
+    value: "3"
+
+  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__FLOOR_ABSOLUTE_SATS # Optional, u64, absolute floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
+  #   value: "<TODO>" # Derived from dogecoin_constants::DUST_AMOUNT_SATS
+
+  # ===========================================================================
+  # [fulfillment_processor] (whole section has #[serde(default)])
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__MAX_RETRIES # Optional, u32, max retries (>=1); default 20
+    value: "20"
+
+  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__RETRY_DELAY_MS # Optional, u64, retry interval (ms, >=1); default 50000
+    value: "50000"
+
+  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__TSO_CHECK_DELAY_MS # Optional, u64, TSO check interval (ms, >=1); default 10000
+    value: "10000"
+
+  # ===========================================================================
+  # [proof_task_policy] (whole section has #[serde(default)])
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_SCROLL_EXECUTION_PROOFS # Optional, bool, skip scroll_chunk/scroll_batch proofs (dev/test); default false
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_BRIDGE_STATE_PROOFS # Optional, bool, skip bridge_state proofs; default false; when false, proof_control_plane_gate must be configured
+    value: "true"
+
+  # ===========================================================================
+  # [proof_control_plane_gate] (Option; required when skip_bridge_state_proofs=false and WF builder is enabled)
+  # ===========================================================================
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__STORE_PATH # Required (when this section is enabled), control-plane SQLite path
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_SYSTEM_ID # Required (when this section is enabled), proof system ID (e.g. "openvm")
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__CIRCUIT_ID # Required (when this section is enabled), bridge circuit ID (e.g. "bridge-transition-v1")
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_KEY_HASH_HEX # Required (when this section is enabled), bridge VK hash (hex, exactly 32 bytes / 64 hex chars)
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_MODE # Optional, proof mode: production/mock; default production
+  #   value: "production"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_POLICY # Optional, verification policy: production/local_mock_allowed; default production
+  #   value: "production"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
+  #   value: "<TODO>"
+
+  # ===========================================================================
+  # [local_bridge_proof_runtime] (Option; when enabled, proof_control_plane_gate must also be configured)
+  # ===========================================================================
+  # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Required (when this section is enabled), local proof artifact storage root; must not overlap with proof_control_plane_gate.store_path-derived paths
+  #   value: "<TODO>"
+
+  # ===========================================================================
+  # [batch_orchestrator] (Option; disabled if unset; all fields are Option<T> with defaults)
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_ACTIVE_BATCHES # Optional, usize, max active batches, range 10..=1000; default 100
+    value: "100"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__EVENT_CHANNEL_CAPACITY # Optional, usize, event channel capacity, range 100..=10000; default 1000
+    value: "1000"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_EVENTS_PER_BATCH # Optional, usize, max events per batch, range 1..=1000; default 50
+    value: "50"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__EVENT_PROCESSING_TIMEOUT_MS # Optional, u64, event processing timeout (ms), range 1000..=300000; default 30000
+    value: "30000"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_RETRY_ATTEMPTS # Optional, u32, max retry attempts, range 1..=10; default 3
+    value: "3"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__BASE_BACKOFF_MS # Optional, u64, base backoff (ms), range 100..=60000; default 1000
+    value: "1000"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_BACKOFF_MS # Optional, u64, max backoff (ms), range 1000..=3600000; default 60000
+    value: "60000"
+
+  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__ENABLE_STARTUP_RECOVERY # Optional, bool, enable startup recovery; default true
+    value: "true"
+
+  # [NO LONGER USED / LEGACY] BATCH_PROCESSING_INTERVAL_SECS: source comments state explicitly "legacy periodic BatchProcessingCycle ticks, to be removed once event-driven flow matures"; production should keep the default None (do not set; pure event-driven).
+  # - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__BATCH_PROCESSING_INTERVAL_SECS # [DEPRECATED / LEGACY KNOB] source code carries a deprecation comment; recommended to leave empty (None)
+  #   value: "<TODO>"
 envFrom:
   - secretRef:
       name: withdrawal-processor-secret-env
