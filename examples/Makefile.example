@@ -45,13 +45,15 @@ install-scroll-monitor:
 		--version=0.1.12-dogeos \
 		--values values/scroll-monitor-production.yaml
 
-install-scroll-core:
-	$(MAKE) install-scroll-monitor
+install-scroll-common:
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
 		--version=0.3.2-dogeos \
 		--values values/genesis.yaml \
-		--values values/protocol-context.yaml
+		--values values/protocol_context.yaml
 
+install-scroll-core:
+	$(MAKE) install-scroll-monitor
+	$(MAKE) install-scroll-common
 	$(MAKE) install-l1-interface
 
 	helm upgrade -i grafana-alloy grafana/alloy -n $(NAMESPACE) \

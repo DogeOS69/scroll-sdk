@@ -26,10 +26,10 @@ service:
 # Resource configuration
 resources:
   requests:
-    memory: "4Gi"
+    memory: "16Gi"
     cpu: "500m"
   limits:
-    memory: "8Gi"
+    memory: "30Gi"
     cpu: "2000m"
 
 # Storage

@@ -1,0 +1,9 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: l2-sequencer-0-data-20260422        # Set to your preferred snapshot name (date suffix recommended)
+  namespace: default                     # Set to the namespace where your PVC exists
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: l2-sequencer-0-data  # Set to the PVC name you want to snapshot
