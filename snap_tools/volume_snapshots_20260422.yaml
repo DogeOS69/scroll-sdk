@@ -1,0 +1,80 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: data-l2-rpc-0-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: data-l2-rpc-0
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: fee-oracle-data-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: fee-oracle-data
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: l1-interface-data-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: l1-interface-data
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: l2-sequencer-0-data-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: l2-sequencer-0-data
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: session-cache-0-cubesigner-signer-0-0-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: session-cache-0-cubesigner-signer-0-0
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: session-cache-1-cubesigner-signer-1-0-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: session-cache-1-cubesigner-signer-1-0
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: session-cache-2-cubesigner-signer-2-0-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: session-cache-2-cubesigner-signer-2-0
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: withdrawal-processor-data-snap-20260422
+  namespace: default
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaimName: withdrawal-processor-data

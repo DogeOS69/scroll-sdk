@@ -1,8 +1,8 @@
 network = "testnet"
 seed_string = "replace_me_with_your_seed"
 dogecoin_rpc_url = "https://dogecoin.testnet.dogeos.com"
-dogecoin_rpc_user = "user"
-dogecoin_rpc_pass = "password"
+dogecoin_rpc_user = ""
+dogecoin_rpc_pass = ""
 attestation_threshold = 2
 recovery_threshold = 2
 attestation_key_count = 3
