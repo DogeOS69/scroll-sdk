@@ -1,8 +1,8 @@
 
 image:
   repository: dogeos69/da-publisher
-  pullPolicy: Always
-  tag: 0.2.0-rc.6
+  pullPolicy: IfNotPresent
+  tag: latest
 
 env:
   - name: "RUST_LOG"

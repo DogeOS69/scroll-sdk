@@ -1,6 +1,6 @@
 image:
   repository: dogeos69/scroll-sdk-frontends
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: 0.3.0-dogeos
 
 persistence:

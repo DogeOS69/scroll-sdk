@@ -2,8 +2,8 @@
 # Production environment overrides
 image:
   repository: dogeos69/fee-oracle
-  pullPolicy: Always
-  tag: 0.2.0-rc.6
+  pullPolicy: IfNotPresent
+  tag: latest
 
 # Direct environment variables
 env:
