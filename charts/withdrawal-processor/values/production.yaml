@@ -105,8 +105,8 @@ env:
   # ===========================================================================
   # Top-level Option fields (default None; enable as needed)
   # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
+    value: "/app/data/replay.sqlite"
 
   - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; when protocol-lane mode is enabled, requires fetch_and_decode_blobs=true and discovery_mode≠fulfillment_driven
     value: "/app/protocol_context.json"

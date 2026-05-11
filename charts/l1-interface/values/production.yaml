@@ -2,8 +2,8 @@
 # Production environment overrides
 image:
   repository: "dogeos69/l1-interface"
-  pullPolicy: "Always"
-  tag: "110625-00"
+  pullPolicy: "IfNotPresent"
+  tag: "0.2.0-rc.6"
 
 # Direct environment variables
 env:
@@ -74,7 +74,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000" # Poll interval (milliseconds, u64)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "false" # Whether to store raw blob data (true/false); must be true for replay-backed public RPC
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Genesis blob commitment string, defaults to empty string
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Not used. Genesis blob commitment string, defaults to empty string
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "namespace_scan" # Blob discovery mode: namespace_scan / tx_search / on_demand; fulfillment_driven is rejected
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT: "false" # Whether to validate signer via Tendermint (true/false); only in NamespaceScan mode
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
@@ -138,4 +138,5 @@ resources:
 # Storage size override for production
 persistence:
   data:
-    size: "10Gi"
+    size: "1000Gi"
+    retain: true

@@ -8,7 +8,7 @@ image:
 # Direct environment variables
 env:
   - name: "RUST_LOG"
-    value: "info" # info,l1_interface=debug
+    value: "info" # info, l1_interface=debug
 
 # ConfigMap overrides for production
 configMaps:
@@ -59,14 +59,14 @@ configMaps:
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "false" # Whether to index deposits (true/false)
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000" # Dogecoin node poll interval (milliseconds, u64)
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: "<TODO>" # Bridge contract address (Dogecoin address), optional
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>" # Fee wallet address, optional
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # Sequencer address, optional
+      #DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>" # Fee wallet address, optional
+      #DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # Sequencer address, optional
 
       # -----------------------------------------------------------------------------
       # [celestia_indexer] - Celestia DA indexer
       # -----------------------------------------------------------------------------
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "<TODO>" # [REQUIRED] Celestia DA node RPC URL
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: "<TODO>" # Tendermint RPC URL, optional; required for TxSearch mode or signer validation
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: "<TODO>" # Tendermint RPC URL, optional; required for TxSearch mode or signer validation
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: "<TODO>" # [REQUIRED] Celestia namespace ID (hex string)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0" # [REQUIRED] Celestia scan start height (i64)
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS:  "<TODO>"                             # Expected blob signer address, optional
@@ -74,7 +74,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000" # Poll interval (milliseconds, u64)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "false" # Whether to store raw blob data (true/false); must be true for replay-backed public RPC
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "<TODO>" # Genesis blob commitment string, defaults to empty string
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Genesis blob commitment string, defaults to empty string
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "namespace_scan" # Blob discovery mode: namespace_scan / tx_search / on_demand; fulfillment_driven is rejected
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT: "false" # Whether to validate signer via Tendermint (true/false); only in NamespaceScan mode
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
