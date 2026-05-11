@@ -94,7 +94,7 @@ persistence:
     mountPath: /app/genesis/
     name: genesis-config
     readOnly: true
-  protocolContext:
+  protocol-context:
     enabled: true
     type: configMap
     name: protocol-context-config
