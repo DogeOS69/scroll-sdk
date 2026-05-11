@@ -63,7 +63,7 @@ probes:
     custom: true
     spec:
       httpGet:
-        path: "/api/v1/health/live"
+        path: "/health"
         port: http
       initialDelaySeconds: 10
       periodSeconds: 10

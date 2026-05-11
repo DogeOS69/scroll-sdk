@@ -72,7 +72,7 @@ configMaps:
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS:  "<TODO>"                             # Expected blob signer address, optional
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3" # [REQUIRED] Confirmation depth (u64)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000" # Poll interval (milliseconds, u64)
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "false" # Whether to store raw blob data (true/false); must be true for replay-backed public RPC
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true" # Whether to store raw blob data (true/false); must be true for replay-backed public RPC
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Not used. Genesis blob commitment string, defaults to empty string
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "namespace_scan" # Blob discovery mode: namespace_scan / tx_search / on_demand; fulfillment_driven is rejected

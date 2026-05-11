@@ -35,8 +35,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_INITIAL_BRIDGE_REDEEM_SCRIPT_HEX # Required, initial/genesis bridge redeem script (hex); alias: bridge_script_hex; after RotateKey provided by replay+wf_bridge_contexts, bootstrap-only
     value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_API_PORT # Required, u16, this service's API listening port
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_API_PORT # Required, u16, this service's API listening port
+    value: "3000"
 
   - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID # Required, genesis sequencer UTXO txid (hex), used for validation
     value: "<TODO>"
@@ -215,11 +215,11 @@ env:
   # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
   # ===========================================================================
   # [NO LONGER USED] HIGH_THRESH_SATS: the "change too large" threshold from the early simple change logic; the current production path has migrated to bridge_strategy (Band/Greedy), and UtxoConfig.high_thresh is no longer read by production code (only used as a test placeholder). The validator still requires >=1, so a non-zero value must be provided to pass startup validation.
-  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__HIGH_THRESH_SATS # [DEPRECATED / DEAD FIELD] only kept to satisfy the validator; actual coin selection is controlled by bridge_strategy.*
-  #   value: "100"
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__HIGH_THRESH_SATS # [DEPRECATED / DEAD FIELD] only kept to satisfy the validator; actual coin selection is controlled by bridge_strategy.*
+    value: "1000000000000"
 
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_MIN_CONFIRMATIONS # Required (when this section is enabled), u32, bridge UTXO minimum confirmations, range 1..=1000
-    value: "<TODO>"
+    value: "6"
 
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__ALLOW_INFLIGHT_BRIDGE_OUTPUTS # Optional, bool, whether to allow using in-flight bridge outputs; default true
     value: "true"
@@ -418,7 +418,8 @@ persistence:
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
-    size: 1Gi
+    size: 1000Gi
+    retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
 
 # Resource configuration for production
