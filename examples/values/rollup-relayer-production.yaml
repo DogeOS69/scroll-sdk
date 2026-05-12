@@ -1,7 +1,7 @@
 image:
   repository: scrolltech/rollup-relayer
   pullPolicy: IfNotPresent
-  tag: v4.5.47
+  tag: v4.7.10
 
 initContainers:
   1-check-postgres-connection:
@@ -15,7 +15,7 @@ initContainers:
       - secretRef:
           name: rollup-relayer-secret-env
   2-migrate-db:
-    image: scrolltech/rollup-db-cli:v4.5.7
+    image: scrolltech/rollup-db-cli:v4.7.10
     command: ["/bin/sh", "-c", "db_cli migrate --config /config/migrate-db.json"]
     volumeMounts:
       - name: migrate-db

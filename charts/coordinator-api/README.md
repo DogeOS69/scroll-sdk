@@ -1,6 +1,6 @@
 # coordinator-api
 
-![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 coordinator-api helm charts
 
@@ -48,7 +48,7 @@ Kubernetes: `>=1.22.0-0`
 | global.nameOverride | string | `"coordinator-api"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"scrolltech/coordinator-api"` |  |
-| image.tag | string | `"v4.5.39"` |  |
+| image.tag | string | `"v4.7.9"` |  |
 | ingress.main.annotations | object | `{}` |  |
 | ingress.main.enabled | bool | `true` |  |
 | ingress.main.hosts[0].host | string | `"coordinator-api.scrollsdk"` |  |

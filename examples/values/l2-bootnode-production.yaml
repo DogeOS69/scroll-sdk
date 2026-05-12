@@ -1,7 +1,7 @@
 image:
   repository: scrolltech/l2geth
   pullPolicy: IfNotPresent
-  tag: scroll-v5.9.6
+  tag: scroll-v5.10.2
 
 global:
   fullnameOverride: l2-bootnode-__INSTANCE_INDEX__

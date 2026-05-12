@@ -11,7 +11,7 @@ global:
 image:
   repository: scrolltech/coordinator-api
   pullPolicy: IfNotPresent
-  tag: v4.5.39
+  tag: v4.7.9
 
 env:
   - name: HTTP_PORT
