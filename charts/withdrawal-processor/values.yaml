@@ -84,33 +84,6 @@ persistence:
     subPath: signers.toml
     readOnly: true
 
-# Init container: seed the replay SQLite DB if it does not already exist.
-initContainers:
-  01-seed-replay-db:
-    image: "dogeos69/dogeos-replay:latest"
-    imagePullPolicy: "IfNotPresent"
-    command: ["/bin/sh", "-c"]
-    args:
-      - |
-        set -e
-        SQLITE_DB=/app/data/replay.sqlite
-        if [ -f "$SQLITE_DB" ]; then
-          echo "replay sqlite already exists at $SQLITE_DB, skipping seed"
-          exit 0
-        fi
-        echo "replay sqlite missing, seeding genesis..."
-        replay_runner --seed-genesis \
-          --context-json /app/protocol_context.json \
-          --sqlite-db /app/data/replay.sqlite \
-          --artifact-dir /app/data/replay.artifacts
-    volumeMounts:
-      - name: data
-        mountPath: /app/data
-      - name: protocol-context
-        mountPath: /app/protocol_context.json
-        subPath: protocol_context.json
-        readOnly: true
-
 # Resource configuration
 resources:
   requests:

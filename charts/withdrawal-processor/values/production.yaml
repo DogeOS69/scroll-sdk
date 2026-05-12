@@ -2,7 +2,7 @@
 # Production environment overrides for withdrawal-processor
 image:
   repository: dogeos69/withdrawal-processor
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: 110525-00
 
 env:

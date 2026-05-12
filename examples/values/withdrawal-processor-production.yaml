@@ -3,7 +3,7 @@
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: 110525-00
+  tag: latest
 
 env:
   # ===========================================================================
