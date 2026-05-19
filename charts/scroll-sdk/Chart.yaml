@@ -70,7 +70,7 @@ dependencies:
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: gas-oracle.enabled
   - name: l1-devnet
-    version: 0.1.4
+    version: 0.1.5-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l1-devnet.enabled
   # - name: l1-explorer

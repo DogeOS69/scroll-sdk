@@ -1,0 +1,221 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "l1-devnet.lighthouseName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.lighthouseName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "l1-devnet.lighthouseName" . }}
+  selector:
+    matchLabels:
+      app: {{ include "l1-devnet.lighthouseName" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "l1-devnet.lighthouseName" . }}
+        {{- include "l1-devnet.selectorLabels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: wait-for-genesis
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for consensus genesis and geth Engine API..."
+              until [ -f /genesis-out/metadata/genesis.ssz ]; do
+                echo "genesis.ssz is not ready. Waiting 5 seconds..."
+                sleep 5
+              done
+
+              until nc -z {{ include "l1-devnet.gethName" . }} 8551; do
+                echo "{{ include "l1-devnet.gethName" . }}:8551 is not ready. Waiting 5 seconds..."
+                sleep 5
+              done
+              echo "Consensus dependencies are ready."
+          volumeMounts:
+            - name: genesis-data
+              mountPath: /genesis-out
+
+      containers:
+        - name: beacon-node
+          image: {{ .Values.images.lighthouse.repository }}:{{ .Values.images.lighthouse.tag }}
+          command:
+            - lighthouse
+            - beacon_node
+            - --datadir=/data
+            - --testnet-dir=/genesis-out/metadata
+            - --allow-insecure-genesis-sync
+            - --http
+            - --http-address=0.0.0.0
+            - --http-port=5052
+            - --http-allow-origin=*
+            - --execution-endpoint=http://{{ include "l1-devnet.gethName" . }}:8551
+            - --execution-jwt=/jwt/jwt.hex
+            - --suggested-fee-recipient={{ .Values.prefundedAddress }}
+            - --target-peers=0
+            - --disable-upnp
+            - --disable-enr-auto-update
+            - --disable-packet-filter
+            - --listen-address=0.0.0.0
+            - --port=9000
+            - --metrics
+            - --metrics-address=0.0.0.0
+            - --metrics-port=5054
+            - --slots-per-restore-point=32
+            - --debug-level={{ .Values.lighthouse.debugLevel }}
+          ports:
+            - name: http
+              containerPort: 5052
+            - name: metrics
+              containerPort: 5054
+            - name: p2p
+              containerPort: 9000
+              protocol: UDP
+          volumeMounts:
+            - name: lighthouse-data
+              mountPath: /data
+            - name: genesis-data
+              mountPath: /genesis-out
+              readOnly: true
+            - name: jwt-secret
+              mountPath: /jwt
+              readOnly: true
+          resources:
+            {{- toYaml .Values.lighthouse.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /eth/v1/node/health
+              port: 5052
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+      volumes:
+        - name: lighthouse-data
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.lighthousePvcName" . }}
+        - name: genesis-data
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.genesisPvcName" . }}
+        - name: jwt-secret
+          secret:
+            secretName: {{ include "l1-devnet.jwtSecretName" . }}
+            items:
+              - key: jwt.hex
+                path: jwt.hex
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "l1-devnet.lighthouseName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.lighthouseName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "l1-devnet.lighthouseName" . }}
+  ports:
+    - name: http
+      port: 5052
+      targetPort: 5052
+    - name: metrics
+      port: 5054
+      targetPort: 5054
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "l1-devnet.validatorName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.validatorName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "l1-devnet.validatorName" . }}
+  selector:
+    matchLabels:
+      app: {{ include "l1-devnet.validatorName" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "l1-devnet.validatorName" . }}
+        {{- include "l1-devnet.selectorLabels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: wait-for-beacon
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for validator keys and Beacon API..."
+              until [ -d /genesis-out/validator/keys ] && [ -d /genesis-out/validator/secrets ]; do
+                echo "Validator keys are not ready. Waiting 5 seconds..."
+                sleep 5
+              done
+
+              until nc -z {{ include "l1-devnet.lighthouseName" . }} 5052; do
+                echo "{{ include "l1-devnet.lighthouseName" . }}:5052 is not ready. Waiting 5 seconds..."
+                sleep 5
+              done
+              echo "Validator dependencies are ready."
+          volumeMounts:
+            - name: genesis-data
+              mountPath: /genesis-out
+      containers:
+        - name: validator-client
+          image: {{ .Values.images.lighthouse.repository }}:{{ .Values.images.lighthouse.tag }}
+          command:
+            - lighthouse
+            - validator_client
+            - --testnet-dir=/genesis-out/metadata
+            - --validators-dir=/genesis-out/validator/keys
+            - --secrets-dir=/genesis-out/validator/secrets
+            - --beacon-nodes=http://{{ include "l1-devnet.lighthouseName" . }}:5052
+            - --suggested-fee-recipient={{ .Values.prefundedAddress }}
+            - --init-slashing-protection
+            - --metrics
+            - --metrics-address=0.0.0.0
+            - --metrics-port=5064
+            - --debug-level={{ .Values.validator.debugLevel }}
+          ports:
+            - name: metrics
+              containerPort: 5064
+          volumeMounts:
+            - name: genesis-data
+              mountPath: /genesis-out
+          resources:
+            {{- toYaml .Values.validator.resources | nindent 12 }}
+      volumes:
+        - name: genesis-data
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.genesisPvcName" . }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "l1-devnet.validatorName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.validatorName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "l1-devnet.validatorName" . }}
+  ports:
+    - name: metrics
+      port: 5064
+      targetPort: 5064

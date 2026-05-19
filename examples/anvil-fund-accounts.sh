@@ -1,13 +1,17 @@
 #!/bin/bash
-# This script funds the default L1 accounts when using an Anvil devnet.
+# Funds default L1 accounts from the prefunded local L1 devnet account.
+
+set -euo pipefail
 
 read_config() {
-    yq eval "$1" config.toml
+    yq eval "$1" charts/scroll-sdk/config.toml
 }
 
 L1_RPC_URL=$(read_config '.frontend.EXTERNAL_RPC_URI_L1')
+FUNDER_PRIVATE_KEY="${FUNDER_PRIVATE_KEY:-$(read_config '.accounts.DEPLOYER_PRIVATE_KEY')}"
+FUNDER_ADDR=$(cast wallet address --private-key "$FUNDER_PRIVATE_KEY")
+FUND_AMOUNT="${FUND_AMOUNT:-100ether}"
 
-# Array of addresses
 addresses=(
   "$(read_config '.accounts.L1_COMMIT_SENDER_ADDR')"
   "$(read_config '.accounts.L1_FINALIZE_SENDER_ADDR')"
@@ -16,15 +20,16 @@ addresses=(
   "$(read_config '.accounts.OWNER_ADDR')"
 )
 
-# Loop through each address and call the curl command
 for address in "${addresses[@]}"
 do
-  curl --location "$L1_RPC_URL" \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "jsonrpc":"2.0",
-    "method":"anvil_setBalance",
-    "params":["'"$address"'","0x3635C9ADC5DEA00000"],
-    "id":0
-  }'
+  if [ "$(echo "$address" | tr '[:upper:]' '[:lower:]')" = "$(echo "$FUNDER_ADDR" | tr '[:upper:]' '[:lower:]')" ]; then
+    echo "Skipping prefunded account $address"
+    continue
+  fi
+
+  cast send \
+    --rpc-url "$L1_RPC_URL" \
+    --private-key "$FUNDER_PRIVATE_KEY" \
+    "$address" \
+    --value "$FUND_AMOUNT"
 done

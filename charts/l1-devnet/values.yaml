@@ -1,72 +1,104 @@
 ---
 global:
-  nameOverride: &app_name l1-devnet
-  fullnameOverride: *app_name
+  nameOverride: l1-devnet
+  fullnameOverride: l1-devnet
 
-controller:
-  replicas: 1
-  strategy: RollingUpdate
-  type: statefulset
+nameOverride: ""
+fullnameOverride: ""
 
-image:
-  repository: scrolltech/l1-devnet
-  pullPolicy: IfNotPresent
-  tag: v0.0.4
+network:
+  chainId: 32382
+  networkId: 32382
+  depositContractAddress: "0x4242424242424242424242424242424242424242"
+  # Leave empty to use the Helm render time for new local devnet installs.
+  genesisTimestamp: ""
+  genesisDelay: "10"
+  genesisGasLimit: "25000000"
+  secondsPerSlot: 4
+  eth1FollowDistance: 16
+  minValidatorWithdrawabilityDelay: 2
+  shardCommitteePeriod: 2
+  maxBlobsPerBlock: 6
+  maxPerEpochActivationChurnLimit: 8
+  churnLimitQuotient: 65536
+  ejectionBalance: "16000000000"
+  samplesPerSlot: 8
+  custodyRequirement: 4
+  dataColumnSidecarSubnetCount: 128
+  electraForkEpoch: 999999
+  fuluForkEpoch: 999999
+  eip7594ForkEpoch: 999999
+  forkVersions:
+    genesis: "0x10000038"
+    altair: "0x20000038"
+    bellatrix: "0x30000038"
+    capella: "0x40000038"
+    deneb: "0x50000038"
+    electra: "0x60000038"
+    fulu: "0x70000038"
+    eip7594: "0x70000038"
 
-command:
-  - "bash"
-  - "-c"
-  - "mkdir -p /data && echo \"{number: 0x0}\" > /data/genesis.json && \
-    anvil --host 0.0.0.0 --port 8545 --chain-id ${CHAIN_ID} --state /data/state.json --state-interval 60 --slots-in-an-epoch 3"
+mnemonic: "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete"
+validatorCount: 64
 
-envFrom:
-  - configMapRef:
-      name: l1-devnet-env
+prefundedAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+prefundedPrivateKey: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+prefundedBalanceEth: "10000"
 
-resources:
-  requests:
-    memory: "100Mi"
-    cpu: "50m"
-  limits:
-    memory: "500Mi"
-    cpu: "100m"
+jwtSecret: "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"
 
-persistence:
-  chain-id:
-    enabled: true
-    type: pvc
-    accessMode: ReadWriteOnce
-    size: 10Mi
-    mounthPath: /chain-id
-  data:
-    enabled: true
-    type: pvc
-    accessMode: ReadWriteOnce
-    size: 10Gi
-    mounthPath: /data
-    retain: false
+images:
+  genesisGenerator:
+    repository: ethpandaops/ethereum-genesis-generator
+    tag: "3.4.1"
+  geth:
+    repository: ethereum/client-go
+    tag: "v1.14.13"
+  lighthouse:
+    repository: sigp/lighthouse
+    tag: "latest"
+
+storageClass: "local-path"
+
+genesis:
+  storage: 2Gi
+
+geth:
+  storage: 20Gi
+  verbosity: 3
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+lighthouse:
+  storage: 20Gi
+  debugLevel: info
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+validator:
+  debugLevel: info
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
 
 service:
   main:
     enabled: true
-    ports:
-      http:
-        enabled: true
-        port: 8545
-        targetPort: 8545
-
-defaultProbes: &default_probes
-  enabled: false
-  tcpSocket:
-    port: 8545
-
-probes:
-  liveness:
-    <<: *default_probes
-  readiness:
-    <<: *default_probes
-  startup:
-    <<: *default_probes
+    type: ClusterIP
 
 ingress:
   main:

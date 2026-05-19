@@ -1,11 +1,11 @@
 NAMESPACE ?= default
 
 .PHONY: prepare install-dogecoin install-scroll-core \
-	install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
+	install-l1-devnet install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
 	install-rollup-explorer-backend install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin delete-frontends \
+	delete-all delete-dogecoin delete-l1-devnet delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-rollup-explorer-backend delete-cubesigner-signers \
 	delete-testnet-activity-helper
@@ -32,7 +32,7 @@ install-l1-interface:
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
 		--wait  \
-		--version=0.1.4 \
+		--version=0.1.5-dogeos \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:
