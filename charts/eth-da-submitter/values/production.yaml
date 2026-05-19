@@ -1,0 +1,88 @@
+image:
+  repository: dogeos69/eth-da-submitter
+  pullPolicy: IfNotPresent
+  tag: latest
+
+env:
+  - name: RUST_LOG
+    value: "info,eth_da_submitter=info"
+
+configMaps:
+  env:
+    enabled: true
+    data:
+      DOGEOS_ETH_DA_SUBMITTER_SERVICE__LISTEN_ADDRESS: "0.0.0.0"
+      DOGEOS_ETH_DA_SUBMITTER_SERVICE__LISTEN_PORT: "3004"
+      DOGEOS_ETH_DA_SUBMITTER_SERVICE__STATUS_POLL_INTERVAL_MS: "5000"
+      DOGEOS_ETH_DA_SUBMITTER_SERVICE__SHUTDOWN_GRACE_PERIOD_SEC: "30"
+      DOGEOS_ETH_DA_SUBMITTER_SERVICE__CYCLE_INTERVAL_MS: "1000"
+
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__ETH_CHAIN_ID: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__L2_CHAIN_ID: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__MAX_BLOB_BASE_FEE_WEI: "50000000000"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__MIN_PRIORITY_FEE_WEI: "2000000000"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__MAX_FEE_PER_GAS_WEI: ""
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMATION_DEPTH: "1"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__FINALIZATION_DEPTH: "64"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMER_POLL_INTERVAL_MS: "12000"
+
+      DOGEOS_ETH_DA_SUBMITTER_L2__RPC_URL: "http://l2-rpc:8545"
+      DOGEOS_ETH_DA_SUBMITTER_L2__CONFIRMATIONS: "0"
+      DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_LIMIT: "128"
+
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_BATCH_HASH: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_STATE_ROOT: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_WITHDRAW_ROOT: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_WITHDRAW_INDEX: "0"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_RELAYED_DEPOSIT_INDEX: "0"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_RELAYED_DEPOSIT_QUEUE_HASH: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MIN_CODEC_VERSION: "10"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "none"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "6000000"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_BLOCKS_PER_CHUNK: "128"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_BYTES_SIZE: "131072"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_CHUNKS_PER_BATCH: "1"
+
+      DOGEOS_ETH_DA_SUBMITTER_STORE__SUBMITTER_DB_PATH: "/app/data/submitter.sqlite"
+      DOGEOS_ETH_DA_SUBMITTER_STORE__LIFECYCLE_DB_PATH: "/app/data/submitter.sqlite"
+      DOGEOS_ETH_DA_SUBMITTER_S3__ENABLED: "false"
+
+envFrom:
+  - configMapRef:
+      name: eth-da-submitter-env
+  - secretRef:
+      name: eth-da-submitter-secret-env
+
+persistence:
+  data:
+    enabled: true
+    name: eth-da-submitter-data-pvc
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    retain: true
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+serviceMonitor:
+  main:
+    enabled: true
+
+externalSecrets:
+  eth-da-submitter-secret-env:
+    provider: aws
+    data:
+      - remoteRef:
+          key: dogeos/eth-da-submitter
+          property: DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SUBMITTER_PRIVATE_KEY
+        secretKey: DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SUBMITTER_PRIVATE_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets
