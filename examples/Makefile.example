@@ -1,13 +1,13 @@
 NAMESPACE ?= default
 
-.PHONY: prepare install-dogecoin install-celestia install-scroll-core \
-	install-l2-sequencer install-l2-bootnode install-contracts install-da-publisher \
-	install-rollup-relayer install-fee-oracle \
+.PHONY: prepare install-dogecoin install-scroll-core \
+	install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
+	install-rollup-explorer-backend install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin  delete-celestia delete-frontends \
+	delete-all delete-dogecoin delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
-	delete-da-publisher delete-fee-oracle delete-rollup-relayer delete-cubesigner-signers \
+	delete-eth-da-submitter delete-fee-oracle delete-rollup-explorer-backend delete-cubesigner-signers \
 	delete-testnet-activity-helper
 
 prepare:
@@ -23,11 +23,6 @@ install-blockbook:
 	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
 		--version=0.1.4 \
 		--values values/blockbook-production.yaml
-
-install-celestia:
-	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.12 \
-		--values values/celestia-node-production.yaml
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
@@ -99,18 +94,13 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
-install-da-publisher:
-	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.7 \
-		--values values/da-publisher-production.yaml \
+install-eth-da-submitter:
+	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
+		--version=0.1.0 \
+		--values values/eth-da-submitter-production.yaml \
 		--wait
 
-install-rollup-relayer:
-	helm upgrade -i rollup-relayer oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-relayer -n $(NAMESPACE) \
-		--version=0.1.13 \
-		--values values/rollup-relayer-production.yaml \
-		--values values/rollup-relayer-config.yaml
-
+install-rollup-explorer-backend:
 	helm upgrade -i rollup-explorer-backend oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
 		--version=0.1.3-dogeos \
 		--values values/rollup-explorer-backend-production.yaml
@@ -180,8 +170,8 @@ install-coordinator:
 		--values values/coordinator-cron-config.yaml
 
 start-l1-sync:
-	kubectl exec -n $(NAMESPACE) $$(kubectl get pod -n $(NAMESPACE) -l app.kubernetes.io/name=rollup-relayer -o jsonpath='{.items[0].metadata.name}') -- \
-		curl -X POST http://l1-interface:9091/disable-genesis-hold
+	kubectl run -n $(NAMESPACE) l1-sync-trigger --rm -i --restart=Never --image=curlimages/curl:8.10.1 -- \
+		curl -fsS -X POST http://l1-interface:9091/disable-genesis-hold
 
 install-all:
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet && scrollsdk setup dogecoin-wallet-import
@@ -189,8 +179,8 @@ install-all:
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-da-publisher
-	$(MAKE) install-rollup-relayer
+	$(MAKE) install-eth-da-submitter
+	$(MAKE) install-rollup-explorer-backend
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
@@ -209,8 +199,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) fee-oracle || true
 	$(MAKE) delete-l2-bootnode || true
 	$(MAKE) delete-l2-rpc || true
-	helm delete -n $(NAMESPACE) rollup-explorer-backend || true
-	helm delete -n $(NAMESPACE) rollup-relayer || true
+	$(MAKE) delete-rollup-explorer-backend || true
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
@@ -221,7 +210,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true
-	helm delete -n $(NAMESPACE) da-publisher || true
+	$(MAKE) delete-eth-da-submitter || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
 	helm delete -n $(NAMESPACE) coordinator-api || true
@@ -239,9 +228,6 @@ delete-dogecoin:
 delete-blockbook:
 	helm delete -n $(NAMESPACE) blockbook-testnet
 
-delete-celestia:
-	helm delete -n $(NAMESPACE) celestia-testnet
-
 delete-frontends:
 	helm delete -n $(NAMESPACE) frontends
 
@@ -255,14 +241,13 @@ delete-withdrawal-processor:
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
 
-delete-da-publisher:
-	helm delete -n $(NAMESPACE) da-publisher
+delete-eth-da-submitter:
+	helm delete -n $(NAMESPACE) eth-da-submitter
 
 delete-fee-oracle:
 	helm delete -n $(NAMESPACE) fee-oracle
 
-delete-rollup-relayer:
-	helm delete -n $(NAMESPACE) rollup-relayer || true
+delete-rollup-explorer-backend:
 	helm delete -n $(NAMESPACE) rollup-explorer-backend || true
 
 delete-cubesigner-signers:
