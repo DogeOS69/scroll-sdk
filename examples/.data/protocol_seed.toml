@@ -1,23 +1,34 @@
+# protocol_seed.toml - operator-supplied input for generate_protocol_context.
+#
+# Matches the current dogeos_protocol::ProtocolContextFile input shape used by
+# crates/test_utils/src/bin/generate_protocol_context.rs.
+
 [protocol]
 protocol_version = 2
 dogecoin_chain_id = 111_111
-l2_chain_id = 222_222
-celestia_namespace = "0x00000000000000000000000000000000000000000000000000000000"
+l2_chain_id = 6_281_971
+eth_chain_id = 32_382
 
 [chain_anchors]
-initial_celestia_height = 0
-initial_da_commitment = "0x0000000000000000000000000000000000000000000000000000000000000000"
-genesis_batch_hash = "0x0000000000000000000000000000000000000000000000000000000000000000"
-genesis_state_root = "0x0000000000000000000000000000000000000000000000000000000000000000"
+# Initial Ethereum DA inbox locator. For a cold start with no prior DA history,
+# zero values are acceptable.
+initial_ethereum_block_hash = "0x0000000000000000000000000000000000000000000000000000000000000000"
+initial_tx_index = 0
+initial_tx_blob_index = 0
+
+# L2 genesis facts. These must be computed from the L2 genesis.json for the
+# deployment; production loaders reject zero values.
+genesis_batch_hash = "0x8c873ede475f2831e9d57b1f32641c4409a24311c4df6f1a3d7114eb9358b1de"
+genesis_state_root = "0x81c777d8b8d3f71224b8e8d6c38e84efa20ff55bcecfd7ff74a5ce108db5a4f2"
 
 [protocol_config_seed.protocol_config]
-l2_chain_id = 222_222
-celestia_namespace = "0x00000000000000000000000000000000000000000000000000000000"
+l2_chain_id = 6_281_971
+eth_chain_id = 32_382
 key_rotation_min_grace_wf_txs = 100
 min_deposit_sats = 100_000
 
-  [protocol_config_seed.protocol_config.deposit_queue_transform]
-  l1_scroll_messenger_address = "0x0000000000000000000000000000000000000001"
-  l2_messenger_address = "0x0000000000000000000000000000000000000002"
-  moat_address = "0x0000000000000000000000000000000000000003"
-  message_queue_gas_limit = 1_000_000
+[protocol_config_seed.protocol_config.deposit_queue_transform]
+l1_scroll_messenger_address = "0xbdcface31b496ed536c93483e3a4e7b4a2c19a55"
+l2_messenger_address = "0xe9c53ca91528246e4e29304058b9d78d7999c96a"
+moat_address = "0xb46985d56f57d138bfaa7acbae0de38dc3cfc00f"
+message_queue_gas_limit = 10_000_000
