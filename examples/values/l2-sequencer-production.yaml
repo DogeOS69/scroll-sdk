@@ -40,7 +40,7 @@ configMaps:
     enabled: true
     data:
       CHAIN_ID: ""
-      L2GETH_L1_ENDPOINT: ""
+      L2GETH_L1_ENDPOINT: "http://l1-interface:8545"
       L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
       L2GETH_SIGNER_ADDRESS: ""
       L2GETH_PEER_LIST: '[""]'

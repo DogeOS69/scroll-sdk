@@ -44,7 +44,7 @@ configMaps:
       CHAIN_ID: ""
       # L2GETH_NODEKEY is now sourced from a Kubernetes Secret
       L2GETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
-      L2GETH_L1_ENDPOINT: ""
+      L2GETH_L1_ENDPOINT: "http://l1-interface:8545"
       L2GETH_DA_BLOB_BEACON_NODE: "http://l1-interface:5052"
       L2GETH_PEER_LIST: "[]"
 

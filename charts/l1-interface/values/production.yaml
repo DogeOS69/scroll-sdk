@@ -63,25 +63,28 @@ configMaps:
       #DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # Sequencer address, optional
 
       # -----------------------------------------------------------------------------
-      # [celestia_indexer] - Celestia DA indexer
+      # [legacy celestia_indexer] - inert in Ethereum DA mode
       # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "<TODO>" # [REQUIRED] Celestia DA node RPC URL
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: "<TODO>" # Tendermint RPC URL, optional; required for TxSearch mode or signer validation
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: "<TODO>" # [REQUIRED] Celestia namespace ID (hex string)
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0" # [REQUIRED] Celestia scan start height (i64)
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS:  "<TODO>"                             # Expected blob signer address, optional
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3" # [REQUIRED] Confirmation depth (u64)
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000" # Poll interval (milliseconds, u64)
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true" # Whether to store raw blob data (true/false); must be true for replay-backed public RPC
+      # Ethereum DA sidecar fetching is not wired through a stable l1-interface
+      # environment variable yet. Keep the legacy Celestia indexer on-demand so
+      # it does not require a Celestia node in Ethereum DA deployments.
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: ""
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: ""
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0"
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Not used. Genesis blob commitment string, defaults to empty string
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "namespace_scan" # Blob discovery mode: namespace_scan / tx_search / on_demand; fulfillment_driven is rejected
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "on_demand" # Keep legacy indexer inert in Ethereum DA mode.
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT: "false" # Whether to validate signer via Tendermint (true/false); only in NamespaceScan mode
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__WORKERS: "4" # Blob processing worker count (usize)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BATCH_SIZE: "100" # Processing batch size (usize)
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "<TODO>" # blob_get_all fallback endpoint URL, optional
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: "<TODO>" # blob_get_all fallback endpoint auth token, optional
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "" # blob_get_all fallback endpoint URL, optional
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: "" # blob_get_all fallback endpoint auth token, optional
 
       # -----------------------------------------------------------------------------
       # [replay_read] - Replay read (required for public RPC)
@@ -119,10 +122,6 @@ externalSecrets:
           key: "dogeos/l1-interface-secret-env"
           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
-        secretKey: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 

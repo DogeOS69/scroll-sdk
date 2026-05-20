@@ -29,7 +29,7 @@ configMaps:
       DOGEOS_FEE_ORACLE_DOGECOIN__BASE_FEE_RATE: "1000000"                         # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__EMPTY_MEMPOOL_FEE_RATE: "1500000"                # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__POLL_INTERVAL: "60"                              # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID
+      DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # legacy Celestia DA value; unused in Ethereum DA mode
       DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000"                   # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000"                # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000"               # predefined
