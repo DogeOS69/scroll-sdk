@@ -181,8 +181,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS # Required, bool; must be true when advance_l2_builder_v2 or protocol_context_json is enabled
     value: "true"
 
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; protocol-lane mode disables fulfillment_driven; default namespace_scan
-    value: "namespace_scan"
+  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; Ethereum DA mode requires on_demand
+    value: "on_demand"
 
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT # Optional, bool, whether to validate signer via Tendermint; default false
     value: "false"
@@ -205,11 +205,35 @@ env:
   # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL # Optional, blob_get_all fallback endpoint URL
   #   value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token; numeric-looking tokens need inner TOML quotes, e.g. '"123456"'
   #   value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION # Optional, blob artifact compression enum: none/zstd; default none
     value: "zstd"
+
+  # ===========================================================================
+  # [ethereum_da] - required when advance_l2_builder_v2 is enabled
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL # Required, Ethereum execution JSON-RPC URL
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ETH_CHAIN_ID # Required, Ethereum chain id
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L2_CHAIN_ID # Required, DogeOS L2 chain id
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INDEXER_SQLITE_PATH # Required, indexer_eth_da SQLite path; must be writable
+    value: "/app/data/eth-da-indexer.sqlite"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_STORE_ROOT # Required, absolute root for raw EIP-4844 blob artifacts
+    value: "/app/data/eth-da-blob-artifacts"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_METADATA_SQLITE_PATH # Required, metadata SQLite path for blob artifacts
+    value: "/app/data/eth-da-artifact-metadata.sqlite"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__MIN_FINALITY # Optional, one of pending/safe/finalized; default finalized
+    value: "safe"
 
   # ===========================================================================
   # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
@@ -380,14 +404,6 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-      - remoteRef:
-          key: dogeos/withdrawal-processor
-          property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
-        secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL
-      - remoteRef:
-          key: dogeos/withdrawal-processor
-          property: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN
-        secretKey: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing

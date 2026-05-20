@@ -68,9 +68,9 @@ configMaps:
       # Ethereum DA sidecar fetching is not wired through a stable l1-interface
       # environment variable yet. Keep the legacy Celestia indexer on-demand so
       # it does not require a Celestia node in Ethereum DA deployments.
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://127.0.0.1:26658" # Legal placeholder; unused while discovery_mode is on_demand.
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: ""
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: '"00000000000000000000"' # Legal placeholder; unused while discovery_mode is on_demand. Numeric-looking strings need inner TOML quotes.
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0"
       #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS: ""
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"
@@ -83,8 +83,8 @@ configMaps:
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__WORKERS: "4" # Blob processing worker count (usize)
       DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BATCH_SIZE: "100" # Processing batch size (usize)
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "" # blob_get_all fallback endpoint URL, optional
-      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: "" # blob_get_all fallback endpoint auth token, optional
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "http://127.0.0.1:26657" # Legal placeholder; unused while discovery_mode is on_demand.
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: '"unused"' # Optional token placeholder; numeric-looking strings need inner TOML quotes.
 
       # -----------------------------------------------------------------------------
       # [replay_read] - Replay read (required for public RPC)
