@@ -87,10 +87,11 @@ persistence:
 ethereumDa:
   indexer:
     enabled: false
-    # Defaults to the withdrawal-processor image. That image now includes
-    # /usr/local/bin/eth_da_indexer so the two containers can share one tag.
+    # eth-da-indexer runs as a sidecar in the same pod as withdrawal-processor,
+    # but uses its own image. The tag defaults to image.tag when omitted so the
+    # two services can still be rolled out as a matched release.
     image:
-      repository: ""
+      repository: dogeos69/eth-da-indexer
       tag: ""
       pullPolicy: ""
     command:

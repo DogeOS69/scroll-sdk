@@ -37,7 +37,7 @@ global:
   ) -}}
 
   {{- $imageValues := default dict $indexer.image -}}
-  {{- $repository := default .Values.image.repository $imageValues.repository -}}
+  {{- $repository := required "ethereumDa.indexer.image.repository is required when ethereumDa.indexer.enabled=true" $imageValues.repository -}}
   {{- $tag := default .Values.image.tag $imageValues.tag -}}
   {{- $pullPolicy := default .Values.image.pullPolicy $imageValues.pullPolicy -}}
   {{- $container := dict

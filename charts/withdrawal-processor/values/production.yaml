@@ -8,6 +8,10 @@ image:
 ethereumDa:
   indexer:
     enabled: true
+    image:
+      repository: dogeos69/eth-da-indexer
+      tag: ""
+      pullPolicy: ""
     config:
       ethereum:
         rpcUrl: "<TODO>"
