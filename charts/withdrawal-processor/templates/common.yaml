@@ -10,6 +10,64 @@ global:
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
+{{- define "withdrawal-processor.ethDaIndexer.prepare" -}}
+{{- $ethDa := default dict .Values.ethereumDa -}}
+{{- $indexer := default dict $ethDa.indexer -}}
+{{- if $indexer.enabled -}}
+  {{- if ne .Values.controller.type "statefulset" -}}
+    {{- fail "ethereumDa.indexer.enabled requires controller.type=statefulset so the sidecar and withdrawal-processor share one stable PVC writer/reader pod" -}}
+  {{- end -}}
+  {{- if ne (int .Values.controller.replicas) 1 -}}
+    {{- fail "ethereumDa.indexer.enabled requires controller.replicas=1; SQLite must not have multiple writer pods" -}}
+  {{- end -}}
+  {{- if not .Values.persistence.data.enabled -}}
+    {{- fail "ethereumDa.indexer.enabled requires persistence.data.enabled=true" -}}
+  {{- end -}}
+
+  {{- $_ := set .Values "sidecars" (default dict .Values.sidecars) -}}
+  {{- $_ := set .Values "persistence" (default dict .Values.persistence) -}}
+  {{- $configMapName := include "withdrawal-processor.ethDaIndexerConfigMapName" . -}}
+  {{- $_ := set .Values.persistence "eth-da-indexer-config" (dict
+    "enabled" true
+    "type" "configMap"
+    "name" $configMapName
+    "mountPath" "/app/config/eth-da-indexer.toml"
+    "subPath" "eth-da-indexer.toml"
+    "readOnly" true
+  ) -}}
+
+  {{- $imageValues := default dict $indexer.image -}}
+  {{- $repository := default .Values.image.repository $imageValues.repository -}}
+  {{- $tag := default .Values.image.tag $imageValues.tag -}}
+  {{- $pullPolicy := default .Values.image.pullPolicy $imageValues.pullPolicy -}}
+  {{- $container := dict
+    "image" (printf "%s:%s" $repository $tag)
+    "imagePullPolicy" $pullPolicy
+    "command" (default (list "/usr/local/bin/eth_da_indexer") $indexer.command)
+    "args" (default (list "--config" "/app/config/eth-da-indexer.toml") $indexer.args)
+    "ports" (list (dict "name" "eth-da-http" "containerPort" (default 3001 $indexer.listenPort) "protocol" "TCP"))
+    "volumeMounts" (list
+      (dict "name" "data" "mountPath" "/app/data")
+      (dict "name" "eth-da-indexer-config" "mountPath" "/app/config/eth-da-indexer.toml" "subPath" "eth-da-indexer.toml" "readOnly" true)
+    )
+    "startupProbe" (dict "httpGet" (dict "path" "/ready" "port" "eth-da-http") "periodSeconds" 5 "failureThreshold" 60 "timeoutSeconds" 2)
+    "livenessProbe" (dict "httpGet" (dict "path" "/health" "port" "eth-da-http") "periodSeconds" 15 "failureThreshold" 3 "timeoutSeconds" 2)
+    "readinessProbe" (dict "httpGet" (dict "path" "/ready" "port" "eth-da-http") "periodSeconds" 10 "failureThreshold" 3 "timeoutSeconds" 2)
+  -}}
+  {{- with $indexer.resources -}}
+    {{- $_ := set $container "resources" . -}}
+  {{- end -}}
+  {{- with $indexer.env -}}
+    {{- $_ := set $container "env" . -}}
+  {{- end -}}
+  {{- with $indexer.envFrom -}}
+    {{- $_ := set $container "envFrom" . -}}
+  {{- end -}}
+  {{- $_ := set .Values.sidecars "eth-da-indexer" $container -}}
+{{- end -}}
+{{- end -}}
+{{- include "withdrawal-processor.ethDaIndexer.prepare" . -}}
+
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}
 ---

@@ -60,4 +60,11 @@ Create the name of the service account to use
 {{- else -}}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end -}}
-{{- end -}} 
+{{- end -}}
+
+{{/*
+Name of the ConfigMap carrying eth_da_indexer.toml.
+*/}}
+{{- define "withdrawal-processor.ethDaIndexerConfigMapName" -}}
+{{- printf "%s-eth-da-indexer" (include "withdrawal-processor.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

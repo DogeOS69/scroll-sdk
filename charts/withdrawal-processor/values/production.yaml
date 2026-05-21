@@ -5,6 +5,37 @@ image:
   pullPolicy: IfNotPresent
   tag: 110525-00
 
+ethereumDa:
+  indexer:
+    enabled: true
+    config:
+      ethereum:
+        rpcUrl: "<TODO>"
+        ethChainId: null
+      indexer:
+        l2ChainId: null
+        sqlitePath: /app/data/eth-da-indexer.sqlite
+        startBlock: 0
+      artifacts:
+        enabled: true
+        artifactStoreRoot: /app/data/eth-da-blob-artifacts
+        artifactMetadataSqlitePath: /app/data/eth-da-artifact-metadata.sqlite
+        compression: none
+        minFinality: pending
+      blobSources:
+        beacon:
+          enabled: true
+          endpoint: "<TODO>"
+        blobscan:
+          enabled: false
+          endpoint: ""
+        blocknative:
+          enabled: false
+          endpoint: ""
+        s3:
+          enabled: false
+          endpoint: ""
+
 env:
   # ===========================================================================
   # Top-level required fields (no default; missing values cause startup failure)

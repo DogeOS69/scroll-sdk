@@ -84,6 +84,76 @@ persistence:
     subPath: signers.toml
     readOnly: true
 
+ethereumDa:
+  indexer:
+    enabled: false
+    # Defaults to the withdrawal-processor image. That image now includes
+    # /usr/local/bin/eth_da_indexer so the two containers can share one tag.
+    image:
+      repository: ""
+      tag: ""
+      pullPolicy: ""
+    command:
+      - /usr/local/bin/eth_da_indexer
+    args:
+      - --config
+      - /app/config/eth-da-indexer.toml
+    listenPort: 3001
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    config:
+      service:
+        listenAddress: "0.0.0.0"
+        listenPort: 3001
+        shutdownGracePeriodSec: 30
+      ethereum:
+        rpcUrl: ""
+        ethChainId: null
+      indexer:
+        l2ChainId: null
+        sqlitePath: /app/data/eth-da-indexer.sqlite
+        cursorId: eth_da_inbox
+        startBlock: 0
+        ingestDepth: 1
+        safeDepth: 32
+        finalizedDepth: 64
+        rollbackLookback: 128
+        pollIntervalMs: 6000
+        maxBlocksPerCycle: 64
+        expectedBatchers: []
+      artifacts:
+        enabled: false
+        artifactStoreRoot: /app/data/eth-da-blob-artifacts
+        artifactMetadataSqlitePath: /app/data/eth-da-artifact-metadata.sqlite
+        compression: none
+        pollIntervalMs: 6000
+        maxPublicationsPerCycle: 256
+        maxArtifactsPerCycle: 32
+        minFinality: pending
+      blobSources:
+        beacon:
+          enabled: false
+          endpoint: ""
+          timeoutMs: 10000
+        blobscan:
+          enabled: false
+          endpoint: ""
+          timeoutMs: 10000
+        blocknative:
+          enabled: false
+          endpoint: ""
+          timeoutMs: 10000
+        s3:
+          enabled: false
+          endpoint: ""
+          timeoutMs: 10000
+          treatForbiddenAsMissing: false
+
 # Resource configuration
 resources:
   requests:
