@@ -137,7 +137,7 @@ env:
     value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK # Required, u64, indexer start block
-    value: "<TODO>"
+    value: "0"
 
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
     value: "12"
