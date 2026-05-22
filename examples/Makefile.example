@@ -26,7 +26,7 @@ install-blockbook:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.18 \
+		--version=0.0.19 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -107,7 +107,7 @@ install-rollup-explorer-backend:
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.7 \
+		--version=0.0.8 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -129,7 +129,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.17 \
+		--version=0.1.18 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:

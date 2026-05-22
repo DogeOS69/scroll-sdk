@@ -1,14 +1,14 @@
-*.tgz
-*.lock
-.idea
-genesis.json
-config-contracts.toml
-charts/scroll-sdk/*.json
-.env.frontend
-charts/scroll-values.yaml
-
+# OS
 .DS_Store
 
-charts/scroll-sdk/configs/*.env
-charts/scroll-sdk/broadcast/
+# Editors
+.idea/
 .vscode/
+
+# Helm dependencies and packaged charts
+charts/**/Chart.lock
+charts/**/*.tgz
+charts/**/charts/
+
+# Generated environment files
+charts/scroll-sdk/configs/*.env
