@@ -476,19 +476,15 @@ tsoSigners:
   - network: "testnet"
     uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Tee signer is local
     role: "Tee"
-    publicKeyOverride: "<TODO_TEE_SIGNER_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-0:3000"
     role: "Attestation"
-    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_0_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-1:3000"
     role: "Attestation"
-    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_1_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-2:3000"
     role: "Attestation"
-    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_2_PUBLIC_KEY>"
 
 # Persistence Configuration
 persistence:
