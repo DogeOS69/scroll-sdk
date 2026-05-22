@@ -1,3 +1,5 @@
+fullnameOverride: dogecoin
+
 dogecoinConf:
   rpcuser: user
   testnet: 1
@@ -34,6 +36,9 @@ resources:
 
 # Storage
 storage:
+  # Set this only when a single-replica deployment must reuse an existing synced datadir PVC.
+  # For example, use dogecoin-testnet-data when migrating an old dogecoin-testnet release.
+  existingClaim: ""
   size: 50Gi              # Should be > 200Gi for mainnet
   retainPvcOnUninstall: true
 # Enable ingress

@@ -15,18 +15,13 @@ prepare:
 	helm repo update
 
 install-dogecoin:
-	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.10 \
+	helm upgrade -i dogecoin oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
+		--version=0.1.12 \
 		--values values/dogecoin-production.yaml
-
-install-blockbook:
-	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
-		--version=0.1.4 \
-		--values values/blockbook-production.yaml
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.19 \
+		--version=0.0.20 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -96,13 +91,13 @@ install-contracts:
 
 install-eth-da-submitter:
 	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.1.1 \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.8 \
+		--version=0.0.9 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -124,7 +119,7 @@ install-tso:
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.18 \
+		--version=0.1.19 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
@@ -169,7 +164,7 @@ start-l1-sync:
 		curl -fsS -X POST http://l1-interface:9091/disable-genesis-hold
 
 install-all:
-	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet && scrollsdk setup dogecoin-wallet-import
+	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin -n $(NAMESPACE) && scrollsdk setup dogecoin-wallet-import --namespace $(NAMESPACE) --service-name dogecoin
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
@@ -216,10 +211,7 @@ delete-l1-devnet:
 	helm delete -n $(NAMESPACE) l1-devnet
 
 delete-dogecoin:
-	helm delete -n $(NAMESPACE) dogecoin-testnet
-
-delete-blockbook:
-	helm delete -n $(NAMESPACE) blockbook-testnet
+	helm delete -n $(NAMESPACE) dogecoin
 
 delete-frontends:
 	helm delete -n $(NAMESPACE) frontends

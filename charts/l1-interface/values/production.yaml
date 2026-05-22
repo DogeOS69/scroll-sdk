@@ -45,7 +45,7 @@ configMaps:
       # -----------------------------------------------------------------------------
       # [dogecoin_rpc] - Dogecoin JSON-RPC client
       # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "<TODO>" # [REQUIRED] Dogecoin node RPC URL (e.g. http://127.0.0.1:22555)
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin:44555" # [REQUIRED] Dogecoin node RPC URL; use http://dogecoin:22555 for mainnet
       #DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER: "<TODO>" # RPC username, optional
       #DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS: "<TODO>" # RPC password, optional
 

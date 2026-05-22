@@ -123,7 +123,7 @@ spec:
             {{- end }}
         - name: dogecoin-data
           persistentVolumeClaim:
-            claimName: {{ include "dogecoin.fullname" . }}-data
+            claimName: {{ .Values.storage.existingClaim | default (printf "%s-data" .Release.Name) }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

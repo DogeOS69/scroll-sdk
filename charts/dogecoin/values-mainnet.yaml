@@ -1,5 +1,7 @@
 replicaCount: 1
 
+fullnameOverride: dogecoin
+
 dogecoinConf:
   disablewallet: 1
   rpcuser: user
@@ -40,6 +42,7 @@ service:
 
 # Storage
 storage:
+  existingClaim: "" # Optional existing PVC name. Defaults to <release-name>-data for backward-compatible upgrades.
   size: 250Gi # Should be > 200Gi for mainnet
   storageClassName: "" # Use cluster default storage class (more portable)
   retainPvcOnUninstall: true # IMPORTANT: Keep PVC when uninstalling to prevent data loss

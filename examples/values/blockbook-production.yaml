@@ -1,12 +1,14 @@
 # Blockbook Production Configuration
 # This file overrides the default values for production deployment
 
+fullnameOverride: blockbook
+
 # Blockbook configuration for production
 blockbook:
   network: testnet
-  rpcUrl: "http://dogecoin-testnet:44555"  # Internal K8s service for testnet
+  rpcUrl: "http://dogecoin:44555"  # Internal K8s Dogecoin service for testnet
   # Enable ZMQ for real-time blockchain data streaming
-  messageQueueBinding: "tcp://dogecoin-testnet:28332"  # ZMQ raw block endpoint
+  messageQueueBinding: "tcp://dogecoin:28332"  # ZMQ raw block endpoint
   blockHeight: "10150000" # Starting block height for syncing
 
 # Enable ingress for external access
@@ -42,4 +44,3 @@ externalSecrets:
     provider: "aws"
     serviceAccount: "external-secrets"
     refreshInterval: "2m"
-

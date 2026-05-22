@@ -2,7 +2,7 @@ apiVersion: v2
 name: fee-oracle
 description: A Helm chart for the DogeOS fee oracle
 type: application
-version: 0.0.8
+version: 0.0.9
 appVersion: "0.0.1"
 kubeVersion: ">=1.22.0-0"
 maintainers:

@@ -16,7 +16,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_DATABASE_URL # Required, primary database connection string (PostgreSQL/SQLite)
     value: "sqlite:///app/data/withdrawal_processor.db"
   - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL
-    value: "<TODO>"
+    value: "http://dogecoin:44555"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER # Required, Dogecoin RPC username
   #   value: "<TODO>"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS # Required, Dogecoin RPC password
