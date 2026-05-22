@@ -5,41 +5,6 @@ image:
   pullPolicy: IfNotPresent
   tag: 110525-00
 
-ethereumDa:
-  indexer:
-    enabled: true
-    image:
-      repository: dogeos69/eth-da-indexer
-      tag: ""
-      pullPolicy: ""
-    config:
-      ethereum:
-        rpcUrl: "<TODO>"
-        ethChainId: null
-      indexer:
-        l2ChainId: null
-        sqlitePath: /app/data/eth-da-indexer.sqlite
-        startBlock: 0
-      artifacts:
-        enabled: true
-        artifactStoreRoot: /app/data/eth-da-blob-artifacts
-        artifactMetadataSqlitePath: /app/data/eth-da-artifact-metadata.sqlite
-        compression: none
-        minFinality: pending
-      blobSources:
-        beacon:
-          enabled: true
-          endpoint: "<TODO>"
-        blobscan:
-          enabled: false
-          endpoint: ""
-        blocknative:
-          enabled: false
-          endpoint: ""
-        s3:
-          enabled: false
-          endpoint: ""
-
 env:
   # ===========================================================================
   # Top-level required fields (no default; missing values cause startup failure)
@@ -269,6 +234,69 @@ env:
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__MIN_FINALITY # Optional, one of pending/safe/finalized; default finalized
     value: "safe"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER_ENABLED # Optional, run the Ethereum DA indexer inside withdrawal-processor; default true
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__CURSOR_ID # Optional, indexer cursor id; default eth_da_inbox
+    value: "eth_da_inbox"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__START_BLOCK # Required for initial sync, Ethereum inbox scan start block
+    value: "0"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__INGEST_DEPTH # Optional, pending ingest depth; default 1
+    value: "1"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__SAFE_DEPTH # Optional, safe block depth; default 32
+    value: "32"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__FINALIZED_DEPTH # Optional, finalized block depth; default 64
+    value: "64"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__ROLLBACK_LOOKBACK # Optional, rollback repair lookback; default 128
+    value: "128"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__POLL_INTERVAL_MS # Optional, embedded indexer poll interval; default 6000
+    value: "6000"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__MAX_BLOCKS_PER_CYCLE # Optional, max Ethereum blocks per indexer cycle; default 64
+    value: "64"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__COMPRESSION # Optional, artifact compression enum: none/zstd; default none
+    value: "none"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__POLL_INTERVAL_MS # Optional, artifact materializer poll interval; default 6000
+    value: "6000"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MAX_PUBLICATIONS_PER_CYCLE # Optional, max publications to materialize per cycle; default 256
+    value: "256"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MAX_ARTIFACTS_PER_CYCLE # Optional, max artifacts to fetch per cycle; default 32
+    value: "32"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MIN_FINALITY # Optional, artifact materializer finality: pending/safe/finalized; default pending
+    value: "pending"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__ENABLED # Optional, enable beacon blob source
+    value: "true"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__ENDPOINT # Required when beacon blob source is enabled
+    value: "<TODO>"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__TIMEOUT_MS # Optional, beacon blob source timeout; default 10000
+    value: "10000"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BLOBSCAN__ENABLED # Optional, enable Blobscan blob source
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BLOCKNATIVE__ENABLED # Optional, enable Blocknative blob source
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__S3__ENABLED # Optional, enable S3 blob source
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__S3__TREAT_FORBIDDEN_AS_MISSING # Optional, treat S3 403 as a cache miss; default false
+    value: "false"
 
   # ===========================================================================
   # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
