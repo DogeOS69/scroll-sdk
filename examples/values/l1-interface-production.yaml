@@ -2,56 +2,112 @@
 # Production environment overrides
 image:
   repository: "dogeos69/l1-interface"
-  pullPolicy: "Always"
-  tag: "0.2.0-rc.6"
+  pullPolicy: "IfNotPresent"
+  tag: "latest"
 
 # Direct environment variables
 env:
   - name: "RUST_LOG"
-    value: "info"     # info,l1_interface=debug
+    value: "info" # info, l1_interface=debug
 
 # ConfigMap overrides for production
 configMaps:
   env:
     enabled: true
     data:
-      DOGEOS_L1_INTERFACE_NETWORK_STR: "testnet"                              # testnet, mainnet
-      DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS: ""                        # L1_SCROLL_MESSENGER_PROXY_ADDR
-      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "8208200"                         # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
-      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: ""                        # L2_MOAT_PROXY_ADDR
-      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: ""                            # L2_DOGEOS_MESSENGER_PROXY_ADDR
-      DOGEOS_L1_INTERFACE_DEPOSIT_GAS_LIMIT: "500000"                         # predefined
-      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"                            # predefined
-      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"                   # genesis.BASE_FEE_PER_GAS
-      DOGEOS_L1_INTERFACE_L1_MINER_ADDRESS: "0x0000000000000000000000000000000000000001"  # predefined
-      DOGEOS_L1_INTERFACE_L1_EXTRA_DATA: "DogeOS Local Test"                  # predefined
+      # -----------------------------------------------------------------------------
+      # [core] - Required core configuration
+      # -----------------------------------------------------------------------------
+      DOGEOS_L1_INTERFACE_NETWORK_STR: "<TODO>" # [REQUIRED] Dogecoin network name (mainnet/testnet/regtest, etc.), used by Network::from_str; alias: network
+      #DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite" # [REQUIRED] Primary database connection string (e.g. sqlite:///path/to.db or postgres://...); alias: db_url
+      # Listen addresses are wired to service.main.ports in values.yaml — managed by chart, do not override here.
+      #DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "<TODO>"           # Main RPC API listen address (host:port)
+      #DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "<TODO>"  # Beacon API listen address (host:port)
+      #DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "<TODO>"      # Health check API listen address (host:port)
+      DOGEOS_L1_INTERFACE_CHAIN_ID: "0" # L2 chain ID (u64), defaults to Scroll Sepolia; usually overridden by genesis.json
+      DOGEOS_L1_INTERFACE_L1_CHAIN_ID: "0" # L1 chain ID (u64), default 1 (Ethereum mainnet); used by cross-chain operations
+      DOGEOS_L1_INTERFACE_SCROLL_CHAIN_ADDRESS: "<TODO>" # ScrollChain contract address (rollup batch commit contract), used for eth_call simulation, optional
+      #DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS:                                  # [DEPRECATED] L1ScrollMessenger address override; public RPC startup hard-rejects this field, use protocol_context_json instead
+      #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_ADDRESS:                                  # L1MessageQueue V1 address (used pre-V2 deployment), optional
+      #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_ADDRESS:                               # L1MessageQueue V2 address (used post-V2 deployment), optional
+      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "4725000" # First L1 block height containing real data (u64); should align with dogecoin_indexer.start_height
+      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: "<TODO>" # [REQUIRED] L2 Moat contract address; finalizes deposit accounting
+      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: "<TODO>" # [REQUIRED] L2 Messenger contract address; forwards deposits to Moat
+      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000" # L1 block gas limit simulation parameter (u64), default 30_000_000
+      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000" # L1 base fee per gas (u64, in wei), default 1_000_000_000 (1 gwei)
+      DOGEOS_L1_INTERFACE_SYSTEM_CONFIG_ADDRESS: "0x5300000000000000000000000000000000000013" # SystemConfig contract address (Scroll default)
+      DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: "0x0000000000000000000000000000000000000001" # Initial system signer address (placeholder default)
+      #DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] genesis.json file path; existence is validated and parsed at startup
+      DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true" # Whether to enable sequencer genesis controlled-init mode (true/false)
+      #DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: "<TODO>"                                # Historical event-plane artifact JSON file path, optional; serves eth_getLogs for pre-genesis blocks
+      #DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "0"                             # First post-genesis block number (u64), optional; pairs with the artifact — without artifact, queries below this value hard-fail
 
-      DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: ""                           # sequencer.L2GETH_SIGNER_ADDRESS 
-      DOGEOS_L1_INTERFACE_WITHDRAWAL_QUERY_LIMIT: "100"                       # predefined
-      DOGEOS_L1_INTERFACE_MAX_WITHDRAWAL_QUERY_LIMIT: "1000"                  # predefined
+      # -----------------------------------------------------------------------------
+      # [dogecoin_rpc] - Dogecoin JSON-RPC client
+      # -----------------------------------------------------------------------------
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "<TODO>" # [REQUIRED] Dogecoin node RPC URL (e.g. http://127.0.0.1:22555)
+      #DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER: "<TODO>" # RPC username, optional
+      #DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS: "<TODO>" # RPC password, optional
 
-      DOGEOS_L1_INTERFACE_RUN_MIGRATIONS: "true"                              # predefined
+      # -----------------------------------------------------------------------------
+      # [dogecoin_indexer] - Dogecoin indexer
+      # -----------------------------------------------------------------------------
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "0" # [REQUIRED] Index start height (u64)
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6" # [REQUIRED] Confirmation depth (u32); confirmations required to consider a block finalized
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "false" # Whether to index UTXOs (true/false)
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_WITHDRAWALS: "false" # Whether to index withdrawals (true/false)
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "false" # Whether to index deposits (true/false)
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000" # Dogecoin node poll interval (milliseconds, u64)
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: "<TODO>" # Bridge contract address (Dogecoin address), optional
+      #DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>" # Fee wallet address, optional
+      #DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # Sequencer address, optional
 
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin-testnet:44555"  # DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL
+      # -----------------------------------------------------------------------------
+      # [legacy celestia_indexer] - inert in Ethereum DA mode
+      # -----------------------------------------------------------------------------
+      # Ethereum DA sidecar fetching is not wired through a stable l1-interface
+      # environment variable yet. Keep the legacy Celestia indexer on-demand so
+      # it does not require a Celestia node in Ethereum DA deployments.
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://127.0.0.1:26658" # Legal placeholder; unused while discovery_mode is on_demand.
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: '"00000000000000000000"' # Legal placeholder; unused while discovery_mode is on_demand. Numeric-looking strings need inner TOML quotes.
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0"
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS: ""
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
+      #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Not used. Genesis blob commitment string, defaults to empty string
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "on_demand" # Keep legacy indexer inert in Ethereum DA mode.
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT: "false" # Whether to validate signer via Tendermint (true/false); only in NamespaceScan mode
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__WORKERS: "4" # Blob processing worker count (usize)
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BATCH_SIZE: "100" # Processing batch size (usize)
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "http://127.0.0.1:26657" # Legal placeholder; unused while discovery_mode is on_demand.
+      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: '"unused"' # Optional token placeholder; numeric-looking strings need inner TOML quotes.
 
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "8208200"           # DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6"                # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "false"              # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_WITHDRAWALS: "true"         # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "true"            # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000"         # predefined
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: ""                # DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS
+      # -----------------------------------------------------------------------------
+      # [replay_read] - Replay read (required for public RPC)
+      # -----------------------------------------------------------------------------
+      #DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
+      #DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
+      #DOGEOS_L1_INTERFACE_REPLAY_READ__FULFILLED_WITHDRAWALS_DB_PATH: "<TODO>"                    # Fulfilled-withdrawals database path, optional
+      DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false" # Whether to require full replay validation (true/false)
+      #DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Protocol context JSON file path; required for public RPC, provides ProtocolParams/GenesisParams/ProtocolConfigSeed
+      #DOGEOS_L1_INTERFACE_REPLAY_READ__L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT: "<TODO>"         # L2 bootstrap next-segment start block height (u64), optional; if set must be > 1
 
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://celestia-testnet-mocha:26658"  # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: ""                  # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "8200000"            # DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"                # predefined
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "15000"         # predefined
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"       # predefined
-      DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: ""              
-      DOGEOS_L1_INTERFACE_BLOB_RETENTION: "1000"
-      DOGEOS_L1_INTERFACE_BLOB_PRUNING_INTERVAL_SECS: "3600"
-      DOGEOS_L1_INTERFACE_REPAIR_CODEC_VERSIONS: "true"
+      # -----------------------------------------------------------------------------
+      # [blob_artifact_pruning] - Blob artifact lifecycle pruning
+      # -----------------------------------------------------------------------------
+      DOGEOS_L1_INTERFACE_BLOB_ARTIFACT_PRUNING__ENABLED: "false" # Whether to enable pruning (true/false)
+      #DOGEOS_L1_INTERFACE_BLOB_ARTIFACT_PRUNING__ARTIFACT_ROOT: "<TODO>"                         # Artifact storage root directory path; must be set explicitly when enabled: true (does not accept the database_url-derived default)
+
+      # -----------------------------------------------------------------------------
+      # [blob_archive] - Remote blob archive client (orthogonal to pruning)
+      # -----------------------------------------------------------------------------
+      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__URL: "<TODO>" # HTTP base URL of celestia_blob_archive_service (http/https), optional; if unset, the archive fallback is disabled
+      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__API_KEY: "<TODO>" # Archive service API key, sent as the X-Api-Key header; when set, url must also be set
+      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__TIMEOUT_SECS: "30" # Request timeout (seconds, u64); must be > 0 when url is set
 
 # External Secrets configuration for production
 externalSecrets:
@@ -66,10 +122,6 @@ externalSecrets:
           key: "dogeos/l1-interface-secret-env"
           property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
         secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-      - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
-        secretKey: "DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 

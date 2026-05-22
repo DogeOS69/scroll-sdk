@@ -1,0 +1,148 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "l1-devnet.gethName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.gethName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "l1-devnet.gethName" . }}
+  selector:
+    matchLabels:
+      app: {{ include "l1-devnet.gethName" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "l1-devnet.gethName" . }}
+        {{- include "l1-devnet.selectorLabels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: wait-for-genesis
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for execution genesis..."
+              until [ -f /genesis-out/metadata/genesis.json ]; do
+                echo "genesis.json is not ready. Waiting 5 seconds..."
+                sleep 5
+              done
+              echo "Execution genesis is ready."
+          volumeMounts:
+            - name: genesis-data
+              mountPath: /genesis-out
+
+        - name: geth-init
+          image: {{ .Values.images.geth.repository }}:{{ .Values.images.geth.tag }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              marker="/data/.l1-devnet-genesis-hash-initialized"
+              if [ ! -f "$marker" ]; then
+                echo "Initializing geth data directory..."
+                rm -rf /data/geth /data/geth.ipc /data/.l1-devnet-genesis-initialized
+                geth init --datadir /data --state.scheme=hash /genesis-out/metadata/genesis.json
+                touch "$marker"
+                echo "geth initialization complete."
+              else
+                echo "geth data directory is already initialized. Skipping initialization."
+              fi
+          volumeMounts:
+            - name: geth-data
+              mountPath: /data
+            - name: genesis-data
+              mountPath: /genesis-out
+
+      containers:
+        - name: geth
+          image: {{ .Values.images.geth.repository }}:{{ .Values.images.geth.tag }}
+          command:
+            - geth
+            - --datadir=/data
+            - --networkid={{ include "l1-devnet.networkId" . }}
+            - --http
+            - --http.addr=0.0.0.0
+            - --http.port=8545
+            - --http.api=eth,net,web3,txpool,debug,admin
+            - --http.corsdomain=*
+            - --http.vhosts=*
+            - --ws
+            - --ws.addr=0.0.0.0
+            - --ws.port=8546
+            - --ws.api=eth,net,web3
+            - --ws.origins=*
+            - --authrpc.addr=0.0.0.0
+            - --authrpc.port=8551
+            - --authrpc.vhosts=*
+            - --authrpc.jwtsecret=/jwt/jwt.hex
+            - --nodiscover
+            - --maxpeers=0
+            - --syncmode=full
+            - --gcmode=archive
+            - --state.scheme=hash
+            - --verbosity={{ .Values.geth.verbosity }}
+          ports:
+            - name: rpc
+              containerPort: 8545
+            - name: ws
+              containerPort: 8546
+            - name: authrpc
+              containerPort: 8551
+          volumeMounts:
+            - name: geth-data
+              mountPath: /data
+            - name: jwt-secret
+              mountPath: /jwt
+              readOnly: true
+          resources:
+            {{- toYaml .Values.geth.resources | nindent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: 8545
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+      volumes:
+        - name: geth-data
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.gethPvcName" . }}
+        - name: genesis-data
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.genesisPvcName" . }}
+        - name: jwt-secret
+          secret:
+            secretName: {{ include "l1-devnet.jwtSecretName" . }}
+            items:
+              - key: jwt.hex
+                path: jwt.hex
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "l1-devnet.gethName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.gethName" . }}
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "l1-devnet.gethName" . }}
+  ports:
+    - name: rpc
+      port: 8545
+      targetPort: 8545
+    - name: ws
+      port: 8546
+      targetPort: 8546
+    - name: authrpc
+      port: 8551
+      targetPort: 8551

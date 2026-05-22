@@ -1,0 +1,134 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "l1-devnet.genesisConfigName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+data:
+  values.env: |
+    export PRESET_BASE="mainnet"
+    export CHAIN_ID="{{ include "l1-devnet.chainId" . }}"
+    export DEPOSIT_CONTRACT_ADDRESS="{{ .Values.network.depositContractAddress }}"
+    export EL_AND_CL_MNEMONIC="{{ .Values.mnemonic }}"
+    export NUMBER_OF_VALIDATORS="{{ .Values.validatorCount }}"
+    export GENESIS_TIMESTAMP="{{ default (now | unixEpoch) .Values.network.genesisTimestamp }}"
+    export GENESIS_DELAY="{{ .Values.network.genesisDelay }}"
+    export SLOT_DURATION_IN_SECONDS="{{ .Values.network.secondsPerSlot }}"
+    export GENESIS_GASLIMIT="{{ .Values.network.genesisGasLimit }}"
+    export GENESIS_FORK_VERSION="{{ .Values.network.forkVersions.genesis }}"
+    export ALTAIR_FORK_VERSION="{{ .Values.network.forkVersions.altair }}"
+    export BELLATRIX_FORK_VERSION="{{ .Values.network.forkVersions.bellatrix }}"
+    export CAPELLA_FORK_VERSION="{{ .Values.network.forkVersions.capella }}"
+    export DENEB_FORK_VERSION="{{ .Values.network.forkVersions.deneb }}"
+    export ELECTRA_FORK_VERSION="{{ .Values.network.forkVersions.electra }}"
+    export ELECTRA_FORK_EPOCH="{{ .Values.network.electraForkEpoch }}"
+    export FULU_FORK_VERSION="{{ .Values.network.forkVersions.fulu }}"
+    export FULU_FORK_EPOCH="{{ .Values.network.fuluForkEpoch }}"
+    export EIP7594_FORK_VERSION="{{ .Values.network.forkVersions.eip7594 }}"
+    export EIP7594_FORK_EPOCH="{{ .Values.network.eip7594ForkEpoch }}"
+    export ETH1_FOLLOW_DISTANCE="{{ .Values.network.eth1FollowDistance }}"
+    export MIN_VALIDATOR_WITHDRAWABILITY_DELAY="{{ .Values.network.minValidatorWithdrawabilityDelay }}"
+    export SHARD_COMMITTEE_PERIOD="{{ .Values.network.shardCommitteePeriod }}"
+    export MAX_BLOBS_PER_BLOCK="{{ .Values.network.maxBlobsPerBlock }}"
+    export MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT="{{ .Values.network.maxPerEpochActivationChurnLimit }}"
+    export CHURN_LIMIT_QUOTIENT="{{ .Values.network.churnLimitQuotient }}"
+    export EJECTION_BALANCE="{{ .Values.network.ejectionBalance }}"
+    export SAMPLES_PER_SLOT="{{ .Values.network.samplesPerSlot }}"
+    export CUSTODY_REQUIREMENT="{{ .Values.network.custodyRequirement }}"
+    export DATA_COLUMN_SIDECAR_SUBNET_COUNT="{{ .Values.network.dataColumnSidecarSubnetCount }}"
+    export EL_PREMINE_ADDRS='{"{{ .Values.prefundedAddress }}":{"balance":"{{ .Values.prefundedBalanceEth }}ETH","secretKey":"{{ .Values.prefundedPrivateKey }}"}}'
+    export ADDITIONAL_PRELOADED_CONTRACTS='{}'
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "l1-devnet.genesisJobName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "l1-devnet.fullname" . }}-genesis-generator
+    {{- include "l1-devnet.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: {{ include "l1-devnet.fullname" . }}-genesis-generator
+        {{- include "l1-devnet.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: prepare-config
+          image: {{ .Values.images.genesisGenerator.repository }}:{{ .Values.images.genesisGenerator.tag }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              cp -R /config/. /work-config/
+              cp /cfg/values.env /work-config/values.env
+          volumeMounts:
+            - name: cfg
+              mountPath: /cfg
+            - name: work-config
+              mountPath: /work-config
+      containers:
+        - name: genesis-generator
+          image: {{ .Values.images.genesisGenerator.repository }}:{{ .Values.images.genesisGenerator.tag }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              if [ -f /genesis-out/metadata/genesis.json ] && [ -f /genesis-out/metadata/genesis.ssz ] && [ -d /genesis-out/validator/keys ]; then
+                echo "Genesis and validator keys already exist. Skipping generation."
+                exit 0
+              fi
+
+              echo "Generating execution and consensus genesis files..."
+              /work/entrypoint.sh all
+
+              echo "Writing deterministic JWT secret..."
+              mkdir -p /genesis-out/jwt
+              cp /jwt/jwt.hex /genesis-out/jwt/jwtsecret
+              if ! grep -Eq '^[0-9]+$' /genesis-out/metadata/deposit_contract_block.txt; then
+                echo "0" > /genesis-out/metadata/deposit_contract_block.txt
+              fi
+
+              echo "Generating Lighthouse validator keystores..."
+              rm -rf /genesis-out/validator
+              eth2-val-tools keystores \
+                --insecure \
+                --source-mnemonic "{{ .Values.mnemonic }}" \
+                --source-min 0 \
+                --source-max {{ .Values.validatorCount }} \
+                --out-loc /genesis-out/validator
+
+              echo "Generated files:"
+              find /genesis-out -maxdepth 3 -type f | sort
+              echo "Genesis generation complete."
+          volumeMounts:
+            - name: work-config
+              mountPath: /config
+            - name: genesis-out
+              mountPath: /data
+            - name: genesis-out
+              mountPath: /genesis-out
+            - name: jwt-secret
+              mountPath: /jwt
+              readOnly: true
+      volumes:
+        - name: cfg
+          configMap:
+            name: {{ include "l1-devnet.genesisConfigName" . }}
+        - name: work-config
+          emptyDir: {}
+        - name: genesis-out
+          persistentVolumeClaim:
+            claimName: {{ include "l1-devnet.genesisPvcName" . }}
+        - name: jwt-secret
+          secret:
+            secretName: {{ include "l1-devnet.jwtSecretName" . }}

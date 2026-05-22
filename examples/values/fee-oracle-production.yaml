@@ -2,8 +2,8 @@
 # Production environment overrides
 image:
   repository: dogeos69/fee-oracle
-  pullPolicy: Always
-  tag: 0.2.0-rc.6
+  pullPolicy: IfNotPresent
+  tag: latest
 
 # Direct environment variables
 env:
@@ -28,8 +28,10 @@ configMaps:
       DOGEOS_FEE_ORACLE_DOGECOIN__MEMPOOL_SAMPLE_SIZE: "1000"                      # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__BASE_FEE_RATE: "1000000"                         # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__EMPTY_MEMPOOL_FEE_RATE: "1500000"                # predefined
+      DOGEOS_FEE_ORACLE_CELESTIA__ENABLED: "false"                                 # legacy Celestia DA config kept for startup validation only
+      DOGEOS_FEE_ORACLE_CELESTIA__GRPC_URL: "http://unused-celestia-grpc:9090"      # legacy Celestia DA config kept for startup validation only
       DOGEOS_FEE_ORACLE_CELESTIA__POLL_INTERVAL: "60"                              # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID
+      DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # legacy Celestia DA value; unused in Ethereum DA mode
       DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000"                   # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000"                # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000"               # predefined
@@ -48,7 +50,6 @@ configMaps:
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__REQUEST_TIMEOUT: "30"                        # predefined
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__MAX_RETRIES: "3"                             # predefined
       DOGEOS_FEE_ORACLE_DEPLOYMENT__DRY_RUN: "false"                               # predefined
-
 # External Secrets configuration for production
 externalSecrets:
   fee-oracle-secret-env:
@@ -66,10 +67,6 @@ externalSecrets:
           key: "dogeos/fee-oracle-secret-env"
           property: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
         secretKey: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-      - remoteRef:
-          key: "dogeos/fee-oracle-secret-env"
-          property: "DOGEOS_FEE_ORACLE_CELESTIA__TENDERMINT_RPC_URL"
-        secretKey: "DOGEOS_FEE_ORACLE_CELESTIA__RPC_URL"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 

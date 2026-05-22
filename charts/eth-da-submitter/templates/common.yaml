@@ -13,4 +13,5 @@ global:
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}
 ---
+{{/* Explicitly include the template to render ExternalSecret resources */}}
 {{- include "scrolllib.externalsecrets.tpl" . }}

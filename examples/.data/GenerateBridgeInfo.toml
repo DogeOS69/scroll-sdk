@@ -1,21 +1,33 @@
+# DogeOS bridge signer policy.
+# Loaded by generate-bridge-info-cli from GenerateBridgeInfo.toml.
+# Top-level config lives under [default] because the loader treats top-level
+# tables as Figment profiles.
+
 [default]
 network = "testnet"
-tee_pubkey = "000000000000000000000000000000000000000000000000000000000000000000"
 timelock = 100
-namespace_id = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# TEE single-signer pubkey, compressed secp256k1 public key hex.
+tee_pubkey = "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+
+# 20-byte bridge namespace id. For production, compute this from the genesis
+# sequencer outpoint with compute-bridge-namespace-cli and replace this zero
+# placeholder before generating bridge.json.
+namespace_id = [
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]
 
 [default.attestation]
 threshold = 2
 pubkeys = [
-  "045ae6449a5fe09488a5af166e728c8d46eeb813c09d1e0d6e2988f3403cfe4de5026b59903c110a35f57ba268ffcd2b9018ea11f21175789de7ab3db8da22a792",
-  "04a402375ab85a045d9a0c20aa82548054f94bd739236da1f5bce84d1b9b1d88be2a84ce5ad5e190263b1f9f04c700cdf4dff2ac53acafed077bcb12fd2b76dfd5",
-  "042a3e5a567de4bd5ad5f720174d76b56083bd1963d434300ab5a79b3b789960341cc677bc4c2afc1a10fe821f83e29b775e73965a14811aa21322ebc38126c39c",
+  "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+  "03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556",
 ]
 
 [default.recovery]
 threshold = 2
 pubkeys = [
-  "028a84dea35f7a6d4b787e51ca0c6053610f4d2fd6812e069d172ffdb3e153fe20",
-  "034bae661941eea943b1044957f7b8194f0c39c212bd5c53ac687fd220e0a8b7a2",
-  "035b04a25374d635245875e2863c60ab86acc025d4d9ed55202290fafecc7a8e53",
+  "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+  "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
 ]

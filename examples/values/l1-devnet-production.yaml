@@ -1,46 +1,44 @@
+---
 global:
   fullnameOverride: l1-devnet
 
-envFrom:
-  - configMapRef:
-      name: l1-devnet-env
+network:
+  chainId: 32382
+  networkId: 32382
 
-persistence:
-  env:
-    enabled: true
-    type: configMap
-    mountPath: /config/
-    name: l1-devnet-env
-  data:
-    enabled: true
-    accessMode: "ReadWriteOnce"
-    size: "10Gi"
-    mountPath: "/data"
-configMaps:
-  env:
-    enabled: true
-    data:
-      CHAIN_ID: ""
+storageClass: local-path
 
-image:
-  repository: ghcr.io/foundry-rs/foundry
-  tag: v1.1.0
-  pullPolicy: IfNotPresent
+genesis:
+  storage: 2Gi
 
-securityContext:
-  runAsUser: 0
-  fsGroup: 0
-resources:
-  limits:
-    memory: "2Gi"
-    cpu: "1000m"
-  requests:
-    memory: "1Gi"
-    cpu: "500m"
-command:
-  - bash
-  - -c
-  - 'mkdir -p /data && echo "{number: 0x0}" > /data/genesis.json && anvil --host 0.0.0.0 --port 8545 --chain-id ${CHAIN_ID} --state /data/state.json --state-interval 60 --slots-in-an-epoch 3 --hardfork cancun'
+geth:
+  storage: 20Gi
+  resources:
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+
+lighthouse:
+  storage: 20Gi
+  resources:
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+
+validator:
+  resources:
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
 
 ingress:
   main:

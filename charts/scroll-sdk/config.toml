@@ -1,9 +1,7 @@
 [general]
 
-DA_PUBLISHER_ENDPOINT = "http://da-publisher:8545"
 L1_RPC_ENDPOINT = "http://l1-interface:8545"
 L1_RPC_ENDPOINT_WEBSOCKET = "ws://l1-devnet:8546"
-BEACON_RPC_ENDPOINT = "http://l1-interface:5052"
 L2_RPC_ENDPOINT = "http://l2-rpc:8545"
 
 CHAIN_NAME_L1 = "DOGE"
@@ -15,6 +13,13 @@ L1_CONTRACT_DEPLOYMENT_BLOCK = 0
 VERIFIER_DIGEST_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
 VERIFIER_DIGEST_2 = "0x0000000000000000000000000000000000000000000000000000000000000002"
 
+[ethereumDa]
+
+chain = "devnet"
+chainId = 32382
+submitterRpcUrl = "http://l1-devnet:8545"
+beaconRpcUrl = "http://l1-devnet-lighthouse:5052"
+minFinality = "safe"
 
 [accounts]
 

@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/tso-service
-  pullPolicy: Always
-  tag: 0.2.0-rc.6
+  pullPolicy: IfNotPresent
+  tag: latest
 
 env:
   - name: PORT
@@ -15,15 +15,12 @@ env:
 
 ingress:
   main:
-    ingressClassName: nginx
+    ingressClassName: "nginx"
     hosts:
-      - host: tso.scrollsdk
+      - host: ""
         paths:
           - path: /
             pathType: Prefix
-    tls:
-      - secretName: tso-tls
-        hosts:
 
 resources:
   requests:

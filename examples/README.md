@@ -13,7 +13,7 @@ For additional, more robust helper scripts, checkout the [scroll-sdk-cli](https:
 1. `l2-generate-txs.sh`: Generates transactions on the L2 network to produce more blocks.
 2. `l1-generate-txs.sh`: Generates transactions on the L1 network to produce more blocks.
 3. `clear-stuck-txs.sh`: Replaces transactions stuck in the mempool, useful when CCC gets overloaded.
-4. `anvil-fund-accounts.sh`: Funds default L1 accounts when using an Anvil devnet.
+4. `anvil-fund-accounts.sh`: Funds default L1 accounts from the prefunded local L1 devnet account.
 
 ## Dependencies
 
