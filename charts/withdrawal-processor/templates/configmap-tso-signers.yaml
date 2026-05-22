@@ -12,5 +12,8 @@ data:
     network = "{{ .network }}"
     uri = "{{ .uri }}"
     role = "{{ .role }}"
+{{- with .publicKeyOverride }}
+    public_key_override = "{{ . }}"
 {{- end }}
-{{- end }} 
+{{- end }}
+{{- end }}

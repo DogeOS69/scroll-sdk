@@ -474,23 +474,21 @@ externalSecrets:
 # which is then mounted as /app/config/signers.toml
 tsoSigners:
   - network: "testnet"
-    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
-  - network: "testnet"
-    uri: "https://hjyjdjvxyw.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
-  - network: "testnet"
-    uri: "https://3mqhpxstvh.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if signers are on the localhost
-    role: "Correctness"
+    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Tee signer is local
+    role: "Tee"
+    publicKeyOverride: "<TODO_TEE_SIGNER_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-0:3000"
     role: "Attestation"
+    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_0_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-1:3000"
     role: "Attestation"
+    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_1_PUBLIC_KEY>"
   - network: "testnet"
     uri: "http://cubesigner-signer-2:3000"
     role: "Attestation"
+    publicKeyOverride: "<TODO_ATTESTATION_SIGNER_2_PUBLIC_KEY>"
 
 # Persistence Configuration
 persistence:
@@ -525,13 +523,15 @@ defaultProbes:
 # has the correct TSO signer configurations for 'testnet', e.g.:
 # [[tso_signers]]
 # network = "testnet"
-# uri = "http://127.0.0.1:4001" # or http://cubesigner-signer-1:3000 if in K8s
-# role = "Correctness"
+# uri = "http://127.0.0.1:4001" # or http://tee-signer:3000 if in K8s
+# role = "Tee"
+# public_key_override = "02..."
 #
 # [[tso_signers]]
 # network = "testnet"
 # uri = "http://127.0.0.1:4002" # or http://cubesigner-signer-2:3000 if in K8s
 # role = "Attestation"
+# public_key_override = "03..."
 
 # As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
 # Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
@@ -539,13 +539,15 @@ defaultProbes:
 # Example:
 # [[tso_signers]]
 # network = "mainnet"
-# uri = "http://mainnet-cubesigner-signer-1:3000" # Adjust URI for your prod signer
-# role = "Correctness"
+# uri = "http://mainnet-tee-signer:3000" # Adjust URI for your prod signer
+# role = "Tee"
+# public_key_override = "02..."
 #
 # [[tso_signers]]
 # network = "mainnet"
 # uri = "http://mainnet-cubesigner-signer-2:3000" # Adjust URI for your prod signer
 # role = "Attestation"
+# public_key_override = "03..."
 #
 # Note on Database: A 1Gi Persistent Volume Claim (data) is configured and enabled above.
 # However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.

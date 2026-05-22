@@ -103,15 +103,19 @@ serviceMonitor:
 # Example:
 # tsoSigners:
 #   - network: "testnet"
-#     uri: "http://your-correctness-signer-service.namespace.svc.cluster.local:3000"
-#     role: "Correctness"
+#     uri: "http://your-tee-signer-service.namespace.svc.cluster.local:3000"
+#     role: "Tee"
+#     publicKeyOverride: "02..." # Optional; rendered as public_key_override in signers.toml
 #   - network: "testnet"
 #     uri: "http://your-attestation-signer-service.namespace.svc.cluster.local:3000"
 #     role: "Attestation"
+#     publicKeyOverride: "03..." # Optional; rendered as public_key_override in signers.toml
 tsoSigners: []
 # - network: "testnet"
 #   uri: "http://127.0.0.1:4001" # Example for local, replace with K8s service names for actual deployment
-#   role: "Correctness"
+#   role: "Tee"
+#   publicKeyOverride: "02..."
 # - network: "testnet"
 #   uri: "http://127.0.0.1:4002"
 #   role: "Attestation"
+#   publicKeyOverride: "03..."
