@@ -2,12 +2,12 @@ NAMESPACE ?= default
 
 .PHONY: prepare install-dogecoin install-scroll-core \
 	install-l1-devnet install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
-	install-rollup-explorer-backend install-fee-oracle \
+	install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin delete-l1-devnet delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
-	delete-eth-da-submitter delete-fee-oracle delete-rollup-explorer-backend delete-cubesigner-signers \
+	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
 	delete-testnet-activity-helper
 
 prepare:
@@ -100,11 +100,6 @@ install-eth-da-submitter:
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
-install-rollup-explorer-backend:
-	helm upgrade -i rollup-explorer-backend oci://ghcr.io/dogeos69/scroll-sdk/helm/rollup-explorer-backend -n $(NAMESPACE) \
-		--version=0.1.3-dogeos \
-		--values values/rollup-explorer-backend-production.yaml
-
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
 		--version=0.0.8 \
@@ -180,7 +175,6 @@ install-all:
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) install-eth-da-submitter
-	$(MAKE) install-rollup-explorer-backend
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
@@ -199,7 +193,6 @@ delete-all:
 	helm delete -n $(NAMESPACE) fee-oracle || true
 	$(MAKE) delete-l2-bootnode || true
 	$(MAKE) delete-l2-rpc || true
-	$(MAKE) delete-rollup-explorer-backend || true
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
@@ -246,9 +239,6 @@ delete-eth-da-submitter:
 
 delete-fee-oracle:
 	helm delete -n $(NAMESPACE) fee-oracle
-
-delete-rollup-explorer-backend:
-	helm delete -n $(NAMESPACE) rollup-explorer-backend || true
 
 delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
