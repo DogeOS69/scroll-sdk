@@ -114,8 +114,8 @@ configMaps:
       DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
       DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite"
       DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json"
-      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
-      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
+      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true"  # Whether to enable replay read (true/false); must be true for public RPC startup
+      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite"  # Replay SQLite database file path; required for public RPC and the file must exist
 
 envFrom:
   - secretRef:
