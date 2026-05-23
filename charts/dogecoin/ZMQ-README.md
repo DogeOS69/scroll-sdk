@@ -48,7 +48,7 @@ To use ZMQ with Blockbook, configure the `messageQueueBinding` in your blockbook
 
 ```yaml
 blockbook:
-  messageQueueBinding: "tcp://dogecoin-testnet:28332"
+  messageQueueBinding: "tcp://dogecoin:28332"
 ```
 
 ## Benefits
@@ -69,7 +69,7 @@ import json
 # Connect to ZMQ endpoint
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
-socket.connect("tcp://dogecoin-testnet:28332")
+socket.connect("tcp://dogecoin:28332")
 socket.setsockopt(zmq.SUBSCRIBE, b"rawblock")
 
 # Listen for messages

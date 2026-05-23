@@ -1,6 +1,6 @@
 # dogecoin
 
-![Version: 0.1.10](https://img.shields.io/badge/Version-0.1.10-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
+![Version: 0.1.12](https://img.shields.io/badge/Version-0.1.12-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
 
 Deploy a Dogecoin FullNode in Kubernetes
 
@@ -35,6 +35,7 @@ Deploy a Dogecoin FullNode in Kubernetes
 | dogecoinConf.zmqpubrawblock | string | `"tcp://0.0.0.0:28332"` |  |
 | dogecoinConf.zmqpubrawtx | string | `"tcp://0.0.0.0:28333"` |  |
 | externalSecrets | object | `{}` |  |
+| fullnameOverride | string | `"dogecoin"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/dogecoin"` |  |
 | ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
@@ -45,6 +46,7 @@ Deploy a Dogecoin FullNode in Kubernetes
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.tls[0].hosts[0] | string | `"dogecoin.example.com"` |  |
 | ingress.tls[0].secretName | string | `"dogecoin-tls"` |  |
+| nameOverride | string | `"dogecoin"` |  |
 | nodeSelector | object | `{}` |  |
 | replicaCount | int | `1` |  |
 | rpcPassword.secretKey | string | `"password"` |  |
@@ -56,6 +58,7 @@ Deploy a Dogecoin FullNode in Kubernetes
 | service.zmqHashTxPort | int | `28334` |  |
 | service.zmqRawBlockPort | int | `28332` |  |
 | service.zmqRawTxPort | int | `28333` |  |
+| storage.existingClaim | string | `""` |  |
 | storage.retainPvcOnUninstall | bool | `true` |  |
 | storage.size | string | `"50Gi"` |  |
 | storage.storageClassName | string | `""` |  |

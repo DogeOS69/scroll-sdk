@@ -21,7 +21,7 @@ configMaps:
       DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "3"                                     # predefined
       DOGEOS_FEE_ORACLE_L2__MAX_GAS_PRICE: "1000000000000"                         # predefined
       DOGEOS_FEE_ORACLE_L2__PRIORITY_FEE: "1000000000"                             # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__RPC_URL: "http://dogecoin-testnet:44555"         # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL
+      DOGEOS_FEE_ORACLE_DOGECOIN__RPC_URL: "http://dogecoin:44555"                 # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL
       DOGEOS_FEE_ORACLE_DOGECOIN__NETWORK_STR: "testnet"                           # DOGEOS_L1_INTERFACE_NETWORK_STR
       DOGEOS_FEE_ORACLE_DOGECOIN__POLL_INTERVAL: "60"                              # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__FEE_LOOKBACK_BLOCKS: "10"                        # predefined

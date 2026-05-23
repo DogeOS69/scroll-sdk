@@ -1,8 +1,8 @@
-# templates/pvc.yaml
+{{- if not .Values.storage.existingClaim }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "dogecoin.fullname" . }}-data
+  name: {{ .Release.Name }}-data
   namespace: {{ .Release.Namespace }}
   {{- if .Values.storage.retainPvcOnUninstall }}
   annotations:
@@ -17,3 +17,4 @@ spec:
   {{- if .Values.storage.storageClassName }}
   storageClassName: {{ .Values.storage.storageClassName }}
   {{- end }}
+{{- end }}
