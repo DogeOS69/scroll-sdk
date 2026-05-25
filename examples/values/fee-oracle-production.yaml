@@ -3,7 +3,7 @@
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: newda
 
 # Direct environment variables
 env:

@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/tso-service
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: newda
 
 env:
   - name: PORT

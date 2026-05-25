@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: newda
 
 env:
   - name: RUST_LOG
