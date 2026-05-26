@@ -25,6 +25,9 @@ blockscout-stack:
       SCROLL_L2_CURIE_UPGRADE_BLOCK: 0
       ECTO_USE_SSL: false
       ETHEREUM_JSONRPC_HTTP_INSECURE: true
+      MICROSERVICE_SC_VERIFIER_ENABLED: true
+      MICROSERVICE_SC_VERIFIER_URL: http://blockscout-sc-verifier:8080
+      MICROSERVICE_SC_VERIFIER_TYPE: sc_verifier
       CHAIN_SPEC_PATH: /app/genesis/genesis.json
       # Not sure what these values are for
       #      SCROLL_L1_SCALAR_INIT:

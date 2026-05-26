@@ -1,6 +1,6 @@
 # blockscout
 
-![Version: 0.1.8-dogeos](https://img.shields.io/badge/Version-0.1.8--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.9-dogeos](https://img.shields.io/badge/Version-0.1.9--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout scroll helm charts
 
@@ -35,6 +35,9 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.blockscout.env.INDEXER_SCROLL_L1_ETH_GET_LOGS_RANGE_SIZE | int | `500` |  |
 | blockscout-stack.blockscout.env.INDEXER_SCROLL_L2_ETH_GET_LOGS_RANGE_SIZE | int | `500` |  |
 | blockscout-stack.blockscout.env.INDEXER_SCROLL_L2_MESSENGER_START_BLOCK | int | `0` |  |
+| blockscout-stack.blockscout.env.MICROSERVICE_SC_VERIFIER_ENABLED | bool | `true` |  |
+| blockscout-stack.blockscout.env.MICROSERVICE_SC_VERIFIER_TYPE | string | `"sc_verifier"` |  |
+| blockscout-stack.blockscout.env.MICROSERVICE_SC_VERIFIER_URL | string | `"http://blockscout-sc-verifier:8080"` |  |
 | blockscout-stack.blockscout.env.SCROLL_L2_CURIE_UPGRADE_BLOCK | int | `0` |  |
 | blockscout-stack.blockscout.envFrom[0].configMapRef.name | string | `"blockscout-env"` |  |
 | blockscout-stack.blockscout.image.pullPolicy | string | `"Always"` |  |
