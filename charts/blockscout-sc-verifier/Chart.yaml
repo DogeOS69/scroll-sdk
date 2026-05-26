@@ -2,7 +2,7 @@
 apiVersion: v2
 description: blockscout-sc-verifier helm charts
 name: blockscout-sc-verifier
-version: 0.1.5-dogeos
+version: 0.1.6-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:

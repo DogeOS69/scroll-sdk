@@ -1,6 +1,6 @@
 # blockscout-sc-verifier
 
-![Version: 0.1.5-dogeos](https://img.shields.io/badge/Version-0.1.5--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout-sc-verifier helm charts
 
@@ -67,14 +67,14 @@ Kubernetes: `>=1.22.0-0`
 | env[7].name | string | `"SMART_CONTRACT_VERIFIER__SOLIDITY__REFRESH_VERSIONS_SCHEDULE"` |  |
 | env[7].value | string | `"0 0 * * * * *"` |  |
 | env[8].name | string | `"SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__LIST__LIST_URL"` |  |
-| env[8].value | string | `"https://solc-bin.ethereum.org/linux-amd64/list.json"` |  |
+| env[8].value | string | `"https://binaries.soliditylang.org/linux-amd64/list.json"` |  |
 | env[9].name | string | `"SMART_CONTRACT_VERIFIER__VYPER__ENABLED"` |  |
 | env[9].value | bool | `true` |  |
 | global.fullnameOverride | string | `"blockscout-sc-verifier"` |  |
 | global.nameOverride | string | `"blockscout-sc-verifier"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/blockscout/smart-contract-verifier"` |  |
-| image.tag | string | `"v1.9.3"` |  |
+| image.tag | string | `"v1.10.3"` |  |
 | probes.liveness.enabled | bool | `false` |  |
 | probes.readiness.enabled | bool | `false` |  |
 | probes.startup.enabled | bool | `false` |  |
