@@ -154,62 +154,62 @@ env:
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE # Required, u64, eth_getLogs batch size (>=1)
     value: "10000"
 
-  # ===========================================================================
-  # [celestia_indexer]
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL # Required, Celestia DA node RPC URL
-    value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL # Optional; required for TxSearch mode or signer validation
+  # # ===========================================================================
+  # # [celestia_indexer]
+  # # ===========================================================================
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL # Required, Celestia DA node RPC URL
   #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE # Required, Celestia namespace (hex string, non-empty)
-    value: "<TODO>"
+  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL # Optional; required for TxSearch mode or signer validation
+  # #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK # Required, u64, Celestia scan start height
-    value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS # Optional, expected blob signer address
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE # Required, Celestia namespace (hex string, non-empty)
   #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
-    value: "6"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
-    value: "60000"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS # Required, bool; must be true when advance_l2_builder_v2 or protocol_context_json is enabled
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; Ethereum DA mode requires on_demand
-    value: "on_demand"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT # Optional, bool, whether to validate signer via Tendermint; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC # Optional, bool, whether to enable fulfillment-driven historical sync optimization; default true (differs from l1_interface)
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP # Optional, bool, whether to repair gaps at startup (avoid blocking startup); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__AUTO_GAP_REPAIR_ENABLED # Optional, bool, runtime automatic gap repair (enabled by default for continuous-running scenarios); default true
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD # Optional, i64, gap detection threshold (>=1); default 100
-    value: "100"
-
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED # Optional, i64, minimum orphan count to trigger gap repair (>=1); default 5
-    value: "5"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL # Optional, blob_get_all fallback endpoint URL
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK # Required, u64, Celestia scan start height
   #   value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token; numeric-looking tokens need inner TOML quotes, e.g. '"123456"'
-  #   value: "<TODO>"
+  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS # Optional, expected blob signer address
+  # #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION # Optional, blob artifact compression enum: none/zstd; default none
-    value: "zstd"
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
+  #   value: "6"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
+  #   value: "60000"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS # Required, bool; must be true when advance_l2_builder_v2 or protocol_context_json is enabled
+  #   value: "true"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; Ethereum DA mode requires on_demand
+  #   value: "on_demand"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT # Optional, bool, whether to validate signer via Tendermint; default false
+  #   value: "false"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC # Optional, bool, whether to enable fulfillment-driven historical sync optimization; default true (differs from l1_interface)
+  #   value: "true"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP # Optional, bool, whether to repair gaps at startup (avoid blocking startup); default false
+  #   value: "false"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__AUTO_GAP_REPAIR_ENABLED # Optional, bool, runtime automatic gap repair (enabled by default for continuous-running scenarios); default true
+  #   value: "true"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD # Optional, i64, gap detection threshold (>=1); default 100
+  #   value: "100"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED # Optional, i64, minimum orphan count to trigger gap repair (>=1); default 5
+  #   value: "5"
+
+  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL # Optional, blob_get_all fallback endpoint URL
+  # #   value: "<TODO>"
+
+  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token; numeric-looking tokens need inner TOML quotes, e.g. '"123456"'
+  # #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION # Optional, blob artifact compression enum: none/zstd; default none
+  #   value: "zstd"
 
   # ===========================================================================
   # [ethereum_da] - required when advance_l2_builder_v2 is enabled
