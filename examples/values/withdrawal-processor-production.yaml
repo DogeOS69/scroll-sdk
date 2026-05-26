@@ -15,8 +15,8 @@ env:
     value: "1000000"
   - name: DOGEOS_WITHDRAWAL_DATABASE_URL # Required, primary database connection string (PostgreSQL/SQLite)
     value: "sqlite:///app/data/withdrawal_processor.db"
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL
-    value: "http://dogecoin:44555"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL; service name dogecoin is fixed, generator fills port
+    value: "http://dogecoin:<TODO_PORT>"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER # Required, Dogecoin RPC username
   #   value: "<TODO>"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS # Required, Dogecoin RPC password
@@ -136,8 +136,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL # Required, DogeOS (L2) RPC URL
     value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK # Required, u64, indexer start block
-    value: "0"
+  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK # Required, u64, L2 event scan start block generated per deployment
+    value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
     value: "12"
@@ -241,8 +241,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__CURSOR_ID # Optional, indexer cursor id; default eth_da_inbox
     value: "eth_da_inbox"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__START_BLOCK # Required for initial sync, Ethereum inbox scan start block
-    value: "0"
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__START_BLOCK # Required for initial sync, Ethereum inbox scan start block generated per deployment
+    value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__INGEST_DEPTH # Optional, pending ingest depth; default 1
     value: "1"
@@ -473,16 +473,16 @@ externalSecrets:
 # This will be used by the Helm template to create a ConfigMap
 # which is then mounted as /app/config/signers.toml
 tsoSigners:
-  - network: "testnet"
-    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Tee signer is local
+  - network: "<TODO>"
+    uri: "<TODO>" # External Tee signer URL generated per deployment
     role: "Tee"
-  - network: "testnet"
+  - network: "<TODO>"
     uri: "http://cubesigner-signer-0:3000"
     role: "Attestation"
-  - network: "testnet"
+  - network: "<TODO>"
     uri: "http://cubesigner-signer-1:3000"
     role: "Attestation"
-  - network: "testnet"
+  - network: "<TODO>"
     uri: "http://cubesigner-signer-2:3000"
     role: "Attestation"
 
@@ -545,7 +545,6 @@ defaultProbes:
 # role = "Attestation"
 # public_key_override = "03..."
 #
-# Note on Database: A 1Gi Persistent Volume Claim (data) is configured and enabled above.
-# However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.
-# If you intend to use SQLite with this PVC in production, update the
-# DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'.
+# Note on Database: This production file uses SQLite on the /app/data PVC by default:
+# DOGEOS_WITHDRAWAL_DATABASE_URL=sqlite:///app/data/withdrawal_processor.db.
+# If you switch to PostgreSQL, update DOGEOS_WITHDRAWAL_DATABASE_URL and persistence accordingly.
