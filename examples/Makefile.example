@@ -124,12 +124,13 @@ install-withdrawal-processor:
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:
-	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
-		--values values/blockscout-production.yaml
-
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-		--version=0.1.6-dogeos
+		--version=0.1.6-dogeos \
+		--wait
+
+	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
+		--version=0.1.9-dogeos \
+		--values values/blockscout-production.yaml
 
 install-preinstalls:
 	helm upgrade -i preinstalls oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls -n $(NAMESPACE) \
