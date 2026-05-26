@@ -30,7 +30,7 @@ configMaps:
       #DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS:                                  # [DEPRECATED] L1ScrollMessenger address override; public RPC startup hard-rejects this field, use protocol_context_json instead
       #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_ADDRESS:                                  # L1MessageQueue V1 address (used pre-V2 deployment), optional
       #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_ADDRESS:                               # L1MessageQueue V2 address (used post-V2 deployment), optional
-      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "4725000" # First L1 block height containing real data (u64); should align with dogecoin_indexer.start_height
+      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "<TODO>" # First L1 block height containing real data (u64); should align with dogecoin_indexer.start_height
       DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: "<TODO>" # [REQUIRED] L2 Moat contract address; finalizes deposit accounting
       DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: "<TODO>" # [REQUIRED] L2 Messenger contract address; forwards deposits to Moat
       DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000" # L1 block gas limit simulation parameter (u64), default 30_000_000

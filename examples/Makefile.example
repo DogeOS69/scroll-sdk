@@ -8,7 +8,8 @@ NAMESPACE ?= default
 	delete-all delete-dogecoin delete-l1-devnet delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
-	delete-testnet-activity-helper
+	delete-l1-interface delete-l2-sequencer delete-l2-bootnode delete-l2-rpc \
+	delete-testnet-activity-helper delete-coordinator
 
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
@@ -184,25 +185,23 @@ install-all:
 delete-all:
 	helm delete -n $(NAMESPACE) scroll-common || true
 	$(MAKE) delete-l2-sequencer  || true
-	helm delete -n $(NAMESPACE) frontends || true
-	helm delete -n $(NAMESPACE) fee-oracle || true
+	$(MAKE) delete-frontends || true
+	$(MAKE) delete-fee-oracle || true
 	$(MAKE) delete-l2-bootnode || true
 	$(MAKE) delete-l2-rpc || true
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
 	helm delete -n $(NAMESPACE) grafana-alloy || true
-	helm delete -n $(NAMESPACE) blockscout || true
-	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
+	$(MAKE) delete-blockscout || true
 	helm delete -n $(NAMESPACE) preinstalls || true
-	helm delete -n $(NAMESPACE) withdrawal-processor || true
-	helm delete -n $(NAMESPACE) tso-service || true
+	$(MAKE) delete-withdrawal-processor || true
+	$(MAKE) delete-tso || true
 	$(MAKE) delete-cubesigner-signers || true
 	$(MAKE) delete-eth-da-submitter || true
-	helm delete -n $(NAMESPACE) l1-interface || true
+	$(MAKE) delete-l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
-	helm delete -n $(NAMESPACE) coordinator-api || true
-	helm delete -n $(NAMESPACE) coordinator-cron || true
+	$(MAKE) delete-coordinator || true
 
 delete-l1-interface:
 	helm delete -n $(NAMESPACE) l1-interface
@@ -242,6 +241,10 @@ delete-cubesigner-signers:
 
 delete-testnet-activity-helper:
 	helm delete -n $(NAMESPACE) testnet-activity-helper
+
+delete-coordinator:
+	helm delete -n $(NAMESPACE) coordinator-api || true
+	helm delete -n $(NAMESPACE) coordinator-cron || true
 
 delete-l2-bootnode:
 	helm delete -n $(NAMESPACE) l2-bootnode-0 || true
