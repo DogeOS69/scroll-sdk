@@ -43,10 +43,6 @@ externalSecrets:
         secretKey: L2_GAS_ORACLE_SENDER_PRIVATE_KEY
       - remoteRef:
           key: scroll/contracts-secret-env
-          property: ROLLUP_EXPLORER_DB_CONNECTION_STRING
-        secretKey: ROLLUP_EXPLORER_DB_CONNECTION_STRING
-      - remoteRef:
-          key: scroll/contracts-secret-env
           property: COORDINATOR_JWT_SECRET_KEY
         secretKey: COORDINATOR_JWT_SECRET_KEY
     refreshInterval: 2m
