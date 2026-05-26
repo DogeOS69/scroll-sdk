@@ -169,7 +169,7 @@ install-all:
 	$(MAKE) install-scroll-core
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
-	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
+	scrollsdk helper fund-accounts -l 2 -f 0.2
 	$(MAKE) install-eth-da-submitter
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers

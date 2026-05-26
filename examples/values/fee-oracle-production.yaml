@@ -10,6 +10,23 @@ env:
   - name: "RUST_LOG"
     value: "info"     # info
 
+probes:
+  liveness:
+    spec:
+      timeoutSeconds: 15
+  readiness:
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      timeoutSeconds: 15
+  startup:
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      timeoutSeconds: 15
+
 # ConfigMap overrides for production
 configMaps:
   env:
