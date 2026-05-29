@@ -18,7 +18,7 @@ VERIFIER_DIGEST_2 = "0x000000000000000000000000000000000000000000000000000000000
 chain = "sepolia"
 chainId = 11155111
 submitterRpcUrl = "https://sepolia.drpc.org"
-beaconRpcUrl = "https://eth-beacon-chain-sepolia.drpc.org/rest"
+beaconRpcUrl = "https://ethereum-sepolia-beacon-api.publicnode.com"
 minFinality = "safe"
 
 [accounts]
