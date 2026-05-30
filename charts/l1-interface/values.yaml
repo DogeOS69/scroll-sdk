@@ -88,40 +88,11 @@ persistence:
     accessMode: ReadWriteOnce
     size: 1Gi
     retain: true
-  genesis:
-    enabled: true
-    type: configMap
-    mountPath: /app/genesis/
-    name: genesis-config
-    readOnly: true
-  protocol-context:
-    enabled: true
-    type: configMap
-    name: protocol-context-config
-    mountPath: /app/protocol_context.json
-    subPath: protocol_context.json
-    readOnly: true
 
 command: ["/usr/local/bin/l1_interface"]
 
-configMaps:
-  env:
-    enabled: true
-    data:
-      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "0.0.0.0:8545"
-      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "0.0.0.0:5052"
-      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090"
-      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json"
-      DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite"
-      DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json"
-      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true"  # Whether to enable replay read (true/false); must be true for public RPC startup
-      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite"  # Replay SQLite database file path; required for public RPC and the file must exist
-
-envFrom:
-  - secretRef:
-      name: "l1-interface-secret-env"
-  - configMapRef:
-      name: "l1-interface-env"
+# Application env/config is intentionally supplied by deployment values such as
+# examples/values/l1-interface-production.yaml.
 
 # Monitoring configuration
 serviceMonitor:

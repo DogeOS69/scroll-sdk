@@ -22,7 +22,7 @@ install-dogecoin:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.20 \
+		--version=0.0.21 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -92,13 +92,13 @@ install-contracts:
 
 install-eth-da-submitter:
 	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.9 \
+		--version=0.0.10 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -114,13 +114,13 @@ install-cubesigner-signers:
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.4 \
+		--version=0.1.5 \
 		--values values/tso-service-production.yaml \
 		--wait
 
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.19 \
+		--version=0.1.20 \
 		--values values/withdrawal-processor-production.yaml
 
 install-blockscout:

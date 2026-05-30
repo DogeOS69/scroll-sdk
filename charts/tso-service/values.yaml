@@ -43,15 +43,8 @@ probes:
       periodSeconds: 5
       failureThreshold: 12
 
-# Direct environment variables for CubeSigner Signer configuration
-env:
-  - name: PORT
-    value: "3000"
-  - name: DOGE_NETWORK
-    value: "testnet"
-  - name: WITHDRAWAL_PROCESSOR_URL
-    value: "http://withdrawal-processor:3000"
-
+# Application env/config is intentionally supplied by deployment values such as
+# examples/values/tso-service-production.yaml.
 
 # Resource configuration
 resources:
