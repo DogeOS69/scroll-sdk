@@ -53,21 +53,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_TSO_TIMEOUT_MINUTES # Optional, u32, TSO polling timeout (minutes), range 1..=1440; default 30
     value: "30"
 
-  # [NO LONGER USED] DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS: only defined in config and used as a test/mock placeholder; not read by the production code path (the actual one in use is reconciler_abandoned_cleanup_timeout_secs). Can be removed.
-  # - name: DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS # [DEPRECATED / DEAD FIELD] not read in production; refer to reconciler_abandoned_cleanup_timeout_secs
-  #   value: "3600"
-
-  - name: DOGEOS_WITHDRAWAL_RECONCILER_BUILDING_TIMEOUT_SECS # Optional, u64, reconciler Building stage timeout; default 180 (tuned for local tests; production should override)
-    value: "180"
-
-  - name: DOGEOS_WITHDRAWAL_RECONCILER_PROPOSED_TIMEOUT_SECS # Optional, u64, reconciler Proposed stage timeout; default 90 (production should override)
-    value: "90"
-
-  - name: DOGEOS_WITHDRAWAL_RECONCILER_BROADCASTING_GRACE_SECS # Optional, u64, reconciler Broadcasting grace period; default 120 (production should override)
-    value: "120"
-
-  - name: DOGEOS_WITHDRAWAL_RECONCILER_ABANDONED_CLEANUP_TIMEOUT_SECS # Optional, u64, abandoned task cleanup timeout; default 600 (production should override)
-    value: "600"
+  - name: DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS # Optional, u64, startup cleanup timeout, range 60..=86400; default 3600
+    value: "3600"
 
   - name: DOGEOS_WITHDRAWAL_MAX_DEPOSITS_PER_ADVANCE_L1 # Optional, u16, max deposit inputs per AdvanceL1 (operational throttle, not part of protocol identity); default 32
     value: "32"
@@ -84,7 +71,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_ADVANCE_L1_BUILDER_V2 # Optional, bool, enable AdvanceL1 builder v2 (when enabled, requires replay_sqlite_path + protocol_context_json); default false
     value: "true"
 
-  - name: DOGEOS_WITHDRAWAL_ADVANCE_L2_BUILDER_V2 # Optional, bool, enable AdvanceL2 builder v2 (when enabled, requires celestia_indexer.fetch_and_decode_blobs=true and replay/protocol context); default false
+  - name: DOGEOS_WITHDRAWAL_ADVANCE_L2_BUILDER_V2 # Required for Ethereum DA mode; when true, requires replay/protocol context and [ethereum_da]
     value: "true"
 
   - name: DOGEOS_WITHDRAWAL_WF_WITHDRAWAL_PARITY_V1 # Optional, bool, enable wf withdrawal parity v1 (requires at least one of rotate_key_v2 / advance_l1_builder_v2 / advance_l2_builder_v2 to be enabled); default false
@@ -108,15 +95,11 @@ env:
   - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
     value: "/app/data/replay.sqlite"
 
-  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; when protocol-lane mode is enabled, requires fetch_and_decode_blobs=true and discovery_mode≠fulfillment_driven
+  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; required by v2 builder paths
     value: "/app/protocol_context.json"
 
   # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional, u64, next starting block height for L2 bootstrap; if set, must be >=1 and requires replay_sqlite_path + protocol_context_json
   #   value: "<TODO>"
-
-  # [NO LONGER USED] DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS: only defined in config and used as a test/mock placeholder; not read by the production code path. Can be removed.
-  # - name: DOGEOS_WITHDRAWAL_COORDINATOR_POLL_INTERVAL_SECS # [DEPRECATED / DEAD FIELD] not read in production; kept only to pass figment parsing
-  #   value: ""
 
   # ===========================================================================
   # [dogecoin_indexer]
@@ -154,65 +137,8 @@ env:
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE # Required, u64, eth_getLogs batch size (>=1)
     value: "10000"
 
-  # # ===========================================================================
-  # # [celestia_indexer]
-  # # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_RPC_URL # Required, Celestia DA node RPC URL
-  #   value: "<TODO>"
-
-  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__TENDERMINT_RPC_URL # Optional; required for TxSearch mode or signer validation
-  # #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DA_NAMESPACE # Required, Celestia namespace (hex string, non-empty)
-  #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__START_BLOCK # Required, u64, Celestia scan start height
-  #   value: "<TODO>"
-
-  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__SIGNER_ADDRESS # Optional, expected blob signer address
-  # #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
-  #   value: "6"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
-  #   value: "60000"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__FETCH_AND_DECODE_BLOBS # Required, bool; must be true when advance_l2_builder_v2 or protocol_context_json is enabled
-  #   value: "true"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__DISCOVERY_MODE # Optional, blob discovery mode: namespace_scan/tx_search/on_demand; Ethereum DA mode requires on_demand
-  #   value: "on_demand"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT # Optional, bool, whether to validate signer via Tendermint; default false
-  #   value: "false"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC # Optional, bool, whether to enable fulfillment-driven historical sync optimization; default true (differs from l1_interface)
-  #   value: "true"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__REPAIR_GAPS_ON_STARTUP # Optional, bool, whether to repair gaps at startup (avoid blocking startup); default false
-  #   value: "false"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__AUTO_GAP_REPAIR_ENABLED # Optional, bool, runtime automatic gap repair (enabled by default for continuous-running scenarios); default true
-  #   value: "true"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_DETECTION_THRESHOLD # Optional, i64, gap detection threshold (>=1); default 100
-  #   value: "100"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__GAP_REPAIR_MIN_ORPHANED # Optional, i64, minimum orphan count to trigger gap repair (>=1); default 5
-  #   value: "5"
-
-  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL # Optional, blob_get_all fallback endpoint URL
-  # #   value: "<TODO>"
-
-  # # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN # Optional, blob_get_all fallback endpoint auth token; numeric-looking tokens need inner TOML quotes, e.g. '"123456"'
-  # #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION # Optional, blob artifact compression enum: none/zstd; default none
-  #   value: "zstd"
-
   # ===========================================================================
-  # [ethereum_da] - required when advance_l2_builder_v2 is enabled
+  # [ethereum_da] - required; withdrawal-processor now runs Ethereum DA only
   # ===========================================================================
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL # Required, Ethereum execution JSON-RPC URL
     value: "<TODO>"
@@ -235,68 +161,47 @@ env:
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__MIN_FINALITY # Optional, one of pending/safe/finalized; default finalized
     value: "safe"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER_ENABLED # Optional, run the Ethereum DA indexer inside withdrawal-processor; default true
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__ENABLED # Optional, run the Ethereum DA inbox worker inside withdrawal-processor; default false
     value: "true"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__CURSOR_ID # Optional, indexer cursor id; default eth_da_inbox
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__WRITER_ID # Required when inbox_worker.enabled=true; singleton DB writer identity
+    value: "withdrawal-processor"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__CURSOR_ID # Optional, indexer cursor id; default eth_da_inbox
     value: "eth_da_inbox"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__START_BLOCK # Required for initial sync, Ethereum inbox scan start block generated per deployment
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__START_BLOCK # Optional, Ethereum inbox scan floor; set per deployment
     value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__INGEST_DEPTH # Optional, pending ingest depth; default 1
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__INGEST_DEPTH # Optional, pending ingest depth; default 1
     value: "1"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__SAFE_DEPTH # Optional, safe block depth; default 32
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__SAFE_DEPTH # Optional, safe block depth; default 32
     value: "32"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__FINALIZED_DEPTH # Optional, finalized block depth; default 64
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__FINALIZED_DEPTH # Optional, finalized block depth; default 64
     value: "64"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__ROLLBACK_LOOKBACK # Optional, rollback repair lookback; default 128
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__ROLLBACK_LOOKBACK # Optional, rollback repair lookback; default 128
     value: "128"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__POLL_INTERVAL_MS # Optional, embedded indexer poll interval; default 6000
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__POLL_INTERVAL_MS # Optional, inbox worker poll interval; default 6000
     value: "6000"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__EMBEDDED_INDEXER__MAX_BLOCKS_PER_CYCLE # Optional, max Ethereum blocks per indexer cycle; default 64
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__MAX_BLOCKS_PER_CYCLE # Optional, max Ethereum blocks per indexer cycle; default 64
     value: "64"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__COMPRESSION # Optional, artifact compression enum: none/zstd; default none
-    value: "none"
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__STATUS_POLL_INTERVAL_MS # Optional, health status refresh interval; default 5000
+    value: "5000"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__POLL_INTERVAL_MS # Optional, artifact materializer poll interval; default 6000
-    value: "6000"
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__KIND # Required when inbox_worker.enabled=true; currently supported: anvil
+    value: "anvil"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MAX_PUBLICATIONS_PER_CYCLE # Optional, max publications to materialize per cycle; default 256
-    value: "256"
+  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__URL # Optional; defaults to ethereum_da.l1_rpc_url when unset
+  #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MAX_ARTIFACTS_PER_CYCLE # Optional, max artifacts to fetch per cycle; default 32
-    value: "32"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_MATERIALIZER__MIN_FINALITY # Optional, artifact materializer finality: pending/safe/finalized; default pending
-    value: "pending"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__ENABLED # Optional, enable beacon blob source
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__ENDPOINT # Required when beacon blob source is enabled
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BEACON__TIMEOUT_MS # Optional, beacon blob source timeout; default 10000
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS # Optional, blob source request timeout; default 10000
     value: "10000"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BLOBSCAN__ENABLED # Optional, enable Blobscan blob source
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__BLOCKNATIVE__ENABLED # Optional, enable Blocknative blob source
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__S3__ENABLED # Optional, enable S3 blob source
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCES__S3__TREAT_FORBIDDEN_AS_MISSING # Optional, treat S3 403 as a cache miss; default false
-    value: "false"
 
   # ===========================================================================
   # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
@@ -349,18 +254,6 @@ env:
   #   value: "<TODO>" # Derived from dogecoin_constants::DUST_AMOUNT_SATS
 
   # ===========================================================================
-  # [fulfillment_processor] (whole section has #[serde(default)])
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__MAX_RETRIES # Optional, u32, max retries (>=1); default 20
-    value: "20"
-
-  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__RETRY_DELAY_MS # Optional, u64, retry interval (ms, >=1); default 50000
-    value: "50000"
-
-  - name: DOGEOS_WITHDRAWAL_FULFILLMENT_PROCESSOR__TSO_CHECK_DELAY_MS # Optional, u64, TSO check interval (ms, >=1); default 10000
-    value: "10000"
-
-  # ===========================================================================
   # [proof_task_policy] (whole section has #[serde(default)])
   # ===========================================================================
   - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_SCROLL_EXECUTION_PROOFS # Optional, bool, skip scroll_chunk/scroll_batch proofs (dev/test); default false
@@ -406,37 +299,6 @@ env:
   # [local_bridge_proof_runtime] (Option; when enabled, proof_control_plane_gate must also be configured)
   # ===========================================================================
   # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Required (when this section is enabled), local proof artifact storage root; must not overlap with proof_control_plane_gate.store_path-derived paths
-  #   value: "<TODO>"
-
-  # ===========================================================================
-  # [batch_orchestrator] (Option; disabled if unset; all fields are Option<T> with defaults)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_ACTIVE_BATCHES # Optional, usize, max active batches, range 10..=1000; default 100
-    value: "100"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__EVENT_CHANNEL_CAPACITY # Optional, usize, event channel capacity, range 100..=10000; default 1000
-    value: "1000"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_EVENTS_PER_BATCH # Optional, usize, max events per batch, range 1..=1000; default 50
-    value: "50"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__EVENT_PROCESSING_TIMEOUT_MS # Optional, u64, event processing timeout (ms), range 1000..=300000; default 30000
-    value: "30000"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_RETRY_ATTEMPTS # Optional, u32, max retry attempts, range 1..=10; default 3
-    value: "3"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__BASE_BACKOFF_MS # Optional, u64, base backoff (ms), range 100..=60000; default 1000
-    value: "1000"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__MAX_BACKOFF_MS # Optional, u64, max backoff (ms), range 1000..=3600000; default 60000
-    value: "60000"
-
-  - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__ENABLE_STARTUP_RECOVERY # Optional, bool, enable startup recovery; default true
-    value: "true"
-
-  # [NO LONGER USED / LEGACY] BATCH_PROCESSING_INTERVAL_SECS: source comments state explicitly "legacy periodic BatchProcessingCycle ticks, to be removed once event-driven flow matures"; production should keep the default None (do not set; pure event-driven).
-  # - name: DOGEOS_WITHDRAWAL_BATCH_ORCHESTRATOR__BATCH_PROCESSING_INTERVAL_SECS # [DEPRECATED / LEGACY KNOB] source code carries a deprecation comment; recommended to leave empty (None)
   #   value: "<TODO>"
 
   # Logging
@@ -494,6 +356,20 @@ persistence:
     size: 1000Gi
     retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true
+  tso-signers-config:
+    enabled: true
+    type: configMap
+    name: "{{ include \"withdrawal-processor.fullname\" . }}-tso-signers"
+    mountPath: /app/config/signers.toml
+    subPath: signers.toml
+    readOnly: true
 
 # Resource configuration for production
 resources:

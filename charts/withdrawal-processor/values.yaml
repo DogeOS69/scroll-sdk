@@ -67,23 +67,6 @@ persistence:
     annotations: {placeholder: "annotation"}
     retain: true
 
-  protocol-context:
-    enabled: true
-    type: configMap
-    name: protocol-context-config
-    mountPath: /app/protocol_context.json
-    subPath: protocol_context.json
-    readOnly: true
-
-  # Configuration for mounting the TSO signers ConfigMap
-  tso-signers-config:
-    enabled: true
-    type: configMap
-    name: "{{ include \"withdrawal-processor.fullname\" . }}-tso-signers"
-    mountPath: /app/config/signers.toml
-    subPath: signers.toml
-    readOnly: true
-
 # Resource configuration
 resources:
   requests:
@@ -98,24 +81,5 @@ serviceMonitor:
   main:
     enabled: false
 
-# tsoSigners configures the TSO signers. This will be rendered into a ConfigMap
-# and mounted into the pod as /app/config/signers.toml
-# Example:
-# tsoSigners:
-#   - network: "testnet"
-#     uri: "http://your-tee-signer-service.namespace.svc.cluster.local:3000"
-#     role: "Tee"
-#     publicKeyOverride: "02..." # Optional; rendered as public_key_override in signers.toml
-#   - network: "testnet"
-#     uri: "http://your-attestation-signer-service.namespace.svc.cluster.local:3000"
-#     role: "Attestation"
-#     publicKeyOverride: "03..." # Optional; rendered as public_key_override in signers.toml
-tsoSigners: []
-# - network: "testnet"
-#   uri: "http://127.0.0.1:4001" # Example for local, replace with K8s service names for actual deployment
-#   role: "Tee"
-#   publicKeyOverride: "02..."
-# - network: "testnet"
-#   uri: "http://127.0.0.1:4002"
-#   role: "Attestation"
-#   publicKeyOverride: "03..."
+# Application env/config is intentionally supplied by deployment values such as
+# examples/values/withdrawal-processor-production.yaml.

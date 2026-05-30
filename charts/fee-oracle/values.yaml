@@ -71,23 +71,8 @@ persistence:
 
 command: ["/usr/local/bin/fee_oracle"]
 
-configMaps:
-  env:
-    enabled: true
-    data:
-      DOGEOS_FEE_ORACLE_DATABASE__SQLITE_PATH: "/data/fee_oracle.db"
-      DOGEOS_FEE_ORACLE_MONITORING__METRICS_PORT: "9090"
-      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_CHECK_PORT: "8080"
-      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_BIND_ADDRESS: "0.0.0.0"
-      DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY_ENV: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-      DOGEOS_FEE_ORACLE_CELESTIA__ENABLED: "false"
-      DOGEOS_FEE_ORACLE_CELESTIA__GRPC_URL: "http://unused-celestia-grpc:9090"
-
-envFrom:
-  - secretRef:
-      name: "fee-oracle-secret-env"
-  - configMapRef:
-      name: "fee-oracle-env"
+# Application env/config is intentionally supplied by deployment values such as
+# examples/values/fee-oracle-production.yaml.
 
 # Monitoring configuration
 serviceMonitor:

@@ -19,11 +19,10 @@ configMaps:
       # [core] - Required core configuration
       # -----------------------------------------------------------------------------
       DOGEOS_L1_INTERFACE_NETWORK_STR: "<TODO>" # [REQUIRED] Dogecoin network name (mainnet/testnet/regtest, etc.), used by Network::from_str; alias: network
-      #DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite" # [REQUIRED] Primary database connection string (e.g. sqlite:///path/to.db or postgres://...); alias: db_url
-      # Listen addresses are wired to service.main.ports in values.yaml — managed by chart, do not override here.
-      #DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "<TODO>"           # Main RPC API listen address (host:port)
-      #DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "<TODO>"  # Beacon API listen address (host:port)
-      #DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "<TODO>"      # Health check API listen address (host:port)
+      DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite" # [REQUIRED] Primary database connection string (e.g. sqlite:///path/to.db or postgres://...); alias: db_url
+      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "0.0.0.0:8545" # Main RPC API listen address (host:port)
+      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "0.0.0.0:5052" # Beacon API listen address (host:port)
+      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090" # Health check API listen address (host:port)
       # Derived from genesis.json; keep unset unless intentionally overriding genesis-derived values.
       #DOGEOS_L1_INTERFACE_CHAIN_ID: "<TODO>" # L2 chain ID (u64), normally sourced from genesis.json
       #DOGEOS_L1_INTERFACE_L1_CHAIN_ID: "<TODO>" # L1 chain ID (u64), normally sourced from genesis.json
@@ -38,7 +37,7 @@ configMaps:
       DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000" # L1 base fee per gas (u64, in wei), default 1_000_000_000 (1 gwei)
       #DOGEOS_L1_INTERFACE_SYSTEM_CONFIG_ADDRESS: "<TODO>" # SystemConfig contract address; normally sourced from genesis.json
       DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: "<TODO>" # [REQUIRED] Initial system signer address; deployment-specific, do not use placeholder defaults
-      #DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] genesis.json file path; existence is validated and parsed at startup
+      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] genesis.json file path; existence is validated and parsed at startup
       DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true" # Whether to enable sequencer genesis controlled-init mode (true/false)
       #DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: "<TODO>"                                # Historical event-plane artifact JSON file path, optional; serves eth_getLogs for pre-genesis blocks
       #DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "0"                             # First post-genesis block number (u64), optional; pairs with the artifact — without artifact, queries below this value hard-fail
@@ -64,51 +63,30 @@ configMaps:
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # [REQUIRED] Sequencer Dogecoin address for this deployment
 
       # -----------------------------------------------------------------------------
-      # [legacy celestia_indexer] - inert in Ethereum DA mode
-      # -----------------------------------------------------------------------------
-      # Ethereum DA sidecar fetching is not wired through a stable l1-interface
-      # environment variable yet. Keep the legacy Celestia indexer on-demand so
-      # it does not require a Celestia node in Ethereum DA deployments.
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DA_RPC_URL: "http://127.0.0.1:26658" # Legal placeholder; unused while discovery_mode is on_demand.
-      # #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__TENDERMINT_RPC_URL: ""
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__NAMESPACE_ID: '"00000000000000000000"' # Legal placeholder; unused while discovery_mode is on_demand. Numeric-looking strings need inner TOML quotes.
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__START_BLOCK: "0"
-      # #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__SIGNER_ADDRESS: ""
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__CONFIRMATIONS: "3"
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__POLL_INTERVAL_MS: "10000"
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__STORE_RAW_BLOB_DATA: "true"
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_ARTIFACT_COMPRESSION: "zstd" # Blob artifact compression strategy, enum: none / zstd
-      # #DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__GENESIS_BLOB_COMMITMENT: "" # Not used. Genesis blob commitment string, defaults to empty string
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__DISCOVERY_MODE: "on_demand" # Keep legacy indexer inert in Ethereum DA mode.
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__VALIDATE_SIGNER_WITH_TENDERMINT: "false" # Whether to validate signer via Tendermint (true/false); only in NamespaceScan mode
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__USE_FULFILLMENT_DRIVEN_HISTORICAL_SYNC: "false" # Whether to enable fulfillment-driven historical sync optimization (true/false)
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__WORKERS: "4" # Blob processing worker count (usize)
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BATCH_SIZE: "100" # Processing batch size (usize)
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_URL: "http://127.0.0.1:26657" # Legal placeholder; unused while discovery_mode is on_demand.
-      # DOGEOS_L1_INTERFACE_CELESTIA_INDEXER__BLOB_GET_ALL_FALLBACK_TOKEN: '"unused"' # Optional token placeholder; numeric-looking strings need inner TOML quotes.
-
-      # -----------------------------------------------------------------------------
       # [replay_read] - Replay read (required for public RPC)
       # -----------------------------------------------------------------------------
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
+      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
+      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
       #DOGEOS_L1_INTERFACE_REPLAY_READ__FULFILLED_WITHDRAWALS_DB_PATH: "<TODO>"                    # Fulfilled-withdrawals database path, optional
       DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false" # Whether to require full replay validation (true/false)
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Protocol context JSON file path; required for public RPC, provides ProtocolParams/GenesisParams/ProtocolConfigSeed
+      DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Protocol context JSON file path; required for public RPC, provides ProtocolParams/GenesisParams/ProtocolConfigSeed
       #DOGEOS_L1_INTERFACE_REPLAY_READ__L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT: "<TODO>"         # L2 bootstrap next-segment start block height (u64), optional; if set must be > 1
 
       # -----------------------------------------------------------------------------
-      # [blob_artifact_pruning] - Blob artifact lifecycle pruning
+      # [ethereum_da] - Optional replay-side blob sidecar serving
       # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_BLOB_ARTIFACT_PRUNING__ENABLED: "false" # Whether to enable pruning (true/false)
-      #DOGEOS_L1_INTERFACE_BLOB_ARTIFACT_PRUNING__ARTIFACT_ROOT: "<TODO>"                         # Artifact storage root directory path; must be set explicitly when enabled: true (does not accept the database_url-derived default)
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL: "<TODO>" # Ethereum execution JSON-RPC URL used to verify committed blob txs
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__ETH_CHAIN_ID: "<TODO>" # Ethereum chain id
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L2_CHAIN_ID: "<TODO>" # DogeOS L2 chain id
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__KIND: "anvil" # Blob source kind; currently supported: anvil
+      #DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__URL: "<TODO>" # Optional; defaults to ethereum_da.l1_rpc_url when unset
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000" # Blob source request timeout in milliseconds
 
-      # -----------------------------------------------------------------------------
-      # [blob_archive] - Remote blob archive client (orthogonal to pruning)
-      # -----------------------------------------------------------------------------
-      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__URL: "<TODO>" # HTTP base URL of celestia_blob_archive_service (http/https), optional; if unset, the archive fallback is disabled
-      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__API_KEY: "<TODO>" # Archive service API key, sent as the X-Api-Key header; when set, url must also be set
-      #DOGEOS_L1_INTERFACE_BLOB_ARCHIVE__TIMEOUT_SECS: "30" # Request timeout (seconds, u64); must be > 0 when url is set
+envFrom:
+  - secretRef:
+      name: "l1-interface-secret-env"
+  - configMapRef:
+      name: "l1-interface-env"
 
 # External Secrets configuration for production
 externalSecrets:
@@ -140,3 +118,16 @@ persistence:
   data:
     size: "1000Gi"
     retain: true
+  genesis:
+    enabled: true
+    type: configMap
+    mountPath: /app/genesis/
+    name: genesis-config
+    readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true
