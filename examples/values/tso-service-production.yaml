@@ -10,6 +10,8 @@ env:
     value: "testnet"
   - name: WITHDRAWAL_PROCESSOR_URL
     value: "http://withdrawal-processor:3000"
+  - name: TIMEOUT_CHECK_INTERVAL_SECONDS
+    value: "60"
   - name: RUST_LOG
     value: "debug"
 

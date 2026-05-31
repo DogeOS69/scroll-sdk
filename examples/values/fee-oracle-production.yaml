@@ -37,23 +37,30 @@ configMaps:
       DOGEOS_FEE_ORACLE_MONITORING__HEALTH_CHECK_PORT: "8080"
       DOGEOS_FEE_ORACLE_MONITORING__HEALTH_BIND_ADDRESS: "0.0.0.0"
       DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY_ENV: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-      DOGEOS_FEE_ORACLE_L2__RPC_URL: ""                                            # L2_RPC_ENDPOINT
-      DOGEOS_FEE_ORACLE_L2__CHAIN_ID: ""                                           # CHAIN_ID_L2
-      DOGEOS_FEE_ORACLE_L2__GAS_ORACLE_CONTRACT: ""                                # L1_GAS_PRICE_ORACLE_ADDR
+      # DOGEOS_FEE_ORACLE_WALLET__KMS_CONFIG__KMS_KEY_ID: "<TODO>"                 # Optional KMS signer; comment PRIVATE_KEY_ENV out before enabling.
+      # DOGEOS_FEE_ORACLE_WALLET__KMS_CONFIG__KMS_REGION: "<TODO>"                 # Optional KMS signer; comment PRIVATE_KEY_ENV out before enabling.
+      # DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY: "<TODO>"                            # Deprecated plaintext key; do not enable in production.
+      DOGEOS_FEE_ORACLE_L2__RPC_URL: "<TODO>"                                      # L2 RPC endpoint
+      DOGEOS_FEE_ORACLE_L2__CHAIN_ID: "<TODO>"                                     # DogeOS L2 chain id
+      DOGEOS_FEE_ORACLE_L2__GAS_ORACLE_CONTRACT: "<TODO>"                          # L1GasPriceOracle contract address
       DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "3"                                     # predefined
       DOGEOS_FEE_ORACLE_L2__MAX_GAS_PRICE: "1000000000000"                         # predefined
       DOGEOS_FEE_ORACLE_L2__PRIORITY_FEE: "1000000000"                             # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__RPC_URL: "http://dogecoin:44555"                 # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL
-      DOGEOS_FEE_ORACLE_DOGECOIN__NETWORK_STR: "testnet"                           # DOGEOS_L1_INTERFACE_NETWORK_STR
+      # DOGEOS_FEE_ORACLE_DOGECOIN__RPC_USER: "<TODO>"                             # Optional RPC username; normally supplied by fee-oracle-secret-env.
+      # DOGEOS_FEE_ORACLE_DOGECOIN__RPC_PASSWORD: "<TODO>"                         # Optional RPC password; normally supplied by fee-oracle-secret-env.
+      DOGEOS_FEE_ORACLE_DOGECOIN__NETWORK_STR: "<TODO>"                            # Dogecoin network: mainnet/testnet/regtest
       DOGEOS_FEE_ORACLE_DOGECOIN__POLL_INTERVAL: "60"                              # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__FEE_LOOKBACK_BLOCKS: "10"                        # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__MEMPOOL_SAMPLE_SIZE: "1000"                      # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__BASE_FEE_RATE: "1000000"                         # predefined
       DOGEOS_FEE_ORACLE_DOGECOIN__EMPTY_MEMPOOL_FEE_RATE: "1500000"                # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__ENABLED: "false"                                 # legacy Celestia DA config kept for startup validation only
-      DOGEOS_FEE_ORACLE_CELESTIA__GRPC_URL: "http://unused-celestia-grpc:9090"      # legacy Celestia DA config kept for startup validation only
+      DOGEOS_FEE_ORACLE_CELESTIA__ENABLED: "false"                                 # Ethereum DA mode disables the Celestia monitor.
+      DOGEOS_FEE_ORACLE_CELESTIA__GRPC_URL: "http://unused-celestia-grpc:9090"      # Required by schema/URL validation even when Celestia is disabled.
+      # DOGEOS_FEE_ORACLE_CELESTIA__GRPC_PORT: "<TODO>"                            # Optional gRPC port override; unused while Celestia is disabled.
+      # DOGEOS_FEE_ORACLE_CELESTIA__GRPC_X_TOKEN: "<TODO>"                         # Optional gRPC auth token; unused while Celestia is disabled.
       DOGEOS_FEE_ORACLE_CELESTIA__POLL_INTERVAL: "60"                              # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: ""                                 # legacy Celestia DA value; unused in Ethereum DA mode
+      # DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: "<TODO>"                         # Optional Celestia namespace; unused while Celestia is disabled.
       DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000"                   # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000"                # predefined
       DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000"               # predefined
@@ -68,6 +75,8 @@ configMaps:
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__CACHE_DURATION: "60"                         # predefined
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__KRAKEN_ENABLED: "true"                       # predefined
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINBASE_ENABLED: "true"                     # predefined
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINGECKO_ENABLED: "false"                   # optional price source; default false
+      # DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINGECKO_API_KEY: "<TODO>"                # Optional; required only when COINGECKO_ENABLED=true.
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__GATEIO_ENABLED: "true"                       # predefined
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__REQUEST_TIMEOUT: "30"                        # predefined
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__MAX_RETRIES: "3"                             # predefined

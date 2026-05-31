@@ -15,8 +15,8 @@ env:
     value: "1000000"
   - name: DOGEOS_WITHDRAWAL_DATABASE_URL # Required, primary database connection string (PostgreSQL/SQLite)
     value: "sqlite:///app/data/withdrawal_processor.db"
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL; service name dogecoin is fixed, generator fills port
-    value: "http://dogecoin:<TODO_PORT>"
+  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL; use http://dogecoin:22555 for mainnet
+    value: "http://dogecoin:44555"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER # Required, Dogecoin RPC username
   #   value: "<TODO>"
   # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS # Required, Dogecoin RPC password
@@ -66,10 +66,10 @@ env:
     value: "false"
 
   - name: DOGEOS_WITHDRAWAL_ROTATE_KEY_V2 # Optional, bool, enable RotateKey v2 path (when enabled, requires replay_sqlite_path + protocol_context_json); default false
-    value: "true"
+    value: "false"
 
   - name: DOGEOS_WITHDRAWAL_ADVANCE_L1_BUILDER_V2 # Optional, bool, enable AdvanceL1 builder v2 (when enabled, requires replay_sqlite_path + protocol_context_json); default false
-    value: "true"
+    value: "false"
 
   - name: DOGEOS_WITHDRAWAL_ADVANCE_L2_BUILDER_V2 # Required for Ethereum DA mode; when true, requires replay/protocol context and [ethereum_da]
     value: "true"
@@ -98,7 +98,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; required by v2 builder paths
     value: "/app/protocol_context.json"
 
-  # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional, u64, next starting block height for L2 bootstrap; if set, must be >=1 and requires replay_sqlite_path + protocol_context_json
+  # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional bootstrap/cutover cursor; leave unset unless bootstrapping a new L2 segment, then replace with a real height.
   #   value: "<TODO>"
 
   # ===========================================================================
@@ -159,7 +159,7 @@ env:
     value: "/app/data/eth-da-artifact-metadata.sqlite"
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__MIN_FINALITY # Optional, one of pending/safe/finalized; default finalized
-    value: "safe"
+    value: "finalized"
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__ENABLED # Optional, run the Ethereum DA inbox worker inside withdrawal-processor; default false
     value: "true"
@@ -197,7 +197,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__KIND # Required when inbox_worker.enabled=true; currently supported: anvil
     value: "anvil"
 
-  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__URL # Optional; defaults to ethereum_da.l1_rpc_url when unset
+  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__URL # Optional; defaults to ethereum_da.l1_rpc_url when unset.
   #   value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS # Optional, blob source request timeout; default 10000
@@ -228,10 +228,10 @@ env:
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAX_INPUTS # Optional, usize, max inputs per tx, range 1..=500; default 60
     value: "60"
 
-  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__DUST_FLOOR_SATS # Optional, u64, dust floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
-  #   value: "<TODO>" # Derived from dogecoin_constants::DUST_AMOUNT_SATS
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__DUST_FLOOR_SATS # Optional, u64, dust floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
+    value: "1000000"
 
-  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAINTENANCE_TARGET_SATS # Optional, u64, target value (sats) for zero-withdrawal consolidation; derived from strategy when None
+  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAINTENANCE_TARGET_SATS # Optional; when unset the strategy derives the zero-withdrawal consolidation target.
   #   value: "<TODO>"
 
   # band sub-strategy
@@ -250,56 +250,92 @@ env:
   - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__MAX_BALANCE_ADDITIONS # Optional, usize, max balance additions, range 0..=20; default 3
     value: "3"
 
-  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__FLOOR_ABSOLUTE_SATS # Optional, u64, absolute floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
-  #   value: "<TODO>" # Derived from dogecoin_constants::DUST_AMOUNT_SATS
+  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__FLOOR_ABSOLUTE_SATS # Optional, u64, absolute floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
+    value: "1000000"
 
   # ===========================================================================
   # [proof_task_policy] (whole section has #[serde(default)])
   # ===========================================================================
   - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_SCROLL_EXECUTION_PROOFS # Optional, bool, skip scroll_chunk/scroll_batch proofs (dev/test); default false
-    value: "true"
+    value: "false"
 
   - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_BRIDGE_STATE_PROOFS # Optional, bool, skip bridge_state proofs; default false; when false, proof_control_plane_gate must be configured
-    value: "true"
+    value: "false"
 
   # ===========================================================================
   # [proof_control_plane_gate] (Option; required when skip_bridge_state_proofs=false and WF builder is enabled)
   # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__STORE_PATH # Required (when this section is enabled), control-plane SQLite path
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__STORE_PATH # Optional section; required when skip_bridge_state_proofs=false
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_SYSTEM_ID # Required (when this section is enabled), proof system ID (e.g. "openvm")
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_SYSTEM_ID # Optional section; proof system ID (e.g. "openvm")
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__CIRCUIT_ID # Required (when this section is enabled), bridge circuit ID (e.g. "bridge-transition-v1")
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__CIRCUIT_ID # Optional section; bridge circuit ID (e.g. "bridge-transition-v1")
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_KEY_HASH_HEX # Required (when this section is enabled), bridge VK hash (hex, exactly 32 bytes / 64 hex chars)
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_KEY_HASH_HEX # Optional section; bridge VK hash (hex, exactly 32 bytes / 64 hex chars)
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_MODE # Optional, proof mode: production/mock; default production
-  #   value: "production"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_MODE # Optional, proof mode: production/mock; default production
+    value: "production"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_POLICY # Optional, verification policy: production/local_mock_allowed; default production
-  #   value: "production"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_POLICY # Optional, verification policy: production/local_mock_allowed; default production
+    value: "production"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
+    value: "<TODO>"
 
-  # - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-  #   value: "<TODO>"
+  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
+    value: "<TODO>"
 
   # ===========================================================================
   # [local_bridge_proof_runtime] (Option; when enabled, proof_control_plane_gate must also be configured)
   # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Required (when this section is enabled), local proof artifact storage root; must not overlap with proof_control_plane_gate.store_path-derived paths
+  # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Optional local proof runtime; not wired for normal production unless a local prover backend is intentionally deployed.
   #   value: "<TODO>"
+
+  # ===========================================================================
+  # [scroll_leaf_proof_source] (Option; enabled when artifact_root is set)
+  # ===========================================================================
+  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT # Optional file-backed Scroll proof artifact source; leave unset unless runner-produced artifacts are mounted.
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__AGG_VK_PATH # Optional; required only when SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT is enabled.
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__EXPECTED_BATCH_APP_COMMITMENT_HEX # Optional; required only when SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT is enabled.
+  #   value: "<TODO>"
+
+  # ===========================================================================
+  # [proof_execution_worker] (Option; worker only runs when enabled=true)
+  # ===========================================================================
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__ENABLED # Optional, bool; default false
+    value: "false"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_OWNER # Optional, non-empty worker lease owner; default wp-local
+    value: "wp-local"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_TTL_MS # Optional, i64, lease duration; default 30000
+    value: "30000"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__MAX_ITEMS_PER_TICK # Optional, u32; default 1
+    value: "1"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__POLL_INTERVAL_MS # Optional, u64; default 1000
+    value: "1000"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_BASE_MS # Optional, u64; default 5000
+    value: "5000"
+
+  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_CAP_MS # Optional, u64; default 300000
+    value: "300000"
 
   # Logging
   - name: RUST_LOG
