@@ -173,6 +173,9 @@ env:
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__START_BLOCK # Optional, Ethereum inbox scan floor; set per deployment
     value: "<TODO>"
 
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__EXPECTED_BATCHERS # Optional allowlist for batcher addresses; set to the KMS-derived eth-da-submitter address.
+    value: '["<TODO>"]'
+
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__INGEST_DEPTH # Optional, pending ingest depth; default 1
     value: "1"
 
