@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.12](https://img.shields.io/badge/Version-0.1.12-informational?style=flat-square) ![AppVersion: v0.28.2-mocha](https://img.shields.io/badge/AppVersion-v0.28.2--mocha-informational?style=flat-square)
+![Version: 0.1.13](https://img.shields.io/badge/Version-0.1.13-informational?style=flat-square) ![AppVersion: v0.28.2-mocha](https://img.shields.io/badge/AppVersion-v0.28.2--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -39,6 +39,8 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | mnemonic | string | `""` |  |
 | network | string | `"mocha"` |  |
 | node_type | string | `"light"` |  |
+| plainSecrets.mnemonic | string | `""` |  |
+| plainSecrets.xToken | string | `""` |  |
 | resources.limits.cpu | string | `"1000m"` |  |
 | resources.limits.memory | string | `"4Gi"` |  |
 | resources.requests.cpu | string | `"500m"` |  |

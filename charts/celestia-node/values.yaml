@@ -10,6 +10,11 @@ core:
 # use --set mnemonic="<your mnemonic here>" to set the mnemonic via helm install
 mnemonic: ""
 
+# Optional: plain env values for testing when externalSecrets is disabled.
+plainSecrets:
+  mnemonic: ""
+  xToken: ""
+
 image:
   repository: "ghcr.io/celestiaorg/celestia-node"
   tag: "v0.28.2-mocha"

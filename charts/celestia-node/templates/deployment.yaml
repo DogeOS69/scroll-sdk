@@ -1,3 +1,7 @@
+{{- $plainMnemonic := .Values.plainSecrets.mnemonic | default "" }}
+{{- $plainXToken := .Values.plainSecrets.xToken | default "" }}
+{{- $hasMnemonic := or $plainMnemonic .Values.mnemonic .Values.externalSecrets }}
+{{- $hasXToken := or $plainXToken .Values.externalSecrets }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,7 +40,7 @@ spec:
           volumeMounts:
             - name: node-store
               mountPath: /home/celestia
-        {{- if or .Values.mnemonic .Values.externalSecrets }}
+        {{- if $hasMnemonic }}
         - name: key-management
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           command:
@@ -44,17 +48,32 @@ spec:
             - "-c"
             - |
               echo "Importing key from mnemonic..."
+              {{- if $plainMnemonic }}
+              MNEMONIC="${CELESTIA_MNEMONIC:-}"
+              if [ -z "$MNEMONIC" ]; then
+                echo "ERROR: mnemonic is empty" >&2
+                exit 1
+              fi
+              {{- else }}
               MNEMONIC=$(cat /mnemonic/mnemonic)
+              {{- end }}
               echo "$MNEMONIC" | cel-key add my_celes_key --recover --keyring-backend test --node.type {{ .Values.node_type }}
               echo "Key imported successfully"
               echo "Available keys:"
               cel-key list --node.type {{ .Values.node_type }} --keyring-backend test
+          {{- if $plainMnemonic }}
+          env:
+            - name: CELESTIA_MNEMONIC
+              value: {{ $plainMnemonic | quote }}
+          {{- end }}
           volumeMounts:
             - name: node-store
               mountPath: /home/celestia
+            {{- if not $plainMnemonic }}
             - name: mnemonic
               mountPath: /mnemonic
               readOnly: true
+            {{- end }}
         {{- end }}
         - name: init-node
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -104,7 +123,7 @@ spec:
             - name: node-config
               mountPath: /config
               readOnly: true
-        {{- if .Values.externalSecrets }}
+        {{- if $hasXToken }}
         - name: write-xtoken
           image: "busybox:latest"
           command:
@@ -112,24 +131,35 @@ spec:
             - -c
             - |
               set -eu
+              {{- if $plainXToken }}
+              TOKEN="${CELESTIA_X_TOKEN:-}"
+              {{- else }}
               TOKEN_PATH="/xtoken/x-token"
               if [ ! -f "$TOKEN_PATH" ]; then
                 echo "ERROR: x-token not found in secret at $TOKEN_PATH" >&2
                 exit 1
               fi
               TOKEN=$(cat "$TOKEN_PATH")
+              {{- end }}
               if [ -z "$TOKEN" ]; then
                 echo "ERROR: x-token is empty" >&2
                 exit 1
               fi
               echo "{ \"x-token\": \"$TOKEN\" }" > /home/celestia/celestia-auth/xtoken.json
               chmod 644 /home/celestia/celestia-auth/xtoken.json
+          {{- if $plainXToken }}
+          env:
+            - name: CELESTIA_X_TOKEN
+              value: {{ $plainXToken | quote }}
+          {{- end }}
           volumeMounts:
             - name: node-store
               mountPath: /home/celestia
+            {{- if not $plainXToken }}
             - name: xtoken-secret
               mountPath: /xtoken
               readOnly: true
+            {{- end }}
         {{- end }}
         {{- if not .Values.rpc.auth.skipAuth }}
         - name: generate-auth-token
@@ -203,7 +233,7 @@ spec:
         - name: node-config
           configMap:
             name: {{ include "celestia-node.fullname" . }}-config
-        {{- if .Values.externalSecrets }}
+        {{- if and .Values.externalSecrets (not $plainXToken) }}
         {{- $secretName := "" }}
         {{- range $key, $val := .Values.externalSecrets }}
         {{- $secretName = $key }}
@@ -212,11 +242,11 @@ spec:
           secret:
             secretName: {{ $secretName }}
         {{- end }}
-        {{- if .Values.mnemonic }}
+        {{- if and .Values.mnemonic (not $plainMnemonic) }}
         - name: mnemonic
           secret:
             secretName: {{ include "celestia-node.fullname" . }}-mnemonic
-        {{- else if .Values.externalSecrets }}
+        {{- else if and .Values.externalSecrets (not $plainMnemonic) }}
         {{- $secretName := "" }}
         {{- range $key, $val := .Values.externalSecrets }}
         {{- $secretName = $key }}
