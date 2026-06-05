@@ -1,6 +1,6 @@
 # l1-devnet
 
-![Version: 0.1.5-dogeos](https://img.shields.io/badge/Version-0.1.5--dogeos-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 Private Ethereum PoS devnet with JSON-RPC + Beacon API
 
@@ -91,4 +91,3 @@ Kubernetes: `>=1.22.0-0`
 | validator.resources.requests.cpu | string | `"250m"` |  |
 | validator.resources.requests.memory | string | `"512Mi"` |  |
 | validatorCount | int | `64` |  |
-

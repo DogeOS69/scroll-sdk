@@ -28,7 +28,7 @@ install-l1-interface:
 install-l1-devnet:
 	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
 		--wait  \
-		--version=0.1.5-dogeos \
+		--version=0.1.6-dogeos \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:

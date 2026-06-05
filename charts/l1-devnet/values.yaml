@@ -77,6 +77,8 @@ geth:
 lighthouse:
   storage: 20Gi
   debugLevel: info
+  readinessProbe:
+    timeoutSeconds: 10
   resources:
     requests:
       cpu: "500m"

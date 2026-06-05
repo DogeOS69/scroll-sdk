@@ -3,7 +3,7 @@ apiVersion: v2
 description: Private Ethereum PoS devnet with JSON-RPC + Beacon API
 name: l1-devnet
 type: application
-version: 0.1.5-dogeos
+version: 0.1.6-dogeos
 appVersion: latest
 kubeVersion: ">=1.22.0-0"
 maintainers:

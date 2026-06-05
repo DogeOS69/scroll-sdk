@@ -94,6 +94,7 @@ spec:
               port: 5052
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: {{ .Values.lighthouse.readinessProbe.timeoutSeconds }}
 
       volumes:
         - name: lighthouse-data

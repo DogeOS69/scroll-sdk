@@ -23,6 +23,8 @@ geth:
 
 lighthouse:
   storage: 20Gi
+  readinessProbe:
+    timeoutSeconds: 10
   resources:
     limits:
       memory: "4Gi"
