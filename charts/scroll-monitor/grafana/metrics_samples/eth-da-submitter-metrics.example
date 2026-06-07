@@ -13,7 +13,7 @@ eth_da_submitter_submissions_total 12
 # HELP eth_da_submitter_submission_failures_total Failed EthDaSubmitter::submit calls
 # TYPE eth_da_submitter_submission_failures_total counter
 eth_da_submitter_submission_failures_total 0
-# HELP eth_da_submitter_latest_l1_block Highest Ethereum L1 block number observed by the lifecycle loop
+# HELP eth_da_submitter_latest_l1_block Highest Ethereum block number observed by the lifecycle loop
 # TYPE eth_da_submitter_latest_l1_block gauge
 eth_da_submitter_latest_l1_block 12345678
 # HELP eth_da_submitter_latest_l2_block Highest L2 block number ingested into the lifecycle store
@@ -38,7 +38,7 @@ eth_da_publish_pending_tx_pressure 1
 # TYPE eth_da_publish_policy_decisions_total counter
 eth_da_publish_policy_decisions_total{decision="submit",reason="target_blobs_ready"} 12
 eth_da_publish_policy_decisions_total{decision="defer",reason="waiting_for_target_blobs"} 48
-# HELP eth_da_publish_l1_base_fee_wei Latest sampled L1 base fee in wei
+# HELP eth_da_publish_l1_base_fee_wei Latest sampled Ethereum base fee in wei
 # TYPE eth_da_publish_l1_base_fee_wei gauge
 eth_da_publish_l1_base_fee_wei 22000000000
 # HELP eth_da_publish_blob_base_fee_wei Latest sampled blob base fee in wei

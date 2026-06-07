@@ -297,7 +297,7 @@ groups:
           repeat_interval: 10m
 
       - uid: dogeos-l1-interface-not-ready
-        title: L1 interface is not ready
+        title: Dogecoin L1 interface is not ready
         condition: C
         data:
           - refId: A
@@ -345,7 +345,7 @@ groups:
         execErrState: Error
         for: 2m
         annotations:
-          summary: L1 interface readiness is below 1.
+          summary: Dogecoin L1 interface readiness is below 1.
         labels:
           severity: critical
           service: l1-interface

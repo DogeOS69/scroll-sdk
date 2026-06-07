@@ -94,11 +94,11 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block)",
-          "legendFormat": "l1 block",
+          "legendFormat": "Ethereum block",
           "refId": "A"
         }
       ],
-      "title": "Inbox Last Indexed L1 Block",
+      "title": "Ethereum DA Inbox Last Indexed Block",
       "type": "stat"
     },
     {
@@ -162,7 +162,7 @@
           "refId": "A"
         }
       ],
-      "title": "Mirrored DA Publications",
+      "title": "Mirrored Ethereum DA Publications",
       "type": "stat"
     },
     {

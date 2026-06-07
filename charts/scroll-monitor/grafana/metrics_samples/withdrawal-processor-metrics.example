@@ -7,7 +7,7 @@ withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds 1762
 # HELP withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds Unix timestamp of the indexer's most recent successful Ethereum DA inbox ingest tick observed by the WP status pump
 # TYPE withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds gauge
 withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds 1762136008
-# HELP withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block Highest L1 block committed by the WP-owned Ethereum DA inbox worker
+# HELP withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block Highest Ethereum block committed by the WP-owned Ethereum DA inbox worker
 # TYPE withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block gauge
 withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block 12345678
 # HELP withdrawal_processor_eth_da_inbox_worker_finality_rows Ethereum DA inbox publication rows mirrored from indexer_eth_da by finality

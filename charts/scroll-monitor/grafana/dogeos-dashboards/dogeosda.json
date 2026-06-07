@@ -318,11 +318,11 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_submitter_latest_l1_block)",
-          "legendFormat": "l1 block",
+          "legendFormat": "Ethereum block",
           "refId": "A"
         }
       ],
-      "title": "Latest L1 Block",
+      "title": "Latest Ethereum DA Block",
       "type": "stat"
     },
     {
@@ -465,7 +465,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_publish_l1_base_fee_wei)",
-          "legendFormat": "l1 base fee",
+          "legendFormat": "Ethereum base fee",
           "refId": "A"
         },
         {
@@ -496,7 +496,7 @@
           "refId": "D"
         }
       ],
-      "title": "Ethereum Fee Inputs",
+      "title": "Ethereum DA Fee Inputs",
       "type": "timeseries"
     },
     {

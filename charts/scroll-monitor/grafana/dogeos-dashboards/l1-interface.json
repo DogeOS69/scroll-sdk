@@ -109,11 +109,11 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(l1_interface_safe_head_height)",
-          "legendFormat": "safe head",
+          "legendFormat": "Dogecoin safe head",
           "refId": "A"
         }
       ],
-      "title": "Safe Head",
+      "title": "Dogecoin Safe Head",
       "type": "stat"
     },
     {
@@ -141,11 +141,11 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(l1_interface_final_rpc_head_height)",
-          "legendFormat": "final head",
+          "legendFormat": "Ethereum-compatible final head",
           "refId": "A"
         }
       ],
-      "title": "Final RPC Head",
+      "title": "Ethereum-compatible Final RPC Head",
       "type": "stat"
     },
     {
@@ -177,7 +177,7 @@
           "refId": "A"
         }
       ],
-      "title": "JSON-RPC Request Rate",
+      "title": "Ethereum-compatible JSON-RPC Request Rate",
       "type": "timeseries"
     },
     {
@@ -209,7 +209,7 @@
           "refId": "A"
         }
       ],
-      "title": "JSON-RPC Error Response Rate",
+      "title": "Ethereum-compatible JSON-RPC Error Response Rate",
       "type": "timeseries"
     },
     {
@@ -250,7 +250,7 @@
           "refId": "B"
         }
       ],
-      "title": "JSON-RPC Latency",
+      "title": "Ethereum-compatible JSON-RPC Latency",
       "type": "timeseries"
     },
     {
@@ -323,7 +323,7 @@
           "refId": "A"
         }
       ],
-      "title": "Indexer Sync Results",
+      "title": "Dogecoin Source Indexer Sync Results",
       "type": "timeseries"
     },
     {
@@ -355,7 +355,7 @@
           "refId": "A"
         }
       ],
-      "title": "Indexer Sync Age",
+      "title": "Dogecoin Source Indexer Sync Age",
       "type": "timeseries"
     }
   ],
@@ -374,7 +374,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "DogeOS L1 Interface",
+  "title": "DogeOS Dogecoin L1 Interface",
   "uid": "l1-interface-dashboard",
   "version": 1,
   "weekStart": ""

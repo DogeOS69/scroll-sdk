@@ -173,7 +173,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(fee_oracle_ethereum_da_l1_base_fee_per_gas_wei)",
-          "legendFormat": "l1 base fee",
+          "legendFormat": "Ethereum base fee",
           "refId": "A"
         },
         {
