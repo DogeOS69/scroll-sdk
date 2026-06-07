@@ -1,813 +1,601 @@
-# # config file version
 apiVersion: 1
-# List of rule groups to import or update
+
 groups:
-    - orgId: 1
-      name: dogeos alert provisioned
-      folder: dogeos
-      interval: 1m
-      rules:
-        - uid: eemuhs8xgrjlsf
-          #OK
-          title: Error Json Log Alert(Paused)
-          condition: B
-          data:
-            - refId: A
-              queryType: instant
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: P8E80F9AEF21F6940
-              model:
-                datasource:
-                    type: loki
-                    uid: P8E80F9AEF21F6940
-                editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~".*(cubesigner).*", level=~"(?i)warn|error"} | pattern "<_>{<message>}"[10m]))
-                intervalMs: 1000
-                maxDataPoints: 43200
-                queryType: instant
-                refId: A
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: B
-                type: threshold
-          noDataState: OK
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: 'Occurrences: {{ $values.A.Value }}'
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: een2zs3umqscga
-          #OK
-          title: Error Log Alert(Paused)
-          condition: B
-          data:
-            - refId: A
-              queryType: instant
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: P8E80F9AEF21F6940
-              model:
-                datasource:
-                    type: loki
-                    uid: P8E80F9AEF21F6940
-                editorMode: code
-                expr: sum by (service, level, message)(count_over_time({service=~"(da-publisher)|(withdrawal-processor)|(tso-service)|(l1-interface)|(fee-oracle)"} | decolorize | detected_level=~`warn|error` | regexp ".*?(?P<level>(WARN|ERROR)).*? (?P<message>.*)"[10m]))
-                intervalMs: 1000
-                maxDataPoints: 43200
-                queryType: instant
-                refId: A
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: B
-                type: threshold
-          noDataState: OK
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: 'Occurrences: {{ $values.A.Value }}'
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: den31ekvqabr4a
-          #OK
-          title: Low Indexing Height(Paused)
-          condition: D
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                exemplar: false
-                # dogecoin_synced_headers_total is exported by metrics-exporter from getblockchaininfo.headers
-                expr: sum by(service) (label_replace(dogecoin_synced_headers_total, "service", "l1-interface", "", ""))
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                #rename dogeos_deposit_processor_current_indexer_height=>indexer_dogecoin_last_synced_block
-                expr: sum by(service) (indexer_dogecoin_last_synced_block)
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: B
-            - refId: D
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 3
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: C
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: D
-                type: threshold
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params: []
-                      reducer:
-                        params: []
-                        type: avg
-                      type: query
-                datasource:
-                    name: Expression
-                    type: __expr__
-                    uid: __expr__
-                expression: $A-$B
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: math
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: |-
-                Dogecoin height:  {{ printf "%.0f" $values.A.Value }}
-                DogeOS indexer height:  {{ printf "%.0f" $values.B.Value }}
-                Difference: {{ printf "%.0f" $values.C.Value }}
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: aeni86j0olzpce
-          #From experience, it’s more practical to wait an hour without any blob submissions before firing the alert.
-          title: No blobs posted in 60 minutes(Paused)
-          condition: C
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                expr: last_posted_blob_timestamp
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: D
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                expr: timestamp(last_posted_blob_timestamp)
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: D
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 3600
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: B
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: threshold
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params: []
-                      reducer:
-                        params: []
-                        type: avg
-                      type: query
-                datasource:
-                    name: Expression
-                    type: __expr__
-                    uid: __expr__
-                expression: $D - $A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: B
-                type: math
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            description: |-
-                No blob posted in last 5 minutes.
-                Last posted blob at {{ humanizeTimestamp $values.A.Value }}
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: fenjo4h3lr18ga
-          #Celestia signer wallet balance
-          title: Low Celestia Wallet Balance(Paused)
-          condition: C
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                expr: wallet_balance
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 1e+06
-                        type: lt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: threshold
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: |-
-               Celestia Wallet balance is low!
+  - orgId: 1
+    name: dogeos metrics provisioned
+    folder: dogeos
+    interval: 1m
+    rules:
+      - uid: dogeos-eth-da-submitter-not-ready
+        title: Eth DA submitter is not ready
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: max(eth_da_submitter_ready)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Eth DA submitter readiness is below 1.
+          description: eth_da_submitter_ready is {{ printf "%.0f" $values.A.Value }}.
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
 
-                Current wallet balance: {{ printf "%.0f" $values.A.Value }}
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: eenjodcbu3jlsb
-          #OK
-          title: No withdrawal processed in 60 minutes(Paused)
-          condition: C
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                expr: withdrawal_processor_last_processed_timestamp
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: D
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                expr: timestamp(withdrawal_processor_last_processed_timestamp)
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: D
-            - refId: E
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                expr: withdrawal_processor_last_processed_batch_height
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: E
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 3600
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: B
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: threshold
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params: []
-                      reducer:
-                        params: []
-                        type: avg
-                      type: query
-                datasource:
-                    name: Expression
-                    type: __expr__
-                    uid: __expr__
-                expression: $D - $A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: B
-                type: math
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            description: |-
-                No withdrawal processed in last 5 minutes.
-                Last processed withdrawal at {{ humanizeTimestamp $values.A.Value }}
-                Last processed withdrawal height: {{ $values.E.Value }}
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: fenjrsinwhhq8e
-          # wait test
-          title: High latency for TEE signers(Paused)
-          condition: C
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 900
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                expr: sum(rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum(rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m]))
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: B
-              relativeTimeRange:
-                from: 900
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                expr: max( sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m])) )
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: B
-            - refId: D
-              relativeTimeRange:
-                from: 900
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                expr: min( sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum{outcome="signed"}[15m])) / sum by (signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count{outcome="signed"}[15m])) )
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: D
-            - refId: C
-              relativeTimeRange:
-                from: 900
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 15
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: threshold
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            description: |-
-                High latency for TEE signers in past 15 minutes
-                Average latency: {{ humanize $values.A.Value }} seconds
-                Max latency: {{ humanize $values.B.Value }} seconds
-                Min latency: {{ humanize $values.D.Value }} seconds
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-        - uid: beps65bnpp98ga
-          title: Next Batch Height Behind(Paused)
-          condition: D
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                exemplar: false
-                #rollup_last_batch_index from metrics exporter
-                expr: sum by(service) (label_replace(rollup_last_batch_index, "service", "withdrawal-processor", "", ""))
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: B
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                datasource:
-                    type: prometheus
-                    uid: PBFA97CFB590B2093
-                editorMode: code
-                #withdrawal_processor_next_batch_height outdate, use withdrawal_processor_last_processed_batch_height
-                expr: sum by(service) (withdrawal_processor_last_processed_batch_height)
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: B
-            - refId: D
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 2
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: C
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: D
-                type: threshold
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 0
-                            - 0
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params: []
-                      reducer:
-                        params: []
-                        type: avg
-                      type: query
-                datasource:
-                    name: Expression
-                    type: __expr__
-                    uid: __expr__
-                expression: $A-$B
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: math
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: |-
-                Rollup committed index:  {{ printf "%.0f" $values.A.Value }}
-                Withdrawal next batch height:  {{ printf "%.0f" $values.B.Value }}
-                Difference: {{ printf "%.0f" $values.C.Value }}
-          labels: {}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            repeat_interval: 5m
-    - orgId: 1
-      name: dogeos critial alert provisioned
-      folder: dogeos
-      interval: 20s
-      rules:
-        - uid: feprf4q4x91c0e
-          title: Low Fee Wallet UTXOs(Paused)
-          condition: C
-          data:
-            - refId: A
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: PBFA97CFB590B2093
-              model:
-                editorMode: code
-                expr: fee_wallet_total_unredeemed_utxo_amount{service="withdrawal-processor"}
-                instant: true
-                intervalMs: 1000
-                legendFormat: __auto
-                maxDataPoints: 43200
-                range: false
-                refId: A
-            - refId: C
-              relativeTimeRange:
-                from: 600
-                to: 0
-              datasourceUid: __expr__
-              model:
-                conditions:
-                    - evaluator:
-                        params:
-                            - 2e+08
-                        type: lt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                            - C
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                datasource:
-                    type: __expr__
-                    uid: __expr__
-                expression: A
-                intervalMs: 1000
-                maxDataPoints: 43200
-                refId: C
-                type: threshold
-          noDataState: NoData
-          execErrState: Error
-          for: 0s
-          annotations:
-            summary: |-
-                Fee Wallet UTXOs amount is low!
-                  Current fee wallet balance(STAOSHI): {{ printf "%.0f" $values.A.Value }}
-          isPaused: true
-          notification_settings:
-            receiver: dogeos default slack alert
-            group_wait: 1s
-            group_interval: 1s
-            repeat_interval: 1m
+      - uid: dogeos-eth-da-publish-backlog-stalled
+        title: Eth DA publish backlog is stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: max(eth_da_publish_ready_backlog > 0 and eth_da_publish_oldest_ready_age_seconds > 3600)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Eth DA has pending_publish rows older than one hour.
+          description: Check eth_da_publish_ready_backlog and eth_da_publish_oldest_ready_age_seconds.
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
 
-# List of contact points to import or update
+      - uid: dogeos-eth-da-submit-failures
+        title: Eth DA submitter failures increased
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: sum(increase(eth_da_submitter_submission_failures_total[10m])) + sum(increase(eth_da_submitter_cycle_failures_total[10m])) + sum(increase(eth_da_submitter_lifecycle_failures_total[10m])) + sum(increase(eth_da_submitter_l2_reorg_failures_total[10m])) + sum(increase(eth_da_publish_canonicality_events_total[10m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: Eth DA submitter failure counters increased in the last 10 minutes.
+          description: Combined failure increase is {{ printf "%.0f" $values.A.Value }}.
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
+
+      - uid: dogeos-withdrawal-inbox-worker-failures
+        title: Withdrawal processor Ethereum DA inbox worker has failures
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Withdrawal processor Ethereum DA inbox worker has consecutive failures.
+          description: Max consecutive failure count is {{ printf "%.0f" $values.A.Value }}.
+        labels:
+          severity: critical
+          service: withdrawal-processor
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
+
+      - uid: dogeos-withdrawal-inbox-worker-stale
+        title: Withdrawal processor Ethereum DA inbox worker observation is stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 900
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Withdrawal processor has not observed an Ethereum DA inbox update recently.
+          description: Last observed age is {{ printf "%.0f" $values.A.Value }} seconds.
+        labels:
+          severity: warning
+          service: withdrawal-processor
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 10m
+
+      - uid: dogeos-l1-interface-not-ready
+        title: L1 interface is not ready
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: max(l1_interface_service_ready)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: L1 interface readiness is below 1.
+        labels:
+          severity: critical
+          service: l1-interface
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
+
+      - uid: dogeos-fee-oracle-stale
+        title: Fee oracle latest Ethereum DA oracle value is stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 900
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Fee oracle Ethereum DA oracle value has not updated recently.
+          description: Latest computed age is {{ printf "%.0f" $values.A.Value }} seconds.
+        labels:
+          severity: critical
+          service: fee-oracle
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
+
+      - uid: dogeos-fee-oracle-errors
+        title: Fee oracle errors increased
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: sum(increase(fee_oracle_updates_failed_total[10m])) + sum(increase(fee_oracle_errors_total[10m])) + sum(increase(fee_oracle_chain_rpc_errors_total[10m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: Fee oracle error counters increased in the last 10 minutes.
+        labels:
+          severity: warning
+          service: fee-oracle
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 10m
+
+      - uid: dogeos-tso-no-signers
+        title: TSO has no registered signers
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: sum(tso_core_registered_signers_count)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: TSO reports fewer than one registered signer.
+        labels:
+          severity: critical
+          service: tso-service
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 5m
+
+      - uid: dogeos-dogecoin-indexer-lag
+        title: Dogecoin indexer is behind node headers
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: max(dogecoin_synced_headers_total) - max(dogecoin_indexer_last_synced_block)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 12
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: Dogecoin indexer is more than 12 headers behind the node.
+          description: Current lag is {{ printf "%.0f" $values.A.Value }} blocks.
+        labels:
+          severity: warning
+          service: withdrawal-processor
+        notification_settings:
+          receiver: dogeos default slack alert
+          repeat_interval: 10m
+
 contactPoints:
-    - orgId: 1
-      name: dogeos default slack alert
-      receivers:
-        - uid: demuhr48nt3wgf
-          type: slack
-          settings:
-            text: '{{ template "slack.dogeos.text" . }}'
-            title: '{{ template "slack.dogeos.title" . }}'
-            url: https://hooks.slack.com/services/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
-          disableResolveMessage: false
+  - orgId: 1
+    name: dogeos default slack alert
+    receivers:
+      - uid: demuhr48nt3wgf
+        type: slack
+        settings:
+          text: '{{ template "slack.dogeos.text" . }}'
+          title: '{{ template "slack.dogeos.title" . }}'
+          url: https://hooks.slack.com/services/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
+        disableResolveMessage: false
 
-# List of templates to import or update
 templates:
-    # <int> organization ID, default = 1
   - orgID: 1
-    # <string, required> name of the template, must be unique
     name: template.dogeos.provisioned
-    # <string, required> content of the template
-    template: "{{ define \"slack.dogeos.title\" -}}\n[{{ if eq .Status \"firing\" }}🔥{{ end }}{{ if eq .Status \"resolved\" }}✅{{ end }}{{ .Status | toUpper -}}\n{{- if eq .Status \"firing\" }}:{{ .Alerts.Firing | len }}{{ if gt (.Alerts.Resolved | len) 0 }}, ✅RESOLVED{{ end }}{{ end -}}\n{{- if gt (.Alerts.Resolved | len) 0 }}:{{ .Alerts.Resolved | len }}{{ end }}] {{ .GroupLabels.alertname -}}\n{{- if .CommonLabels.service }} in {{ .CommonLabels.service -}}\n{{- else }} in {{ if gt (len .Alerts.Firing) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Firing }}{{ end -}}\n{{- if gt (len .Alerts.Resolved) 0 }}{{ template \"dogeos_rulename_list\" .Alerts.Resolved }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"dogeos_rulename_list\" -}}\n{{- range . }}{{ range .Labels.SortedPairs }}{{ if eq .Name \"rulename\" }}'{{ .Value }}' {{ end }}{{ end }}{{ end -}}\n{{ end }}\n\n{{ define \"slack.dogeos.text\" }}\nHere are details:\n{{ if gt (len .Alerts.Firing) 0 }}🔥🔥🔥 {{ len .Alerts.Firing }} FIRING 🔥🔥🔥\n{{ template \"dogeos_text_alert_list\" .Alerts.Firing }}{{ if gt (len .Alerts.Resolved) 0 }}\n{{ end }}{{ end }}{{ if gt (len .Alerts.Resolved) 0 }}✅✅✅ {{ len .Alerts.Resolved }} RESOLVED ✅✅✅\n{{ template \"dogeos_text_alert_list\" .Alerts.Resolved }}{{ end }}{{ end }}\n\n\n{{ define \"dogeos_text_alert_list\" }}{{ range . }}\nLabels:\n{{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}Annotations:\n{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}\n{{ end }}{{ if gt (len .SilenceURL) 0 }}Silence: {{ .SilenceURL }}\n{{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}\n{{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}\n{{ end }}{{ end }}{{ end }}"
+    template: "{{ define \"slack.dogeos.title\" -}}\n[{{ .Status | toUpper }}] {{ .GroupLabels.alertname -}}\n{{- if .CommonLabels.service }} in {{ .CommonLabels.service }}{{ end -}}\n{{ end }}\n\n{{ define \"slack.dogeos.text\" }}\n{{ range .Alerts }}\nLabels:\n{{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}Annotations:\n{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}\n{{ end }}{{ if gt (len .GeneratorURL) 0 }}Source: {{ .GeneratorURL }}\n{{ end }}{{ if gt (len .DashboardURL) 0 }}Dashboard: {{ .DashboardURL }}\n{{ end }}{{ if gt (len .PanelURL) 0 }}Panel: {{ .PanelURL }}\n{{ end }}\n{{ end }}{{ end }}"

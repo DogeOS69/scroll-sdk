@@ -1,0 +1,71 @@
+# HELP eth_da_submitter_ready Service readiness (1 once /ready returns 200)
+# TYPE eth_da_submitter_ready gauge
+eth_da_submitter_ready 1
+# HELP eth_da_submitter_cycles_total Lifecycle loop iterations attempted
+# TYPE eth_da_submitter_cycles_total counter
+eth_da_submitter_cycles_total 120
+# HELP eth_da_submitter_cycle_failures_total Lifecycle loop iterations that returned an error
+# TYPE eth_da_submitter_cycle_failures_total counter
+eth_da_submitter_cycle_failures_total 0
+# HELP eth_da_submitter_submissions_total Successful EthDaSubmitter::submit calls
+# TYPE eth_da_submitter_submissions_total counter
+eth_da_submitter_submissions_total 12
+# HELP eth_da_submitter_submission_failures_total Failed EthDaSubmitter::submit calls
+# TYPE eth_da_submitter_submission_failures_total counter
+eth_da_submitter_submission_failures_total 0
+# HELP eth_da_submitter_latest_l1_block Highest Ethereum L1 block number observed by the lifecycle loop
+# TYPE eth_da_submitter_latest_l1_block gauge
+eth_da_submitter_latest_l1_block 12345678
+# HELP eth_da_submitter_latest_l2_block Highest L2 block number ingested into the lifecycle store
+# TYPE eth_da_submitter_latest_l2_block gauge
+eth_da_submitter_latest_l2_block 987654
+# HELP eth_da_submitter_latest_batch_height Highest lifecycle batch index proposed
+# TYPE eth_da_submitter_latest_batch_height gauge
+eth_da_submitter_latest_batch_height 42
+# HELP eth_da_submitter_pending_txs Number of lifecycle batches awaiting confirmer settlement
+# TYPE eth_da_submitter_pending_txs gauge
+eth_da_submitter_pending_txs 1
+# HELP eth_da_publish_ready_backlog Total lifecycle batches in pending_publish state
+# TYPE eth_da_publish_ready_backlog gauge
+eth_da_publish_ready_backlog 3
+# HELP eth_da_publish_oldest_ready_age_seconds Age of the oldest pending_publish lifecycle batch
+# TYPE eth_da_publish_oldest_ready_age_seconds gauge
+eth_da_publish_oldest_ready_age_seconds 78
+# HELP eth_da_publish_pending_tx_pressure Active submitter pending blob transaction count
+# TYPE eth_da_publish_pending_tx_pressure gauge
+eth_da_publish_pending_tx_pressure 1
+# HELP eth_da_publish_policy_decisions_total Publish policy decisions by decision and reason labels
+# TYPE eth_da_publish_policy_decisions_total counter
+eth_da_publish_policy_decisions_total{decision="submit",reason="target_blobs_ready"} 12
+eth_da_publish_policy_decisions_total{decision="defer",reason="waiting_for_target_blobs"} 48
+# HELP eth_da_publish_l1_base_fee_wei Latest sampled L1 base fee in wei
+# TYPE eth_da_publish_l1_base_fee_wei gauge
+eth_da_publish_l1_base_fee_wei 22000000000
+# HELP eth_da_publish_blob_base_fee_wei Latest sampled blob base fee in wei
+# TYPE eth_da_publish_blob_base_fee_wei gauge
+eth_da_publish_blob_base_fee_wei 1000000000
+# HELP eth_da_publish_resolved_max_fee_per_gas_wei Latest service-resolved max_fee_per_gas in wei
+# TYPE eth_da_publish_resolved_max_fee_per_gas_wei gauge
+eth_da_publish_resolved_max_fee_per_gas_wei 46000000000
+# HELP eth_da_publish_resolved_max_fee_per_blob_gas_wei Latest service-resolved max_fee_per_blob_gas in wei
+# TYPE eth_da_publish_resolved_max_fee_per_blob_gas_wei gauge
+eth_da_publish_resolved_max_fee_per_blob_gas_wei 2000000000
+# HELP eth_da_publish_fresh_submission_failures_total Fresh publication failures by bounded kind
+# TYPE eth_da_publish_fresh_submission_failures_total counter
+eth_da_publish_fresh_submission_failures_total{kind="provider"} 0
+# HELP eth_da_publish_canonicality_events_total Exceptional submitter canonicality events by stage and kind
+# TYPE eth_da_publish_canonicality_events_total counter
+eth_da_publish_canonicality_events_total{stage="receipt",kind="provider_inconsistency"} 0
+# HELP eth_da_submitter_sign_requests_total Transaction signing requests by backend label
+# TYPE eth_da_submitter_sign_requests_total counter
+eth_da_submitter_sign_requests_total{backend="aws_kms"} 12
+# HELP eth_da_submitter_sign_failures_total Transaction signing failures by backend and bounded kind labels
+# TYPE eth_da_submitter_sign_failures_total counter
+eth_da_submitter_sign_failures_total{backend="aws_kms",kind="timeout"} 0
+# HELP eth_da_submitter_blob_upload_rows Current submitter_blob_uploads row count by bounded state label
+# TYPE eth_da_submitter_blob_upload_rows gauge
+eth_da_submitter_blob_upload_rows{state="pending"} 0
+eth_da_submitter_blob_upload_rows{state="uploading"} 0
+eth_da_submitter_blob_upload_rows{state="uploaded"} 12
+eth_da_submitter_blob_upload_rows{state="failed"} 0
+eth_da_submitter_blob_upload_rows{state="conflict"} 0

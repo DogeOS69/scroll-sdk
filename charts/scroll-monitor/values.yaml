@@ -93,6 +93,18 @@ grafana:
     annotations:
       "helm.sh/resource-policy": keep
 
+dashboards:
+  bundled:
+    # Set false when dashboard ConfigMaps are managed outside this chart and
+    # referenced through grafana.dashboardsConfigMaps.
+    enabled: true
+
+alerts:
+  bundled:
+    # Set false when Grafana alert provisioning is managed outside this chart
+    # and mounted through grafana.extraConfigmapMounts.
+    enabled: true
+
 loki:
   enabled: false
   fullnameOverride: loki

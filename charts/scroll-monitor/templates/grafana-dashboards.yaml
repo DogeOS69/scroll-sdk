@@ -1,4 +1,20 @@
-{{- if .Values.grafana.enabled }}
+{{- $dashboardsBundledEnabled := true -}}
+{{- with .Values.dashboards }}
+  {{- with .bundled }}
+    {{- if hasKey . "enabled" }}
+      {{- $dashboardsBundledEnabled = .enabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $alertsBundledEnabled := true -}}
+{{- with .Values.alerts }}
+  {{- with .bundled }}
+    {{- if hasKey . "enabled" }}
+      {{- $alertsBundledEnabled = .enabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.grafana.enabled $dashboardsBundledEnabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -35,6 +51,8 @@ metadata:
     grafana_dashboard: "4"
 data:
 {{ (.Files.Glob "grafana/blockscout-dashboards/*.json").AsConfig | indent 2 }}
+{{- end }}
+{{- if and .Values.grafana.enabled $alertsBundledEnabled }}
 ---
 apiVersion: v1
 kind: ConfigMap

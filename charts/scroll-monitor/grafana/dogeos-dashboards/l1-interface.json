@@ -18,22 +18,8 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 500,
-      "panels": [],
-      "title": "Service Overview",
-      "type": "row"
-    },
     {
       "datasource": {
         "type": "prometheus",
@@ -41,99 +27,30 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
+          "unit": "none"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value #A"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "match": "null",
-                      "result": {
-                        "text": "N/A"
-                      }
-                    },
-                    "type": "special"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 24,
+        "w": 6,
         "x": 0,
-        "y": 1
+        "y": 0
       },
-      "id": 501,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "name",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.1.0-69632",
+      "id": 1,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "code",
-          "expr": "l1_interface_service_info",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "Version: {{version}} | Chain ID: {{chain_id}}",
-          "range": false,
+          "expr": "max(l1_interface_service_ready)",
+          "legendFormat": "ready",
           "refId": "A"
         }
       ],
-      "title": "Service Info",
+      "title": "Service Ready",
       "type": "stat"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 5
-      },
-      "id": 100,
-      "panels": [],
-      "title": "Golden Signals: Latency",
-      "type": "row"
     },
     {
       "datasource": {
@@ -142,14 +59,103 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
+          "expr": "max(l1_interface_active_tasks)",
+          "legendFormat": "active tasks",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "unit": "s"
+          "expr": "max(l1_interface_safe_head_height)",
+          "legendFormat": "safe head",
+          "refId": "A"
+        }
+      ],
+      "title": "Safe Head",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_final_rpc_head_height)",
+          "legendFormat": "final head",
+          "refId": "A"
+        }
+      ],
+      "title": "Final RPC Head",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -157,50 +163,21 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 4
       },
-      "id": 101,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 5,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99 - {{method}}",
+          "expr": "sum by (method) (rate(l1_interface_rpc_requests_total[$__rate_interval]))",
+          "legendFormat": "{{method}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95 - {{method}}",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50 - {{method}}",
-          "refId": "C"
         }
       ],
-      "title": "RPC Request Latency",
+      "title": "JSON-RPC Request Rate",
       "type": "timeseries"
     },
     {
@@ -210,13 +187,79 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 6,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
+          "expr": "sum by (method, status) (rate(l1_interface_rpc_responses_total{status!=\"success\"}[$__rate_interval]))",
+          "legendFormat": "{{method}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "JSON-RPC Error Response Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 7,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
+          "expr": "histogram_quantile(0.99, sum by (le, method) (rate(l1_interface_rpc_request_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p99 {{method}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "histogram_quantile(0.90, sum by (le, method) (rate(l1_interface_rpc_request_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p90 {{method}}",
+          "refId": "B"
+        }
+      ],
+      "title": "JSON-RPC Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
           "unit": "s"
         },
         "overrides": []
@@ -225,28 +268,17 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 12
       },
-      "id": 102,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 8,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99",
+          "expr": "histogram_quantile(0.99, sum by (le, status) (rate(l1_interface_db_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p99 {{status}}",
           "refId": "A"
         },
         {
@@ -254,18 +286,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95",
+          "expr": "histogram_quantile(0.90, sum by (le, status) (rate(l1_interface_db_query_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p90 {{status}}",
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50",
-          "refId": "C"
         }
       ],
       "title": "Database Query Latency",
@@ -278,13 +301,38 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
-          },
+          "expr": "sum by (indexer, status) (rate(l1_interface_indexer_sync_results_total[$__rate_interval]))",
+          "legendFormat": "{{indexer}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Indexer Sync Results",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
           "unit": "s"
         },
         "overrides": []
@@ -292,417 +340,29 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 14
-      },
-      "id": 103,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50",
-          "refId": "C"
-        }
-      ],
-      "title": "Deposit Processing Latency",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "id": 200,
-      "panels": [],
-      "title": "Golden Signals: Traffic",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "req/s",
-            "axisPlacement": "left",
-            "drawStyle": "bars",
-            "fillOpacity": 50,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 23
-      },
-      "id": 201,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum by (method) (rate(l1_interface_rpc_requests_total[$__rate_interval]))",
-          "legendFormat": "{{method}}",
-          "refId": "A"
-        }
-      ],
-      "title": "RPC Request Rate (QPS)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "req/s",
-            "axisPlacement": "left",
-            "drawStyle": "line",
-            "fillOpacity": 20
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 23
+        "y": 20
       },
-      "id": 202,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 10,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(rate(l1_interface_db_queries_total[$__rate_interval]))",
-          "legendFormat": "DB Queries",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(l1_interface_deposits_processed_total[$__rate_interval]))",
-          "legendFormat": "Deposits Processed",
-          "refId": "B"
-        }
-      ],
-      "title": "DB & Deposit Rate (QPS)",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "id": 300,
-      "panels": [],
-      "title": "Golden Signals: Errors",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "err/s",
-            "axisPlacement": "left",
-            "drawStyle": "bars",
-            "fillOpacity": 50,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 32
-      },
-      "id": 301,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum by (method) (rate(l1_interface_rpc_responses_total{status!=\"success\"}[$__rate_interval]))",
-          "legendFormat": "{{method}}",
+          "expr": "time() - max by (indexer) (l1_interface_indexer_last_sync_timestamp)",
+          "legendFormat": "{{indexer}}",
           "refId": "A"
         }
       ],
-      "title": "RPC Error Rate",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 40
-      },
-      "id": 400,
-      "panels": [],
-      "title": "Golden Signals: Saturation & Service Health",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisPlacement": "left"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 41
-      },
-      "id": 401,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_active_tasks",
-          "legendFormat": "Active Tasks",
-          "refId": "A"
-        }
-      ],
-      "title": "Active Tasks",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "left"
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 41
-      },
-      "id": 402,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(l1_interface_kzg_cache_hits_total{status=\"miss\"}[$__rate_interval])) by (cache_type) / sum(rate(l1_interface_kzg_cache_requests_total[$__rate_interval])) by (cache_type)",
-          "legendFormat": "{{cache_type}} miss rate",
-          "refId": "A"
-        }
-      ],
-      "title": "KZG Cache Miss Rate",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "blocks",
-            "axisPlacement": "left"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 41
-      },
-      "id": 403,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "indexer_dogecoin_last_synced_block - l1_interface_final_rpc_head_height",
-          "legendFormat": "Sync Lag",
-          "refId": "A"
-        }
-      ],
-      "title": "Indexer Sync Lag",
+      "title": "Indexer Sync Age",
       "type": "timeseries"
     }
   ],
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
+    "dogeos",
     "l1-interface"
   ],
   "templating": {
@@ -713,9 +373,9 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "l1-interface Service Dashboard",
-  "uid": "l1-interface-dashboard",
+  "timezone": "",
+  "title": "DogeOS L1 Interface",
+  "uid": "dogeos-l1-interface",
   "version": 1,
   "weekStart": ""
 }
