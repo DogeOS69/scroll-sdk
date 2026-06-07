@@ -2,6 +2,8 @@ grafana:
   enabled: true
   fullnameOverride: grafana
   nameOverride: grafana
+  deploymentStrategy:
+    type: Recreate
   adminUser: admin
   adminPassword: scroll-sdk
   additionalDataSources:
