@@ -1,0 +1,80 @@
+image:
+  repository: ghcr.io/dogeos69/scroll-reth
+  pullPolicy: IfNotPresent
+  tag: dogeos-revm-c1cd6f4
+
+global:
+  fullnameOverride: l2-sequencer-__INSTANCE_INDEX__
+
+command:
+  - bash
+  - -c
+  - exec dogeos-reth-entrypoint
+
+env:
+  - name: RUST_LOG
+    value: sqlx=off,scroll=trace,reth=trace,rollup=trace,info
+
+envFrom:
+  - configMapRef:
+      name: l2-sequencer-__INSTANCE_INDEX__-env
+
+initContainers:
+  wait-for-l1:
+    image: scrolltech/scroll-alpine:v0.0.1
+    command:
+      - /bin/sh
+      - -c
+      - /wait-for-l1.sh $L2RETH_L1_ENDPOINT
+    envFrom:
+      - configMapRef:
+          name: l2-sequencer-__INSTANCE_INDEX__-env
+    volumeMounts:
+      - name: wait-for-l1-script
+        mountPath: /wait-for-l1.sh
+        subPath: wait-for-l1.sh
+
+configMaps:
+  env:
+    enabled: true
+    data:
+      CHAIN_ID: ""
+      L2RETH_ROLE: sequencer
+      L2RETH_DATADIR: /l2reth/reth-data
+      L2RETH_GENESIS: /l2reth/genesis/genesis.json
+      L2RETH_HTTP_PORT: "8545"
+      L2RETH_WS_PORT: "8546"
+      L2RETH_P2P_PORT: "30303"
+      L2RETH_L1_ENDPOINT: "http://l1-interface:8545"
+      L2RETH_BEACON_ENDPOINT: "http://l1-interface:5052"
+      L2RETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
+      L2RETH_VALID_SIGNER: ""
+      L2RETH_PEER_LIST: "[]"
+      L2RETH_EXTRA_PARAMS: ""
+
+persistence:
+  env:
+    enabled: true
+    type: configMap
+    name: l2-sequencer-__INSTANCE_INDEX__-env
+  data:
+    enabled: true
+    type: pvc
+    name: l2reth-data
+    mountPath: /l2reth/reth-data
+    size: 1000Gi
+    retain: true
+  genesis:
+    enabled: true
+    type: configMap
+    name: genesis-config
+    mountPath: /l2reth/genesis/genesis.json
+    subPath: genesis.json
+
+resources:
+  requests:
+    memory: "150Mi"
+    cpu: "50m"
+  limits:
+    memory: "8Gi"
+    cpu: "4"
