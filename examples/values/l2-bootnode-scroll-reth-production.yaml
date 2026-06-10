@@ -71,5 +71,11 @@ persistence:
     mountPath: /l2reth/genesis/
 
 service:
+  main:
+    enabled: false
   p2p:
     enabled: true
+
+serviceMonitor:
+  main:
+    enabled: false

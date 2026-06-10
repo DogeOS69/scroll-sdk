@@ -63,7 +63,15 @@ configMaps:
       L2RETH_L1_CONTRACT_DEPLOYMENT_BLOCK: ""
       L2RETH_VALID_SIGNER: ""
       L2RETH_PEER_LIST: "[]"
-      L2RETH_EXTRA_PARAMS: ""
+      L2RETH_EXTRA_PARAMS: "--metrics 0.0.0.0:6060"
+
+probes:
+  liveness:
+    enabled: false
+  readiness:
+    enabled: false
+  startup:
+    enabled: false
 
 ingress:
   main:
