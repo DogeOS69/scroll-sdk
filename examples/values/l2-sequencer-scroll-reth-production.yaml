@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/dogeos69/scroll-reth
+  repository: vladogeos/scroll-reth
   pullPolicy: IfNotPresent
   tag: dogeos-revm-c1cd6f4
 
