@@ -47,3 +47,26 @@ withdrawal_processor_scroll_batch_local_runtime_total{outcome="ready"} 4
 # HELP withdrawal_processor_bridge_witness_runtime_total Bridge witness materialization runtime attempts by outcome
 # TYPE withdrawal_processor_bridge_witness_runtime_total counter
 withdrawal_processor_bridge_witness_runtime_total{outcome="ready"} 7
+# HELP withdrawal_processor_protocol_replay_configured Whether WP has a replay sqlite path configured for protocol observability
+# TYPE withdrawal_processor_protocol_replay_configured gauge
+withdrawal_processor_protocol_replay_configured 1
+# HELP withdrawal_processor_protocol_replay_wf_tx_number Canonical replay head WF transaction number
+# TYPE withdrawal_processor_protocol_replay_wf_tx_number gauge
+withdrawal_processor_protocol_replay_wf_tx_number 1554
+# HELP withdrawal_processor_protocol_replay_bridge_key_info Active replay bridge key labels
+# TYPE withdrawal_processor_protocol_replay_bridge_key_info gauge
+withdrawal_processor_protocol_replay_bridge_key_info{role="current",key_hash="0x1111111111111111111111111111111111111111"} 1
+withdrawal_processor_protocol_replay_bridge_key_info{role="deprecating",key_hash="0x2222222222222222222222222222222222222222"} 1
+# HELP withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number Current replay bridge-key deprecation cutoff WF transaction number
+# TYPE withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number gauge
+withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number 1600
+# HELP withdrawal_processor_protocol_job_count Protocol action job count by status and action kind
+# TYPE withdrawal_processor_protocol_job_count gauge
+withdrawal_processor_protocol_job_count{status="awaiting_replay",action_kind="rotate_key"} 1
+withdrawal_processor_protocol_job_count{status="completed",action_kind="advance_l1_build"} 10
+# HELP withdrawal_processor_protocol_job_oldest_age_seconds Oldest non-terminal protocol action job age by status and action kind
+# TYPE withdrawal_processor_protocol_job_oldest_age_seconds gauge
+withdrawal_processor_protocol_job_oldest_age_seconds{status="awaiting_replay",action_kind="rotate_key"} 35
+# HELP withdrawal_processor_protocol_metrics_scrape_errors_total Protocol metrics scrape refresh errors by source
+# TYPE withdrawal_processor_protocol_metrics_scrape_errors_total counter
+withdrawal_processor_protocol_metrics_scrape_errors_total{source="replay_db"} 0

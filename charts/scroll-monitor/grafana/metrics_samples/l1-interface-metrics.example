@@ -51,3 +51,47 @@ l1_interface_indexer_sync_results_total{indexer="dogecoin",status="success"} 40
 # HELP l1_interface_indexer_last_sync_timestamp Last indexer sync timestamp
 # TYPE l1_interface_indexer_last_sync_timestamp gauge
 l1_interface_indexer_last_sync_timestamp{indexer="dogecoin"} 1762136013
+# HELP l1_interface_protocol_replay_configured Whether L1 Interface has replay_read enabled with a replay SQLite path configured
+# TYPE l1_interface_protocol_replay_configured gauge
+l1_interface_protocol_replay_configured 1
+# HELP l1_interface_protocol_replay_validated_up_to Replay read-model validated WF transaction number
+# TYPE l1_interface_protocol_replay_validated_up_to gauge
+l1_interface_protocol_replay_validated_up_to 1554
+# HELP l1_interface_protocol_replay_discovered_up_to Replay read-model discovered WF transaction number
+# TYPE l1_interface_protocol_replay_discovered_up_to gauge
+l1_interface_protocol_replay_discovered_up_to 1554
+# HELP l1_interface_protocol_replay_lag Replay read-model discovered minus validated WF transaction lag
+# TYPE l1_interface_protocol_replay_lag gauge
+l1_interface_protocol_replay_lag 0
+# HELP l1_interface_protocol_replay_fully_validated Whether the replay read model is fully validated
+# TYPE l1_interface_protocol_replay_fully_validated gauge
+l1_interface_protocol_replay_fully_validated 1
+# HELP l1_interface_protocol_replay_ready Whether the replay read model passes readiness checks
+# TYPE l1_interface_protocol_replay_ready gauge
+l1_interface_protocol_replay_ready 1
+# HELP l1_interface_protocol_replay_stopped Whether the replay pipeline has a stop reason
+# TYPE l1_interface_protocol_replay_stopped gauge
+l1_interface_protocol_replay_stopped 0
+# HELP l1_interface_protocol_replay_stop_reason_active Active bounded replay stop-reason kind
+# TYPE l1_interface_protocol_replay_stop_reason_active gauge
+l1_interface_protocol_replay_stop_reason_active{reason="missing_witness"} 0
+l1_interface_protocol_replay_stop_reason_active{reason="checkpoint_stale"} 0
+# HELP l1_interface_protocol_replay_staleness_seconds Seconds since the replay read-model head was last updated
+# TYPE l1_interface_protocol_replay_staleness_seconds gauge
+l1_interface_protocol_replay_staleness_seconds 5
+# HELP l1_interface_protocol_replay_active_regression_episode Whether replay read-model reorg recovery has an active regression episode
+# TYPE l1_interface_protocol_replay_active_regression_episode gauge
+l1_interface_protocol_replay_active_regression_episode 0
+# HELP l1_interface_protocol_deposit_queue_next_index Replay-state deposit queue next deposit index
+# TYPE l1_interface_protocol_deposit_queue_next_index gauge
+l1_interface_protocol_deposit_queue_next_index 42
+# HELP l1_interface_protocol_deposit_queue_covered_message_count Deposit messages covered by the replay read model before the next deposit index
+# TYPE l1_interface_protocol_deposit_queue_covered_message_count gauge
+l1_interface_protocol_deposit_queue_covered_message_count 42
+# HELP l1_interface_protocol_replay_bridge_key_info Active replay bridge key labels
+# TYPE l1_interface_protocol_replay_bridge_key_info gauge
+l1_interface_protocol_replay_bridge_key_info{role="current",key_hash="0x1111111111111111111111111111111111111111"} 1
+l1_interface_protocol_replay_bridge_key_info{role="deprecating",key_hash="0x2222222222222222222222222222222222222222"} 1
+# HELP l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number Current replay bridge-key deprecation cutoff WF transaction number
+# TYPE l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number gauge
+l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number 1600

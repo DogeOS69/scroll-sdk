@@ -1,6 +1,17 @@
 # HELP tso_core_registered_signers_count Number of currently registered signers in the TSO
 # TYPE tso_core_registered_signers_count gauge
 tso_core_registered_signers_count 3
+# HELP tso_core_registered_signers_by_role Current number of registered signers by role
+# TYPE tso_core_registered_signers_by_role gauge
+tso_core_registered_signers_by_role{role="Attestation"} 3
+# HELP tso_core_registered_signer_info Registered signer labels
+# TYPE tso_core_registered_signer_info gauge
+tso_core_registered_signer_info{role="Attestation",public_key="02abc"} 1
+tso_core_registered_signer_info{role="Attestation",public_key="03abc"} 1
+# HELP tso_core_transactions_by_status Current in-memory TSO transaction count by status
+# TYPE tso_core_transactions_by_status gauge
+tso_core_transactions_by_status{status="collecting_attestation"} 1
+tso_core_transactions_by_status{status="completed"} 4
 # HELP tso_core_signer_transaction_events_total Counter for signer events
 # TYPE tso_core_signer_transaction_events_total counter
 tso_core_signer_transaction_events_total{signer_pubkey="02abc",event_type="signed"} 120
