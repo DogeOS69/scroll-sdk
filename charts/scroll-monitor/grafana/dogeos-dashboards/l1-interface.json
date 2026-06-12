@@ -18,22 +18,27 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "dogeos",
+    "l1-interface"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "DogeOS Dogecoin L1 Interface",
+  "uid": "l1-interface-dashboard",
+  "version": 3,
+  "weekStart": "",
   "panels": [
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 500,
-      "panels": [],
-      "title": "Service Overview",
-      "type": "row"
-    },
     {
       "datasource": {
         "type": "prometheus",
@@ -41,99 +46,30 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
+          "unit": "none"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value #A"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "match": "null",
-                      "result": {
-                        "text": "N/A"
-                      }
-                    },
-                    "type": "special"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 24,
+        "w": 4,
         "x": 0,
-        "y": 1
+        "y": 0
       },
-      "id": 501,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "name",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.1.0-69632",
+      "id": 1,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "code",
-          "expr": "l1_interface_service_info",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "Version: {{version}} | Chain ID: {{chain_id}}",
-          "range": false,
+          "expr": "max(l1_interface_service_ready)",
+          "legendFormat": "ready",
           "refId": "A"
         }
       ],
-      "title": "Service Info",
+      "title": "Service Ready",
       "type": "stat"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 5
-      },
-      "id": 100,
-      "panels": [],
-      "title": "Golden Signals: Latency",
-      "type": "row"
     },
     {
       "datasource": {
@@ -142,14 +78,302 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
+          "expr": "max(l1_interface_active_tasks)",
+          "legendFormat": "tasks",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_genesis_mode_active)",
+          "legendFormat": "genesis",
+          "refId": "A"
+        }
+      ],
+      "title": "Genesis Mode Active",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (version, chain_id) (l1_interface_service_info)",
+          "legendFormat": "v{{version}} / chain {{chain_id}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Service Info",
+      "type": "stat",
+      "options": {
+        "textMode": "name"
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 5,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(indexer_dogecoin_last_synced_block)",
+          "legendFormat": "block",
+          "refId": "A"
+        }
+      ],
+      "title": "Dogecoin Indexer Last Synced Block",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 4
+      },
+      "id": 6,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_wf_tx_number)",
+          "legendFormat": "wf_tx",
+          "refId": "A"
+        }
+      ],
+      "title": "Protocol State WF Tx Number",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 4
+      },
+      "id": 7,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number)",
+          "legendFormat": "block",
+          "refId": "A"
+        }
+      ],
+      "title": "Dogecoin Confirmed Block",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 4
+      },
+      "id": 8,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_l2_batch_height)",
+          "legendFormat": "batch",
+          "refId": "A"
+        }
+      ],
+      "title": "L2 Batch Height",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 15,
+        "y": 4
+      },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_next_relayed_deposit_index)",
+          "legendFormat": "deposit",
+          "refId": "A"
+        }
+      ],
+      "title": "Next Relayed Deposit Index",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 4
+      },
+      "id": 10,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_next_withdraw_index)",
+          "legendFormat": "withdraw",
+          "refId": "A"
+        }
+      ],
+      "title": "Next Withdraw Index",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
           "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
-          },
-          "unit": "s"
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
@@ -157,28 +381,17 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 8
       },
-      "id": 101,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 11,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99 - {{method}}",
+          "expr": "max(l1_interface_protocol_state_wf_tx_number)",
+          "legendFormat": "wf_tx_number",
           "refId": "A"
         },
         {
@@ -186,8 +399,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95 - {{method}}",
+          "expr": "max(l1_interface_protocol_state_l2_batch_height)",
+          "legendFormat": "l2_batch_height",
           "refId": "B"
         },
         {
@@ -195,12 +408,21 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_rpc_request_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50 - {{method}}",
+          "expr": "max(l1_interface_protocol_state_next_relayed_deposit_index)",
+          "legendFormat": "next_relayed_deposit_index",
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_state_next_withdraw_index)",
+          "legendFormat": "next_withdraw_index",
+          "refId": "D"
         }
       ],
-      "title": "RPC Request Latency",
+      "title": "Protocol State Progression",
       "type": "timeseries"
     },
     {
@@ -210,14 +432,11 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "unit": "none",
           "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
-          },
-          "unit": "s"
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
@@ -225,28 +444,17 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 8
       },
-      "id": 102,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 12,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99",
+          "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number)",
+          "legendFormat": "state_confirmed_block",
           "refId": "A"
         },
         {
@@ -254,21 +462,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95",
+          "expr": "max(indexer_dogecoin_last_synced_block)",
+          "legendFormat": "indexer_last_synced_block",
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_db_query_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50",
-          "refId": "C"
         }
       ],
-      "title": "Database Query Latency",
+      "title": "Dogecoin Block Progression",
       "type": "timeseries"
     },
     {
@@ -278,79 +477,126 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 16
+      },
+      "id": 13,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "custom": {
-            "axisLabel": "seconds",
-            "axisPlacement": "left"
+          "expr": "max(l1_interface_protocol_replay_ready)",
+          "legendFormat": "ready",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 16
+      },
+      "id": 14,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
+          "expr": "max(l1_interface_protocol_replay_fully_validated)",
+          "legendFormat": "validated",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Fully Validated",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 16
+      },
+      "id": 15,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_lag)",
+          "legendFormat": "lag",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Lag",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
           "unit": "s"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 14
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 16
       },
-      "id": 103,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 16,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.99\"}",
-          "legendFormat": "P99",
+          "expr": "max(l1_interface_protocol_replay_staleness_seconds)",
+          "legendFormat": "staleness",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.95\"}",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_deposit_processing_duration_seconds{quantile=\"0.5\"}",
-          "legendFormat": "P50",
-          "refId": "C"
         }
       ],
-      "title": "Deposit Processing Latency",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "id": 200,
-      "panels": [],
-      "title": "Golden Signals: Traffic",
-      "type": "row"
+      "title": "Replay Staleness",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -359,20 +605,219 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 16
+      },
+      "id": 17,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
+          "expr": "max(l1_interface_protocol_replay_readiness_failure_count)",
+          "legendFormat": "failures",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Readiness Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 16
+      },
+      "id": 18,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_active_regression_episode)",
+          "legendFormat": "episode",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Regression Episode",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
           "custom": {
-            "axisLabel": "req/s",
-            "axisPlacement": "left",
-            "drawStyle": "bars",
-            "fillOpacity": 50,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 19,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          "unit": "reqps"
+          "expr": "max(l1_interface_protocol_replay_validated_up_to)",
+          "legendFormat": "validated_up_to",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_discovered_up_to)",
+          "legendFormat": "discovered_up_to",
+          "refId": "B"
+        }
+      ],
+      "title": "Replay Head",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 20
+      },
+      "id": 20,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_stopped)",
+          "legendFormat": "stopped",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_active_regression_episode)",
+          "legendFormat": "active_regression_episode",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (reason) (l1_interface_protocol_replay_stop_reason_active)",
+          "legendFormat": "stop: {{reason}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Replay Stop and Recovery State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 20
+      },
+      "id": 21,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_deposit_queue_next_index)",
+          "legendFormat": "next_index",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_deposit_queue_covered_message_count)",
+          "legendFormat": "covered_message_count",
+          "refId": "B"
+        }
+      ],
+      "title": "Replay Deposit Queue Coverage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
@@ -380,20 +825,234 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 23
+        "y": 28
       },
-      "id": 201,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+      "id": 22,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (role, key_hash) (l1_interface_protocol_replay_bridge_key_info)",
+          "legendFormat": "{{role}}: {{key_hash}}",
+          "refId": "A"
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number)",
+          "legendFormat": "deprecation_cutoff_wf_tx",
+          "refId": "B"
         }
+      ],
+      "title": "Replay Bridge Keys",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 23,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (payload_type) (l1_interface_protocol_wf_event_count)",
+          "legendFormat": "{{payload_type}}",
+          "refId": "A"
+        }
+      ],
+      "title": "WF Protocol Events by Payload Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 36
+      },
+      "id": 24,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_protocol_deposit_count)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Deposit Count by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 36
+      },
+      "id": 25,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_protocol_deposit_amount_sats) / 1e8",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Deposit Amount by Status (DOGE)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 36
+      },
+      "id": 26,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_protocol_withdrawal_count)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Withdrawal Count by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 36
+      },
+      "id": 27,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_protocol_withdrawal_amount_sats) / 1e8",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Withdrawal Amount by Status (DOGE)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 44
+      },
+      "id": 28,
       "targets": [
         {
           "datasource": {
@@ -405,7 +1064,7 @@
           "refId": "A"
         }
       ],
-      "title": "RPC Request Rate (QPS)",
+      "title": "Ethereum-compatible JSON-RPC Request Rate",
       "type": "timeseries"
     },
     {
@@ -415,206 +1074,11 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "unit": "reqps",
           "custom": {
-            "axisLabel": "req/s",
-            "axisPlacement": "left",
-            "drawStyle": "line",
-            "fillOpacity": 20
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 23
-      },
-      "id": 202,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(l1_interface_db_queries_total[$__rate_interval]))",
-          "legendFormat": "DB Queries",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(l1_interface_deposits_processed_total[$__rate_interval]))",
-          "legendFormat": "Deposits Processed",
-          "refId": "B"
-        }
-      ],
-      "title": "DB & Deposit Rate (QPS)",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "id": 300,
-      "panels": [],
-      "title": "Golden Signals: Errors",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "err/s",
-            "axisPlacement": "left",
-            "drawStyle": "bars",
-            "fillOpacity": 50,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 32
-      },
-      "id": 301,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum by (method) (rate(l1_interface_rpc_responses_total{status!=\"success\"}[$__rate_interval]))",
-          "legendFormat": "{{method}}",
-          "refId": "A"
-        }
-      ],
-      "title": "RPC Error Rate",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 40
-      },
-      "id": 400,
-      "panels": [],
-      "title": "Golden Signals: Saturation & Service Health",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisPlacement": "left"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 41
-      },
-      "id": 401,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "l1_interface_active_tasks",
-          "legendFormat": "Active Tasks",
-          "refId": "A"
-        }
-      ],
-      "title": "Active Tasks",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "left"
-          },
-          "unit": "percent"
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
@@ -622,32 +1086,21 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 41
+        "y": 44
       },
-      "id": 402,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 29,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(rate(l1_interface_kzg_cache_hits_total{status=\"miss\"}[$__rate_interval])) by (cache_type) / sum(rate(l1_interface_kzg_cache_requests_total[$__rate_interval])) by (cache_type)",
-          "legendFormat": "{{cache_type}} miss rate",
+          "expr": "sum by (method, status) (rate(l1_interface_rpc_responses_total{status!=\"success\"}[$__rate_interval]))",
+          "legendFormat": "{{method}} {{status}}",
           "refId": "A"
         }
       ],
-      "title": "KZG Cache Miss Rate",
+      "title": "Ethereum-compatible JSON-RPC Error Response Rate",
       "type": "timeseries"
     },
     {
@@ -657,14 +1110,11 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
+          "unit": "s",
           "custom": {
-            "axisLabel": "blocks",
-            "axisPlacement": "left"
-          },
-          "unit": "short"
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
@@ -672,50 +1122,491 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 41
+        "y": 44
       },
-      "id": 403,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
+      "id": 30,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "indexer_dogecoin_last_synced_block - l1_interface_final_rpc_head_height",
-          "legendFormat": "Sync Lag",
+          "expr": "max by (method) (l1_interface_rpc_request_duration_seconds{quantile=\"0.99\"})",
+          "legendFormat": "p99 {{method}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (method) (l1_interface_rpc_request_duration_seconds{quantile=\"0.5\"})",
+          "legendFormat": "p50 {{method}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Ethereum-compatible JSON-RPC Latency (summary)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 52
+      },
+      "id": 31,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(l1_interface_db_queries_total[$__rate_interval]))",
+          "legendFormat": "queries",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (status) (rate(l1_interface_db_query_responses_total{status!=\"success\"}[$__rate_interval]))",
+          "legendFormat": "error: {{status}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Database Query Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 52
+      },
+      "id": 32,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_db_query_duration_seconds{quantile=\"0.99\"})",
+          "legendFormat": "p99 {{status}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (status) (l1_interface_db_query_duration_seconds{quantile=\"0.5\"})",
+          "legendFormat": "p50 {{status}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Database Query Latency (summary)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 52
+      },
+      "id": 33,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (source) (rate(l1_interface_protocol_metrics_scrape_errors_total[$__rate_interval]))",
+          "legendFormat": "{{source}}",
           "refId": "A"
         }
       ],
-      "title": "Indexer Sync Lag",
+      "title": "Protocol Metrics Scrape Errors",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 60
+      },
+      "id": 34,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (indexer, status) (rate(l1_interface_indexer_sync_results_total[$__rate_interval]))",
+          "legendFormat": "{{indexer}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Dogecoin Source Indexer Sync Results",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 60
+      },
+      "id": 35,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "time() - max by (indexer) (l1_interface_indexer_last_sync_timestamp)",
+          "legendFormat": "{{indexer}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Dogecoin Source Indexer Sync Age",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 60
+      },
+      "id": 36,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (indexer) (l1_interface_indexer_sync_duration_seconds{quantile=\"0.99\"})",
+          "legendFormat": "p99 {{indexer}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (indexer) (l1_interface_indexer_sync_duration_seconds{quantile=\"0.5\"})",
+          "legendFormat": "p50 {{indexer}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Indexer Sync Duration (summary)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 68
+      },
+      "id": 37,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (kind) (eth_da_blob_source_providers_active)",
+          "legendFormat": "{{kind}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Blob Source Providers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 68
+      },
+      "id": 38,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (provider, outcome) (rate(eth_da_blob_provider_requests_total[$__rate_interval]))",
+          "legendFormat": "{{provider}} {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Blob Provider Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 68
+      },
+      "id": 39,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (provider) (eth_da_blob_provider_request_duration_seconds{quantile=\"0.99\"})",
+          "legendFormat": "p99 {{provider}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (provider) (eth_da_blob_provider_request_duration_seconds{quantile=\"0.5\"})",
+          "legendFormat": "p50 {{provider}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Blob Provider Request Latency (summary)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 68
+      },
+      "id": 40,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (event, outcome) (rate(eth_da_blob_cache_events_total[$__rate_interval]))",
+          "legendFormat": "{{event}} {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Blob Cache Events",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 76
+      },
+      "id": 41,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_wallet_total_unredeemed_utxo_amount)",
+          "legendFormat": "amount",
+          "refId": "A"
+        }
+      ],
+      "title": "Fee Wallet Unredeemed UTXO Amount",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 76
+      },
+      "id": 42,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(l1_interface_service_startup_duration_seconds)",
+          "legendFormat": "startup",
+          "refId": "A"
+        }
+      ],
+      "title": "Service Startup Duration",
+      "type": "stat"
     }
-  ],
-  "schemaVersion": 39,
-  "tags": [
-    "l1-interface"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "browser",
-  "title": "l1-interface Service Dashboard",
-  "uid": "l1-interface-dashboard",
-  "version": 1,
-  "weekStart": ""
+  ]
 }

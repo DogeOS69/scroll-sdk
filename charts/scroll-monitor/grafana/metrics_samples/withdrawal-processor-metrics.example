@@ -1,118 +1,361 @@
-# HELP withdrawal_processor_events_processed_total Total number of events processed successfully
-# TYPE withdrawal_processor_events_processed_total counter
-withdrawal_processor_events_processed_total{event="Chain"} 4
-withdrawal_processor_events_processed_total{event="Lifecycle"} 307
-withdrawal_processor_events_processed_total{event="System"} 1
-withdrawal_processor_events_processed_total{event="Task"} 36
+# HELP withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total Ethereum DA inbox worker status-pump probes by outcome
+# TYPE withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total counter
+withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total{outcome="success"} 80
 
-# HELP withdrawal_processor_batch_started_total Total number of batches started
-# TYPE withdrawal_processor_batch_started_total counter
-withdrawal_processor_batch_started_total{trigger="ProcessingStarted"} 5
+# HELP eth_da_blob_cache_events_total Resolver blob-cache events by event, outcome, and bounded error kind
+# TYPE eth_da_blob_cache_events_total counter
+eth_da_blob_cache_events_total{event="writeback_after_missing",outcome="success",error_kind="none"} 24
+eth_da_blob_cache_events_total{event="local_hit",outcome="success",error_kind="none"} 7
+eth_da_blob_cache_events_total{event="source_after_missing",outcome="success",error_kind="none"} 24
 
-# HELP withdrawal_processor_task_created_total Total number of tasks created
-# TYPE withdrawal_processor_task_created_total counter
-withdrawal_processor_task_created_total{source="orchestrator"} 5
+# HELP eth_da_blob_provider_requests_total Blob provider fetch attempts by provider, outcome, and bounded error kind
+# TYPE eth_da_blob_provider_requests_total counter
+eth_da_blob_provider_requests_total{provider="beacon-node",outcome="success",error_kind="none"} 24
 
-# HELP withdrawal_processor_tso_proposals_total Total TSO proposals sent
-# TYPE withdrawal_processor_tso_proposals_total counter
-withdrawal_processor_tso_proposals_total{source="building"} 5
+# HELP withdrawal_processor_protocol_latest_da_l2_ending_block_height Ending L2 block height for the latest locally recorded DA batch
+# TYPE withdrawal_processor_protocol_latest_da_l2_ending_block_height gauge
+withdrawal_processor_protocol_latest_da_l2_ending_block_height 0
 
-# HELP withdrawal_processor_tso_finalized_total Total TSO finalizations received
-# TYPE withdrawal_processor_tso_finalized_total counter
-withdrawal_processor_tso_finalized_total{source="api_event"} 5
+# HELP withdrawal_processor_protocol_replay_bridge_key_info Active replay bridge key labels by role and key_hash; active label is 1, stale observed labels are 0
+# TYPE withdrawal_processor_protocol_replay_bridge_key_info gauge
+withdrawal_processor_protocol_replay_bridge_key_info{role="current",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793"} 1
 
-# HELP celestia_indexer_stored_blob_total Total number of DA blobs stored that matched the target namespace.
-# TYPE celestia_indexer_stored_blob_total counter
-celestia_indexer_stored_blob_total 7
+# HELP withdrawal_processor_protocol_withdrawal_count Withdrawal count grouped by status
+# TYPE withdrawal_processor_protocol_withdrawal_count gauge
+withdrawal_processor_protocol_withdrawal_count{status="Processed"} 37
+withdrawal_processor_protocol_withdrawal_count{status="Failed"} 0
+withdrawal_processor_protocol_withdrawal_count{status="Pending"} 13152
+withdrawal_processor_protocol_withdrawal_count{status="Cancelled"} 0
 
-# HELP withdrawal_processor_batch_completed_total Total number of batches completed
-# TYPE withdrawal_processor_batch_completed_total counter
-withdrawal_processor_batch_completed_total{result="complete"} 4
+# HELP withdrawal_processor_protocol_state_next_withdraw_index Canonical protocol state next withdrawal index
+# TYPE withdrawal_processor_protocol_state_next_withdraw_index gauge
+withdrawal_processor_protocol_state_next_withdraw_index 13084
 
-# HELP withdrawal_processor_last_processed_timestamp Unix timestamp of the last successfully processed withdrawal event
-# TYPE withdrawal_processor_last_processed_timestamp gauge
-withdrawal_processor_last_processed_timestamp{component="broadcast"} 1761891977
+# HELP withdrawal_processor_protocol_state_l2_batch_height Canonical protocol state L2 batch height
+# TYPE withdrawal_processor_protocol_state_l2_batch_height gauge
+withdrawal_processor_protocol_state_l2_batch_height 8842
 
-# HELP withdrawal_processor_active_tasks Current number of active tasks
-# TYPE withdrawal_processor_active_tasks gauge
-withdrawal_processor_active_tasks 1
+# HELP fee_wallet_total_unredeemed_utxo_amount Total amount (satoshis) of fee wallet UTXOs with redeemed=false.
+# TYPE fee_wallet_total_unredeemed_utxo_amount gauge
+fee_wallet_total_unredeemed_utxo_amount 990085653000
 
-# TYPE indexer_dogecoin_last_synced_block gauge
-indexer_dogecoin_last_synced_block 14119118
+# HELP withdrawal_processor_eth_da_inbox_worker_consecutive_failures Current Ethereum DA inbox worker failure streak by source (indexer tick or status pump probe)
+# TYPE withdrawal_processor_eth_da_inbox_worker_consecutive_failures gauge
+withdrawal_processor_eth_da_inbox_worker_consecutive_failures{source="indexer"} 0
+withdrawal_processor_eth_da_inbox_worker_consecutive_failures{source="status_pump"} 0
 
-# TYPE withdrawal_processor_last_processed_batch_height gauge
-withdrawal_processor_last_processed_batch_height{component="broadcast"} 4
-
-# TYPE withdrawal_processor_event_publisher_active gauge
-withdrawal_processor_event_publisher_active 1
-
-# TYPE withdrawal_processor_last_processed_mq_index gauge
-withdrawal_processor_last_processed_mq_index{component="broadcast"} 1
-
-# HELP withdrawal_processor_active_batches Current number of active batches
-# TYPE withdrawal_processor_active_batches gauge
-withdrawal_processor_active_batches 1
-
-# TYPE indexer_dogeos_latest_block_number gauge
-indexer_dogeos_latest_block_number 2971
+# HELP withdrawal_processor_protocol_state_dogecoin_confirmed_block_number Canonical protocol state Dogecoin confirmed block number
+# TYPE withdrawal_processor_protocol_state_dogecoin_confirmed_block_number gauge
+withdrawal_processor_protocol_state_dogecoin_confirmed_block_number 62639039
 
 # TYPE indexer_dogeos_last_synced_block gauge
-indexer_dogeos_last_synced_block 2959
+indexer_dogeos_last_synced_block 5364994
 
-# HELP celestia_indexer_last_synced_block The last block number successfully synced by the Celestia indexer.
-# TYPE celestia_indexer_last_synced_block gauge
-celestia_indexer_last_synced_block 8640202
+# HELP withdrawal_processor_protocol_latest_da_batch_height Latest locally recorded DA batch height
+# TYPE withdrawal_processor_protocol_latest_da_batch_height gauge
+withdrawal_processor_protocol_latest_da_batch_height 0
 
-# HELP withdrawal_processor_pending_tasks Current number of pending tasks
-# TYPE withdrawal_processor_pending_tasks gauge
-withdrawal_processor_pending_tasks 4
+# HELP withdrawal_processor_tso_handoff_recovery_enabled Whether stale TSO handoff recovery is enabled for WF dispatch
+# TYPE withdrawal_processor_tso_handoff_recovery_enabled gauge
+withdrawal_processor_tso_handoff_recovery_enabled 1
 
-# TYPE dogeos_max_message_queue_index gauge
-dogeos_max_message_queue_index 1
+# HELP withdrawal_processor_tso_handoff_recovery_age_probe_ok Whether the latest stale TSO handoff blocked-age probe succeeded
+# TYPE withdrawal_processor_tso_handoff_recovery_age_probe_ok gauge
+withdrawal_processor_tso_handoff_recovery_age_probe_ok 1
 
-# HELP withdrawal_processor_tso_signing_duration_seconds Duration between TSO proposal and finalization
-# TYPE withdrawal_processor_tso_signing_duration_seconds summary
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0.5"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0.9"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0.95"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0.99"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="0.999"} 0
-withdrawal_processor_tso_signing_duration_seconds{route="submit_finalized_tx",quantile="1"} 0
-withdrawal_processor_tso_signing_duration_seconds_sum{route="submit_finalized_tx"} 37
-withdrawal_processor_tso_signing_duration_seconds_count{route="submit_finalized_tx"} 5
+# HELP withdrawal_processor_protocol_state_wf_tx_number Canonical protocol state WF transaction number
+# TYPE withdrawal_processor_protocol_state_wf_tx_number gauge
+withdrawal_processor_protocol_state_wf_tx_number 9467
 
-# TYPE withdrawal_processor_txs_per_bundle summary
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0.5"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0.9"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0.95"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0.99"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="0.999"} 0
-withdrawal_processor_txs_per_bundle{component="broadcast",quantile="1"} 0
-withdrawal_processor_txs_per_bundle_sum{component="broadcast"} 5
-withdrawal_processor_txs_per_bundle_count{component="broadcast"} 5
+# HELP withdrawal_processor_eth_da_inbox_worker_enabled Whether the WP-owned Ethereum DA inbox worker task has entered its run loop
+# TYPE withdrawal_processor_eth_da_inbox_worker_enabled gauge
+withdrawal_processor_eth_da_inbox_worker_enabled 1
 
-# HELP celestia_indexer_blob_fetch_duration_seconds Duration to fetch full blob data via the blob_get RPC call.
-# TYPE celestia_indexer_blob_fetch_duration_seconds summary
-celestia_indexer_blob_fetch_duration_seconds{quantile="0"} 0.007360906
-celestia_indexer_blob_fetch_duration_seconds{quantile="0.5"} 0.008769284851531103
-celestia_indexer_blob_fetch_duration_seconds{quantile="0.9"} 0.05516094938892254
-celestia_indexer_blob_fetch_duration_seconds{quantile="0.95"} 0.05516094938892254
-celestia_indexer_blob_fetch_duration_seconds{quantile="0.99"} 0.05516094938892254
-celestia_indexer_blob_fetch_duration_seconds{quantile="0.999"} 0.05516094938892254
-celestia_indexer_blob_fetch_duration_seconds{quantile="1"} 0.061040068
-celestia_indexer_blob_fetch_duration_seconds_sum 603.2242879280005
-celestia_indexer_blob_fetch_duration_seconds_count 3015
+# HELP withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds Unix timestamp of the indexer's most recent successful Ethereum DA inbox ingest tick observed by the WP status pump
+# TYPE withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds gauge
+withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds 1781257585.523
 
-# HELP withdrawal_processor_withdrawals_per_tx Number of withdrawals included in each broadcast transaction
-# TYPE withdrawal_processor_withdrawals_per_tx summary
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0.5"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0.9"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0.95"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0.99"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="0.999"} 0
-withdrawal_processor_withdrawals_per_tx{component="broadcast",quantile="1"} 0
-withdrawal_processor_withdrawals_per_tx_sum{component="broadcast"} 2
-withdrawal_processor_withdrawals_per_tx_count{component="broadcast"} 5
+# HELP withdrawal_processor_tso_handoff_recovery_blocked_age_seconds Last observed age of the oldest proposed_to_tso WF handoff that can block dispatch; -1 means the latest probe failed
+# TYPE withdrawal_processor_tso_handoff_recovery_blocked_age_seconds gauge
+withdrawal_processor_tso_handoff_recovery_blocked_age_seconds 3
+
+# TYPE indexer_dogeos_latest_block_number gauge
+indexer_dogeos_latest_block_number 5365006
+
+# HELP withdrawal_processor_protocol_withdrawal_amount_sats Withdrawal amount in satoshis grouped by status
+# TYPE withdrawal_processor_protocol_withdrawal_amount_sats gauge
+withdrawal_processor_protocol_withdrawal_amount_sats{status="Pending"} 3078837797142
+withdrawal_processor_protocol_withdrawal_amount_sats{status="Failed"} 0
+withdrawal_processor_protocol_withdrawal_amount_sats{status="Cancelled"} 0
+withdrawal_processor_protocol_withdrawal_amount_sats{status="Processed"} 6450000000
+
+# HELP withdrawal_processor_protocol_deposit_amount_sats Canonical Dogecoin deposit amount in satoshis grouped by status
+# TYPE withdrawal_processor_protocol_deposit_amount_sats gauge
+withdrawal_processor_protocol_deposit_amount_sats{status="bridge_tx"} 0
+withdrawal_processor_protocol_deposit_amount_sats{status="orphaned"} 0
+withdrawal_processor_protocol_deposit_amount_sats{status="unverified"} 0
+withdrawal_processor_protocol_deposit_amount_sats{status="valid"} 3258250000000
+withdrawal_processor_protocol_deposit_amount_sats{status="invalid_op_return"} 0
+withdrawal_processor_protocol_deposit_amount_sats{status="insufficient_amount"} 0
+
+# HELP withdrawal_processor_protocol_replay_configured Whether WP has a replay sqlite path configured for protocol observability
+# TYPE withdrawal_processor_protocol_replay_configured gauge
+withdrawal_processor_protocol_replay_configured 1
+
+# HELP withdrawal_processor_protocol_job_count Protocol action job count by status and action kind
+# TYPE withdrawal_processor_protocol_job_count gauge
+withdrawal_processor_protocol_job_count{status="completed",action_kind="advance_l2_build"} 4463
+withdrawal_processor_protocol_job_count{status="proposed_to_tso",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="bug",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="failed_retryable",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="built",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="completed",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="completed",action_kind="advance_l1_build"} 5003
+withdrawal_processor_protocol_job_count{status="awaiting_replay",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="bug",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="queued",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="failed_terminal",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="proposed_to_tso",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="awaiting_replay",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="bug",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="built",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="failed_retryable",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="queued",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="built",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="failed_retryable",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="queued",action_kind="advance_l2_build"} 1
+withdrawal_processor_protocol_job_count{status="proposed_to_tso",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_count{status="failed_terminal",action_kind="advance_l1_build"} 4442
+withdrawal_processor_protocol_job_count{status="failed_terminal",action_kind="advance_l2_build"} 1487
+withdrawal_processor_protocol_job_count{status="awaiting_replay",action_kind="advance_l1_build"} 1
+withdrawal_processor_protocol_job_count{status="building",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_count{status="building",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_count{status="building",action_kind="rotate_key"} 0
+
+# HELP withdrawal_processor_protocol_state_next_relayed_deposit_index Canonical protocol state next relayed deposit index
+# TYPE withdrawal_processor_protocol_state_next_relayed_deposit_index gauge
+withdrawal_processor_protocol_state_next_relayed_deposit_index 24922
+
+# HELP withdrawal_processor_protocol_l2_bootstrap_last_batch_index L2 bootstrap frontier last processed batch index
+# TYPE withdrawal_processor_protocol_l2_bootstrap_last_batch_index gauge
+withdrawal_processor_protocol_l2_bootstrap_last_batch_index 0
+
+# HELP withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height L2 bootstrap frontier next starting block height
+# TYPE withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height gauge
+withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height 0
+
+# HELP withdrawal_processor_protocol_latest_da_l2_starting_block_height Starting L2 block height for the latest locally recorded DA batch
+# TYPE withdrawal_processor_protocol_latest_da_l2_starting_block_height gauge
+withdrawal_processor_protocol_latest_da_l2_starting_block_height 0
+
+# HELP withdrawal_processor_eth_da_inbox_worker_lifetime_rejections Lifetime Ethereum DA inbox publication rejections mirrored from indexer_eth_da by bounded kind
+# TYPE withdrawal_processor_eth_da_inbox_worker_lifetime_rejections gauge
+withdrawal_processor_eth_da_inbox_worker_lifetime_rejections{kind="next_withdraw_oversized"} 0
+withdrawal_processor_eth_da_inbox_worker_lifetime_rejections{kind="decode"} 0
+withdrawal_processor_eth_da_inbox_worker_lifetime_rejections{kind="allowlist_skipped"} 0
+withdrawal_processor_eth_da_inbox_worker_lifetime_rejections{kind="count_mismatch"} 0
+
+# HELP withdrawal_processor_protocol_wf_event_count Canonical WF protocol event count grouped by payload type
+# TYPE withdrawal_processor_protocol_wf_event_count gauge
+withdrawal_processor_protocol_wf_event_count{payload_type="rotate_key"} 0
+withdrawal_processor_protocol_wf_event_count{payload_type="advance_l1"} 5003
+withdrawal_processor_protocol_wf_event_count{payload_type="advance_l2"} 4463
+
+# HELP withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds Unix timestamp of the most recent Ethereum DA inbox worker status-pump probe
+# TYPE withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds gauge
+withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds 1781257590.388
+
+# HELP withdrawal_processor_protocol_deposit_count Canonical Dogecoin deposit count grouped by status
+# TYPE withdrawal_processor_protocol_deposit_count gauge
+withdrawal_processor_protocol_deposit_count{status="orphaned"} 0
+withdrawal_processor_protocol_deposit_count{status="bridge_tx"} 0
+withdrawal_processor_protocol_deposit_count{status="invalid_op_return"} 0
+withdrawal_processor_protocol_deposit_count{status="insufficient_amount"} 0
+withdrawal_processor_protocol_deposit_count{status="valid"} 12
+withdrawal_processor_protocol_deposit_count{status="unverified"} 0
+
+# HELP withdrawal_processor_protocol_job_oldest_age_seconds Oldest non-terminal protocol action job age by status and action kind
+# TYPE withdrawal_processor_protocol_job_oldest_age_seconds gauge
+withdrawal_processor_protocol_job_oldest_age_seconds{status="building",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="bug",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="building",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="failed_retryable",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="failed_retryable",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="proposed_to_tso",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="queued",action_kind="advance_l2_build"} 15.286016464233398
+withdrawal_processor_protocol_job_oldest_age_seconds{status="built",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="built",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="building",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="queued",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="queued",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="awaiting_replay",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="bug",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="built",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="awaiting_replay",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="failed_retryable",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="proposed_to_tso",action_kind="advance_l1_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="proposed_to_tso",action_kind="advance_l2_build"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="bug",action_kind="rotate_key"} 0
+withdrawal_processor_protocol_job_oldest_age_seconds{status="awaiting_replay",action_kind="advance_l1_build"} 13.77200335264206
+
+# HELP withdrawal_processor_protocol_replay_wf_tx_number Canonical replay head WF transaction number
+# TYPE withdrawal_processor_protocol_replay_wf_tx_number gauge
+withdrawal_processor_protocol_replay_wf_tx_number 9467
+
+# HELP eth_da_blob_source_providers_active Active configured Ethereum DA blob source providers by kind
+# TYPE eth_da_blob_source_providers_active gauge
+eth_da_blob_source_providers_active{kind="anvil"} 0
+eth_da_blob_source_providers_active{kind="blob_scan"} 0
+eth_da_blob_source_providers_active{kind="block_native"} 0
+eth_da_blob_source_providers_active{kind="aws_s3"} 1
+eth_da_blob_source_providers_active{kind="beacon_node"} 1
+
+# HELP withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block Highest L1 block number committed by the WP-owned Ethereum DA inbox worker
+# TYPE withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block gauge
+withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block 148755
+
+# TYPE indexer_dogecoin_last_synced_block gauge
+indexer_dogecoin_last_synced_block 62639042
+
+# HELP withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number Current replay bridge-key deprecation cutoff WF transaction number, or 0 when no deprecating key is active
+# TYPE withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number gauge
+withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number 0
+
+# HELP withdrawal_processor_eth_da_inbox_worker_finality_rows Ethereum DA inbox publication rows mirrored from indexer_eth_da by finality
+# TYPE withdrawal_processor_eth_da_inbox_worker_finality_rows gauge
+withdrawal_processor_eth_da_inbox_worker_finality_rows{finality="finalized"} 11028
+withdrawal_processor_eth_da_inbox_worker_finality_rows{finality="pending"} 28
+withdrawal_processor_eth_da_inbox_worker_finality_rows{finality="safe"} 30
+withdrawal_processor_eth_da_inbox_worker_finality_rows{finality="orphaned"} 0
+
+# HELP withdrawal_processor_protocol_planner_duration_seconds Protocol planner sweep duration by action kind and outcome
+# TYPE withdrawal_processor_protocol_planner_duration_seconds summary
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0"} 0.144903077
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0.5"} 0.14490165450901663
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0.9"} 0.14490165450901663
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0.95"} 0.14490165450901663
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0.99"} 0.14490165450901663
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="0.999"} 0.14490165450901663
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l2_build",outcome="planned",quantile="1"} 0.151128677
+withdrawal_processor_protocol_planner_duration_seconds_sum{action_kind="advance_l2_build",outcome="planned"} 7.072029797999999
+withdrawal_processor_protocol_planner_duration_seconds_count{action_kind="advance_l2_build",outcome="planned"} 31
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0"} 0.702840046
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0.5"} 0.7027879938142056
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0.9"} 0.7027879938142056
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0.95"} 0.7027879938142056
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0.99"} 0.7027879938142056
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="0.999"} 0.7027879938142056
+withdrawal_processor_protocol_planner_duration_seconds{action_kind="advance_l1_build",outcome="planned",quantile="1"} 0.980955752
+withdrawal_processor_protocol_planner_duration_seconds_sum{action_kind="advance_l1_build",outcome="planned"} 18.091860386
+withdrawal_processor_protocol_planner_duration_seconds_count{action_kind="advance_l1_build",outcome="planned"} 31
+
+# HELP withdrawal_processor_protocol_replay_advance_duration_seconds WP-local protocol replay advance duration by outcome
+# TYPE withdrawal_processor_protocol_replay_advance_duration_seconds summary
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0"} 9.502565816
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0.5"} 9.51148487370498
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0.9"} 9.635941392089798
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0.95"} 9.635941392089798
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0.99"} 9.635941392089798
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="0.999"} 9.635941392089798
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="success",quantile="1"} 9.783669424
+withdrawal_processor_protocol_replay_advance_duration_seconds_sum{outcome="success"} 301.959098789
+withdrawal_processor_protocol_replay_advance_duration_seconds_count{outcome="success"} 31
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0"} 0.516003288
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0.5"} 0.5314745279908903
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0.9"} 0.5512868496679885
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0.95"} 0.5844406711642213
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0.99"} 0.6155125112356025
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="0.999"} 0.6155125112356025
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="idle",quantile="1"} 0.630820898
+withdrawal_processor_protocol_replay_advance_duration_seconds_sum{outcome="idle"} 120.83290419400002
+withdrawal_processor_protocol_replay_advance_duration_seconds_count{outcome="idle"} 227
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0.5"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0.9"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0.95"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0.99"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="0.999"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds{outcome="skipped_already_validated",quantile="1"} 0
+withdrawal_processor_protocol_replay_advance_duration_seconds_sum{outcome="skipped_already_validated"} 8.482419001999999
+withdrawal_processor_protocol_replay_advance_duration_seconds_count{outcome="skipped_already_validated"} 16
+
+# HELP eth_da_blob_provider_request_duration_seconds Blob provider fetch attempt latency by provider, outcome, and bounded error kind
+# TYPE eth_da_blob_provider_request_duration_seconds summary
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0"} 0.093356623
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.5"} 0.09335927908615302
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.9"} 0.09335927908615302
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.95"} 0.09335927908615302
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.99"} 0.09335927908615302
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.999"} 0.09335927908615302
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="1"} 0.093733784
+eth_da_blob_provider_request_duration_seconds_sum{provider="beacon-node",outcome="success",error_kind="none"} 5.450053502
+eth_da_blob_provider_request_duration_seconds_count{provider="beacon-node",outcome="success",error_kind="none"} 24
+
+# HELP withdrawal_processor_protocol_tick_duration_seconds Withdrawal processor protocol tick duration by outcome
+# TYPE withdrawal_processor_protocol_tick_duration_seconds summary
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0"} 1.079374274
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0.5"} 1.1126004191127281
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0.9"} 11.364562976387475
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0.95"} 11.844930892076134
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0.99"} 11.844930892076134
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="0.999"} 11.844930892076134
+withdrawal_processor_protocol_tick_duration_seconds{outcome="success",quantile="1"} 11.858851023
+withdrawal_processor_protocol_tick_duration_seconds_sum{outcome="success"} 455.7827557359999
+withdrawal_processor_protocol_tick_duration_seconds_count{outcome="success"} 121
+
+# HELP withdrawal_processor_protocol_dispatch_duration_seconds Protocol WF dispatch duration by dispatch phase, action kind, and outcome
+# TYPE withdrawal_processor_protocol_dispatch_duration_seconds summary
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0"} 0.057537218
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0.5"} 0.05753855612898114
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0.9"} 0.05753855612898114
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0.95"} 0.05753855612898114
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0.99"} 0.05753855612898114
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="0.999"} 0.05753855612898114
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="none",outcome="noop",quantile="1"} 0.069135924
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="early_non_empty",action_kind="none",outcome="noop"} 1.119540614
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="early_non_empty",action_kind="none",outcome="noop"} 20
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0"} 0.112995681
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0.5"} 0.11298502261682827
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0.9"} 0.11298502261682827
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0.95"} 0.11298502261682827
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0.99"} 0.11298502261682827
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="0.999"} 0.11298502261682827
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l2_build",outcome="dispatched",quantile="1"} 0.112995681
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="normal",action_kind="advance_l2_build",outcome="dispatched"} 1.9607434209999997
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="normal",action_kind="advance_l2_build",outcome="dispatched"} 23
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0"} 0.031669629
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0.5"} 0.03638858996260127
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0.9"} 0.04021561138985155
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0.95"} 0.04021561138985155
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0.99"} 0.04021561138985155
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="0.999"} 0.04021561138985155
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked",quantile="1"} 0.04573674
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked"} 2.420431461
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="early_non_empty",action_kind="advance_l2_build",outcome="blocked"} 66
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0"} 0.014386062
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0.5"} 0.01438599638046327
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0.9"} 0.01438599638046327
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0.95"} 0.01438599638046327
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0.99"} 0.01438599638046327
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="0.999"} 0.01438599638046327
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="unknown",outcome="error",quantile="1"} 0.014386062
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="early_non_empty",action_kind="unknown",outcome="error"} 0.17578615900000003
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="early_non_empty",action_kind="unknown",outcome="error"} 11
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0"} 0.033720379
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0.5"} 0.037858490070632404
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0.9"} 0.037858490070632404
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0.95"} 0.037858490070632404
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0.99"} 0.037858490070632404
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="0.999"} 0.037858490070632404
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked",quantile="1"} 0.039265381
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked"} 0.934494396
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="early_non_empty",action_kind="advance_l1_build",outcome="blocked"} 24
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0"} 0.090972996
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0.5"} 0.0909814160100873
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0.9"} 0.0909814160100873
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0.95"} 0.0909814160100873
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0.99"} 0.0909814160100873
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="0.999"} 0.0909814160100873
+withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="1"} 0.090972996
+withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="normal",action_kind="advance_l1_build",outcome="dispatched"} 0.713182259
+withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="normal",action_kind="advance_l1_build",outcome="dispatched"} 8

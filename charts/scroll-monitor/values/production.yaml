@@ -24,6 +24,17 @@ grafana:
     limits:
       cpu: 500m
       memory: 1Gi
+
+# Keep bundled dashboards/alerts by default. Production environments can set
+# these false and point grafana.dashboardsConfigMaps / extraConfigmapMounts at
+# externally managed ConfigMaps to update panels without publishing this chart.
+dashboards:
+  bundled:
+    enabled: true
+alerts:
+  bundled:
+    enabled: true
+
 loki:
   enabled: true
   fullnameOverride: loki

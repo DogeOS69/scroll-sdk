@@ -1,0 +1,14 @@
+# HELP dummy_signer_requests_total Dummy signer /sign requests by outcome
+# TYPE dummy_signer_requests_total counter
+dummy_signer_requests_total{outcome="accepted",reason="none"} 10
+dummy_signer_requests_total{outcome="rejected",reason="invalid_psbt"} 1
+# HELP dummy_signer_tso_submissions_total Dummy signer submissions back to TSO by outcome and role
+# TYPE dummy_signer_tso_submissions_total counter
+dummy_signer_tso_submissions_total{outcome="success",role="Attestation"} 10
+dummy_signer_tso_submissions_total{outcome="failure",role="Attestation"} 0
+# HELP dummy_signer_pending_queue_size Current number of queued signing requests in the dummy signer
+# TYPE dummy_signer_pending_queue_size gauge
+dummy_signer_pending_queue_size 0
+# HELP dummy_signer_info Dummy signer identity labels
+# TYPE dummy_signer_info gauge
+dummy_signer_info{public_key="02abc",network="testnet",role="Attestation"} 1

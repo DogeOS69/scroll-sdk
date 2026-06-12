@@ -1,0 +1,201 @@
+# HELP eth_da_submitter_cycles_total Lifecycle loop iterations attempted
+# TYPE eth_da_submitter_cycles_total counter
+eth_da_submitter_cycles_total 742
+
+# HELP eth_da_submitter_submissions_total Successful EthDaSubmitter::submit calls
+# TYPE eth_da_submitter_submissions_total counter
+eth_da_submitter_submissions_total 114
+
+# HELP eth_da_submitter_blob_upload_anonymous_write_probe_total Anonymous S3 write-permission probe outcomes by bounded outcome label; denied is the expected conclusive success, every other outcome requires operator attention: allowed_success, indeterminate, indeterminate_exhausted, transport_error, transport_exhausted, client_error, disabled, url_error, dropped
+# TYPE eth_da_submitter_blob_upload_anonymous_write_probe_total counter
+eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="denied"} 1
+
+# HELP eth_da_publish_policy_decisions_total Publish policy decisions by decision and reason labels
+# TYPE eth_da_publish_policy_decisions_total counter
+eth_da_publish_policy_decisions_total{decision="noop",reason="no_ready_blobs"} 232
+eth_da_publish_policy_decisions_total{decision="submit",reason="target_blobs_ready"} 114
+eth_da_publish_policy_decisions_total{decision="defer",reason="waiting_for_target_blobs"} 395
+
+# HELP eth_da_publish_fee_samples_total Publish policy fee sample classifications by status label
+# TYPE eth_da_publish_fee_samples_total counter
+eth_da_publish_fee_samples_total{status="available"} 509
+
+# HELP eth_da_submitter_sign_requests_total Transaction signing requests by backend label
+# TYPE eth_da_submitter_sign_requests_total counter
+eth_da_submitter_sign_requests_total{backend="aws_kms"} 114
+
+# HELP eth_da_publish_window_budget_configured Whether a publish window budget is configured
+# TYPE eth_da_publish_window_budget_configured gauge
+eth_da_publish_window_budget_configured 0
+
+# HELP eth_da_publish_l1_base_fee_wei Latest sampled L1 base fee in wei
+# TYPE eth_da_publish_l1_base_fee_wei gauge
+eth_da_publish_l1_base_fee_wei 7
+
+# HELP eth_da_publish_estimated_cost_wei Visibility-only estimated publish cost in wei by component label
+# TYPE eth_da_publish_estimated_cost_wei gauge
+eth_da_publish_estimated_cost_wei{component="blob_per_blob"} 262144
+eth_da_publish_estimated_cost_wei{component="execution_per_tx"} 42000000294000
+eth_da_publish_estimated_cost_wei{component="selected_tx_total"} 42000000818288
+eth_da_publish_estimated_cost_wei{component="execution_per_selected_blob"} 21000000147000
+
+# HELP eth_da_publish_blob_base_fee_wei Latest sampled blob base fee in wei
+# TYPE eth_da_publish_blob_base_fee_wei gauge
+eth_da_publish_blob_base_fee_wei 1
+
+# HELP eth_da_submitter_blob_upload_task_running Whether the blob upload task is currently running in this process
+# TYPE eth_da_submitter_blob_upload_task_running gauge
+eth_da_submitter_blob_upload_task_running{chain_id="32382",sender="0x809cb1378cb2775816dd14d1a3754a536b066889"} 1
+
+# HELP eth_da_submitter_latest_batch_height Highest lifecycle batch index proposed (regardless of publish status)
+# TYPE eth_da_submitter_latest_batch_height gauge
+eth_da_submitter_latest_batch_height 13472
+
+# HELP eth_da_submitter_ready Service readiness (1 once /ready returns 200)
+# TYPE eth_da_submitter_ready gauge
+eth_da_submitter_ready 1
+
+# HELP eth_da_publish_oldest_ready_age_seconds Age in seconds of the oldest pending_publish lifecycle batch
+# TYPE eth_da_publish_oldest_ready_age_seconds gauge
+eth_da_publish_oldest_ready_age_seconds 3.607
+
+# HELP eth_da_submitter_latest_l1_block Highest Ethereum L1 block number observed by the lifecycle loop
+# TYPE eth_da_submitter_latest_l1_block gauge
+eth_da_submitter_latest_l1_block 149054
+
+# HELP eth_da_publish_hard_fee_cap_configured Whether a hard fee cap is configured, by fee_type label
+# TYPE eth_da_publish_hard_fee_cap_configured gauge
+eth_da_publish_hard_fee_cap_configured{fee_type="execution"} 0
+eth_da_publish_hard_fee_cap_configured{fee_type="blob"} 0
+
+# HELP eth_da_submitter_blob_upload_retry_exhausted_rows Current failed upload rows whose retry budget is exhausted
+# TYPE eth_da_submitter_blob_upload_retry_exhausted_rows gauge
+eth_da_submitter_blob_upload_retry_exhausted_rows 0
+
+# HELP eth_da_submitter_pending_txs Number of lifecycle batches in 'submitted' state awaiting confirmer settlement
+# TYPE eth_da_submitter_pending_txs gauge
+eth_da_submitter_pending_txs 2
+
+# HELP eth_da_publish_window_budget_used_blobs Lifecycle blobs submitted in the configured publish budget window
+# TYPE eth_da_publish_window_budget_used_blobs gauge
+eth_da_publish_window_budget_used_blobs 0
+
+# HELP eth_da_publish_pending_tx_pressure Active submitter pending blob transaction count
+# TYPE eth_da_publish_pending_tx_pressure gauge
+eth_da_publish_pending_tx_pressure 1
+
+# HELP eth_da_submitter_blob_upload_conflict_rows Current upload rows in terminal conflict state
+# TYPE eth_da_submitter_blob_upload_conflict_rows gauge
+eth_da_submitter_blob_upload_conflict_rows 0
+
+# HELP eth_da_publish_ready_backlog Total lifecycle batches in pending_publish state
+# TYPE eth_da_publish_ready_backlog gauge
+eth_da_publish_ready_backlog 1
+
+# HELP eth_da_publish_resolved_max_fee_per_gas_wei Latest service-resolved max_fee_per_gas in wei
+# TYPE eth_da_publish_resolved_max_fee_per_gas_wei gauge
+eth_da_publish_resolved_max_fee_per_gas_wei 2000000014
+
+# HELP eth_da_publish_fee_sample_available Whether fee sample gauges reflect a current available sample
+# TYPE eth_da_publish_fee_sample_available gauge
+eth_da_publish_fee_sample_available 1
+
+# HELP eth_da_publish_resolved_max_fee_per_blob_gas_wei Latest service-resolved max_fee_per_blob_gas in wei
+# TYPE eth_da_publish_resolved_max_fee_per_blob_gas_wei gauge
+eth_da_publish_resolved_max_fee_per_blob_gas_wei 2
+
+# HELP eth_da_submitter_blob_upload_rows Current submitter_blob_uploads row count by bounded state label
+# TYPE eth_da_submitter_blob_upload_rows gauge
+eth_da_submitter_blob_upload_rows{state="pending"} 0
+eth_da_submitter_blob_upload_rows{state="conflict"} 0
+eth_da_submitter_blob_upload_rows{state="uploaded"} 11340
+eth_da_submitter_blob_upload_rows{state="uploading"} 0
+eth_da_submitter_blob_upload_rows{state="failed"} 0
+
+# HELP eth_da_publish_window_budget_remaining_blobs Remaining lifecycle blobs in the configured publish budget window
+# TYPE eth_da_publish_window_budget_remaining_blobs gauge
+eth_da_publish_window_budget_remaining_blobs 0
+
+# HELP eth_da_submitter_blob_upload_task_fatal Whether the blob upload task is in fatal restart backoff in this process
+# TYPE eth_da_submitter_blob_upload_task_fatal gauge
+eth_da_submitter_blob_upload_task_fatal{chain_id="32382",sender="0x809cb1378cb2775816dd14d1a3754a536b066889"} 0
+
+# HELP eth_da_publish_estimated_cost_available Whether visibility-only estimated publish cost gauges reflect a current available sample
+# TYPE eth_da_publish_estimated_cost_available gauge
+eth_da_publish_estimated_cost_available 0
+
+# HELP eth_da_submitter_latest_l2_block Highest L2 block number ingested into the lifecycle store
+# TYPE eth_da_submitter_latest_l2_block gauge
+eth_da_submitter_latest_l2_block 5365275
+
+# HELP eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes Sum of per-chunk pre-compression estimated bytes for each proposed Scroll DA batch
+# TYPE eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes summary
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0"} 2124
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0.5"} 2124.9424965351586
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0.9"} 2124.9424965351586
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0.95"} 2124.9424965351586
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0.99"} 2124.9424965351586
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="0.999"} 2124.9424965351586
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile="1"} 2125
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes_sum 492956
+eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes_count 228
+
+# HELP eth_da_submitter_sign_duration_seconds Transaction signing duration by backend label
+# TYPE eth_da_submitter_sign_duration_seconds summary
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0"} 0.031850132
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0.5"} 0.03296529240224915
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0.9"} 0.03350367930036495
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0.95"} 0.03350367930036495
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0.99"} 0.03350367930036495
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="0.999"} 0.03350367930036495
+eth_da_submitter_sign_duration_seconds{backend="aws_kms",quantile="1"} 0.036261849
+eth_da_submitter_sign_duration_seconds_sum{backend="aws_kms"} 3.517562083999999
+eth_da_submitter_sign_duration_seconds_count{backend="aws_kms"} 114
+
+# HELP eth_da_submitter_lifecycle_batch_l2_blocks Number of L2 blocks selected into each proposed Scroll DA batch
+# TYPE eth_da_submitter_lifecycle_batch_l2_blocks summary
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0"} 1
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0.5"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0.9"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0.95"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0.99"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="0.999"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_l2_blocks{quantile="1"} 1
+eth_da_submitter_lifecycle_batch_l2_blocks_sum 232
+eth_da_submitter_lifecycle_batch_l2_blocks_count 228
+
+# HELP eth_da_publish_selected_blobs_per_tx Number of blobs selected for each publish transaction
+# TYPE eth_da_publish_selected_blobs_per_tx histogram
+eth_da_publish_selected_blobs_per_tx_bucket{le="1"} 0
+eth_da_publish_selected_blobs_per_tx_bucket{le="2"} 114
+eth_da_publish_selected_blobs_per_tx_bucket{le="3"} 114
+eth_da_publish_selected_blobs_per_tx_bucket{le="4"} 114
+eth_da_publish_selected_blobs_per_tx_bucket{le="5"} 114
+eth_da_publish_selected_blobs_per_tx_bucket{le="6"} 114
+eth_da_publish_selected_blobs_per_tx_bucket{le="+Inf"} 114
+eth_da_publish_selected_blobs_per_tx_sum 228
+eth_da_publish_selected_blobs_per_tx_count 114
+
+# HELP eth_da_submitter_lifecycle_batch_effective_blob_bytes Encoded pre-canonicalization effective blob bytes for each proposed Scroll DA batch
+# TYPE eth_da_submitter_lifecycle_batch_effective_blob_bytes summary
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0"} 187
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0.5"} 186.99839098083368
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0.9"} 186.99839098083368
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0.95"} 186.99839098083368
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0.99"} 186.99839098083368
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="0.999"} 186.99839098083368
+eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile="1"} 187
+eth_da_submitter_lifecycle_batch_effective_blob_bytes_sum 42980
+eth_da_submitter_lifecycle_batch_effective_blob_bytes_count 228
+
+# HELP eth_da_submitter_lifecycle_batch_chunks Number of lifecycle chunks selected into each proposed Scroll DA batch
+# TYPE eth_da_submitter_lifecycle_batch_chunks summary
+eth_da_submitter_lifecycle_batch_chunks{quantile="0"} 1
+eth_da_submitter_lifecycle_batch_chunks{quantile="0.5"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_chunks{quantile="0.9"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_chunks{quantile="0.95"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_chunks{quantile="0.99"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_chunks{quantile="0.999"} 0.9998999999999999
+eth_da_submitter_lifecycle_batch_chunks{quantile="1"} 1
+eth_da_submitter_lifecycle_batch_chunks_sum 228
+eth_da_submitter_lifecycle_batch_chunks_count 228
