@@ -19,6 +19,26 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "dogeos",
+    "ethereum-da",
+    "submitter"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "DogeOS Ethereum DA Submitter",
+  "uid": "dengy26ra2ry8a",
+  "version": 2,
+  "weekStart": "",
   "panels": [
     {
       "datasource": {
@@ -27,36 +47,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "Not ready"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "Ready"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
+          "unit": "none"
         },
         "overrides": []
       },
@@ -67,20 +58,6 @@
         "y": 0
       },
       "id": 1,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
@@ -92,7 +69,7 @@
           "refId": "A"
         }
       ],
-      "title": "Submitter Readiness",
+      "title": "Service Ready",
       "type": "stat"
     },
     {
@@ -113,32 +90,18 @@
         "y": 0
       },
       "id": 2,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_publish_ready_backlog)",
-          "legendFormat": "ready backlog",
+          "expr": "max(eth_da_submitter_latest_batch_height)",
+          "legendFormat": "batch",
           "refId": "A"
         }
       ],
-      "title": "Publish Backlog",
+      "title": "Latest Batch Height",
       "type": "stat"
     },
     {
@@ -148,7 +111,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -159,32 +122,18 @@
         "y": 0
       },
       "id": 3,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_publish_oldest_ready_age_seconds)",
-          "legendFormat": "oldest ready age",
+          "expr": "max(eth_da_submitter_latest_l1_block)",
+          "legendFormat": "l1",
           "refId": "A"
         }
       ],
-      "title": "Oldest Ready Age",
+      "title": "Latest L1 Block",
       "type": "stat"
     },
     {
@@ -205,32 +154,18 @@
         "y": 0
       },
       "id": 4,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_submitter_pending_txs)",
-          "legendFormat": "pending txs",
+          "expr": "max(eth_da_submitter_latest_l2_block)",
+          "legendFormat": "l2",
           "refId": "A"
         }
       ],
-      "title": "Pending Blob Txs",
+      "title": "Latest L2 Block",
       "type": "stat"
     },
     {
@@ -251,32 +186,18 @@
         "y": 0
       },
       "id": 5,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_submitter_latest_batch_height)",
-          "legendFormat": "batch height",
+          "expr": "max(eth_da_submitter_pending_txs)",
+          "legendFormat": "pending",
           "refId": "A"
         }
       ],
-      "title": "Latest Batch",
+      "title": "Pending Txs (awaiting settlement)",
       "type": "stat"
     },
     {
@@ -297,32 +218,18 @@
         "y": 0
       },
       "id": 6,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_submitter_latest_l1_block)",
-          "legendFormat": "Ethereum block",
+          "expr": "max(eth_da_publish_ready_backlog)",
+          "legendFormat": "backlog",
           "refId": "A"
         }
       ],
-      "title": "Latest Ethereum DA Block",
+      "title": "Ready Backlog",
       "type": "stat"
     },
     {
@@ -332,36 +239,29 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 4
       },
       "id": 7,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(rate(eth_da_submitter_submissions_total[$__rate_interval]))",
-          "legendFormat": "successful submissions/s",
+          "expr": "max(eth_da_submitter_latest_batch_height)",
+          "legendFormat": "latest_batch_height",
           "refId": "A"
         },
         {
@@ -369,8 +269,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(rate(eth_da_submitter_submission_failures_total[$__rate_interval]))",
-          "legendFormat": "submission failures/s",
+          "expr": "max(eth_da_submitter_latest_l1_block)",
+          "legendFormat": "latest_l1_block",
           "refId": "B"
         },
         {
@@ -378,12 +278,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(rate(eth_da_submitter_cycle_failures_total[$__rate_interval]))",
-          "legendFormat": "cycle failures/s",
+          "expr": "max(eth_da_submitter_latest_l2_block)",
+          "legendFormat": "latest_l2_block",
           "refId": "C"
         }
       ],
-      "title": "Submission and Cycle Rates",
+      "title": "Heights Progression",
       "type": "timeseries"
     },
     {
@@ -393,36 +293,155 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 4
       },
       "id": 8,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum by (decision, reason) (increase(eth_da_publish_policy_decisions_total[$__rate_interval]))",
-          "legendFormat": "{{decision}} / {{reason}}",
+          "expr": "max(eth_da_publish_ready_backlog)",
+          "legendFormat": "ready_backlog",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_pending_txs)",
+          "legendFormat": "pending_txs",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_publish_pending_tx_pressure)",
+          "legendFormat": "pending_tx_pressure",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_publish_oldest_ready_age_seconds)",
+          "legendFormat": "oldest_ready_age_s",
+          "refId": "D"
+        }
+      ],
+      "title": "Publish Backlog and Pressure",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_submitter_cycles_total[$__rate_interval]))",
+          "legendFormat": "cycles",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_submitter_submissions_total[$__rate_interval]))",
+          "legendFormat": "submissions",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_submitter_cycle_failures_total[$__rate_interval]))",
+          "legendFormat": "cycle_failures",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_submitter_submission_failures_total[$__rate_interval]))",
+          "legendFormat": "submission_failures",
+          "refId": "D"
+        }
+      ],
+      "title": "Cycles and Submissions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "id": 10,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (decision, reason) (rate(eth_da_publish_policy_decisions_total[$__rate_interval]))",
+          "legendFormat": "{{decision}}: {{reason}}",
           "refId": "A"
         }
       ],
@@ -436,28 +455,129 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
+        "w": 8,
+        "x": 8,
         "y": 12
       },
-      "id": 9,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
+      "id": 11,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(eth_da_publish_selected_blobs_per_tx_bucket[$__rate_interval])))",
+          "legendFormat": "p99",
+          "refId": "A"
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(eth_da_publish_selected_blobs_per_tx_bucket[$__rate_interval])))",
+          "legendFormat": "p50",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_publish_selected_blobs_per_tx_sum[$__rate_interval])) / sum(rate(eth_da_publish_selected_blobs_per_tx_count[$__rate_interval]))",
+          "legendFormat": "avg",
+          "refId": "C"
         }
+      ],
+      "title": "Selected Blobs per Tx",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "id": 12,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_publish_window_budget_configured)",
+          "legendFormat": "configured",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_publish_window_budget_used_blobs)",
+          "legendFormat": "used_blobs",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_publish_window_budget_remaining_blobs)",
+          "legendFormat": "remaining_blobs",
+          "refId": "C"
+        }
+      ],
+      "title": "Window Budget",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 13,
       "targets": [
         {
           "datasource": {
@@ -465,7 +585,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_publish_l1_base_fee_wei)",
-          "legendFormat": "Ethereum base fee",
+          "legendFormat": "l1_base_fee",
           "refId": "A"
         },
         {
@@ -474,7 +594,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_publish_blob_base_fee_wei)",
-          "legendFormat": "blob base fee",
+          "legendFormat": "blob_base_fee",
           "refId": "B"
         },
         {
@@ -483,7 +603,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_publish_resolved_max_fee_per_gas_wei)",
-          "legendFormat": "resolved max fee/gas",
+          "legendFormat": "resolved_max_fee_per_gas",
           "refId": "C"
         },
         {
@@ -492,11 +612,11 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_publish_resolved_max_fee_per_blob_gas_wei)",
-          "legendFormat": "resolved max blob fee",
+          "legendFormat": "resolved_max_fee_per_blob_gas",
           "refId": "D"
         }
       ],
-      "title": "Ethereum DA Fee Inputs",
+      "title": "L1 Fees (wei)",
       "type": "timeseries"
     },
     {
@@ -506,36 +626,29 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 12
+        "w": 8,
+        "x": 8,
+        "y": 20
       },
-      "id": 10,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
+      "id": 14,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum by (kind) (increase(eth_da_publish_fresh_submission_failures_total[$__rate_interval]))",
-          "legendFormat": "fresh failure {{kind}}",
+          "expr": "sum by (status) (rate(eth_da_publish_fee_samples_total[$__rate_interval]))",
+          "legendFormat": "samples {{status}}",
           "refId": "A"
         },
         {
@@ -543,8 +656,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum by (kind) (increase(eth_da_publish_replacement_failures_total[$__rate_interval]))",
-          "legendFormat": "replacement failure {{kind}}",
+          "expr": "max(eth_da_publish_fee_sample_available)",
+          "legendFormat": "sample_available",
           "refId": "B"
         },
         {
@@ -552,12 +665,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum by (stage, kind) (increase(eth_da_publish_canonicality_events_total[$__rate_interval]))",
-          "legendFormat": "canonicality {{stage}}/{{kind}}",
+          "expr": "max by (fee_type) (eth_da_publish_hard_fee_cap_configured)",
+          "legendFormat": "hard_cap {{fee_type}}",
           "refId": "C"
         }
       ],
-      "title": "Publication Exceptions",
+      "title": "Fee Samples and Availability",
       "type": "timeseries"
     },
     {
@@ -567,36 +680,29 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
+        "w": 8,
+        "x": 16,
         "y": 20
       },
-      "id": 11,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
+      "id": 15,
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, backend) (rate(eth_da_submitter_sign_duration_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "p95 {{backend}}",
+          "expr": "max by (component) (eth_da_publish_estimated_cost_wei)",
+          "legendFormat": "{{component}}",
           "refId": "A"
         },
         {
@@ -604,12 +710,102 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "histogram_quantile(0.50, sum by (le, backend) (rate(eth_da_submitter_sign_duration_seconds_bucket[$__rate_interval])))",
+          "expr": "max(eth_da_publish_estimated_cost_available)",
+          "legendFormat": "available",
+          "refId": "B"
+        }
+      ],
+      "title": "Estimated Publish Cost (wei)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
+      "id": 16,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (backend) (rate(eth_da_submitter_sign_requests_total[$__rate_interval]))",
+          "legendFormat": "{{backend}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (backend) (rate(eth_da_submitter_sign_failures_total[$__rate_interval]))",
+          "legendFormat": "failures {{backend}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Sign Requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 28
+      },
+      "id": 17,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (backend) (eth_da_submitter_sign_duration_seconds{quantile=\"0.99\"})",
+          "legendFormat": "p99 {{backend}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (backend) (eth_da_submitter_sign_duration_seconds{quantile=\"0.5\"})",
           "legendFormat": "p50 {{backend}}",
           "refId": "B"
         }
       ],
-      "title": "Signer Latency",
+      "title": "Sign Duration (summary)",
       "type": "timeseries"
     },
     {
@@ -619,28 +815,93 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "ops",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 20
+        "w": 8,
+        "x": 16,
+        "y": 28
       },
-      "id": 12,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
+      "id": 18,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_publish_replacement_failures_total[$__rate_interval]))",
+          "legendFormat": "replacement",
+          "refId": "A"
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_publish_fresh_submission_failures_total[$__rate_interval]))",
+          "legendFormat": "fresh_submission",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (event) (rate(eth_da_publish_canonicality_events_total[$__rate_interval]))",
+          "legendFormat": "canonicality {{event}}",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_publish_fee_cap_deferrals_total[$__rate_interval]))",
+          "legendFormat": "fee_cap_deferrals",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(eth_da_publish_liveness_blocked_total[$__rate_interval]))",
+          "legendFormat": "liveness_blocked",
+          "refId": "E"
         }
+      ],
+      "title": "Failure Counters",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 36
+      },
+      "id": 19,
       "targets": [
         {
           "datasource": {
@@ -648,7 +909,43 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max by (state) (eth_da_submitter_blob_upload_rows)",
-          "legendFormat": "{{state}} rows",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Blob Upload Rows by State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 36
+      },
+      "id": 20,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_blob_upload_conflict_rows)",
+          "legendFormat": "conflict_rows",
           "refId": "A"
         },
         {
@@ -657,41 +954,183 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(eth_da_submitter_blob_upload_retry_exhausted_rows)",
-          "legendFormat": "retry exhausted",
+          "legendFormat": "retry_exhausted_rows",
           "refId": "B"
+        }
+      ],
+      "title": "Blob Upload Problem Rows",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 36
+      },
+      "id": 21,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (chain_id, sender) (eth_da_submitter_blob_upload_task_running)",
+          "legendFormat": "running {{sender}}",
+          "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(eth_da_submitter_blob_upload_task_fatal)",
-          "legendFormat": "task fatal",
-          "refId": "C"
+          "expr": "max by (chain_id, sender) (eth_da_submitter_blob_upload_task_fatal)",
+          "legendFormat": "fatal {{sender}}",
+          "refId": "B"
         }
       ],
-      "title": "S3 Blob Archive Uploader",
+      "title": "Blob Upload Task State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 36
+      },
+      "id": 22,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (outcome) (increase(eth_da_submitter_blob_upload_anonymous_write_probe_total[$__rate_interval]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "S3 Anonymous Write Probe",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 44
+      },
+      "id": 23,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_lifecycle_batch_chunks{quantile=\"0.99\"})",
+          "legendFormat": "chunks p99",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_lifecycle_batch_l2_blocks{quantile=\"0.99\"})",
+          "legendFormat": "l2_blocks p99",
+          "refId": "B"
+        }
+      ],
+      "title": "Batch Chunks / L2 Blocks (summary p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "id": 24,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{quantile=\"0.99\"})",
+          "legendFormat": "estimated_uncompressed p99",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eth_da_submitter_lifecycle_batch_effective_blob_bytes{quantile=\"0.99\"})",
+          "legendFormat": "effective_blob p99",
+          "refId": "B"
+        }
+      ],
+      "title": "Batch Bytes (summary p99)",
       "type": "timeseries"
     }
-  ],
-  "refresh": "30s",
-  "schemaVersion": 39,
-  "tags": [
-    "dogeos",
-    "ethereum-da",
-    "submitter"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "",
-  "title": "DogeOS Ethereum DA Submitter",
-  "uid": "dengy26ra2ry8a",
-  "version": 1,
-  "weekStart": ""
+  ]
 }

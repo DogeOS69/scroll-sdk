@@ -1,97 +1,242 @@
-# HELP l1_interface_service_ready Service readiness
-# TYPE l1_interface_service_ready gauge
-l1_interface_service_ready 1
-# HELP l1_interface_service_info Service metadata
-# TYPE l1_interface_service_info gauge
-l1_interface_service_info{version="0.1.0",chain_id="31337"} 1
-# HELP l1_interface_active_tasks Active background tasks
-# TYPE l1_interface_active_tasks gauge
-l1_interface_active_tasks 4
-# HELP l1_interface_safe_head_height Current safe head height
-# TYPE l1_interface_safe_head_height gauge
-l1_interface_safe_head_height 1200
-# HELP l1_interface_final_rpc_head_height Current finalized RPC head height
-# TYPE l1_interface_final_rpc_head_height gauge
-l1_interface_final_rpc_head_height 1190
-# HELP l1_interface_rpc_requests_total JSON-RPC requests by method
-# TYPE l1_interface_rpc_requests_total counter
-l1_interface_rpc_requests_total{method="eth_blockNumber"} 1000
-l1_interface_rpc_requests_total{method="eth_getBlockByNumber"} 840
-# HELP l1_interface_rpc_responses_total JSON-RPC responses by method and status
+# Sample of GET /api/v1/metrics from l1-interface v0.3.0.
+# Note: *_duration_seconds metrics are Prometheus summaries (quantile label),
+# not histograms - there are no _bucket series, so dashboards must read the
+# quantile series directly instead of using histogram_quantile().
+
+# HELP eth_da_blob_provider_requests_total Blob provider fetch attempts by provider, outcome, and bounded error kind
+# TYPE eth_da_blob_provider_requests_total counter
+eth_da_blob_provider_requests_total{provider="beacon-node",outcome="success",error_kind="none"} 42
+
 # TYPE l1_interface_rpc_responses_total counter
-l1_interface_rpc_responses_total{method="eth_blockNumber",status="success"} 1000
-l1_interface_rpc_responses_total{method="eth_getBlockByNumber",status="success"} 838
-l1_interface_rpc_responses_total{method="eth_getBlockByNumber",status="error"} 2
-# HELP l1_interface_rpc_request_duration_seconds JSON-RPC request duration
-# TYPE l1_interface_rpc_request_duration_seconds histogram
-l1_interface_rpc_request_duration_seconds_bucket{method="eth_blockNumber",status="success",le="0.005"} 800
-l1_interface_rpc_request_duration_seconds_bucket{method="eth_blockNumber",status="success",le="0.01"} 960
-l1_interface_rpc_request_duration_seconds_bucket{method="eth_blockNumber",status="success",le="0.05"} 1000
-l1_interface_rpc_request_duration_seconds_bucket{method="eth_blockNumber",status="success",le="+Inf"} 1000
-l1_interface_rpc_request_duration_seconds_sum{method="eth_blockNumber",status="success"} 4.2
-l1_interface_rpc_request_duration_seconds_count{method="eth_blockNumber",status="success"} 1000
-# HELP l1_interface_db_queries_total Database queries
-# TYPE l1_interface_db_queries_total counter
-l1_interface_db_queries_total 600
-# HELP l1_interface_db_query_responses_total Database query responses by status
-# TYPE l1_interface_db_query_responses_total counter
-l1_interface_db_query_responses_total{status="success"} 598
-l1_interface_db_query_responses_total{status="error"} 2
-# HELP l1_interface_db_query_duration_seconds Database query duration
-# TYPE l1_interface_db_query_duration_seconds histogram
-l1_interface_db_query_duration_seconds_bucket{status="success",le="0.001"} 500
-l1_interface_db_query_duration_seconds_bucket{status="success",le="0.005"} 590
-l1_interface_db_query_duration_seconds_bucket{status="success",le="0.01"} 598
-l1_interface_db_query_duration_seconds_bucket{status="success",le="+Inf"} 598
-l1_interface_db_query_duration_seconds_sum{status="success"} 0.45
-l1_interface_db_query_duration_seconds_count{status="success"} 598
-# HELP l1_interface_indexer_sync_results_total Indexer sync results
+l1_interface_rpc_responses_total{method="eth_getTransactionByHash",status="success"} 77
+l1_interface_rpc_responses_total{method="eth_getLogs",status="success"} 100
+l1_interface_rpc_responses_total{method="eth_getBlockByNumber",status="success"} 179
+l1_interface_rpc_responses_total{method="eth_getStorageAt",status="success"} 420
+l1_interface_rpc_responses_total{method="eth_blockNumber",status="success"} 420
+
+# TYPE l1_interface_indexer_sync_attempts_total counter
+l1_interface_indexer_sync_attempts_total{indexer="dogecoin"} 1
+
 # TYPE l1_interface_indexer_sync_results_total counter
-l1_interface_indexer_sync_results_total{indexer="dogecoin",status="success"} 40
-# HELP l1_interface_indexer_last_sync_timestamp Last indexer sync timestamp
-# TYPE l1_interface_indexer_last_sync_timestamp gauge
-l1_interface_indexer_last_sync_timestamp{indexer="dogecoin"} 1762136013
+l1_interface_indexer_sync_results_total{indexer="dogecoin",status="success"} 1
+
+# TYPE l1_interface_db_query_responses_total counter
+l1_interface_db_query_responses_total{status="success"} 589
+
+# HELP eth_da_blob_cache_events_total Resolver blob-cache events by event, outcome, and bounded error kind
+# TYPE eth_da_blob_cache_events_total counter
+eth_da_blob_cache_events_total{event="local_hit",outcome="success",error_kind="none"} 2
+eth_da_blob_cache_events_total{event="source_after_missing",outcome="success",error_kind="none"} 42
+eth_da_blob_cache_events_total{event="writeback_after_missing",outcome="success",error_kind="none"} 42
+
+# TYPE l1_interface_service_ready_total counter
+l1_interface_service_ready_total 1
+
+# TYPE l1_interface_db_queries_total counter
+l1_interface_db_queries_total 589
+
+# TYPE l1_interface_rpc_requests_total counter
+l1_interface_rpc_requests_total{method="eth_getStorageAt"} 420
+l1_interface_rpc_requests_total{method="eth_getTransactionByHash"} 77
+l1_interface_rpc_requests_total{method="eth_getBlockByNumber"} 179
+l1_interface_rpc_requests_total{method="eth_getLogs"} 100
+l1_interface_rpc_requests_total{method="eth_blockNumber"} 420
+
+# TYPE l1_interface_genesis_mode_active gauge
+l1_interface_genesis_mode_active 0
+
+# HELP l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number Current replay bridge-key deprecation cutoff WF transaction number, or 0 when no deprecating key is active
+# TYPE l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number gauge
+l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number 0
+
 # HELP l1_interface_protocol_replay_configured Whether L1 Interface has replay_read enabled with a replay SQLite path configured
 # TYPE l1_interface_protocol_replay_configured gauge
 l1_interface_protocol_replay_configured 1
-# HELP l1_interface_protocol_replay_validated_up_to Replay read-model validated WF transaction number
-# TYPE l1_interface_protocol_replay_validated_up_to gauge
-l1_interface_protocol_replay_validated_up_to 1554
-# HELP l1_interface_protocol_replay_discovered_up_to Replay read-model discovered WF transaction number
-# TYPE l1_interface_protocol_replay_discovered_up_to gauge
-l1_interface_protocol_replay_discovered_up_to 1554
-# HELP l1_interface_protocol_replay_lag Replay read-model discovered minus validated WF transaction lag
-# TYPE l1_interface_protocol_replay_lag gauge
-l1_interface_protocol_replay_lag 0
-# HELP l1_interface_protocol_replay_fully_validated Whether the replay read model is fully validated
-# TYPE l1_interface_protocol_replay_fully_validated gauge
-l1_interface_protocol_replay_fully_validated 1
-# HELP l1_interface_protocol_replay_ready Whether the replay read model passes readiness checks
-# TYPE l1_interface_protocol_replay_ready gauge
-l1_interface_protocol_replay_ready 1
+
+# TYPE fee_wallet_total_unredeemed_utxo_amount gauge
+fee_wallet_total_unredeemed_utxo_amount 0
+
+# HELP l1_interface_protocol_wf_event_count Canonical WF protocol event count grouped by payload type
+# TYPE l1_interface_protocol_wf_event_count gauge
+l1_interface_protocol_wf_event_count{payload_type="advance_l1"} 5001
+l1_interface_protocol_wf_event_count{payload_type="advance_l2"} 4454
+l1_interface_protocol_wf_event_count{payload_type="rotate_key"} 0
+
+# HELP l1_interface_protocol_replay_staleness_seconds Seconds since the replay read-model head was last updated
+# TYPE l1_interface_protocol_replay_staleness_seconds gauge
+l1_interface_protocol_replay_staleness_seconds 12
+
+# TYPE l1_interface_indexer_last_sync_timestamp gauge
+l1_interface_indexer_last_sync_timestamp{indexer="dogecoin"} 1781256269
+
+# HELP l1_interface_protocol_state_next_relayed_deposit_index Canonical protocol state next relayed deposit index
+# TYPE l1_interface_protocol_state_next_relayed_deposit_index gauge
+l1_interface_protocol_state_next_relayed_deposit_index 24922
+
+# TYPE l1_interface_active_tasks gauge
+l1_interface_active_tasks 7
+
+# HELP l1_interface_protocol_deposit_queue_next_index Replay-state deposit queue next deposit index
+# TYPE l1_interface_protocol_deposit_queue_next_index gauge
+l1_interface_protocol_deposit_queue_next_index 24934
+
+# HELP l1_interface_protocol_replay_readiness_failure_count Number of replay read-model readiness failures
+# TYPE l1_interface_protocol_replay_readiness_failure_count gauge
+l1_interface_protocol_replay_readiness_failure_count 0
+
 # HELP l1_interface_protocol_replay_stopped Whether the replay pipeline has a stop reason
 # TYPE l1_interface_protocol_replay_stopped gauge
 l1_interface_protocol_replay_stopped 0
-# HELP l1_interface_protocol_replay_stop_reason_active Active bounded replay stop-reason kind
-# TYPE l1_interface_protocol_replay_stop_reason_active gauge
-l1_interface_protocol_replay_stop_reason_active{reason="missing_witness"} 0
-l1_interface_protocol_replay_stop_reason_active{reason="checkpoint_stale"} 0
-# HELP l1_interface_protocol_replay_staleness_seconds Seconds since the replay read-model head was last updated
-# TYPE l1_interface_protocol_replay_staleness_seconds gauge
-l1_interface_protocol_replay_staleness_seconds 5
+
 # HELP l1_interface_protocol_replay_active_regression_episode Whether replay read-model reorg recovery has an active regression episode
 # TYPE l1_interface_protocol_replay_active_regression_episode gauge
 l1_interface_protocol_replay_active_regression_episode 0
-# HELP l1_interface_protocol_deposit_queue_next_index Replay-state deposit queue next deposit index
-# TYPE l1_interface_protocol_deposit_queue_next_index gauge
-l1_interface_protocol_deposit_queue_next_index 42
+
+# HELP l1_interface_protocol_withdrawal_amount_sats Withdrawal amount in satoshis grouped by status
+# TYPE l1_interface_protocol_withdrawal_amount_sats gauge
+l1_interface_protocol_withdrawal_amount_sats{status="Pending"} 0
+l1_interface_protocol_withdrawal_amount_sats{status="Cancelled"} 0
+l1_interface_protocol_withdrawal_amount_sats{status="Failed"} 0
+l1_interface_protocol_withdrawal_amount_sats{status="Processed"} 0
+
+# HELP l1_interface_protocol_deposit_count Canonical Dogecoin deposit count grouped by status
+# TYPE l1_interface_protocol_deposit_count gauge
+l1_interface_protocol_deposit_count{status="valid"} 12
+l1_interface_protocol_deposit_count{status="unverified"} 0
+l1_interface_protocol_deposit_count{status="invalid_op_return"} 0
+l1_interface_protocol_deposit_count{status="bridge_tx"} 0
+l1_interface_protocol_deposit_count{status="insufficient_amount"} 0
+l1_interface_protocol_deposit_count{status="orphaned"} 0
+
+# HELP l1_interface_protocol_replay_ready Whether the replay read model passes readiness checks
+# TYPE l1_interface_protocol_replay_ready gauge
+l1_interface_protocol_replay_ready 1
+
+# HELP l1_interface_protocol_replay_updated_at_unix Unix timestamp when the replay read-model head was last updated
+# TYPE l1_interface_protocol_replay_updated_at_unix gauge
+l1_interface_protocol_replay_updated_at_unix 1781257414
+
+# HELP l1_interface_protocol_replay_fully_validated Whether the replay read model is fully validated
+# TYPE l1_interface_protocol_replay_fully_validated gauge
+l1_interface_protocol_replay_fully_validated 1
+
 # HELP l1_interface_protocol_deposit_queue_covered_message_count Deposit messages covered by the replay read model before the next deposit index
 # TYPE l1_interface_protocol_deposit_queue_covered_message_count gauge
-l1_interface_protocol_deposit_queue_covered_message_count 42
-# HELP l1_interface_protocol_replay_bridge_key_info Active replay bridge key labels
+l1_interface_protocol_deposit_queue_covered_message_count 24934
+
+# HELP l1_interface_protocol_state_l2_batch_height Canonical protocol state L2 batch height
+# TYPE l1_interface_protocol_state_l2_batch_height gauge
+l1_interface_protocol_state_l2_batch_height 8830
+
+# HELP l1_interface_protocol_withdrawal_count Withdrawal count grouped by status
+# TYPE l1_interface_protocol_withdrawal_count gauge
+l1_interface_protocol_withdrawal_count{status="Cancelled"} 0
+l1_interface_protocol_withdrawal_count{status="Failed"} 0
+l1_interface_protocol_withdrawal_count{status="Pending"} 0
+l1_interface_protocol_withdrawal_count{status="Processed"} 0
+
+# HELP l1_interface_protocol_state_wf_tx_number Canonical protocol state WF transaction number
+# TYPE l1_interface_protocol_state_wf_tx_number gauge
+l1_interface_protocol_state_wf_tx_number 9450
+
+# TYPE l1_interface_service_startup_duration_seconds gauge
+l1_interface_service_startup_duration_seconds 107.32183898
+
+# HELP eth_da_blob_source_providers_active Active configured Ethereum DA blob source providers by kind
+# TYPE eth_da_blob_source_providers_active gauge
+eth_da_blob_source_providers_active{kind="beacon_node"} 1
+eth_da_blob_source_providers_active{kind="anvil"} 0
+eth_da_blob_source_providers_active{kind="block_native"} 0
+eth_da_blob_source_providers_active{kind="aws_s3"} 1
+eth_da_blob_source_providers_active{kind="blob_scan"} 0
+
+# HELP l1_interface_protocol_deposit_amount_sats Canonical Dogecoin deposit amount in satoshis grouped by status
+# TYPE l1_interface_protocol_deposit_amount_sats gauge
+l1_interface_protocol_deposit_amount_sats{status="valid"} 3258250000000
+l1_interface_protocol_deposit_amount_sats{status="orphaned"} 0
+l1_interface_protocol_deposit_amount_sats{status="insufficient_amount"} 0
+l1_interface_protocol_deposit_amount_sats{status="unverified"} 0
+l1_interface_protocol_deposit_amount_sats{status="invalid_op_return"} 0
+l1_interface_protocol_deposit_amount_sats{status="bridge_tx"} 0
+
+# HELP l1_interface_protocol_state_next_withdraw_index Canonical protocol state next withdrawal index
+# TYPE l1_interface_protocol_state_next_withdraw_index gauge
+l1_interface_protocol_state_next_withdraw_index 13084
+
+# HELP l1_interface_protocol_replay_lag Replay read-model discovered minus validated WF transaction lag
+# TYPE l1_interface_protocol_replay_lag gauge
+l1_interface_protocol_replay_lag 0
+
+# TYPE indexer_dogecoin_last_synced_block gauge
+indexer_dogecoin_last_synced_block 62638918
+
+# TYPE l1_interface_service_info gauge
+l1_interface_service_info{version="0.3.0",chain_id="6281971"} 1
+
+# HELP l1_interface_protocol_replay_validated_up_to Replay read-model validated WF transaction number
+# TYPE l1_interface_protocol_replay_validated_up_to gauge
+l1_interface_protocol_replay_validated_up_to 9450
+
+# HELP l1_interface_protocol_state_dogecoin_confirmed_block_number Canonical protocol state Dogecoin confirmed block number
+# TYPE l1_interface_protocol_state_dogecoin_confirmed_block_number gauge
+l1_interface_protocol_state_dogecoin_confirmed_block_number 62638815
+
+# HELP l1_interface_protocol_replay_bridge_key_info Active replay bridge key labels by role and key_hash; active label is 1, stale observed labels are 0
 # TYPE l1_interface_protocol_replay_bridge_key_info gauge
-l1_interface_protocol_replay_bridge_key_info{role="current",key_hash="0x1111111111111111111111111111111111111111"} 1
-l1_interface_protocol_replay_bridge_key_info{role="deprecating",key_hash="0x2222222222222222222222222222222222222222"} 1
-# HELP l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number Current replay bridge-key deprecation cutoff WF transaction number
-# TYPE l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number gauge
-l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number 1600
+l1_interface_protocol_replay_bridge_key_info{role="current",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793"} 1
+
+# HELP l1_interface_protocol_replay_discovered_up_to Replay read-model discovered WF transaction number
+# TYPE l1_interface_protocol_replay_discovered_up_to gauge
+l1_interface_protocol_replay_discovered_up_to 9450
+
+# HELP l1_interface_protocol_replay_stop_reason_active Active bounded replay stop-reason kind; active reason is 1 and inactive reasons are 0
+# TYPE l1_interface_protocol_replay_stop_reason_active gauge
+l1_interface_protocol_replay_stop_reason_active{reason="witness_decode_failed"} 0
+l1_interface_protocol_replay_stop_reason_active{reason="min_confirmations_not_met"} 0
+l1_interface_protocol_replay_stop_reason_active{reason="missing_witness"} 0
+l1_interface_protocol_replay_stop_reason_active{reason="witness_mismatch"} 0
+l1_interface_protocol_replay_stop_reason_active{reason="checkpoint_stale"} 0
+
+# TYPE l1_interface_service_ready gauge
+l1_interface_service_ready 1
+
+# HELP eth_da_blob_provider_request_duration_seconds Blob provider fetch attempt latency by provider, outcome, and bounded error kind
+# TYPE eth_da_blob_provider_request_duration_seconds summary
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.5"} 0.08682158499729316
+eth_da_blob_provider_request_duration_seconds{provider="beacon-node",outcome="success",error_kind="none",quantile="0.99"} 0.08682158499729316
+eth_da_blob_provider_request_duration_seconds_sum{provider="beacon-node",outcome="success",error_kind="none"} 3.6947326670000007
+eth_da_blob_provider_request_duration_seconds_count{provider="beacon-node",outcome="success",error_kind="none"} 42
+
+# TYPE l1_interface_indexer_sync_duration_seconds summary
+l1_interface_indexer_sync_duration_seconds{indexer="dogecoin",status="success",quantile="0.5"} 0
+l1_interface_indexer_sync_duration_seconds{indexer="dogecoin",status="success",quantile="0.99"} 0
+l1_interface_indexer_sync_duration_seconds_sum{indexer="dogecoin",status="success"} 0.490075719
+l1_interface_indexer_sync_duration_seconds_count{indexer="dogecoin",status="success"} 1
+
+# TYPE l1_interface_db_query_duration_seconds summary
+l1_interface_db_query_duration_seconds{status="success",quantile="0.5"} 0.00013827030805798674
+l1_interface_db_query_duration_seconds{status="success",quantile="0.99"} 0.004941432437544696
+l1_interface_db_query_duration_seconds_sum{status="success"} 1.8528225210000004
+l1_interface_db_query_duration_seconds_count{status="success"} 589
+
+# TYPE l1_interface_rpc_request_duration_seconds summary
+l1_interface_rpc_request_duration_seconds{method="eth_getStorageAt",status="success",quantile="0.5"} 0.000005151101175870194
+l1_interface_rpc_request_duration_seconds{method="eth_getStorageAt",status="success",quantile="0.99"} 0.000005907427827062183
+l1_interface_rpc_request_duration_seconds_sum{method="eth_getStorageAt",status="success"} 0.002485345999999998
+l1_interface_rpc_request_duration_seconds_count{method="eth_getStorageAt",status="success"} 420
+l1_interface_rpc_request_duration_seconds{method="eth_getTransactionByHash",status="success",quantile="0.5"} 1.1453382353686967
+l1_interface_rpc_request_duration_seconds{method="eth_getTransactionByHash",status="success",quantile="0.99"} 1.1501587720140822
+l1_interface_rpc_request_duration_seconds_sum{method="eth_getTransactionByHash",status="success"} 88.88109556900002
+l1_interface_rpc_request_duration_seconds_count{method="eth_getTransactionByHash",status="success"} 77
+l1_interface_rpc_request_duration_seconds{method="eth_getBlockByNumber",status="success",quantile="0.5"} 0.0013949453683952831
+l1_interface_rpc_request_duration_seconds{method="eth_getBlockByNumber",status="success",quantile="0.99"} 0.0013949453683952831
+l1_interface_rpc_request_duration_seconds_sum{method="eth_getBlockByNumber",status="success"} 0.5653282479999998
+l1_interface_rpc_request_duration_seconds_count{method="eth_getBlockByNumber",status="success"} 179
+l1_interface_rpc_request_duration_seconds{method="eth_getLogs",status="success",quantile="0.5"} 0.00978700278064487
+l1_interface_rpc_request_duration_seconds{method="eth_getLogs",status="success",quantile="0.99"} 0.009800714180323723
+l1_interface_rpc_request_duration_seconds_sum{method="eth_getLogs",status="success"} 0.8681091179999996
+l1_interface_rpc_request_duration_seconds_count{method="eth_getLogs",status="success"} 100
+l1_interface_rpc_request_duration_seconds{method="eth_blockNumber",status="success",quantile="0.5"} 0.0010014563103526474
+l1_interface_rpc_request_duration_seconds{method="eth_blockNumber",status="success",quantile="0.99"} 0.0010479703055645674
+l1_interface_rpc_request_duration_seconds_sum{method="eth_blockNumber",status="success"} 0.45958852499999997
+l1_interface_rpc_request_duration_seconds_count{method="eth_blockNumber",status="success"} 420
