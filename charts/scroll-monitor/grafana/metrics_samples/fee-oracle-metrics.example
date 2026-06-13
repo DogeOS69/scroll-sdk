@@ -1,80 +1,88 @@
 # HELP fee_oracle_ethereum_da_oracle_value_persisted_total Total oracle-value rows persisted by the service loop, writeable AND degraded. Matches the row count in ethereum_da_oracle_values.
 # TYPE fee_oracle_ethereum_da_oracle_value_persisted_total counter
-fee_oracle_ethereum_da_oracle_value_persisted_total 84
+fee_oracle_ethereum_da_oracle_value_persisted_total 1368
 
-# HELP fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas Most recent writeable (ready_to_write OR capped) oracle blob fee in dogewei per blob gas. See companion base-fee gauge for the 'stays at prior writeable value' rule.
-# TYPE fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas gauge
-fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas 1543148801495128600
-
-# HELP fee_oracle_ethereum_da_priority_fee_per_gas_wei Ethereum priority fee used by dry-run estimate
-# TYPE fee_oracle_ethereum_da_priority_fee_per_gas_wei gauge
-fee_oracle_ethereum_da_priority_fee_per_gas_wei 0
-
-# HELP fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei Raw Ethereum blob base fee in wei/blob-gas
-# TYPE fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei gauge
-fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei 1
-
-# HELP fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas Most recent writeable (ready_to_write OR capped) oracle base fee in dogewei per execution gas. Stays at the prior writeable value when the latest cycle is degraded; consult /status for whether the latest cycle was writeable.
-# TYPE fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas gauge
-fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas 135072
-
-# HELP fee_oracle_ethereum_da_contract_write_mode Ethereum DA contract write mode
-# TYPE fee_oracle_ethereum_da_contract_write_mode gauge
-fee_oracle_ethereum_da_contract_write_mode{mode="dry_run"} 1
-
-# HELP fee_oracle_ethereum_da_cost_per_blob_dogewei Estimated total Ethereum DA cost per blob in dogewei
-# TYPE fee_oracle_ethereum_da_cost_per_blob_dogewei gauge
-fee_oracle_ethereum_da_cost_per_blob_dogewei{mode="conservative",role="default_conservative"} 5365208142
-fee_oracle_ethereum_da_cost_per_blob_dogewei{mode="expected_configured_target",role="review_expected"} 3947076153
-
-# HELP fee_oracle_ethereum_da_sample_age_seconds Age of the last Ethereum DA sample
-# TYPE fee_oracle_ethereum_da_sample_age_seconds gauge
-fee_oracle_ethereum_da_sample_age_seconds 0
-
-# HELP fee_oracle_active_da_mode Active fee oracle DA mode
-# TYPE fee_oracle_active_da_mode gauge
-fee_oracle_active_da_mode{mode="ethereum_da"} 1
-
-# HELP fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms Unix timestamp (ms) of the most recently persisted oracle-value row, writeable or degraded. Use as the 'is the loop alive?' signal.
-# TYPE fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms gauge
-fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms 1781258712687
-
-# HELP fee_oracle_ethereum_da_effective_blobs_per_tx Effective blob count used by an Ethereum DA estimate
-# TYPE fee_oracle_ethereum_da_effective_blobs_per_tx gauge
-fee_oracle_ethereum_da_effective_blobs_per_tx{mode="conservative"} 1
-fee_oracle_ethereum_da_effective_blobs_per_tx{mode="expected_configured_target"} 2
-
-# HELP fee_oracle_ethereum_da_status Ethereum DA dry-run status
-# TYPE fee_oracle_ethereum_da_status gauge
-fee_oracle_ethereum_da_status{status="valid"} 1
+# HELP fee_oracle_ethereum_da_oracle_value_persisted_degraded_total Additional per-reason breakdown of degraded rows (subset of the total persisted counter). Use this to attribute degraded cycles to the reason that triggered them.
+# TYPE fee_oracle_ethereum_da_oracle_value_persisted_degraded_total counter
+fee_oracle_ethereum_da_oracle_value_persisted_degraded_total{reason="price_unavailable"} 157
+fee_oracle_ethereum_da_oracle_value_persisted_degraded_total{reason="provider_unavailable"} 269
 
 # HELP fee_oracle_ethereum_da_blob_cost_per_blob_wei Estimated Ethereum DA blob-gas cost per blob
 # TYPE fee_oracle_ethereum_da_blob_cost_per_blob_wei gauge
 fee_oracle_ethereum_da_blob_cost_per_blob_wei{mode="expected_configured_target",role="review_expected"} 131072
 fee_oracle_ethereum_da_blob_cost_per_blob_wei{mode="conservative",role="default_conservative"} 131072
 
-# HELP fee_oracle_ethereum_da_oracle_value_latest_status Constant 1 for the (status, reason) of the most recently persisted oracle-value row; cleared to 0 for the previous combination on each update so exactly one label combination is active at any time.
-# TYPE fee_oracle_ethereum_da_oracle_value_latest_status gauge
-fee_oracle_ethereum_da_oracle_value_latest_status{status="ready_to_write",reason="valid_update"} 1
+# HELP fee_oracle_ethereum_da_effective_blobs_per_tx Effective blob count used by an Ethereum DA estimate
+# TYPE fee_oracle_ethereum_da_effective_blobs_per_tx gauge
+fee_oracle_ethereum_da_effective_blobs_per_tx{mode="expected_configured_target"} 2
+fee_oracle_ethereum_da_effective_blobs_per_tx{mode="conservative"} 1
 
 # HELP fee_oracle_ethereum_da_l1_base_fee_per_gas_wei Raw Ethereum execution base fee in wei/gas
 # TYPE fee_oracle_ethereum_da_l1_base_fee_per_gas_wei gauge
 fee_oracle_ethereum_da_l1_base_fee_per_gas_wei 7
+
+# HELP fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas Most recent writeable (ready_to_write OR capped) oracle blob fee in dogewei per blob gas. See companion base-fee gauge for the 'stays at prior writeable value' rule.
+# TYPE fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas gauge
+fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas 1543148801495128300
+
+# HELP fee_oracle_ethereum_da_sample_age_seconds Age of the last Ethereum DA sample
+# TYPE fee_oracle_ethereum_da_sample_age_seconds gauge
+fee_oracle_ethereum_da_sample_age_seconds 0
+
+# HELP fee_oracle_ethereum_da_contract_write_mode Ethereum DA contract write mode
+# TYPE fee_oracle_ethereum_da_contract_write_mode gauge
+fee_oracle_ethereum_da_contract_write_mode{mode="dry_run"} 1
+
+# HELP fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms Unix timestamp (ms) of the most recently persisted oracle-value row, writeable or degraded. Use as the 'is the loop alive?' signal.
+# TYPE fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms gauge
+fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms 1781371940715
+
+# HELP fee_oracle_ethereum_da_priority_fee_per_gas_wei Ethereum priority fee used by dry-run estimate
+# TYPE fee_oracle_ethereum_da_priority_fee_per_gas_wei gauge
+fee_oracle_ethereum_da_priority_fee_per_gas_wei 0
+
+# HELP fee_oracle_ethereum_da_sample_available Whether an Ethereum DA raw fee sample is available
+# TYPE fee_oracle_ethereum_da_sample_available gauge
+fee_oracle_ethereum_da_sample_available 1
 
 # HELP fee_oracle_ethereum_da_execution_cost_per_blob_wei Estimated Ethereum execution cost amortized per blob
 # TYPE fee_oracle_ethereum_da_execution_cost_per_blob_wei gauge
 fee_oracle_ethereum_da_execution_cost_per_blob_wei{mode="expected_configured_target",role="review_expected"} 73500
 fee_oracle_ethereum_da_execution_cost_per_blob_wei{mode="conservative",role="default_conservative"} 147000
 
-# HELP fee_oracle_ethereum_da_sample_available Whether an Ethereum DA raw fee sample is available
-# TYPE fee_oracle_ethereum_da_sample_available gauge
-fee_oracle_ethereum_da_sample_available 1
+# HELP fee_oracle_ethereum_da_status Ethereum DA dry-run status
+# TYPE fee_oracle_ethereum_da_status gauge
+fee_oracle_ethereum_da_status{status="price_unavailable"} 1
+fee_oracle_ethereum_da_status{status="valid"} 1
 
 # HELP fee_oracle_uptime_seconds Service uptime in seconds
 # TYPE fee_oracle_uptime_seconds gauge
-fee_oracle_uptime_seconds 2514
+fee_oracle_uptime_seconds 41013
+
+# HELP fee_oracle_active_da_mode Active fee oracle DA mode
+# TYPE fee_oracle_active_da_mode gauge
+fee_oracle_active_da_mode{mode="ethereum_da"} 1
+
+# HELP fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas Most recent writeable (ready_to_write OR capped) oracle base fee in dogewei per execution gas. Stays at the prior writeable value when the latest cycle is degraded; consult /status for whether the latest cycle was writeable.
+# TYPE fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas gauge
+fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas 133923
+
+# HELP fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei Raw Ethereum blob base fee in wei/blob-gas
+# TYPE fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei gauge
+fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei 1
+
+# HELP fee_oracle_ethereum_da_cost_per_blob_dogewei Estimated total Ethereum DA cost per blob in dogewei
+# TYPE fee_oracle_ethereum_da_cost_per_blob_dogewei gauge
+fee_oracle_ethereum_da_cost_per_blob_dogewei{mode="expected_configured_target",role="review_expected"} 3912721747
+fee_oracle_ethereum_da_cost_per_blob_dogewei{mode="conservative",role="default_conservative"} 5318510654
 
 # HELP fee_oracle_ethereum_da_cost_per_blob_wei Estimated total Ethereum DA cost per blob in wei
 # TYPE fee_oracle_ethereum_da_cost_per_blob_wei gauge
 fee_oracle_ethereum_da_cost_per_blob_wei{mode="conservative",role="default_conservative"} 278072
 fee_oracle_ethereum_da_cost_per_blob_wei{mode="expected_configured_target",role="review_expected"} 204572
+
+# HELP fee_oracle_ethereum_da_oracle_value_latest_status Constant 1 for the (status, reason) of the most recently persisted oracle-value row; cleared to 0 for the previous combination on each update so exactly one label combination is active at any time.
+# TYPE fee_oracle_ethereum_da_oracle_value_latest_status gauge
+fee_oracle_ethereum_da_oracle_value_latest_status{status="not_ready",reason="provider_unavailable"} 0
+fee_oracle_ethereum_da_oracle_value_latest_status{status="ready_to_write",reason="valid_update"} 1
+fee_oracle_ethereum_da_oracle_value_latest_status{status="not_ready",reason="price_unavailable"} 0
