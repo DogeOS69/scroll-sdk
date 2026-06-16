@@ -36,7 +36,7 @@
   "timezone": "",
   "title": "DogeOS Dogecoin L1 Interface",
   "uid": "l1-interface-dashboard",
-  "version": 4,
+  "version": 5,
   "weekStart": "",
   "panels": [
     {
@@ -44,7 +44,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "dogeos-infinity"
       },
-      "description": "Live protocol chain height read directly from the l1-interface eth_blockNumber JSON-RPC (not a Prometheus metric).",
+      "description": "Live WF transaction chain height read directly from the l1-interface eth_blockNumber JSON-RPC (not a Prometheus metric).",
       "fieldConfig": {
         "defaults": {
           "unit": "none"
@@ -95,7 +95,7 @@
           "uql": "parse-json | project \"height\"=parse_int(replace(\"result\", \"0x\", \"\"), 16)"
         }
       ],
-      "title": "Protocol Chain Height (eth_blockNumber)",
+      "title": "WF Transaction Chain (eth_blockNumber)",
       "type": "stat"
     },
     {
@@ -268,12 +268,17 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 5,
         "x": 0,
         "y": 8
@@ -291,7 +296,7 @@
         }
       ],
       "title": "Protocol State WF Tx Number",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -300,12 +305,17 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 5,
         "x": 5,
         "y": 8
@@ -323,7 +333,7 @@
         }
       ],
       "title": "Dogecoin Confirmed Block",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -332,12 +342,17 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 5,
         "x": 10,
         "y": 8
@@ -355,7 +370,7 @@
         }
       ],
       "title": "L2 Batch Height",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -364,12 +379,17 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 5,
         "x": 15,
         "y": 8
@@ -387,7 +407,7 @@
         }
       ],
       "title": "Next Relayed Deposit Index",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -396,12 +416,17 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 4,
         "x": 20,
         "y": 8
@@ -419,7 +444,7 @@
         }
       ],
       "title": "Next Withdraw Index",
-      "type": "stat"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -440,7 +465,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "id": 11,
       "targets": [
@@ -503,7 +528,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 12
+        "y": 16
       },
       "id": 12,
       "targets": [
@@ -544,7 +569,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 20
+        "y": 24
       },
       "id": 13,
       "targets": [
@@ -576,7 +601,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 20
+        "y": 24
       },
       "id": 14,
       "targets": [
@@ -608,7 +633,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 20
+        "y": 24
       },
       "id": 15,
       "targets": [
@@ -640,7 +665,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 20
+        "y": 24
       },
       "id": 16,
       "targets": [
@@ -672,7 +697,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 20
+        "y": 24
       },
       "id": 17,
       "targets": [
@@ -704,7 +729,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 20
+        "y": 24
       },
       "id": 18,
       "targets": [
@@ -740,7 +765,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 24
+        "y": 28
       },
       "id": 19,
       "targets": [
@@ -785,7 +810,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 24
+        "y": 28
       },
       "id": 20,
       "targets": [
@@ -839,7 +864,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 24
+        "y": 28
       },
       "id": 21,
       "targets": [
@@ -884,7 +909,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 36
       },
       "id": 22,
       "targets": [
@@ -929,7 +954,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 36
       },
       "id": 23,
       "targets": [
@@ -965,7 +990,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 40
+        "y": 44
       },
       "id": 24,
       "targets": [
@@ -1001,7 +1026,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 40
+        "y": 44
       },
       "id": 25,
       "targets": [
@@ -1037,7 +1062,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 40
+        "y": 44
       },
       "id": 26,
       "targets": [
@@ -1073,7 +1098,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 40
+        "y": 44
       },
       "id": 27,
       "targets": [
@@ -1109,7 +1134,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 48
+        "y": 52
       },
       "id": 28,
       "targets": [
@@ -1145,7 +1170,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 48
+        "y": 52
       },
       "id": 29,
       "targets": [
@@ -1181,7 +1206,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 48
+        "y": 52
       },
       "id": 30,
       "targets": [
@@ -1226,7 +1251,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 56
+        "y": 60
       },
       "id": 31,
       "targets": [
@@ -1271,7 +1296,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 56
+        "y": 60
       },
       "id": 32,
       "targets": [
@@ -1316,7 +1341,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 56
+        "y": 60
       },
       "id": 33,
       "targets": [
@@ -1352,7 +1377,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 64
+        "y": 68
       },
       "id": 34,
       "targets": [
@@ -1388,7 +1413,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 64
+        "y": 68
       },
       "id": 35,
       "targets": [
@@ -1424,7 +1449,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 64
+        "y": 68
       },
       "id": 36,
       "targets": [
@@ -1469,7 +1494,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 72
+        "y": 76
       },
       "id": 37,
       "targets": [
@@ -1505,7 +1530,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 72
+        "y": 76
       },
       "id": 38,
       "targets": [
@@ -1541,7 +1566,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 72
+        "y": 76
       },
       "id": 39,
       "targets": [
@@ -1586,7 +1611,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 72
+        "y": 76
       },
       "id": 40,
       "targets": [
@@ -1618,7 +1643,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 80
+        "y": 84
       },
       "id": 41,
       "targets": [
@@ -1650,7 +1675,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 80
+        "y": 84
       },
       "id": 42,
       "targets": [
