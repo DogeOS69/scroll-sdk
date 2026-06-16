@@ -33,7 +33,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.18-dogeos \
+		--version=0.1.19-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:

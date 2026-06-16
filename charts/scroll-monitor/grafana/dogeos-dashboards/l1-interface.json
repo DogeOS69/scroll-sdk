@@ -92,7 +92,7 @@
             "body_content_type": "application/json",
             "data": "{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}"
           },
-          "uql": "parse-json | project \"height\"=parse_int(replace(\"result\", \"0x\", \"\"), 16)"
+          "uql": "parse-json | jsonata \"{'height': $number(result)}\""
         }
       ],
       "title": "WF Transaction Chain (eth_blockNumber)",
