@@ -6,6 +6,11 @@ grafana:
     type: Recreate
   adminUser: admin
   adminPassword: scroll-sdk
+  # Infinity datasource lets panels query JSON/HTTP endpoints directly (e.g. the
+  # l1-interface eth_blockNumber JSON-RPC) for values that are not exported as
+  # Prometheus metrics.
+  plugins:
+    - yesoreyeram-infinity-datasource
   additionalDataSources:
     - name: Loki
       type: loki
@@ -32,6 +37,11 @@ grafana:
             httpHeaderName1: 'X-Scope-OrgID'
           secureJsonData:
             httpHeaderValue1: '1'
+        - name: Infinity
+          type: yesoreyeram-infinity-datasource
+          uid: dogeos-infinity
+          access: proxy
+          isDefault: false
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1

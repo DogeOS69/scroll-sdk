@@ -36,9 +36,68 @@
   "timezone": "",
   "title": "DogeOS Dogecoin L1 Interface",
   "uid": "l1-interface-dashboard",
-  "version": 3,
+  "version": 4,
   "weekStart": "",
   "panels": [
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "dogeos-infinity"
+      },
+      "description": "Live protocol chain height read directly from the l1-interface eth_blockNumber JSON-RPC (not a Prometheus metric).",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 43,
+      "options": {
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "dogeos-infinity"
+          },
+          "refId": "A",
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "parser": "uql",
+          "url": "http://l1-interface:8545",
+          "url_options": {
+            "method": "POST",
+            "headers": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body_type": "raw",
+            "body_content_type": "application/json",
+            "data": "{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}"
+          },
+          "uql": "parse-json | project \"height\"=parse_int(replace(\"result\", \"0x\", \"\"), 16)"
+        }
+      ],
+      "title": "Protocol Chain Height (eth_blockNumber)",
+      "type": "stat"
+    },
     {
       "datasource": {
         "type": "prometheus",
@@ -54,7 +113,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 4
       },
       "id": 1,
       "targets": [
@@ -86,7 +145,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 0
+        "y": 4
       },
       "id": 2,
       "targets": [
@@ -118,7 +177,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 0
+        "y": 4
       },
       "id": 3,
       "targets": [
@@ -150,7 +209,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 0
+        "y": 4
       },
       "id": 4,
       "targets": [
@@ -185,7 +244,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 0
+        "y": 4
       },
       "id": 5,
       "targets": [
@@ -217,7 +276,7 @@
         "h": 4,
         "w": 5,
         "x": 0,
-        "y": 4
+        "y": 8
       },
       "id": 6,
       "targets": [
@@ -249,7 +308,7 @@
         "h": 4,
         "w": 5,
         "x": 5,
-        "y": 4
+        "y": 8
       },
       "id": 7,
       "targets": [
@@ -281,7 +340,7 @@
         "h": 4,
         "w": 5,
         "x": 10,
-        "y": 4
+        "y": 8
       },
       "id": 8,
       "targets": [
@@ -313,7 +372,7 @@
         "h": 4,
         "w": 5,
         "x": 15,
-        "y": 4
+        "y": 8
       },
       "id": 9,
       "targets": [
@@ -345,7 +404,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 4
+        "y": 8
       },
       "id": 10,
       "targets": [
@@ -381,7 +440,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 12
       },
       "id": 11,
       "targets": [
@@ -444,7 +503,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 12
       },
       "id": 12,
       "targets": [
@@ -485,7 +544,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 16
+        "y": 20
       },
       "id": 13,
       "targets": [
@@ -517,7 +576,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 16
+        "y": 20
       },
       "id": 14,
       "targets": [
@@ -549,7 +608,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 16
+        "y": 20
       },
       "id": 15,
       "targets": [
@@ -581,7 +640,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 16
+        "y": 20
       },
       "id": 16,
       "targets": [
@@ -613,7 +672,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 16
+        "y": 20
       },
       "id": 17,
       "targets": [
@@ -645,7 +704,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 16
+        "y": 20
       },
       "id": 18,
       "targets": [
@@ -681,7 +740,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 20
+        "y": 24
       },
       "id": 19,
       "targets": [
@@ -726,7 +785,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 20
+        "y": 24
       },
       "id": 20,
       "targets": [
@@ -780,7 +839,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 20
+        "y": 24
       },
       "id": 21,
       "targets": [
@@ -825,7 +884,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 32
       },
       "id": 22,
       "targets": [
@@ -870,7 +929,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 32
       },
       "id": 23,
       "targets": [
@@ -906,7 +965,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 36
+        "y": 40
       },
       "id": 24,
       "targets": [
@@ -942,7 +1001,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 36
+        "y": 40
       },
       "id": 25,
       "targets": [
@@ -978,7 +1037,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 36
+        "y": 40
       },
       "id": 26,
       "targets": [
@@ -1014,7 +1073,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 36
+        "y": 40
       },
       "id": 27,
       "targets": [
@@ -1050,7 +1109,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 44
+        "y": 48
       },
       "id": 28,
       "targets": [
@@ -1086,7 +1145,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 44
+        "y": 48
       },
       "id": 29,
       "targets": [
@@ -1122,7 +1181,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 44
+        "y": 48
       },
       "id": 30,
       "targets": [
@@ -1167,7 +1226,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 52
+        "y": 56
       },
       "id": 31,
       "targets": [
@@ -1212,7 +1271,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 52
+        "y": 56
       },
       "id": 32,
       "targets": [
@@ -1257,7 +1316,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 52
+        "y": 56
       },
       "id": 33,
       "targets": [
@@ -1293,7 +1352,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 60
+        "y": 64
       },
       "id": 34,
       "targets": [
@@ -1329,7 +1388,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 60
+        "y": 64
       },
       "id": 35,
       "targets": [
@@ -1365,7 +1424,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 60
+        "y": 64
       },
       "id": 36,
       "targets": [
@@ -1410,7 +1469,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 68
+        "y": 72
       },
       "id": 37,
       "targets": [
@@ -1446,7 +1505,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 68
+        "y": 72
       },
       "id": 38,
       "targets": [
@@ -1482,7 +1541,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 68
+        "y": 72
       },
       "id": 39,
       "targets": [
@@ -1527,7 +1586,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 68
+        "y": 72
       },
       "id": 40,
       "targets": [
@@ -1559,7 +1618,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 76
+        "y": 80
       },
       "id": 41,
       "targets": [
@@ -1591,7 +1650,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 76
+        "y": 80
       },
       "id": 42,
       "targets": [
