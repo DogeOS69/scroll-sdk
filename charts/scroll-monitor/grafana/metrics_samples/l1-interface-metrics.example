@@ -185,6 +185,10 @@ l1_interface_protocol_state_dogecoin_confirmed_block_number 62638815
 # TYPE l1_interface_protocol_replay_bridge_key_info gauge
 l1_interface_protocol_replay_bridge_key_info{role="current",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793"} 1
 
+# HELP l1_interface_protocol_replay_bridge_address_info Active replay bridge address labels by role, network, key_hash, address, script_pubkey_hex, and deprecation WF tx number; active label is 1, stale observed labels are 0
+# TYPE l1_interface_protocol_replay_bridge_address_info gauge
+l1_interface_protocol_replay_bridge_address_info{role="current",network="regtest",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793",address="2N4bs85KqR29BPfYs8v2mLECqbBTDUFYdMj",script_pubkey_hex="a9147c90b3774cc70fcc850c25669b5cfbbaa911979387",deprecation_wf_tx_number=""} 1
+
 # HELP l1_interface_protocol_replay_discovered_up_to Replay read-model discovered WF transaction number
 # TYPE l1_interface_protocol_replay_discovered_up_to gauge
 l1_interface_protocol_replay_discovered_up_to 9450

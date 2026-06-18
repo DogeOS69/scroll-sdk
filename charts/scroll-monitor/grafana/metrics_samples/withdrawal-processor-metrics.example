@@ -20,6 +20,10 @@ withdrawal_processor_protocol_latest_da_l2_ending_block_height 0
 # TYPE withdrawal_processor_protocol_replay_bridge_key_info gauge
 withdrawal_processor_protocol_replay_bridge_key_info{role="current",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793"} 1
 
+# HELP withdrawal_processor_protocol_replay_bridge_address_info Active replay bridge address labels by role, network, key_hash, address, script_pubkey_hex, and deprecation WF tx number; active label is 1, stale observed labels are 0
+# TYPE withdrawal_processor_protocol_replay_bridge_address_info gauge
+withdrawal_processor_protocol_replay_bridge_address_info{role="current",network="regtest",key_hash="0x7c90b3774cc70fcc850c25669b5cfbbaa9119793",address="2N4bs85KqR29BPfYs8v2mLECqbBTDUFYdMj",script_pubkey_hex="a9147c90b3774cc70fcc850c25669b5cfbbaa911979387",deprecation_wf_tx_number=""} 1
+
 # HELP withdrawal_processor_protocol_withdrawal_count Withdrawal count grouped by status
 # TYPE withdrawal_processor_protocol_withdrawal_count gauge
 withdrawal_processor_protocol_withdrawal_count{status="Processed"} 37

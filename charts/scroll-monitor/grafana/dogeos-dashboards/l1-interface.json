@@ -899,15 +899,42 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "fillOpacity": 8,
-            "showPoints": "never"
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "active"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "text": "Stale"
+                      },
+                      "1": {
+                        "text": "Active"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 4,
+        "w": 6,
         "x": 0,
         "y": 36
       },
@@ -919,21 +946,150 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max by (role, key_hash) (l1_interface_protocol_replay_bridge_key_info)",
-          "legendFormat": "{{role}}: {{key_hash}}",
+          "format": "table",
+          "instant": true,
           "refId": "A"
+        }
+      ],
+      "title": "Replay Bridge Keys",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "role": 0,
+              "key_hash": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "Value": "active"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 36
+      },
+      "id": 44,
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "max(l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number)",
-          "legendFormat": "deprecation_cutoff_wf_tx",
+          "instant": true,
+          "legendFormat": "wf_tx",
           "refId": "B"
         }
       ],
-      "title": "Replay Bridge Keys",
-      "type": "timeseries"
+      "title": "Replay Deprecation Cutoff WF Tx",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "active"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "text": "Stale"
+                      },
+                      "1": {
+                        "text": "Active"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 45,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max by (role, network, address, key_hash, script_pubkey_hex, deprecation_wf_tx_number) (l1_interface_protocol_replay_bridge_address_info)",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Bridge Addresses",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "role": 0,
+              "network": 1,
+              "address": 2,
+              "key_hash": 3,
+              "script_pubkey_hex": 4,
+              "deprecation_wf_tx_number": 5,
+              "Value": 6
+            },
+            "renameByName": {
+              "Value": "active"
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
