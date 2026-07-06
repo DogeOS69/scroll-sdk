@@ -1,14 +1,14 @@
 NAMESPACE ?= default
 
 .PHONY: prepare install-dogecoin install-scroll-core \
-	install-l1-devnet install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
+	install-l1-devnet install-l2-reth install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
 	install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor \
 	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin delete-l1-devnet delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
-	delete-l1-interface delete-l2-sequencer delete-l2-bootnode delete-l2-rpc \
+	delete-l1-interface delete-l2-reth delete-l2-sequencer delete-l2-bootnode delete-l2-rpc \
 	delete-testnet-activity-helper delete-coordinator
 
 prepare:
@@ -63,6 +63,11 @@ install-l2-rpc:
 	helm upgrade -i l2-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-rpc -n $(NAMESPACE) \
 		--version=0.1.16 \
 		--values values/l2-rpc-production.yaml
+
+install-l2-reth:
+	helm upgrade -i l2-reth-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth -n $(NAMESPACE) \
+		--version=0.1.0 \
+		--values values/l2-reth-production.yaml
 
 install-l2-sequencer:
 	helm upgrade -i l2-sequencer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-sequencer -n $(NAMESPACE) \
@@ -257,3 +262,6 @@ delete-l2-sequencer:
 
 delete-l2-rpc:
 	helm delete -n $(NAMESPACE) l2-rpc
+
+delete-l2-reth:
+	helm delete -n $(NAMESPACE) l2-reth-rpc

@@ -1,0 +1,10 @@
+---
+{{- include "scroll.common.loader.init" . }}
+
+{{- include "l2-reth.validate" . }}
+{{- $generated := include "l2-reth.generatedValues" . | fromYaml }}
+{{- $_ := mergeOverwrite .Values $generated }}
+
+{{ include "scroll.common.loader.generate" . }}
+---
+{{- include "scrolllib.externalsecrets.tpl" . }}
