@@ -97,7 +97,6 @@ reth:
     feeRecipient: "<TODO>"
 
   rpc:
-    sequencerUrl: "http://l2-reth-sequencer-0:8545"
     trustedOnly: false
     maxOutboundPeers: ""
     maxInboundPeers: ""

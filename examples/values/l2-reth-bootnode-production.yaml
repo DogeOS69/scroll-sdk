@@ -90,7 +90,6 @@ reth:
     feeRecipient: "<TODO>"
 
   rpc:
-    sequencerUrl: ""
     trustedOnly: false
     maxOutboundPeers: ""
     maxInboundPeers: ""
