@@ -1,0 +1,140 @@
+---
+role: rpc
+
+global:
+  nameOverride: ""
+  fullnameOverride: ""
+
+controller:
+  replicas: 1
+  strategy: RollingUpdate
+  type: statefulset
+
+image:
+  repository: scrolltech/rollup-node
+  pullPolicy: IfNotPresent
+  tag: v1.0.7-rc6
+
+waitForL1:
+  image: scrolltech/scroll-alpine:v0.0.1
+
+nodeKeyGenerator:
+  image: scrolltech/scroll-alpine:v0.0.1
+
+env:
+  - name: RUST_BACKTRACE
+    value: "1"
+
+envFrom: []
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+  limits:
+    cpu: "8"
+    memory: 32Gi
+
+service:
+  main:
+    type: ClusterIP
+    annotations: {}
+
+reth:
+  networkId: "4444444"
+  l1Url: http://l1-interface:8545
+  l1LivenessThreshold: "2147483647"
+  l1LivenessCheckInterval: "3600"
+  blobS3Url: ""
+  trustedPeers: ""
+  builderGasLimit: ""
+  engineSyncAtStartup: "false"
+  engineLegacyStateRoot: true
+  ipcPath: /tmp/reth.ipc
+  ipcPermissions: "0600"
+  logFormat: log-fmt
+  verbosity: 3
+  # Additional rollup-node arguments. A string is split on whitespace:
+  # "--foo bar --flag" renders as ["--foo", "bar", "--flag"].
+  # Use a list when an argument value itself contains spaces.
+  extraArgs: []
+
+  ports:
+    http: 8545
+    ws: 8546
+    metrics: 6060
+    p2p: 30303
+
+  genesis:
+    configMapName: genesis-config
+    chainPath: /app/genesis/genesis.json
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+
+  data:
+    size: 100Gi
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    retain: true
+
+  nodeKey:
+    mode: pvcAutoGenerate
+    path: /keys/nodekey
+    generatedPath: /data/nodekey
+    # Defaults to <fullname>-secret-env when mode is secret.
+    secretName: ""
+    secretKey: RETH_NODEKEY
+
+  signer:
+    type: none
+    awsKmsKeyId: ""
+    localFile:
+      path: /signer/sequencer-key
+      # Defaults to <fullname>-secret-env when signer.type is localFile.
+      secretName: ""
+      secretKey: RETH_SEQUENCER_SIGNER_PRIVATE_KEY
+
+  sequencer:
+    enabled: false
+    autoStart: true
+    allowEmptyBlocks: false
+    blockTimeMs: "3000"
+    payloadBuildingDurationMs: "800"
+    l1InclusionMode: finalized:2
+    feeRecipient: "0x5300000000000000000000000000000000000005"
+
+  rpc:
+    sequencerUrl: ""
+    trustedOnly: false
+    maxOutboundPeers: ""
+    maxInboundPeers: ""
+    disableTransactionsBackup: false
+    rollupNode: false
+    rollupNodeAdmin: false
+    maxConnections: ""
+    maxRequestSize: ""
+    maxResponseSize: ""
+    maxSubscriptionsPerConnection: ""
+    maxBlocksPerFilter: ""
+    maxLogsPerResponse: ""
+    maxTracingRequests: ""
+
+  http:
+    enabled: true
+    addr: 0.0.0.0
+    corsDomain: "*"
+    api: eth,net,web3,rpc
+
+  ws:
+    enabled: true
+    addr: 0.0.0.0
+    api: eth,net,web3,rpc
+
+  service:
+    p2p:
+      enabled: false
+    extra: {}
+
+ingress: {}
+serviceMonitor: {}
+externalSecrets: {}
