@@ -2,8 +2,8 @@
 role: rpc
 
 global:
-  nameOverride: l2-reth-rpc
-  fullnameOverride: l2-reth-rpc
+  nameOverride: l2-reth
+  fullnameOverride: l2-reth
 
 controller:
   replicas: 1

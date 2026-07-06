@@ -169,6 +169,23 @@ probes:
 {{/*
 Generate rollup-node argv without shell interpolation.
 */}}
+{{- define "l2-reth.extraArgs" -}}
+{{- $extraArgs := .Values.reth.extraArgs -}}
+{{- if kindIs "string" $extraArgs -}}
+{{- range $arg := regexSplit "\\s+" (trim $extraArgs) -1 }}
+{{- if $arg }}
+- {{ $arg | quote }}
+{{- end }}
+{{- end }}
+{{- else if kindIs "slice" $extraArgs -}}
+{{- range $extraArgs }}
+- {{ . | quote }}
+{{- end }}
+{{- else if $extraArgs -}}
+{{- fail "reth.extraArgs must be a string or a list of strings" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "l2-reth.args" -}}
 - node
 - --chain
@@ -298,9 +315,7 @@ Generate rollup-node argv without shell interpolation.
 {{- end }}
 - --log.stdout.format
 - {{ .Values.reth.logFormat | quote }}
-{{- range .Values.reth.extraArgs }}
-- {{ . | quote }}
-{{- end }}
+{{ include "l2-reth.extraArgs" . }}
 {{- if gt (int .Values.reth.verbosity) 0 }}
 - {{ printf "-%s" (repeat (int .Values.reth.verbosity) "v") | quote }}
 {{- end }}

@@ -54,6 +54,9 @@ reth:
   ipcPermissions: "0600"
   logFormat: log-fmt
   verbosity: 3
+  # Additional rollup-node arguments. A string is split on whitespace:
+  # "--foo bar --flag" renders as ["--foo", "bar", "--flag"].
+  # Use a list when an argument value itself contains spaces.
   extraArgs: []
 
   ports:
