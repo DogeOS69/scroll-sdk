@@ -167,6 +167,34 @@ probes:
 {{- end -}}
 
 {{/*
+Render l2-reth container ports explicitly. The common chart derives container
+ports from every enabled Service port, which duplicates the P2P container ports
+when a bootnode has both an internal P2P Service and an external P2P
+LoadBalancer Service.
+*/}}
+{{- define "scroll.common.lib.container.ports" -}}
+{{- if .Values.reth.http.enabled }}
+- name: http
+  containerPort: {{ .Values.reth.ports.http }}
+  protocol: TCP
+{{- end }}
+{{- if .Values.reth.ws.enabled }}
+- name: ws
+  containerPort: {{ .Values.reth.ports.ws }}
+  protocol: TCP
+{{- end }}
+- name: metrics
+  containerPort: {{ .Values.reth.ports.metrics }}
+  protocol: TCP
+- name: p2p-tcp
+  containerPort: {{ .Values.reth.ports.p2p }}
+  protocol: TCP
+- name: p2p-udp
+  containerPort: {{ .Values.reth.ports.p2p }}
+  protocol: UDP
+{{- end -}}
+
+{{/*
 Generate rollup-node argv without shell interpolation.
 */}}
 {{- define "l2-reth.extraArgs" -}}

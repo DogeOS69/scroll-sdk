@@ -1,0 +1,27 @@
+apiVersion: v2
+name: proof-coordinator
+description: A Helm chart for the DogeOS proof-coordinator service
+type: application
+version: 0.2.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.22.0-0"
+home: https://github.com/DogeOS69/dogeos-core
+sources:
+  - https://github.com/DogeOS69/dogeos-core/tree/develop/crates/proof_coordinator
+keywords:
+  - dogeos
+  - scroll
+  - proof-coordinator
+  - zk
+  - bridge
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com
+
+dependencies:
+  - name: common
+    repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
+    version: 1.5.1
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

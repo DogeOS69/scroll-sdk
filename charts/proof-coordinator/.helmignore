@@ -1,0 +1,22 @@
+# Patterns to ignore when building Helm packages.
+# https://helm.sh/docs/topics/charts/#the-helmignore-file
+.DS_Store
+# Version control
+.git/
+.gitignore
+.bzr/
+.hg/
+.hgignore
+.svn/
+# Common backup / editor files
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+# CI / IDE
+.idea/
+.vscode/
+.project
+# Charts index / repo metadata (not part of the packaged chart)
+index.yaml

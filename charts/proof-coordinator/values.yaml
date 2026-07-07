@@ -1,0 +1,160 @@
+global:
+  nameOverride: &app_name proof-coordinator
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/proof-coordinator
+  pullPolicy: Always
+  tag: latest
+
+# Dedicated ServiceAccount. Keeping a per-workload identity (rather than the
+# namespace `default`) is required for cloud IAM binding — e.g. AWS IRSA for the
+# S3 artifact store: set `serviceAccount.annotations.eks.amazonaws.com/role-arn`
+# (see values/production.yaml).
+serviceAccount:
+  create: true
+  name: proof-coordinator
+  annotations: {}
+
+command:
+  - "sh"
+  - "-ec"
+  - "mkdir -p /app/data/proof-artifacts && exec proof-coordinator --config /app/conf/ProofCoordinator.toml"
+
+service:
+  main:
+    enabled: false
+    ports:
+      http:
+        enabled: true
+        port: 9400
+        protocol: TCP
+
+defaultProbes: &default_probes
+  enabled: false
+  custom: true
+  spec:
+    httpGet:
+      path: /healthz
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    <<: *default_probes
+  startup:
+    <<: *default_probes
+    spec:
+      httpGet:
+        path: /healthz
+        port: http
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 24
+
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    mountPath: /app/conf/
+    # Rendered by the common library from `configMaps.config` below as
+    # <fullname>-config; changes roll pods via the checksum/config annotation.
+    name: proof-coordinator-config
+  data:
+    enabled: true
+    name: proof-coordinator-data-pvc
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    retain: true
+  secrets:
+    enabled: false
+    type: secret
+    mountPath: /run/secrets
+    name: proof-coordinator-secrets
+    readOnly: true
+  # Writable scratch space so the container can run with a read-only root
+  # filesystem (see securityContext.readOnlyRootFilesystem). Sized small; all
+  # durable state lives on the `data` PVC.
+  tmp:
+    enabled: true
+    type: emptyDir
+    mountPath: /tmp
+    sizeLimit: 1Gi
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Pod-level hardening. The runtime image (debian-slim) ships no non-root USER,
+# so we pin an unprivileged UID/GID here; the binary is world-executable and
+# only writes to the `data` PVC, whose ownership fsGroup fixes up on mount.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level hardening. Durable state is on the `data` PVC and scratch on
+# the `tmp` emptyDir, so the root filesystem can be read-only.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+serviceMonitor:
+  main:
+    enabled: false
+
+ingress:
+  main:
+    enabled: false
+
+# Per-deployment scalar overrides. The binary layers
+# `DOGEOS_PROOF_COORDINATOR_*` env vars (Figment, `__` = section separator) on
+# top of ProofCoordinator.toml, so deployment-specific values belong here —
+# tooling (scroll-sdk-cli) should emit these instead of rewriting the TOML.
+# e.g. DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__BUCKET=my-bucket
+env: []
+envFrom: []
+externalSecrets: {}
+
+configMaps:
+  config:
+    enabled: true
+    data:
+      # Static baseline configuration. Dev/regtest verify-only defaults;
+      # values/production.yaml replaces this with the production posture
+      # (auth, S3 store, verifier identity pins, prover_api) and moves the
+      # per-deployment scalars to `env` above.
+      ProofCoordinator.toml: |
+        proof_work_base_url = "http://127.0.0.1:9300"
+        coordinator_id = "proof-coordinator"
+        poll_interval_ms = 1000
+        lease_ttl_ms = 60000
+
+        [artifact_store]
+        kind = "local_fs"
+        root = "/app/data/proof-artifacts"
+
+        [verifier]
+        verifier_import_mode = "dev_dummy"
