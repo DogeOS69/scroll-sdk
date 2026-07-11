@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "controller": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "attestation-signer is singleton-only: its durable SQLite store is the single-writer signing ledger backing the local_ledger_conflict (double-sign) check."
+        }
+      }
+    }
+  }
+}

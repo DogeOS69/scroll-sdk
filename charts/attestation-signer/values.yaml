@@ -1,0 +1,122 @@
+global:
+  nameOverride: &app_name attestation-signer
+  fullnameOverride: *app_name
+
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+
+image:
+  repository: dogeos69/attestation-signer
+  pullPolicy: Always
+  tag: latest
+
+# The service deploys config-file-first: non-secret config comes from the TOML
+# mounted at /etc/dogeos/attestation-signer.toml; secrets (the signing WIF or
+# the KMS key id) are env-only and never live in this file.
+args:
+  - "-c"
+  - "/etc/dogeos/attestation-signer.toml"
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 4040
+        protocol: TCP
+
+defaultProbes: &default_probes
+  enabled: true
+  custom: true
+  spec:
+    httpGet:
+      path: "/health"
+      port: http
+
+probes:
+  liveness:
+    <<: *default_probes
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/ready"
+        port: http
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/ready"
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 24
+      timeoutSeconds: 2
+
+# Application env/config is intentionally supplied by deployment values such as
+# examples/values/attestation-signer-production.yaml. The skeleton below only
+# fixes the deployment shape (TOML file at /etc/dogeos/); every <TODO> must be
+# filled before the binary will start in production_enforce.
+configMaps:
+  config:
+    enabled: true
+    data:
+      attestation-signer.toml: |
+        [service]
+        port = 4040
+        network = "testnet"
+
+        [policy]
+        mode = "production_enforce"
+
+        [signer]
+        backend = "aws_kms"
+
+        [tso]
+        url = "http://tso-service:3000"
+        callback_phase = "attestation"
+
+        [database]
+        path = "/app/data/attestation-signer.sqlite"
+
+persistence:
+  data:
+    enabled: true
+    name: attestation-signer-data-pvc
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    retain: true
+  config:
+    enabled: true
+    type: configMap
+    name: attestation-signer-config
+    mountPath: /etc/dogeos/
+    readOnly: true
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+serviceMonitor:
+  main:
+    enabled: true
+
+ingress:
+  main:
+    enabled: false
+
+externalSecrets: {}

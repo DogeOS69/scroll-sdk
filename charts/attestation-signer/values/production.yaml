@@ -1,0 +1,119 @@
+image:
+  repository: dogeos69/attestation-signer
+  pullPolicy: IfNotPresent
+  tag: latest
+
+env:
+  - name: RUST_LOG
+    value: "info,attestation_signer=info"
+
+configMaps:
+  config:
+    enabled: true
+    data:
+      # Non-secret config. Precedence in the binary is
+      # `defaults < TOML < env/CLI`, so anything here can still be overridden
+      # via ATTESTATION_SIGNER_* env below.
+      attestation-signer.toml: |
+        [service]
+        port = 4040
+        network = "<TODO>"                 # "dogecoin" (mainnet) | "testnet"
+
+        [policy]
+        mode = "production_enforce"        # fail-closed; do not weaken in production
+
+        [signer]
+        backend = "aws_kms"
+        kms_region = "<TODO>"
+        # Operator-pinned compressed Dogecoin pubkey: exactly 66 lowercase hex
+        # chars, no 0x. Public material — pinning it here keeps it auditable.
+        # The signer refuses to start if the KMS-derived pubkey mismatches.
+        kms_expected_signer_id = "<TODO>"
+        # kms_key_id is env-only (redacted): ATTESTATION_SIGNER_KMS_KEY_ID below.
+
+        [tso]
+        url = "http://tso-service:3000"
+        callback_phase = "attestation"
+
+        [database]
+        path = "/app/data/attestation-signer.sqlite"
+
+        [production_policy]
+        protocol_instance_id = "<TODO>"    # 0x-prefixed 32-byte hex
+        bridge_namespace_id = "<TODO>"     # 0x-prefixed 20-byte hex
+        active_bridge_key_hash = "<TODO>"  # 0x-prefixed 20-byte hex, hash160(bridge redeem script)
+        supported_signing_policy_versions = "1"
+        verifier_registry_toml = "/etc/dogeos/verifier-registry.toml"
+        tee_allowed_signer_ids = "<TODO>"  # CSV of 66-char compressed pubkey hex
+        source_set_toml = "/etc/dogeos/source-set.toml"
+
+        [envelope_policy]
+        max_proof_artifacts = 4
+        allowed_proof_triples = "<TODO>"   # CSV of proof_kind:verifier_id:0xvk_hash
+
+        [proof_artifact_fetch]
+        mode = "http"
+
+      # Allowlist of (proof_kind, verifier_id, vk_hash) triples enforced by the
+      # proof_artifact_registry check. Schema:
+      # dogeos-core crates/attestation_signer/src/verifier_registry.rs
+      verifier-registry.toml: |
+        # <TODO: fill from the deployed verifier identities>
+
+      # Source-set topology (PRD §14); structurally validated at startup.
+      source-set.toml: |
+        # <TODO: fill from the production source-set topology>
+
+  env:
+    enabled: true
+    data:
+      # Release-policy envelope — all required in production_enforce; the
+      # binary refuses to start on any absence or mismatch.
+      ATTESTATION_SIGNER_ALLOWED_RELEASE_VERSION: "<TODO>" # must equal the image's CARGO_PKG_VERSION
+      ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT: "<TODO>"      # must equal the build-time GIT_COMMIT
+      ATTESTATION_SIGNER_ALLOWED_SIGNING_POLICY_VERSION: "1" # must equal the compiled-in SIGNING_POLICY_VERSION
+      # Optional container-digest pinning: set both values.
+      # ATTESTATION_SIGNER_ALLOWED_CONTAINER_DIGEST: "<TODO>"
+      # ATTESTATION_SIGNER_CONTAINER_DIGEST: "<TODO>"
+      # AWS KMS key id or ARN (redacted in logs). Move to externalSecrets if
+      # your posture treats key ids as secrets.
+      ATTESTATION_SIGNER_KMS_KEY_ID: "<TODO>"
+
+envFrom:
+  - configMapRef:
+      name: attestation-signer-env
+
+# IRSA role granting kms:Sign + kms:GetPublicKey on the signing key.
+serviceAccount:
+  create: true
+  name: attestation-signer
+  annotations:
+    eks.amazonaws.com/role-arn: "<TODO>"
+
+persistence:
+  data:
+    enabled: true
+    name: attestation-signer-data-pvc
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    retain: true
+  config:
+    enabled: true
+    type: configMap
+    name: attestation-signer-config
+    mountPath: /etc/dogeos/
+    readOnly: true
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+serviceMonitor:
+  main:
+    enabled: true
