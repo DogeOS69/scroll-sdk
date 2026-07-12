@@ -422,9 +422,10 @@ readiness:
         - |
           resp="$(curl -fsS -m 2 \
             -H 'Content-Type: application/json' \
-            --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
+            --data '{"jsonrpc":"2.0","method":"rollupNode_status","params":[],"id":1}' \
             http://127.0.0.1:{{ .Values.reth.ports.http }})"
-          echo "$resp" | grep -q '"result":false'
+          printf '%s' "$resp" | grep -Fq '"result":{"l1":{"status":"Synced"'
+          printf '%s' "$resp" | grep -Fq '"l2":{"status":"Synced"'
     periodSeconds: 10
     timeoutSeconds: 3
     failureThreshold: 3
