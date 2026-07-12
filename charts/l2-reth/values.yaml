@@ -37,6 +37,8 @@ resources:
 
 service:
   main:
+    # Optional exact Kubernetes Service name. Empty keeps the default release-derived name.
+    fullname: ""
     type: ClusterIP
     annotations: {}
 

@@ -1,6 +1,6 @@
 # common
 
-![Version: 1.5.2](https://img.shields.io/badge/Version-1.5.2-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square)
+![Version: 1.5.3](https://img.shields.io/badge/Version-1.5.3-informational?style=flat-square) ![Type: library](https://img.shields.io/badge/Type-library-informational?style=flat-square)
 
 Function library for Helm charts
 
@@ -185,6 +185,7 @@ Kubernetes: `>=1.22.0-0`
 | service.main.ipFamilies | list | `[]` | The ip families that should be used. Options: IPv4, IPv6 |
 | service.main.ipFamilyPolicy | string | `nil` | Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack |
 | service.main.labels | object | `{}` | Provide additional labels which may be required. |
+| service.main.fullname | string | `nil` | Override the full service name. If unset, the chart uses the release fullname, optionally followed by `nameOverride`. |
 | service.main.nameOverride | string | `nil` | Override the name suffix that is used for this service |
 | service.main.ports | object | See below | Configure the Service port information here. Additional ports can be added by adding a dictionary key similar to the 'http' service. |
 | service.main.ports.http.enabled | bool | `true` | Enables or disables the port |
@@ -206,7 +207,7 @@ Kubernetes: `>=1.22.0-0`
 | serviceMonitor.main.labels | object | `{}` | Provide additional labels which may be required. |
 | serviceMonitor.main.nameOverride | string | `nil` | Override the name suffix that is used for this serviceMonitor. |
 | serviceMonitor.main.selector | object | `{}` | Configures a custom selector for the serviceMonitor, this takes precedence over specifying a service name. Helm templates can be used. |
-| serviceMonitor.main.serviceName | string | `"{{ include \"scroll.common.lib.chart.names.fullname\" $ }}"` | Configures the target Service for the serviceMonitor. Helm templates can be used. |
+| serviceMonitor.main.serviceName | string | `"{{ include \"scroll.common.lib.service.name\" (dict \"root\" $ \"values\" (get $.Values.service (include \"scroll.common.lib.service.primary\" $))) }}"` | Configures the target Service for the serviceMonitor. Helm templates can be used. |
 | sidecars | object | `{}` | Specify any sidecar containers here as dictionary items. Each sidecar container should have its own key. The dictionary item key will determine the order. Helm templates can be used. |
 | termination.gracePeriodSeconds | string | `nil` | [[ref](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#lifecycle)] |
 | termination.messagePath | string | `nil` | [[ref](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#lifecycle-1)] |

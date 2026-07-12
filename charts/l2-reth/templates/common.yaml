@@ -5,6 +5,13 @@
 {{- $generated := include "l2-reth.generatedValues" . | fromYaml }}
 {{- $_ := mergeOverwrite .Values $generated }}
 
+{{- $fullname := include "scroll.common.lib.chart.names.fullname" . -}}
+{{- if hasKey .Values.externalSecrets "secret-env" -}}
+  {{- $externalSecret := get .Values.externalSecrets "secret-env" -}}
+  {{- $_ := unset .Values.externalSecrets "secret-env" -}}
+  {{- $_ := set .Values.externalSecrets (printf "%s-secret-env" $fullname) $externalSecret -}}
+{{- end -}}
+
 {{ include "scroll.common.loader.generate" . }}
 ---
 {{- include "scrolllib.externalsecrets.tpl" . }}

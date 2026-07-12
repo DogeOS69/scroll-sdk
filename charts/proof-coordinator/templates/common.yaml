@@ -2,13 +2,23 @@
 {{- include "scroll.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:
-  nameOverride: "{{ .Release.Name }}"
+  nameOverride: {{ .Release.Name | quote }}
 {{ end }}
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{- $fullname := include "scroll.common.lib.chart.names.fullname" . -}}
+{{- $_ := set .Values.persistence.config "name" (printf "%s-config" $fullname) -}}
+{{- if not .Values.persistence.secrets.name -}}
+  {{- $_ := set .Values.persistence.secrets "name" (printf "%s-secrets" $fullname) -}}
+{{- end -}}
+{{- if hasKey .Values.externalSecrets "secrets" -}}
+  {{- $externalSecret := get .Values.externalSecrets "secrets" -}}
+  {{- $_ := unset .Values.externalSecrets "secrets" -}}
+  {{- $_ := set .Values.externalSecrets .Values.persistence.secrets.name $externalSecret -}}
+{{- end -}}
 
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}

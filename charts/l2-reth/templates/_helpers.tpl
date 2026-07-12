@@ -21,6 +21,13 @@ Resolve the Secret name for a local sequencer signer key.
 {{- end -}}
 
 {{/*
+Resolve the primary Service name, including service.main.fullname when set.
+*/}}
+{{- define "l2-reth.serviceName" -}}
+{{- include "scroll.common.lib.service.name" (dict "root" $ "values" .Values.service.main) -}}
+{{- end -}}
+
+{{/*
 Validate l2-reth role constraints before generating common chart values.
 */}}
 {{- define "l2-reth.validate" -}}
@@ -29,8 +36,11 @@ Validate l2-reth role constraints before generating common chart values.
     {{- fail (printf "invalid role %q: expected rpc, sequencer, or bootnode" $role) -}}
   {{- end -}}
   {{- $replicas := int (default 1 .Values.controller.replicas) -}}
-  {{- if and (ne $role "rpc") (gt $replicas 1) -}}
-    {{- fail (printf "role %s allows only controller.replicas 0 or 1" $role) -}}
+  {{- if and (eq $role "sequencer") (gt $replicas 1) -}}
+    {{- fail "role sequencer requires controller.replicas to be 0 or 1; multiple sequencer replicas are unsafe" -}}
+  {{- end -}}
+  {{- if and (eq $role "bootnode") (gt $replicas 1) -}}
+    {{- fail "role bootnode requires controller.replicas to be 0 or 1" -}}
   {{- end -}}
   {{- if lt $replicas 0 -}}
     {{- fail "controller.replicas must be at least 0" -}}
@@ -62,6 +72,11 @@ command:
   - rollup-node
 args:
 {{ include "l2-reth.args" . | nindent 2 }}
+{{- if dig "configMaps" "env" "enabled" false .Values }}
+envFrom:
+  - configMapRef:
+      name: {{ printf "%s-env" (include "scroll.common.lib.chart.names.fullname" .) | quote }}
+{{- end }}
 initContainers:
   wait-for-l1:
     image: {{ .Values.waitForL1.image | quote }}
@@ -352,6 +367,9 @@ Generate rollup-node argv without shell interpolation.
 {{- define "l2-reth.service" -}}
 main:
   enabled: true
+  {{- with .Values.service.main.fullname }}
+  fullname: {{ . | quote }}
+  {{- end }}
   type: {{ .Values.service.main.type | default "ClusterIP" }}
   {{- with .Values.service.main.annotations }}
   annotations:
@@ -422,9 +440,10 @@ readiness:
         - |
           resp="$(curl -fsS -m 2 \
             -H 'Content-Type: application/json' \
-            --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
+            --data '{"jsonrpc":"2.0","method":"rollupNode_status","params":[],"id":1}' \
             http://127.0.0.1:{{ .Values.reth.ports.http }})"
-          echo "$resp" | grep -q '"result":false'
+          printf '%s' "$resp" | grep -Fq '"result":{"l1":{"status":"Synced"'
+          printf '%s' "$resp" | grep -Fq '"l2":{"status":"Synced"'
     periodSeconds: 10
     timeoutSeconds: 3
     failureThreshold: 3

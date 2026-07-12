@@ -1,10 +1,6 @@
 ---
 role: sequencer
 
-global:
-  nameOverride: l2-reth-sequencer-__INSTANCE_INDEX__
-  fullnameOverride: l2-reth-sequencer-__INSTANCE_INDEX__
-
 controller:
   replicas: 1
   strategy: RollingUpdate
@@ -133,7 +129,8 @@ serviceMonitor:
         path: /debug/metrics/prometheus
 
 externalSecrets:
-  l2-reth-sequencer-__INSTANCE_INDEX__-secret-env:
+  # Logical local resource key; rendered as <release-fullname>-secret-env.
+  secret-env:
     provider: aws
     data:
       - remoteRef:

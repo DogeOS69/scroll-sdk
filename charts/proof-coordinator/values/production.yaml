@@ -61,7 +61,6 @@ persistence:
     enabled: true
     type: secret
     mountPath: /run/secrets
-    name: proof-coordinator-secrets
     readOnly: true
 
 # Grant the pod's ServiceAccount an AWS IAM role via IRSA so the S3 artifact
@@ -69,7 +68,8 @@ persistence:
 # annotations empty and use env/envFrom below for MinIO or static credentials.
 serviceAccount:
   create: true
-  name: proof-coordinator
+  # Set name explicitly together with an IRSA role annotation when the IAM
+  # trust policy pins a namespace/ServiceAccount OIDC subject.
   annotations: {}
     # eks.amazonaws.com/role-arn: arn:aws:iam::<ACCOUNT_ID>:role/<TODO>
 
@@ -104,7 +104,8 @@ env:
 envFrom: []
 
 externalSecrets:
-  proof-coordinator-secrets:
+  # Logical local resource key; rendered as <release-fullname>-secrets.
+  secrets:
     provider: aws
     data:
       - remoteRef:
