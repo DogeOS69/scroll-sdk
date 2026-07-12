@@ -1,7 +1,211 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
+  "required": ["attestationSigner"],
   "properties": {
+    "attestationSigner": {
+      "type": "object",
+      "required": [
+        "profile",
+        "network",
+        "port",
+        "tso",
+        "database",
+        "local",
+        "kms",
+        "productionPolicy",
+        "envelopePolicy",
+        "proofArtifact",
+        "releasePolicy"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": ["staging-local", "staging-kms", "production-kms"]
+        },
+        "network": {
+          "type": "string",
+          "enum": ["dogecoin", "mainnet", "testnet", "regtest"]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "logFilter": { "type": "string", "minLength": 1 },
+        "signatureDelaySeconds": { "type": "integer", "minimum": 0 },
+        "allowRotateKeySigningInScaffold": { "type": "boolean" },
+        "tso": {
+          "type": "object",
+          "required": ["url", "callbackPhase"],
+          "properties": {
+            "url": { "type": "string", "minLength": 1 },
+            "callbackPhase": {
+              "type": "string",
+              "enum": ["correctness", "attestation"]
+            }
+          }
+        },
+        "database": {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 }
+          }
+        },
+        "local": {
+          "type": "object",
+          "required": ["wifSecretRef"],
+          "properties": {
+            "wifSecretRef": { "$ref": "#/definitions/secretKeyRef" }
+          }
+        },
+        "kms": {
+          "type": "object",
+          "required": ["keyId", "region", "expectedSignerId"],
+          "properties": {
+            "keyId": { "type": "string" },
+            "region": { "type": "string" },
+            "expectedSignerId": { "type": "string" },
+            "endpointUrl": { "type": "string" }
+          }
+        },
+        "productionPolicy": {
+          "type": "object",
+          "required": [
+            "protocolInstanceId",
+            "bridgeNamespaceId",
+            "activeBridgeKeyHash",
+            "supportedSigningPolicyVersions",
+            "verifierRegistryToml",
+            "teeAllowedSignerIds",
+            "sourceSetToml"
+          ],
+          "properties": {
+            "protocolInstanceId": { "type": "string" },
+            "bridgeNamespaceId": { "type": "string" },
+            "activeBridgeKeyHash": { "type": "string" },
+            "supportedSigningPolicyVersions": { "type": "string", "minLength": 1 },
+            "verifierRegistryToml": { "type": "string" },
+            "teeAllowedSignerIds": { "type": "string" },
+            "sourceSetToml": { "type": "string" }
+          }
+        },
+        "envelopePolicy": {
+          "type": "object",
+          "required": [
+            "allowedProofTriples",
+            "allowedTeeSignerIds",
+            "maxProofArtifacts",
+            "maxRefStringBytes",
+            "maxFetchUrlBytes"
+          ],
+          "properties": {
+            "allowedProofTriples": { "type": "string" },
+            "allowedTeeSignerIds": { "type": "string" },
+            "maxProofArtifacts": { "type": "integer", "minimum": 0 },
+            "maxRefStringBytes": { "type": "integer", "minimum": 0 },
+            "maxFetchUrlBytes": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "proofArtifact": {
+          "type": "object",
+          "required": ["fetchMode", "maxBytes"],
+          "properties": {
+            "fetchMode": {
+              "type": "string",
+              "enum": ["disabled", "http"]
+            },
+            "maxBytes": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          }
+        },
+        "releasePolicy": {
+          "type": "object",
+          "required": [
+            "allowedReleaseVersion",
+            "allowedGitCommit",
+            "allowedSigningPolicyVersion",
+            "allowedContainerDigest",
+            "containerDigest"
+          ],
+          "properties": {
+            "allowedReleaseVersion": { "type": "string" },
+            "allowedGitCommit": { "type": "string" },
+            "allowedSigningPolicyVersion": { "type": "string" },
+            "allowedContainerDigest": { "type": "string" },
+            "containerDigest": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "profile": { "const": "staging-local" } }
+          },
+          "then": {
+            "properties": {
+              "local": {
+                "properties": {
+                  "wifSecretRef": {
+                    "properties": {
+                      "name": { "minLength": 1 },
+                      "key": { "minLength": 1 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": { "enum": ["staging-kms", "production-kms"] }
+            }
+          },
+          "then": {
+            "properties": {
+              "kms": {
+                "properties": {
+                  "region": { "minLength": 1 },
+                  "expectedSignerId": { "minLength": 1 },
+                  "keyId": { "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "profile": { "const": "production-kms" } }
+          },
+          "then": {
+            "properties": {
+              "productionPolicy": {
+                "properties": {
+                  "protocolInstanceId": { "minLength": 1 },
+                  "bridgeNamespaceId": { "minLength": 1 },
+                  "activeBridgeKeyHash": { "minLength": 1 },
+                  "verifierRegistryToml": { "minLength": 1 },
+                  "teeAllowedSignerIds": { "minLength": 1 },
+                  "sourceSetToml": { "minLength": 1 }
+                }
+              },
+              "releasePolicy": {
+                "properties": {
+                  "allowedReleaseVersion": { "minLength": 1 },
+                  "allowedGitCommit": { "minLength": 1 },
+                  "allowedSigningPolicyVersion": { "minLength": 1 }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "controller": {
       "type": "object",
       "properties": {
@@ -11,6 +215,16 @@
           "maximum": 1,
           "description": "attestation-signer is singleton-only: its durable SQLite store is the single-writer signing ledger backing the local_ledger_conflict (double-sign) check."
         }
+      }
+    }
+  },
+  "definitions": {
+    "secretKeyRef": {
+      "type": "object",
+      "required": ["name", "key"],
+      "properties": {
+        "name": { "type": "string" },
+        "key": { "type": "string" }
       }
     }
   }

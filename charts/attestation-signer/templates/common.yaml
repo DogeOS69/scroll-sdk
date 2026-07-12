@@ -1,12 +1,28 @@
 ---
 {{- include "scroll.common.loader.init" . }}
 
+{{- $legacyToml := dig "configMaps" "config" "data" "attestation-signer.toml" "" .Values -}}
+{{- if $legacyToml -}}
+{{- fail "direct configMaps.config.data.attestation-signer.toml is unsupported; regenerate values with scrollsdk and configure structured attestationSigner values" -}}
+{{- end -}}
+
+{{- $configToml := include "attestation-signer.configToml" . -}}
+{{- $_ := set .Values.configMaps.config.data "attestation-signer.toml" $configToml -}}
+
+{{- $generatedEnv := include "attestation-signer.generatedEnv" . | fromYamlArray -}}
+{{- $_ := set .Values "env" (concat (.Values.env | default list) $generatedEnv) -}}
+
 {{- define "app-template.hardcodedValues" -}}
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
+service:
+  main:
+    ports:
+      http:
+        port: {{ .Values.attestationSigner.port }}
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
