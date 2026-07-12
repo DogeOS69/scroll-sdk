@@ -54,7 +54,7 @@ prepare:
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.10 \
+		--version=0.1.12 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:
@@ -64,7 +64,7 @@ install-blockbook:
 
 install-celestia:
 	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.12 \
+		--version=0.1.13 \
 		--values values/celestia-node-production.yaml
 
 install-l1-interface:
@@ -80,7 +80,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.19-dogeos \
+		--version=0.1.20-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:
@@ -190,11 +190,11 @@ install-withdrawal-processor:
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
-		--version=0.1.8-dogeos \
+		--version=0.1.9-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
-		--version=0.1.5-dogeos
+		--version=0.1.6-dogeos
 
 install-frontends:
 	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
