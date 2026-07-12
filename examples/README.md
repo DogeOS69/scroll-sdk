@@ -53,3 +53,28 @@ These scripts read configuration values from the `charts/scroll-sdk/config.toml`
 - Always review and understand a script before running it, especially when it involves sending transactions or modifying account balances.
 
 For more information on Scroll SDK, refer to the main README in the root directory of this repository.
+
+## Proof release files
+
+Production proof configuration uses a fixed working-directory layout shared by
+the example Makefile and `scrollsdk setup proof-config`:
+
+```text
+proof-artifacts/
+├── release.json
+└── manifests/
+    ├── scroll-chunk.json
+    ├── scroll-batch.json
+    └── bridge-transition.json
+
+values/
+├── proof-coordinator-production.yaml
+└── withdrawal-processor-production.yaml
+```
+
+After staging the released manifests, run `make proof-config` or simply
+`scrollsdk setup proof-config`. Explicit path flags are only necessary for a
+non-standard layout. The aggregate verifying key remains binary release
+material and must be made available to both trusted services at the configured
+runtime path `/app/data/verifier/agg-vk.bin`; it is deliberately not copied into
+a values YAML or ConfigMap.

@@ -1,12 +1,19 @@
 NAMESPACE ?= default
+PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
+PROOF_COORDINATOR_CHART_VERSION ?= 0.2.1
+PROOF_CONFIG_INPUTS = \
+	proof-artifacts/release.json \
+	proof-artifacts/manifests/scroll-chunk.json \
+	proof-artifacts/manifests/scroll-batch.json \
+	proof-artifacts/manifests/bridge-transition.json
 
-.PHONY: prepare install-dogecoin install-scroll-core \
+.PHONY: prepare proof-config check-proof-config-inputs install-dogecoin install-scroll-core \
 	install-l1-devnet install-l2-reth install-l2-sequencer install-l2-bootnode install-contracts install-eth-da-submitter \
 	install-fee-oracle \
-	install-cubesigner-signers install-attestation-signers install-tso install-withdrawal-processor \
+	install-cubesigner-signers install-attestation-signers install-tso install-withdrawal-processor install-proof-coordinator \
 	install-blockscout install-preinstalls install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin delete-l1-devnet delete-frontends \
-	delete-blockscout delete-withdrawal-processor delete-tso \
+	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers delete-attestation-signers \
 	delete-l1-interface delete-l2-reth delete-l2-sequencer delete-l2-bootnode delete-l2-rpc \
 	delete-testnet-activity-helper delete-coordinator
@@ -14,6 +21,21 @@ NAMESPACE ?= default
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
+
+# Standard proof release layout. With these names the CLI needs no path flags.
+check-proof-config-inputs:
+	@set -eu; \
+	missing=""; \
+	for file in $(PROOF_CONFIG_INPUTS); do \
+		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
+	done; \
+	if [ -n "$$missing" ]; then \
+		printf 'proof-config requires release files that are currently missing:%b\n' "$$missing" >&2; \
+		exit 1; \
+	fi
+
+proof-config: check-proof-config-inputs
+	scrollsdk setup proof-config
 
 install-dogecoin:
 	helm upgrade -i dogecoin oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
@@ -139,6 +161,11 @@ install-withdrawal-processor:
 		--version=0.1.20 \
 		--values values/withdrawal-processor-production.yaml
 
+install-proof-coordinator:
+	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
+		--version $(PROOF_COORDINATOR_CHART_VERSION) \
+		--values values/proof-coordinator-production.yaml
+
 install-blockscout:
 	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
 		--version=0.1.6-dogeos \
@@ -192,7 +219,9 @@ install-all:
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-attestation-signers
 	$(MAKE) install-tso
+	$(MAKE) proof-config
 	$(MAKE) install-withdrawal-processor
+	$(MAKE) install-proof-coordinator
 	$(MAKE) install-blockscout
 	$(MAKE) install-preinstalls
 	$(MAKE) install-frontends
@@ -214,6 +243,7 @@ delete-all:
 	$(MAKE) delete-blockscout || true
 	helm delete -n $(NAMESPACE) preinstalls || true
 	$(MAKE) delete-withdrawal-processor || true
+	$(MAKE) delete-proof-coordinator || true
 	$(MAKE) delete-tso || true
 	$(MAKE) delete-cubesigner-signers || true
 	$(MAKE) delete-attestation-signers || true
@@ -240,6 +270,9 @@ delete-blockscout:
 
 delete-withdrawal-processor:
 	helm delete -n $(NAMESPACE) withdrawal-processor
+
+delete-proof-coordinator:
+	helm delete -n $(NAMESPACE) proof-coordinator
 
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
