@@ -21,6 +21,13 @@ Resolve the Secret name for a local sequencer signer key.
 {{- end -}}
 
 {{/*
+Resolve the primary Service name, including service.main.fullname when set.
+*/}}
+{{- define "l2-reth.serviceName" -}}
+{{- include "scroll.common.lib.service.name" (dict "root" $ "values" .Values.service.main) -}}
+{{- end -}}
+
+{{/*
 Validate l2-reth role constraints before generating common chart values.
 */}}
 {{- define "l2-reth.validate" -}}
@@ -360,6 +367,9 @@ Generate rollup-node argv without shell interpolation.
 {{- define "l2-reth.service" -}}
 main:
   enabled: true
+  {{- with .Values.service.main.fullname }}
+  fullname: {{ . | quote }}
+  {{- end }}
   type: {{ .Values.service.main.type | default "ClusterIP" }}
   {{- with .Values.service.main.annotations }}
   annotations:

@@ -303,6 +303,10 @@ service:
     # -- Override the name suffix that is used for this service
     nameOverride:
 
+    # -- Override the full service name. If unset, the chart uses the release fullname,
+    # optionally followed by `nameOverride`.
+    fullname:
+
     # -- Set the service type
     type: ClusterIP
 
@@ -376,7 +380,7 @@ serviceMonitor:
     selector: {}
 
     # -- Configures the target Service for the serviceMonitor. Helm templates can be used.
-    serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
+    serviceName: '{{ include "scroll.common.lib.service.name" (dict "root" $ "values" (get $.Values.service (include "scroll.common.lib.service.primary" $))) }}'
 
     # -- Configures the endpoints for the serviceMonitor.
     # @default -- See values.yaml
