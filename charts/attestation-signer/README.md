@@ -118,6 +118,17 @@ default is `5Gi` per signer rather than `1Gi`. Use at least `10Gi` per signer fo
 sustained workloads near 50-100 requests/day, keep 20-25% free for SQLite WAL,
 and alert before PVC usage reaches 85%.
 
+## Resource naming
+
+Chart-owned Kubernetes resources are derived from the Helm release fullname.
+Do not set `global.nameOverride`, `global.fullnameOverride`, ConfigMap names, PVC
+names, or local Secret names in ordinary production values. A release named
+`attestation-signer-0` therefore owns `attestation-signer-0-config`,
+`attestation-signer-0-data`, and (for local WIF) `attestation-signer-0-env`.
+`serviceAccount.name` is the exception for AWS KMS deployments: when EKS IRSA
+trust pins `system:serviceaccount:<namespace>:<name>`, keep that workload
+identity explicit and aligned with the IAM role trust policy.
+
 The common chart adds configuration checksums to Pod annotations. Policy
 ConfigMap changes therefore trigger a controlled StatefulSet rollout. The
 SQLite PVC is retained by default.

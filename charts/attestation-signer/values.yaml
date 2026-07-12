@@ -1,6 +1,6 @@
 global:
-  nameOverride: &app_name attestation-signer
-  fullnameOverride: *app_name
+  nameOverride: ""
+  fullnameOverride: ""
 
 controller:
   type: statefulset
@@ -31,7 +31,9 @@ attestationSigner:
     path: /app/data/attestation-signer.sqlite
   local:
     wifSecretRef:
-      name: attestation-signer-env
+      # Empty derives <release-fullname>-env. Set only to reference a
+      # deliberately pre-existing Secret with a stable external name.
+      name: ""
       key: ATTESTATION_SIGNER_WIF
   kms:
     keyId: "<TODO>"
@@ -129,7 +131,6 @@ configMaps:
 persistence:
   data:
     enabled: true
-    name: attestation-signer-data-pvc
     type: pvc
     mountPath: /app/data
     accessMode: ReadWriteOnce
@@ -140,7 +141,6 @@ persistence:
   config:
     enabled: true
     type: configMap
-    name: attestation-signer-config
     mountPath: /etc/dogeos/
     readOnly: true
 

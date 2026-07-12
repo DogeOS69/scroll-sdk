@@ -62,6 +62,11 @@ command:
   - rollup-node
 args:
 {{ include "l2-reth.args" . | nindent 2 }}
+{{- if dig "configMaps" "env" "enabled" false .Values }}
+envFrom:
+  - configMapRef:
+      name: {{ printf "%s-env" (include "scroll.common.lib.chart.names.fullname" .) | quote }}
+{{- end }}
 initContainers:
   wait-for-l1:
     image: {{ .Values.waitForL1.image | quote }}

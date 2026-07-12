@@ -151,7 +151,6 @@
                 "properties": {
                   "wifSecretRef": {
                     "properties": {
-                      "name": { "minLength": 1 },
                       "key": { "minLength": 1 }
                     }
                   }
@@ -221,7 +220,7 @@
   "definitions": {
     "secretKeyRef": {
       "type": "object",
-      "required": ["name", "key"],
+      "required": ["key"],
       "properties": {
         "name": { "type": "string" },
         "key": { "type": "string" }

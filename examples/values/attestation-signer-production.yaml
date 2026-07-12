@@ -6,9 +6,6 @@ image:
   pullPolicy: IfNotPresent
   tag: latest # Pin to a release tag for shared environments.
 
-global:
-  fullnameOverride: "attestation-signer-__INSTANCE_INDEX__"
-
 attestationSigner:
   profile: staging-local
   network: testnet
@@ -21,7 +18,6 @@ attestationSigner:
     path: /app/data/attestation-signer.sqlite
   local:
     wifSecretRef:
-      name: "attestation-signer-__INSTANCE_INDEX__-env"
       key: ATTESTATION_SIGNER_WIF
   envelopePolicy:
     maxProofArtifacts: 4
@@ -40,7 +36,9 @@ persistence:
     retain: true
 
 externalSecrets:
-  attestation-signer-__INSTANCE_INDEX__-env:
+  # Logical key only. The Chart renders the Kubernetes SecretStore,
+  # ExternalSecret, and target Secret as <release-fullname>-env.
+  signer-env:
     provider: aws
     data:
       - remoteRef:

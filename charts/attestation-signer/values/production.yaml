@@ -45,13 +45,14 @@ persistence:
   config:
     enabled: true
     type: configMap
-    name: attestation-signer-config
     mountPath: /etc/dogeos/
     readOnly: true
 
 # IRSA role granting kms:Sign + kms:GetPublicKey on exactly one signing key.
 serviceAccount:
   create: true
+  # This name is part of the EKS IRSA OIDC subject. Keep it aligned with the
+  # IAM role trust policy; unlike ordinary Chart-owned names it is intentional.
   name: attestation-signer
   annotations:
     eks.amazonaws.com/role-arn: "<TODO>"

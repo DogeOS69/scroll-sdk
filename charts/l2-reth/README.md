@@ -44,9 +44,6 @@ When `reth.signer.type` is `localFile`, `reth.signer.localFile.secretName` also 
 Example:
 
 ```yaml
-global:
-  fullnameOverride: l2-sequencer-reth-0
-
 reth:
   nodeKey:
     mode: secret
@@ -57,7 +54,7 @@ reth:
       secretKey: RETH_SEQUENCER_SIGNER_PRIVATE_KEY
 
 externalSecrets:
-  l2-sequencer-reth-0-secret-env:
+  secret-env:
     provider: aws
     data:
       - remoteRef:
@@ -71,3 +68,10 @@ externalSecrets:
     refreshInterval: 2m
     serviceAccount: external-secrets
 ```
+
+`secret-env` is a logical values key. The Chart renders its SecretStore,
+ExternalSecret, and target Secret as `<release-fullname>-secret-env`; ConfigMap,
+Service, StatefulSet, and PVC names are likewise release-derived. Do not set
+`global.nameOverride` or `global.fullnameOverride` in normal production values.
+For an AWS KMS sequencer, retain an explicit `serviceAccount.name` when the EKS
+IRSA role trust policy pins that namespace/ServiceAccount OIDC subject.
