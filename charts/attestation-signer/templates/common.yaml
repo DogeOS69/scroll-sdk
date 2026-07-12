@@ -2,13 +2,40 @@
 {{- include "scroll.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
+{{- if not .Values.global.nameOverride }}
 global:
-  nameOverride: "{{ .Release.Name }}"
-{{ end }}
+  nameOverride: {{ .Release.Name | quote }}
+{{- end }}
+service:
+  main:
+    ports:
+      http:
+        port: {{ .Values.attestationSigner.port }}
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{- $fullname := include "scroll.common.lib.chart.names.fullname" . -}}
+{{- $_ := set .Values.persistence.config "name" (printf "%s-config" $fullname) -}}
+{{- if eq .Values.attestationSigner.profile "staging-local" -}}
+  {{- $secretName := default (printf "%s-env" $fullname) .Values.attestationSigner.local.wifSecretRef.name -}}
+  {{- $_ := set .Values.attestationSigner.local.wifSecretRef "name" $secretName -}}
+  {{- if hasKey .Values.externalSecrets "signer-env" -}}
+    {{- $externalSecret := get .Values.externalSecrets "signer-env" -}}
+    {{- $_ := unset .Values.externalSecrets "signer-env" -}}
+    {{- $_ := set .Values.externalSecrets $secretName $externalSecret -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $legacyToml := dig "configMaps" "config" "data" "attestation-signer.toml" "" .Values -}}
+{{- if $legacyToml -}}
+{{- fail "direct configMaps.config.data.attestation-signer.toml is unsupported; regenerate values with scrollsdk and configure structured attestationSigner values" -}}
+{{- end -}}
+
+{{- $configToml := include "attestation-signer.configToml" . -}}
+{{- $_ := set .Values.configMaps.config.data "attestation-signer.toml" $configToml -}}
+
+{{- $generatedEnv := include "attestation-signer.generatedEnv" . | fromYamlArray -}}
+{{- $_ := set .Values "env" (concat (.Values.env | default list) $generatedEnv) -}}
 
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}

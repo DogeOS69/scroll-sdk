@@ -1,70 +1,29 @@
-# Devnet/staging template for the attestation-signer chart. One release per
-# attestation key: `scrollsdk setup prep-charts` replaces __INSTANCE_INDEX__
-# and writes attestation-signer-production-{0,1,2}.yaml (same pattern as
-# cubesigner-signer). Policy posture is staging_scaffold: every implemented
-# check is enforced; NotImplemented checks are bypassed with an audit record.
-# The production_enforce / aws_kms reference lives in the chart's own
-# values/production.yaml.
+# Devnet/staging template. `scrollsdk setup prep-charts` expands the instance
+# placeholder into one values file per attestation key.
 
 image:
   repository: dogeos69/attestation-signer
   pullPolicy: IfNotPresent
-  tag: latest # pin to a release tag for real deployments
+  tag: latest # Pin to a release tag for shared environments.
 
-global:
-  fullnameOverride: "attestation-signer-__INSTANCE_INDEX__"
-
-env:
-  - name: RUST_LOG
-    value: "info,attestation_signer=info"
-  # Signing WIF is the only secret; it never goes in the TOML below.
-  - name: ATTESTATION_SIGNER_WIF
-    valueFrom:
-      secretKeyRef:
-        name: "attestation-signer-__INSTANCE_INDEX__-env"
-        key: "ATTESTATION_SIGNER_WIF"
-
-configMaps:
-  config:
-    enabled: true
-    data:
-      attestation-signer.toml: |
-        [service]
-        port = 4040
-        network = "testnet"
-
-        [policy]
-        # Audit-bridge mode: implemented checks (evidence binding, envelope
-        # allowlist, double-sign ledger, ...) stay enforced; NotImplemented
-        # checks are bypassed and recorded as BypassedScaffold.
-        mode = "staging_scaffold"
-        allow_unimplemented_checks = true
-
-        [signer]
-        backend = "local"
-        # WIF supplied via ATTESTATION_SIGNER_WIF env (see env above).
-
-        [tso]
-        url = "http://tso-service:3000"
-        callback_phase = "attestation"
-
-        [database]
-        path = "/app/data/attestation-signer.sqlite"
-
-        [envelope_policy]
-        # Deny-by-default: envelopes carrying proof artifacts are rejected
-        # unless their (proof_kind, verifier_id, vk_hash) triples are listed
-        # here. Fill from the deployed verifier identities; empty means
-        # envelope-less requests still pass.
-        max_proof_artifacts = 4
-        allowed_proof_triples = ""
-
-        [proof_artifact_fetch]
-        # disabled: skip the out-of-band artifact fetch; with artifacts
-        # present the check surfaces a bypassable NotImplemented (audited),
-        # never a silent pass. Switch to "http" once signer pods can reach
-        # the artifact store URLs carried in the evidence.
-        mode = "disabled"
+attestationSigner:
+  profile: staging-local
+  network: testnet
+  port: 4040
+  logFilter: info,attestation_signer=info
+  tso:
+    url: http://tso-service:3000
+    callbackPhase: attestation
+  database:
+    path: /app/data/attestation-signer.sqlite
+  local:
+    wifSecretRef:
+      key: ATTESTATION_SIGNER_WIF
+  envelopePolicy:
+    maxProofArtifacts: 4
+    allowedProofTriples: ""
+  proofArtifact:
+    fetchMode: disabled
 
 persistence:
   data:
@@ -72,34 +31,31 @@ persistence:
     type: pvc
     mountPath: /app/data
     accessMode: ReadWriteOnce
-    size: 1Gi
+    # Per signer. The durable audit DB grows without automatic retention.
+    size: 5Gi
     retain: true
-  config:
-    enabled: true
-    type: configMap
-    name: "attestation-signer-__INSTANCE_INDEX__-config"
-    mountPath: /etc/dogeos/
-    readOnly: true
 
 externalSecrets:
-  attestation-signer-__INSTANCE_INDEX__-env:
-    provider: "aws"
+  # Logical key only. The Chart renders the Kubernetes SecretStore,
+  # ExternalSecret, and target Secret as <release-fullname>-env.
+  signer-env:
+    provider: aws
     data:
       - remoteRef:
-          key: "dogeos/attestation-signer-__INSTANCE_INDEX__-env"
-          property: "ATTESTATION_SIGNER_WIF"
-        secretKey: "ATTESTATION_SIGNER_WIF"
-    refreshInterval: "2m"
-    serviceAccount: "external-secrets"
-    secretRegion: "us-west-2"
+          key: dogeos/attestation-signer-__INSTANCE_INDEX__-env
+          property: ATTESTATION_SIGNER_WIF
+        secretKey: ATTESTATION_SIGNER_WIF
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+    secretRegion: us-west-2
 
 resources:
   requests:
-    memory: "128Mi"
-    cpu: "50m"
+    memory: 128Mi
+    cpu: 50m
   limits:
-    memory: "512Mi"
-    cpu: "500m"
+    memory: 512Mi
+    cpu: 500m
 
 serviceMonitor:
   main:

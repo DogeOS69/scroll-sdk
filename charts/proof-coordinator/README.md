@@ -1,6 +1,6 @@
 # proof-coordinator
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS proof-coordinator service
 
@@ -25,6 +25,16 @@ Kubernetes: `>=1.22.0-0`
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.1 |
 
+## Resource naming
+
+Chart-owned StatefulSet, Service, ConfigMap, PVC, SecretStore, ExternalSecret,
+and target Secret names derive from the Helm release fullname. Production
+values use the logical ExternalSecret key `secrets`, rendered locally as
+`<release-fullname>-secrets`; the remote secret key remains an explicit external
+integration value. Leave `serviceAccount.name` empty for release-derived naming,
+or set it explicitly when an EKS IRSA trust policy pins a stable
+namespace/ServiceAccount OIDC subject.
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -47,26 +57,24 @@ Kubernetes: `>=1.22.0-0`
 | env | list | `[]` |  |
 | envFrom | list | `[]` |  |
 | externalSecrets | object | `{}` |  |
-| global.fullnameOverride | string | `"proof-coordinator"` |  |
-| global.nameOverride | string | `"proof-coordinator"` |  |
+| global.fullnameOverride | string | `""` | Optional advanced override; ordinary resource names derive from the Helm release. |
+| global.nameOverride | string | `""` | Optional advanced override; ordinary resource names derive from the Helm release. |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"dogeos69/proof-coordinator"` |  |
 | image.tag | string | `"latest"` |  |
 | ingress.main.enabled | bool | `false` |  |
 | persistence.config.enabled | bool | `true` |  |
 | persistence.config.mountPath | string | `"/app/conf/"` |  |
-| persistence.config.name | string | `"proof-coordinator-config"` |  |
 | persistence.config.type | string | `"configMap"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/app/data"` |  |
-| persistence.data.name | string | `"proof-coordinator-data-pvc"` |  |
 | persistence.data.retain | bool | `true` |  |
 | persistence.data.size | string | `"10Gi"` |  |
 | persistence.data.type | string | `"pvc"` |  |
 | persistence.secrets.enabled | bool | `false` |  |
 | persistence.secrets.mountPath | string | `"/run/secrets"` |  |
-| persistence.secrets.name | string | `"proof-coordinator-secrets"` |  |
+| persistence.secrets.name | string | `""` | Optional existing/stable Secret name; empty derives `<release-fullname>-secrets`. |
 | persistence.secrets.readOnly | bool | `true` |  |
 | persistence.secrets.type | string | `"secret"` |  |
 | persistence.tmp.enabled | bool | `true` |  |
@@ -118,6 +126,5 @@ Kubernetes: `>=1.22.0-0`
 | service.main.ports.http.protocol | string | `"TCP"` |  |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
-| serviceAccount.name | string | `"proof-coordinator"` |  |
+| serviceAccount.name | string | `""` | Empty derives the release fullname; set explicitly for an IRSA-pinned workload identity. |
 | serviceMonitor.main.enabled | bool | `false` |  |
-

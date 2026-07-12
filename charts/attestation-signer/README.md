@@ -1,84 +1,134 @@
 # attestation-signer
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.0](https://img.shields.io/badge/AppVersion-0.3.0-informational?style=flat-square)
+Helm chart for the DogeOS correctness attestation signer.
 
-A Helm chart for the DogeOS Correctness Attestation signer
+## Configuration model
 
-## Maintainers
+The attestation-signer binary supports `-c/--config` with precedence
+`defaults < TOML < env/CLI`. This chart exposes typed `attestationSigner.*`
+values and renders the non-secret application configuration into
+`/etc/dogeos/attestation-signer.toml`.
 
-| Name | Email | Url |
-| ---- | ------ | --- |
-| DogeOS69 | <support@dogeos.com> |  |
+The mounted ConfigMap contains the generated application TOML plus the two
+operator-owned policy documents that the binary reads as separate files:
 
-## Requirements
+- `verifier-registry.toml`
+- `source-set.toml`
 
-Kubernetes: `>=1.22.0-0`
+Secrets never live in chart values or ConfigMaps. Local WIF and KMS key ID
+values are injected with Kubernetes `secretKeyRef` environment overrides.
+Production release identity also remains environment-based because it is a
+runtime/build attestation boundary rather than application file config.
 
-| Repository | Name | Version |
-|------------|------|---------|
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
-| oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.1 |
+## Security profiles
 
-## Values
+### `staging-local`
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| args[0] | string | `"-c"` |  |
-| args[1] | string | `"/etc/dogeos/attestation-signer.toml"` |  |
-| configMaps.config.data."attestation-signer.toml" | string | `"[service]\nport = 4040\nnetwork = \"testnet\"\n\n[policy]\nmode = \"production_enforce\"\n\n[signer]\nbackend = \"aws_kms\"\n\n[tso]\nurl = \"http://tso-service:3000\"\ncallback_phase = \"attestation\"\n\n[database]\npath = \"/app/data/attestation-signer.sqlite\"\n"` |  |
-| configMaps.config.enabled | bool | `true` |  |
-| controller.replicas | int | `1` |  |
-| controller.strategy | string | `"RollingUpdate"` |  |
-| controller.type | string | `"statefulset"` |  |
-| defaultProbes.custom | bool | `true` |  |
-| defaultProbes.enabled | bool | `true` |  |
-| defaultProbes.spec.httpGet.path | string | `"/health"` |  |
-| defaultProbes.spec.httpGet.port | string | `"http"` |  |
-| externalSecrets | object | `{}` |  |
-| global.fullnameOverride | string | `"attestation-signer"` |  |
-| global.nameOverride | string | `"attestation-signer"` |  |
-| image.pullPolicy | string | `"Always"` |  |
-| image.repository | string | `"dogeos69/attestation-signer"` |  |
-| image.tag | string | `"latest"` |  |
-| ingress.main.enabled | bool | `false` |  |
-| persistence.config.enabled | bool | `true` |  |
-| persistence.config.mountPath | string | `"/etc/dogeos/"` |  |
-| persistence.config.name | string | `"attestation-signer-config"` |  |
-| persistence.config.readOnly | bool | `true` |  |
-| persistence.config.type | string | `"configMap"` |  |
-| persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
-| persistence.data.enabled | bool | `true` |  |
-| persistence.data.mountPath | string | `"/app/data"` |  |
-| persistence.data.name | string | `"attestation-signer-data-pvc"` |  |
-| persistence.data.retain | bool | `true` |  |
-| persistence.data.size | string | `"1Gi"` |  |
-| persistence.data.type | string | `"pvc"` |  |
-| probes.liveness.<<.custom | bool | `true` |  |
-| probes.liveness.<<.enabled | bool | `true` |  |
-| probes.liveness.<<.spec.httpGet.path | string | `"/health"` |  |
-| probes.liveness.<<.spec.httpGet.port | string | `"http"` |  |
-| probes.readiness.custom | bool | `true` |  |
-| probes.readiness.enabled | bool | `true` |  |
-| probes.readiness.spec.failureThreshold | int | `3` |  |
-| probes.readiness.spec.httpGet.path | string | `"/ready"` |  |
-| probes.readiness.spec.httpGet.port | string | `"http"` |  |
-| probes.readiness.spec.periodSeconds | int | `10` |  |
-| probes.readiness.spec.timeoutSeconds | int | `2` |  |
-| probes.startup.custom | bool | `true` |  |
-| probes.startup.enabled | bool | `true` |  |
-| probes.startup.spec.failureThreshold | int | `24` |  |
-| probes.startup.spec.httpGet.path | string | `"/ready"` |  |
-| probes.startup.spec.httpGet.port | string | `"http"` |  |
-| probes.startup.spec.initialDelaySeconds | int | `10` |  |
-| probes.startup.spec.periodSeconds | int | `5` |  |
-| probes.startup.spec.timeoutSeconds | int | `2` |  |
-| resources.limits.cpu | string | `"500m"` |  |
-| resources.limits.memory | string | `"512Mi"` |  |
-| resources.requests.cpu | string | `"100m"` |  |
-| resources.requests.memory | string | `"128Mi"` |  |
-| service.main.enabled | bool | `true` |  |
-| service.main.ports.http.enabled | bool | `true` |  |
-| service.main.ports.http.port | int | `4040` |  |
-| service.main.ports.http.protocol | string | `"TCP"` |  |
-| serviceMonitor.main.enabled | bool | `true` |  |
+For development and staging only:
 
+- policy mode: `staging_scaffold`
+- signer backend: `local`
+- `allow_unimplemented_checks=true`
+- signing WIF loaded from `attestationSigner.local.wifSecretRef`
+
+```yaml
+attestationSigner:
+  profile: staging-local
+  network: testnet
+  tso:
+    url: http://tso-service:3000
+    callbackPhase: attestation
+  local:
+    wifSecretRef:
+      name: attestation-signer-0-env
+      key: ATTESTATION_SIGNER_WIF
+  proofArtifact:
+    fetchMode: disabled
+```
+
+### `production-kms`
+
+Fail-closed production profile:
+
+- policy mode: `production_enforce`
+- signer backend: `aws_kms`
+- `allow_unimplemented_checks=false`
+- KMS key ID rendered from non-secret `attestationSigner.kms.keyId`
+- verifier registry and source-set policy mounted from the config ConfigMap
+- release identity and production policy values required explicitly
+
+Start from `values/production.yaml`, replace every `<TODO>`, pin the image,
+configure the KMS key ID, and configure an IRSA role scoped to
+`kms:Sign` and `kms:GetPublicKey` on exactly one key.
+
+### `staging-kms`
+
+For shared staging environments that need KMS-backed keys while production
+policy checks are still under rollout:
+
+- policy mode: `staging_scaffold`
+- signer backend: `aws_kms`
+- KMS key ID rendered from non-secret `attestationSigner.kms.keyId`
+- KMS region and expected compressed signer ID rendered into TOML
+- no production release-policy requirements
+
+## Important values
+
+| Value | Description |
+| --- | --- |
+| `attestationSigner.profile` | `staging-local`, `staging-kms`, or `production-kms`; selects policy and backend together. |
+| `attestationSigner.network` | `dogecoin`, `mainnet`, `testnet`, or `regtest`. |
+| `attestationSigner.port` | Container and Service HTTP port. |
+| `attestationSigner.tso` | TSO URL and callback phase. |
+| `attestationSigner.database.path` | Durable SQLite ledger path on the data PVC. |
+| `attestationSigner.local.wifSecretRef` | WIF Secret reference for staging-local. |
+| `attestationSigner.kms` | KMS Secret reference, region, expected signer ID, and optional endpoint. |
+| `attestationSigner.productionPolicy` | Fail-closed production protocol and policy identity. |
+| `attestationSigner.envelopePolicy` | Evidence-envelope allowlists and bounds. |
+| `attestationSigner.proofArtifact` | Artifact fetch mode and bounded maximum size. |
+| `attestationSigner.releasePolicy` | Allowed binary/build identity for production. |
+
+The JSON schema rejects unknown profiles, invalid network/callback/fetch modes,
+out-of-range ports and replicas, missing profile-specific Secret references,
+and missing production policy fields.
+
+## Upgrading from 0.1.x
+
+Version 0.2.0 replaces CLI-owned raw TOML with chart-owned rendering from typed
+values. Legacy values containing a directly supplied
+`configMaps.config.data.attestation-signer.toml` fail rendering intentionally.
+Regenerate values with a current `scrollsdk` and select an explicit
+`attestationSigner.profile`; the chart then renders the application TOML and
+mounts verifier/source-set TOML files in the same ConfigMap.
+
+## Rollouts and storage
+
+The chart deploys one replica per release because each signer owns a durable
+single-writer SQLite signing ledger. Deploy multiple attestation keys as
+separate releases (`attestation-signer-0`, `attestation-signer-1`, etc.).
+
+## Persistence sizing
+
+Each release owns an independent PVC containing the original and signed PSBTs,
+evidence/bundle/envelope audit JSON, policy decisions, and the anti-double-sign
+ledger. Proof artifact bytes are fetched and verified out of band; they are not
+stored in SQLite. The database currently has no automatic retention or vacuum
+policy, and deleting request rows would also delete linked ledger rows, so the
+default is `5Gi` per signer rather than `1Gi`. Use at least `10Gi` per signer for
+sustained workloads near 50-100 requests/day, keep 20-25% free for SQLite WAL,
+and alert before PVC usage reaches 85%.
+
+## Resource naming
+
+Chart-owned Kubernetes resources are derived from the Helm release fullname.
+Do not set `global.nameOverride`, `global.fullnameOverride`, ConfigMap names, PVC
+names, or local Secret names in ordinary production values. A release named
+`attestation-signer-0` therefore owns `attestation-signer-0-config`,
+`attestation-signer-0-data`, and (for local WIF) `attestation-signer-0-env`.
+`serviceAccount.name` is the exception for AWS KMS deployments: when EKS IRSA
+trust pins `system:serviceaccount:<namespace>:<name>`, keep that workload
+identity explicit and aligned with the IAM role trust policy.
+
+The common chart adds configuration checksums to Pod annotations. Policy
+ConfigMap changes therefore trigger a controlled StatefulSet rollout. The
+SQLite PVC is retained by default.

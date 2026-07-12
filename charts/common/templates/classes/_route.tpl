@@ -16,10 +16,7 @@ within the common library.
 {{ end -}}
 {{- $routeKind := $values.kind | default "HTTPRoute" -}}
 {{- $primaryService := get .Values.service (include "scroll.common.lib.service.primary" .) -}}
-{{- $defaultServiceName := $fullName -}}
-{{- if and (hasKey $primaryService "nameOverride") $primaryService.nameOverride -}}
-  {{- $defaultServiceName = printf "%v-%v" $defaultServiceName $primaryService.nameOverride -}}
-{{- end -}}
+{{- $defaultServiceName := include "scroll.common.lib.service.name" (dict "root" $ "values" $primaryService) -}}
 {{- $defaultServicePort := get $primaryService.ports (include "scroll.common.lib.service.primaryPort" (dict "values" $primaryService)) -}}
 ---
 apiVersion: gateway.networking.k8s.io/v1alpha2

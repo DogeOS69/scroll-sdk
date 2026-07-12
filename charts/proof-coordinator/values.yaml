@@ -1,6 +1,6 @@
 global:
-  nameOverride: &app_name proof-coordinator
-  fullnameOverride: *app_name
+  nameOverride: ""
+  fullnameOverride: ""
 
 controller:
   type: statefulset
@@ -18,7 +18,9 @@ image:
 # (see values/production.yaml).
 serviceAccount:
   create: true
-  name: proof-coordinator
+  # Empty derives the release fullname. Set explicitly when an IRSA trust
+  # policy binds a stable namespace/ServiceAccount OIDC subject.
+  name: ""
   annotations: {}
 
 command:
@@ -68,10 +70,8 @@ persistence:
     mountPath: /app/conf/
     # Rendered by the common library from `configMaps.config` below as
     # <fullname>-config; changes roll pods via the checksum/config annotation.
-    name: proof-coordinator-config
   data:
     enabled: true
-    name: proof-coordinator-data-pvc
     type: pvc
     mountPath: /app/data
     accessMode: ReadWriteOnce
@@ -81,7 +81,8 @@ persistence:
     enabled: false
     type: secret
     mountPath: /run/secrets
-    name: proof-coordinator-secrets
+    # Empty derives <release-fullname>-secrets.
+    name: ""
     readOnly: true
   # Writable scratch space so the container can run with a read-only root
   # filesystem (see securityContext.readOnlyRootFilesystem). Sized small; all

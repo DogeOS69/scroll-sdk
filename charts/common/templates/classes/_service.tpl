@@ -10,10 +10,7 @@ within the common library.
   {{- end -}}
 {{ end -}}
 
-{{- $serviceName := include "scroll.common.lib.chart.names.fullname" . -}}
-{{- if and (hasKey $values "nameOverride") $values.nameOverride -}}
-  {{- $serviceName = printf "%v-%v" $serviceName $values.nameOverride -}}
-{{ end -}}
+{{- $serviceName := include "scroll.common.lib.service.name" (dict "root" $ "values" $values) -}}
 {{- $svcType := $values.type | default "" -}}
 {{- $enabledPorts := include "scroll.common.lib.service.enabledPorts" (dict "serviceName" $serviceName "values" $values) | fromYaml }}
 {{- $primaryPort := get $values.ports (include "scroll.common.lib.service.primaryPort" (dict "values" $values)) }}
