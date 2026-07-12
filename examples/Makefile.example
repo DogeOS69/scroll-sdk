@@ -29,7 +29,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/contracts-production.yaml \
 	values/scroll-common-config-contracts.yaml \
 	values/scroll-common-config.yaml \
-	values/da-publisher-production.yaml \
+	values/eth-da-submitter-production.yaml \
 	values/fee-oracle-production.yaml \
 	values/cubesigner-signer-production-0.yaml \
 	values/tso-service-production.yaml \
@@ -43,7 +43,7 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
 .PHONY: prepare proof-config check-proof-config-inputs install-dogecoin install-celestia install-scroll-core \
-	install-contracts install-da-publisher \
+	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	install-attestation-signers check-install-all-values \
@@ -52,7 +52,7 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
-	delete-da-publisher delete-fee-oracle delete-cubesigner-signers \
+	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
 	delete-testnet-activity-helper delete-attestation-signers \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
 
@@ -171,10 +171,10 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
-install-da-publisher:
-	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.7 \
-		--values values/da-publisher-production.yaml \
+install-eth-da-submitter:
+	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
+		--version=0.1.2 \
+		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
@@ -264,7 +264,7 @@ install-all: check-install-all-values
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-da-publisher
+	$(MAKE) install-eth-da-submitter
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
@@ -291,7 +291,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) proof-coordinator || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true
-	helm delete -n $(NAMESPACE) da-publisher || true
+	helm delete -n $(NAMESPACE) eth-da-submitter || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
 
@@ -326,8 +326,8 @@ delete-proof-coordinator:
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
 
-delete-da-publisher:
-	helm delete -n $(NAMESPACE) da-publisher
+delete-eth-da-submitter:
+	helm delete -n $(NAMESPACE) eth-da-submitter
 
 delete-fee-oracle:
 	helm delete -n $(NAMESPACE) fee-oracle
