@@ -29,8 +29,11 @@ Validate l2-reth role constraints before generating common chart values.
     {{- fail (printf "invalid role %q: expected rpc, sequencer, or bootnode" $role) -}}
   {{- end -}}
   {{- $replicas := int (default 1 .Values.controller.replicas) -}}
-  {{- if and (ne $role "rpc") (gt $replicas 1) -}}
-    {{- fail (printf "role %s allows only controller.replicas 0 or 1" $role) -}}
+  {{- if and (eq $role "sequencer") (gt $replicas 1) -}}
+    {{- fail "role sequencer requires controller.replicas to be 0 or 1; multiple sequencer replicas are unsafe" -}}
+  {{- end -}}
+  {{- if and (eq $role "bootnode") (gt $replicas 1) -}}
+    {{- fail "role bootnode requires controller.replicas to be 0 or 1" -}}
   {{- end -}}
   {{- if lt $replicas 0 -}}
     {{- fail "controller.replicas must be at least 0" -}}

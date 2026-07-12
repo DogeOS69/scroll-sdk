@@ -66,7 +66,7 @@ install-l2-rpc:
 
 install-l2-reth:
 	helm upgrade -i l2-reth-rpc oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth -n $(NAMESPACE) \
-		--version=0.1.1 \
+		--version=0.1.2 \
 		--values values/l2-reth-production.yaml
 
 install-l2-sequencer:
@@ -119,13 +119,13 @@ install-cubesigner-signers:
 
 install-attestation-signers:
 	helm upgrade -i attestation-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/attestation-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.2.1 \
 		--values values/attestation-signer-production-0.yaml
 	helm upgrade -i attestation-signer-1 oci://ghcr.io/dogeos69/scroll-sdk/helm/attestation-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.2.1 \
 		--values values/attestation-signer-production-1.yaml
 	helm upgrade -i attestation-signer-2 oci://ghcr.io/dogeos69/scroll-sdk/helm/attestation-signer -n $(NAMESPACE) \
-		--version=0.1.0 \
+		--version=0.2.1 \
 		--values values/attestation-signer-production-2.yaml
 
 install-tso:
