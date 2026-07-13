@@ -1,0 +1,25 @@
+# The current signer validates this topology but does not yet call these RPCs.
+# Production nevertheless requires all three sections and valid quorum bounds.
+
+[dogecoin]
+rpcs = ["https://dogecoin-rpc-a.example", "https://dogecoin-rpc-b.example"]
+min_online_sources = 2
+all_online_must_agree = true
+required_confirmations = 20
+fail_on_anchor_disagreement = true
+
+[ethereum_execution]
+rpcs = ["https://ethereum-rpc-a.example", "https://ethereum-rpc-b.example"]
+min_online_sources = 2
+all_online_must_agree = true
+finality_policy = "finalized"
+
+[dogeos_l2]
+rpcs = ["https://dogeos-l2-a.example"]
+min_online_sources = 1
+all_online_must_agree = true
+
+[ethereum_beacon]
+enabled = false
+rpcs = []
+min_online_sources = 0

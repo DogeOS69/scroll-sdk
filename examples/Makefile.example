@@ -188,17 +188,13 @@ install-cubesigner-signers:
 		--values values/cubesigner-signer-production-0.yaml
 
 install-attestation-signers:
-	helm upgrade -i attestation-signer-0 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-0.yaml
-
-	helm upgrade -i attestation-signer-1 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-1.yaml
-
-	helm upgrade -i attestation-signer-2 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-2.yaml
+	@set -e; for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
+		[ -e "$$values_file" ] || { echo "No generated attestation signer values found"; exit 1; }; \
+		index=$${values_file##*-}; index=$${index%.yaml}; \
+		release="attestation-signer-$$index"; \
+		helm upgrade -i "$$release" $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
+			--version $(ATTESTATION_SIGNER_CHART_VERSION) --values "$$values_file"; \
+	done
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
@@ -336,9 +332,11 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 
 delete-attestation-signers:
-	helm delete -n $(NAMESPACE) attestation-signer-0 || true
-	helm delete -n $(NAMESPACE) attestation-signer-1 || true
-	helm delete -n $(NAMESPACE) attestation-signer-2 || true
+	@for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
+		[ -e "$$values_file" ] || continue; \
+		index=$${values_file##*-}; index=$${index%.yaml}; \
+		helm delete -n $(NAMESPACE) "attestation-signer-$$index" || true; \
+	done
 	-kubectl delete pvc -n $(NAMESPACE) session-cache-0-cubesigner-signer-0-0
 
 delete-testnet-activity-helper:

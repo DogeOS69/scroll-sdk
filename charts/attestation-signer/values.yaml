@@ -19,7 +19,8 @@ image:
 # Profiles own security-sensitive combinations so production cannot
 # accidentally inherit scaffold policy or a local key backend.
 attestationSigner:
-  profile: production-kms
+  profile: staging-local
+  expectedReleaseName: ""
   network: testnet
   port: 4040
   logFilter: info,attestation_signer=info
@@ -36,17 +37,17 @@ attestationSigner:
       name: ""
       key: ATTESTATION_SIGNER_WIF
   kms:
-    keyId: "<TODO>"
-    region: "<TODO>"
-    expectedSignerId: "<TODO>"
+    keyId: ""
+    region: ""
+    expectedSignerId: ""
     endpointUrl: ""
   productionPolicy:
-    protocolInstanceId: "<TODO>"
-    bridgeNamespaceId: "<TODO>"
-    activeBridgeKeyHash: "<TODO>"
+    protocolInstanceId: ""
+    bridgeNamespaceId: ""
+    activeBridgeKeyHash: ""
     supportedSigningPolicyVersions: "1"
     verifierRegistryToml: /etc/dogeos/verifier-registry.toml
-    teeAllowedSignerIds: "<TODO>"
+    teeAllowedSignerIds: ""
     sourceSetToml: /etc/dogeos/source-set.toml
   envelopePolicy:
     allowedProofTriples: ""
@@ -55,12 +56,12 @@ attestationSigner:
     maxRefStringBytes: 512
     maxFetchUrlBytes: 2048
   proofArtifact:
-    fetchMode: http
+    fetchMode: disabled
     maxBytes: "536870912"
   allowRotateKeySigningInScaffold: false
   releasePolicy:
-    allowedReleaseVersion: "<TODO>"
-    allowedGitCommit: "<TODO>"
+    allowedReleaseVersion: ""
+    allowedGitCommit: ""
     allowedSigningPolicyVersion: "1"
     allowedContainerDigest: ""
     containerDigest: ""
@@ -151,6 +152,19 @@ resources:
   limits:
     memory: "512Mi"
     cpu: "500m"
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+enableServiceLinks: false
 
 serviceMonitor:
   main:
