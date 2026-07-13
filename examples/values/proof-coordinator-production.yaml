@@ -1,12 +1,12 @@
 # Production proof-coordinator values. Run `make proof-config` after placing
 # the released proof manifests under proof-artifacts/; the CLI updates only the
-# marked verifier block in config/proof-coordinator/ProofCoordinator.toml.
+# marked verifier block in proof-coordinator/ProofCoordinator.toml.
 proofCoordinator:
   config:
     required: true
 
 # Supply the native config file at deploy time:
-#   --set-file proofCoordinator.config.content=examples/config/proof-coordinator/ProofCoordinator.toml
+#   --set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent

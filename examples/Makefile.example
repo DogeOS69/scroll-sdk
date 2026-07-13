@@ -1,7 +1,7 @@
 NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
-PROOF_COORDINATOR_CONFIG ?= config/proof-coordinator/ProofCoordinator.toml
+PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
 PROOF_CONFIG_INPUTS = \
 	proof-artifacts/release.json \
 	proof-artifacts/manifests/scroll-chunk.json \
@@ -75,7 +75,7 @@ check-proof-config-inputs:
 	fi
 
 proof-config: check-proof-config-inputs
-	scrollsdk setup proof-config --coordinator-config $(PROOF_COORDINATOR_CONFIG)
+	scrollsdk setup proof-config
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
