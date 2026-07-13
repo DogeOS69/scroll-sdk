@@ -1,0 +1,18 @@
+{{- $config := .Values.proofCoordinator.config -}}
+{{- if not $config.existingConfigMap -}}
+{{- $content := $config.content -}}
+{{- if not $content -}}
+  {{- $content = .Files.Get "files/default.toml" -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "scroll.common.lib.chart.names.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: {{ include "scroll.common.lib.chart.names.fullname" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+data:
+  {{ $config.key | quote }}: |
+{{ $content | nindent 4 }}
+{{- end }}

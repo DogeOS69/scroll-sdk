@@ -1,6 +1,12 @@
-# Production proof-coordinator template. Run `make proof-config` after placing
-# the released proof manifests under proof-artifacts/; the CLI replaces all
-# cryptographic identity placeholders below.
+# Production proof-coordinator values. Run `make proof-config` after placing
+# the released proof manifests under proof-artifacts/; the CLI updates only the
+# marked verifier block in config/proof-coordinator/ProofCoordinator.toml.
+proofCoordinator:
+  config:
+    required: true
+
+# Supply the native config file at deploy time:
+#   --set-file proofCoordinator.config.content=examples/config/proof-coordinator/ProofCoordinator.toml
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
@@ -69,69 +75,3 @@ externalSecrets:
           key: scroll/proof-coordinator-secrets
           property: prover-worker-token
         secretKey: prover-worker-token
-
-configMaps:
-  config:
-    enabled: true
-    data:
-      ProofCoordinator.toml: |
-        poll_interval_ms = 1000
-        lease_ttl_ms = 60000
-
-        [auth]
-        bearer_token_file = "/run/secrets/proof-work-token"
-
-        [artifact_store]
-        kind = "s3"
-        key_prefix = "proof-topology"
-        force_path_style = false
-
-        [verifier]
-        verifier_import_mode = "production"
-
-        [verifier.scroll_chunk_verifier_identity]
-        expected_proof_system_id = "<AUTO>"
-        expected_circuit_id = "<AUTO>"
-        expected_circuit_version = "<AUTO>"
-        expected_verification_key_hash_hex = "<AUTO>"
-        expected_program_commitment_hash_hex = "<AUTO>"
-        program_manifest_path = "/app/data/manifests/scroll-chunk.json"
-        verifier_id = "<AUTO>"
-
-        [verifier.scroll_batch_verifier_identity]
-        expected_proof_system_id = "<AUTO>"
-        expected_circuit_id = "<AUTO>"
-        expected_circuit_version = "<AUTO>"
-        expected_verification_key_hash_hex = "<AUTO>"
-        expected_program_commitment_hash_hex = "<AUTO>"
-        program_manifest_path = "/app/data/manifests/scroll-batch.json"
-        verifier_id = "<AUTO>"
-
-        [verifier.scroll_bridge_verifier_identity]
-        expected_proof_system_id = "<AUTO>"
-        expected_circuit_id = "<AUTO>"
-        expected_circuit_version = "<AUTO>"
-        expected_verification_key_hash_hex = "<AUTO>"
-        expected_program_commitment_hash_hex = "<AUTO>"
-        program_manifest_path = "/app/data/manifests/bridge-transition.json"
-        verifier_id = "<AUTO>"
-
-        [verifier.scroll_real_verifier]
-        agg_verifying_key_path = "/app/data/verifier/agg-vk.bin"
-        chunk_program_commitment_hex = "<AUTO>"
-        batch_program_commitment_hex = "<AUTO>"
-        bridge_program_commitment_hex = "<AUTO>"
-
-        [prover_api]
-        enabled = true
-        bind_addr = "0.0.0.0:9400"
-        worker_auth_token_file = "/run/secrets/prover-worker-token"
-        max_lease_ttl_ms = 300000
-        transport = "s3"
-
-        [artifact_write]
-        signed_put_expiry_ms = 3600000
-        staging_prefix = "staging/proofs"
-        accepted_prefix = "accepted/proofs"
-        max_proof_bytes = 536870912
-        max_public_output_bytes = 10485760

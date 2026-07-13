@@ -1,11 +1,13 @@
 NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.2.1
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
+PROOF_COORDINATOR_CONFIG ?= config/proof-coordinator/ProofCoordinator.toml
 PROOF_CONFIG_INPUTS = \
 	proof-artifacts/release.json \
 	proof-artifacts/manifests/scroll-chunk.json \
 	proof-artifacts/manifests/scroll-batch.json \
-	proof-artifacts/manifests/bridge-transition.json
+	proof-artifacts/manifests/bridge-transition.json \
+	$(PROOF_COORDINATOR_CONFIG)
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.2
@@ -73,7 +75,7 @@ check-proof-config-inputs:
 	fi
 
 proof-config: check-proof-config-inputs
-	scrollsdk setup proof-config
+	scrollsdk setup proof-config --coordinator-config $(PROOF_COORDINATOR_CONFIG)
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
@@ -210,7 +212,8 @@ install-withdrawal-processor:
 install-proof-coordinator:
 	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
-		--values values/proof-coordinator-production.yaml
+		--values values/proof-coordinator-production.yaml \
+		--set-file proofCoordinator.config.content=$(PROOF_COORDINATOR_CONFIG)
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \

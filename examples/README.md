@@ -67,14 +67,20 @@ proof-artifacts/
     ├── scroll-batch.json
     └── bridge-transition.json
 
+config/proof-coordinator/
+└── ProofCoordinator.toml
+
 values/
 ├── proof-coordinator-production.yaml
 └── withdrawal-processor-production.yaml
 ```
 
 After staging the released manifests, run `make proof-config` or simply
-`scrollsdk setup proof-config`. Explicit path flags are only necessary for a
-non-standard layout. The aggregate verifying key remains binary release
+`scrollsdk setup proof-config`. The CLI replaces only the marked verifier block
+in the native TOML and preserves all manually maintained sections. Deployment
+passes that file to Helm with
+`--set-file proofCoordinator.config.content=config/proof-coordinator/ProofCoordinator.toml`.
+Explicit path flags are only necessary for a non-standard layout. The aggregate verifying key remains binary release
 material and must be made available to both trusted services at the configured
 runtime path `/app/data/verifier/agg-vk.bin`; it is deliberately not copied into
 a values YAML or ConfigMap.

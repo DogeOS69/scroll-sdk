@@ -1,6 +1,6 @@
 # proof-coordinator
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS proof-coordinator service
 
@@ -35,6 +35,25 @@ integration value. Leave `serviceAccount.name` empty for release-derived naming,
 or set it explicitly when an EKS IRSA trust policy pins a stable
 namespace/ServiceAccount OIDC subject.
 
+## Application configuration
+
+The chart treats `ProofCoordinator.toml` as an opaque application-owned file;
+it does not duplicate or interpret the TOML schema. Supply production config
+from its native file so Helm owns the ConfigMap and rolls the StatefulSet when
+the content changes:
+
+```bash
+helm upgrade --install proof-coordinator ./charts/proof-coordinator \
+  --values ./charts/proof-coordinator/values/production.yaml \
+  --set-file proofCoordinator.config.content=./ProofCoordinator.toml
+```
+
+GitOps deployments may instead set
+`proofCoordinator.config.existingConfigMap`. The two sources are mutually
+exclusive. Use an immutable/content-hashed external name so configuration
+changes update the pod template. The bundled TOML is only the default local-development posture;
+production values require an explicit source.
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -42,8 +61,7 @@ namespace/ServiceAccount OIDC subject.
 | command[0] | string | `"sh"` |  |
 | command[1] | string | `"-ec"` |  |
 | command[2] | string | `"mkdir -p /app/data/proof-artifacts && exec proof-coordinator --config /app/conf/ProofCoordinator.toml"` |  |
-| configMaps.config.data."ProofCoordinator.toml" | string | `"proof_work_base_url = \"http://127.0.0.1:9300\"\ncoordinator_id = \"proof-coordinator\"\npoll_interval_ms = 1000\nlease_ttl_ms = 60000\n\n[artifact_store]\nkind = \"local_fs\"\nroot = \"/app/data/proof-artifacts\"\n\n[verifier]\nverifier_import_mode = \"dev_dummy\"\n"` |  |
-| configMaps.config.enabled | bool | `true` |  |
+| configMaps.config.enabled | bool | `false` | Internal common-chart ConfigMap rendering is disabled so opaque TOML is never evaluated with `tpl`. |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
 | controller.type | string | `"statefulset"` |  |
@@ -113,6 +131,10 @@ namespace/ServiceAccount OIDC subject.
 | probes.startup.spec.httpGet.port | string | `"http"` |  |
 | probes.startup.spec.periodSeconds | int | `5` |  |
 | probes.startup.spec.timeoutSeconds | int | `2` |  |
+| proofCoordinator.config.content | string | `""` | Opaque TOML content; normally supplied with `--set-file`. |
+| proofCoordinator.config.existingConfigMap | string | `""` | Existing ConfigMap containing the configured key. Mutually exclusive with content. |
+| proofCoordinator.config.key | string | `"ProofCoordinator.toml"` | ConfigMap key and mounted filename. |
+| proofCoordinator.config.required | bool | `false` | Require an explicit content or existingConfigMap source. Production sets this true. |
 | resources.limits.cpu | string | `"500m"` |  |
 | resources.limits.memory | string | `"1Gi"` |  |
 | resources.requests.cpu | string | `"100m"` |  |

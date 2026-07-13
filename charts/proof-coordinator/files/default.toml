@@ -1,0 +1,11 @@
+proof_work_base_url = "http://127.0.0.1:9300"
+coordinator_id = "proof-coordinator"
+poll_interval_ms = 1000
+lease_ttl_ms = 60000
+
+[artifact_store]
+kind = "local_fs"
+root = "/app/data/proof-artifacts"
+
+[verifier]
+verifier_import_mode = "dev_dummy"
