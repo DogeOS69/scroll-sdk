@@ -5,7 +5,58 @@ image:
   pullPolicy: IfNotPresent
   tag: newda
 
+# Deep proof topology is native TOML. Simple deployment scalars and secrets
+# remain ENV overrides (`DOGEOS_WITHDRAWAL_*`) below.
+args:
+  - --config
+  - /app/config/WithdrawalProcessor.toml
+
+configMaps:
+  config:
+    enabled: true
+    data:
+      WithdrawalProcessor.toml: |-
+        # This block is owned by `scrollsdk setup proof-config`. Keep unrelated
+        # hand-maintained TOML outside the markers.
+        # BEGIN scrollsdk managed proof configuration
+        [proof_system]
+        mode = "disabled"
+        require_bridge_state = false
+        require_scroll_execution = false
+        # END scrollsdk managed proof configuration
+
+# The common chart already checksums generic configMaps (including the main
+# TOML). tsoSigners uses a chart-specific ConfigMap, so checksum it explicitly.
+podAnnotations:
+  checksum/tso-signers: '{{ .Values.tsoSigners | toJson | sha256sum }}'
+
+# The only operator-facing proof activation switch. `setup proof-config`
+# prepares the TOML topology but preserves this value.
+withdrawalProof:
+  enabled: false
+  # Required by `setup proof-config`: use `irsa` for EKS, or explicitly use
+  # `ambient` only when credentials are supplied by another controlled path.
+  s3AuthMode: irsa
+
+# Proof artifact S3 access is fail-closed in IRSA mode until a real role ARN
+# is supplied. This identity is independent from proof activation.
+serviceAccount:
+  create: true
+  name: withdrawal-processor
+  annotations: {}
+
 env:
+  # Atomic projection of the single Helm switch into the four Rust activation
+  # fields. All remaining proof configuration belongs in TOML.
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
+    value: '{{ ternary "production" "disabled" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ENABLED
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+
   # ===========================================================================
   # Top-level required fields (no default; missing values cause startup failure)
   # ===========================================================================
@@ -68,6 +119,9 @@ env:
   - name: DOGEOS_WITHDRAWAL_ROTATE_KEY_V2 # Optional, bool, enable RotateKey v2 path (when enabled, requires replay_sqlite_path + protocol_context_json); default false
     value: "false"
 
+  - name: DOGEOS_WITHDRAWAL_ROTATE_SEQUENCER_SIGNER_V2 # Optional, bool, keep false for the current production proof gate
+    value: "false"
+
   - name: DOGEOS_WITHDRAWAL_ADVANCE_L1_BUILDER_V2 # Optional, bool, enable AdvanceL1 builder v2 (when enabled, requires replay_sqlite_path + protocol_context_json); default false
     value: "false"
 
@@ -99,6 +153,9 @@ env:
     value: "/app/protocol_context.json"
 
   # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional bootstrap/cutover cursor; leave unset unless bootstrapping a new L2 segment, then replace with a real height.
+  #   value: "<TODO>"
+
+  # - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TX_HEX # Optional raw consensus tx hex; required only when genesis AdvanceL1 proof materialization must spend the configured genesis sequencer outpoint.
   #   value: "<TODO>"
 
   # ===========================================================================
@@ -197,14 +254,18 @@ env:
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__STATUS_POLL_INTERVAL_MS # Optional, health status refresh interval; default 5000
     value: "5000"
 
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__KIND # Required when inbox_worker.enabled=true; currently supported: anvil
-    value: "anvil"
-
-  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__URL # Optional; defaults to ethereum_da.l1_rpc_url when unset.
-  #   value: "<TODO>"
-
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS # Optional, blob source request timeout; default 10000
     value: "10000"
+
+  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL # At least one current provider section is required; Beacon API base URL.
+    value: "<TODO>"
+
+  # Optional fallback provider. URL is the public S3 HTTP base; KEY_PREFIX is
+  # prepended before the canonical blob object key.
+  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__URL
+  #   value: "<TODO>"
+  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__KEY_PREFIX
+  #   value: "<TODO>"
 
   # ===========================================================================
   # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
@@ -257,54 +318,6 @@ env:
     value: "1000000"
 
   # ===========================================================================
-  # [proof_task_policy] (whole section has #[serde(default)])
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_SCROLL_EXECUTION_PROOFS # Optional, bool, skip scroll_chunk/scroll_batch proofs (dev/test); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_BRIDGE_STATE_PROOFS # Optional, bool, skip bridge_state proofs; default false; when false, proof_control_plane_gate must be configured
-    value: "false"
-
-  # ===========================================================================
-  # [proof_control_plane_gate] (Option; required when skip_bridge_state_proofs=false and WF builder is enabled)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__STORE_PATH # Optional section; required when skip_bridge_state_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_SYSTEM_ID # Optional section; proof system ID (e.g. "openvm")
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__CIRCUIT_ID # Optional section; bridge circuit ID (e.g. "bridge-transition-v1")
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_KEY_HASH_HEX # Optional section; bridge VK hash (hex, exactly 32 bytes / 64 hex chars)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_MODE # Optional, proof mode: production/mock; default production
-    value: "production"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_POLICY # Optional, verification policy: production/local_mock_allowed; default production
-    value: "production"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-    value: "<TODO>"
-
-  # ===========================================================================
-  # [local_bridge_proof_runtime] (Option; when enabled, proof_control_plane_gate must also be configured)
-  # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Optional local proof runtime; not wired for normal production unless a local prover backend is intentionally deployed.
-  #   value: "<TODO>"
-
-  # ===========================================================================
   # [scroll_leaf_proof_source] (Option; enabled when artifact_root is set)
   # ===========================================================================
   # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT # Optional file-backed Scroll proof artifact source; leave unset unless runner-produced artifacts are mounted.
@@ -315,30 +328,6 @@ env:
 
   # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__EXPECTED_BATCH_APP_COMMITMENT_HEX # Optional; required only when SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT is enabled.
   #   value: "<TODO>"
-
-  # ===========================================================================
-  # [proof_execution_worker] (Option; worker only runs when enabled=true)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__ENABLED # Optional, bool; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_OWNER # Optional, non-empty worker lease owner; default wp-local
-    value: "wp-local"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_TTL_MS # Optional, i64, lease duration; default 30000
-    value: "30000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__MAX_ITEMS_PER_TICK # Optional, u32; default 1
-    value: "1"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__POLL_INTERVAL_MS # Optional, u64; default 1000
-    value: "1000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_BASE_MS # Optional, u64; default 5000
-    value: "5000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_CAP_MS # Optional, u64; default 300000
-    value: "300000"
 
   # Logging
   - name: RUST_LOG
@@ -402,6 +391,13 @@ persistence:
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
     readOnly: true
+  withdrawal-processor-config:
+    enabled: true
+    type: configMap
+    name: '{{ include "withdrawal-processor.fullname" . }}-config'
+    mountPath: /app/config/WithdrawalProcessor.toml
+    subPath: WithdrawalProcessor.toml
+    readOnly: true
   tso-signers-config:
     enabled: true
     type: configMap
@@ -426,40 +422,8 @@ serviceMonitor:
 defaultProbes:
   enabled: false
 
-# Note on TSO Signers:
-# The [[tso_signers]] array of tables from WithdrawalProcessor.toml
-# cannot be easily configured via Helm environment variables due to Figment limitations.
-# For local testing, ensure your local WithdrawalProcessor.toml (if used directly by the application)
-# or the TOML file mounted as a ConfigMap (if testing full K8s deployment)
-# has the correct TSO signer configurations for 'testnet', e.g.:
-# [[tso_signers]]
-# network = "testnet"
-# uri = "http://127.0.0.1:4001" # or http://tee-signer:3000 if in K8s
-# role = "Tee"
-# public_key_override = "02..."
-#
-# [[tso_signers]]
-# network = "testnet"
-# uri = "http://127.0.0.1:4002" # or http://cubesigner-signer-2:3000 if in K8s
-# role = "Attestation"
-# public_key_override = "03..."
-
-# As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
-# Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
-# has the correct mainnet TSO signer configurations.
-# Example:
-# [[tso_signers]]
-# network = "mainnet"
-# uri = "http://mainnet-tee-signer:3000" # Adjust URI for your prod signer
-# role = "Tee"
-# public_key_override = "02..."
-#
-# [[tso_signers]]
-# network = "mainnet"
-# uri = "http://mainnet-cubesigner-signer-2:3000" # Adjust URI for your prod signer
-# role = "Attestation"
-# public_key_override = "03..."
-#
+# `tsoSigners` is rendered by the chart as /app/config/signers.toml. The Rust
+# loader merges that file after the main WithdrawalProcessor.toml.
 # Note on Database: This production file uses SQLite on the /app/data PVC by default:
 # DOGEOS_WITHDRAWAL_DATABASE_URL=sqlite:///app/data/withdrawal_processor.db.
 # If you switch to PostgreSQL, update DOGEOS_WITHDRAWAL_DATABASE_URL and persistence accordingly.

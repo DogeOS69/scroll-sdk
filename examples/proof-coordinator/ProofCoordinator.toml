@@ -11,6 +11,64 @@ kind = "s3"
 key_prefix = "proof-topology"
 force_path_style = false
 
+[materializer]
+artifact_store_root = "/app/data/proof-materializer-staging"
+
+[materializer.scroll_chunk_segmentation]
+enabled = true
+
+[materializer.scroll_batch]
+enabled = true
+dev_sentinel = false
+materializer_output_root = "/app/data/scroll-batch-materializer"
+
+[materializer.scroll_batch.subprocess]
+binary_path = "/usr/local/bin/scroll-runtime-materializer"
+statement_namespace_config_path = "/app/data/manifests/statement-namespace.json"
+scratch_root = "/app/data/scroll-batch-scratch"
+# setup proof-config injects the validated raw commitment through the
+# DOGEOS_PROOF_COORDINATOR_* environment overlay.
+chunk_program_commitment_hex = "overridden-by-scrollsdk"
+l2_rpc_url = "<TODO>"
+subprocess_timeout_ms = 3600000
+
+[materializer.scroll_batch.subprocess.ethereum_da]
+l1_rpc_url = "<TODO>"
+eth_chain_id = 11155111
+l2_chain_id = 1
+artifact_store_root = "/app/data/scroll-batch-eth-da/blobs"
+artifact_metadata_sqlite_path = "/app/data/scroll-batch-eth-da/meta.sqlite"
+
+[materializer.scroll_batch.subprocess.ethereum_da.blob_source]
+timeout_ms = 10000
+
+[materializer.scroll_batch.subprocess.ethereum_da.blob_source.aws_s3]
+url = "<TODO>"
+key_prefix = "<TODO>"
+
+[materializer.bridge]
+enabled = true
+advance_l1 = true
+advance_l2 = true
+
+[materializer.bridge.dogecoin_rpc]
+url = "http://dogecoin:22555"
+network = "<TODO>"
+
+[materializer.bridge.ethereum_da]
+l1_rpc_url = "<TODO>"
+eth_chain_id = 11155111
+l2_chain_id = 1
+artifact_store_root = "/app/data/bridge-eth-da/blobs"
+artifact_metadata_sqlite_path = "/app/data/bridge-eth-da/meta.sqlite"
+
+[materializer.bridge.ethereum_da.blob_source]
+timeout_ms = 10000
+
+[materializer.bridge.ethereum_da.blob_source.aws_s3]
+url = "<TODO>"
+key_prefix = "<TODO>"
+
 # BEGIN scrollsdk managed verifier configuration
 [verifier]
 verifier_import_mode = "production"
