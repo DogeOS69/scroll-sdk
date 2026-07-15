@@ -9,7 +9,7 @@ attestationSigner:
   kms:
     keyId: "<TODO>"
     region: "<TODO>"
-    expectedSignerId: "<TODO>" # 66 lowercase compressed-pubkey hex chars
+    expectedSignerId: "<TODO>" # Replace before rendering; schema requires 66 lowercase compressed-pubkey hex chars.
   productionPolicy:
     protocolInstanceId: "<TODO>"
     bridgeNamespaceId: "<TODO>"
@@ -53,7 +53,9 @@ serviceAccount:
   create: true
   # This name is part of the EKS IRSA OIDC subject. Keep it aligned with the
   # IAM role trust policy; unlike ordinary Chart-owned names it is intentional.
-  name: attestation-signer
+  # Name is derived from the Helm release so each signer gets an independent
+  # IRSA subject. Override only for an intentionally pre-created identity.
+  name: ""
   annotations:
     eks.amazonaws.com/role-arn: "<TODO>"
 

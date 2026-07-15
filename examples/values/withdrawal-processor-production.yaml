@@ -1,344 +1,71 @@
 ---
-# Production environment overrides for withdrawal-processor
+# Production environment overrides for withdrawal-processor.
+#
+# Application configuration is NOT defined here: it lives in the native
+# withdrawal-processor/WithdrawalProcessor.toml, maintained by
+# `scrollsdk setup prep-charts` (deployment block) and
+# `scrollsdk setup proof-config` (proof block), and is passed to Helm with
+# --set-file (see Makefile.example). This values file carries only Kubernetes
+# shape, secrets wiring, and the proof activation switch.
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
   tag: newda
 
+# The main API remains on 3000. The external proof-coordinator talks to the
+# dedicated WP proof-work authority API on the deployment-standard port 9300.
+service:
+  main:
+    ports:
+      proof-work:
+        enabled: true
+        port: 9300
+        protocol: TCP
+
+args:
+  - --config
+  - /app/config/WithdrawalProcessor.toml
+
+# Content is supplied at install time via --set-file; keep the ConfigMap
+# enabled so the chart renders and mounts it.
+configMaps:
+  config:
+    enabled: true
+
+# The common chart already checksums generic configMaps (including the main
+# TOML). tsoSigners uses a chart-specific ConfigMap, so checksum it explicitly.
+podAnnotations:
+  checksum/tso-signers: '{{ .Values.tsoSigners | toJson | sha256sum }}'
+
+# The only operator-facing proof activation switch. `setup proof-config`
+# prepares the TOML topology but preserves this value.
+withdrawalProof:
+  enabled: false
+  # Required by `setup proof-config`: use `irsa` for EKS, or explicitly use
+  # `ambient` only when credentials are supplied by another controlled path.
+  # `setup proof-aws-init` provisions the role and fills the annotation below.
+  s3AuthMode: irsa
+
+# Proof artifact S3 access is fail-closed in IRSA mode until a real role ARN
+# is supplied. This identity is independent from proof activation.
+serviceAccount:
+  create: true
+  name: withdrawal-processor
+  annotations: {}
+
 env:
-  # ===========================================================================
-  # Top-level required fields (no default; missing values cause startup failure)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_NETWORK_STR # Required, Dogecoin network string (mainnet/testnet/regtest), used for Network::from_str
-    value: "<TODO>"
-  - name: DOGEOS_WITHDRAWAL_FEE_RATE_SAT_PER_KVB # Required, u64, withdrawal tx fee rate (sat/kvB); validator enforces min=1
-    value: "1000000"
-  - name: DOGEOS_WITHDRAWAL_DATABASE_URL # Required, primary database connection string (PostgreSQL/SQLite)
-    value: "sqlite:///app/data/withdrawal_processor.db"
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_URL # Required, Dogecoin node JSON-RPC URL; use http://dogecoin:22555 for mainnet
-    value: "http://dogecoin:44555"
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER # Required, Dogecoin RPC username
-  #   value: "<TODO>"
-  # - name: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS # Required, Dogecoin RPC password
-  #   value: "<TODO>"
-  - name: DOGEOS_WITHDRAWAL_TSO_URL # Required, TSO (Threshold Signer Orchestrator) service URL
-    value: "<TODO>"
-  # - name: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY # Required, fee signer key (non-empty)
-  #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY # Required, sequencer signer key (non-empty)
-  #   value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS # Required, bridge address; at startup must be derivable from initial_bridge_redeem_script_hex
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_INITIAL_BRIDGE_REDEEM_SCRIPT_HEX # Required, initial/genesis bridge redeem script (hex); alias: bridge_script_hex; after RotateKey provided by replay+wf_bridge_contexts, bootstrap-only
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_API_PORT # Required, u16, this service's API listening port
-    value: "3000"
-
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID # Required, genesis sequencer UTXO txid (hex), used for validation
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT # Required, u32, genesis sequencer UTXO vout
-    value: "<TODO>"
-
-  # ===========================================================================
-  # Top-level fields with default values
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_MAX_WITHDRAWAL_OUTPUTS_PER_TX # Optional, usize, max outputs per withdrawal tx; default 85
-    value: "85"
-
-  - name: DOGEOS_WITHDRAWAL_TSO_TIMEOUT_MINUTES # Optional, u32, TSO polling timeout (minutes), range 1..=1440; default 30
-    value: "30"
-
-  - name: DOGEOS_WITHDRAWAL_CLEANUP_TIMEOUT_SECS # Optional, u64, startup cleanup timeout, range 60..=86400; default 3600
-    value: "3600"
-
-  - name: DOGEOS_WITHDRAWAL_MAX_DEPOSITS_PER_ADVANCE_L1 # Optional, u16, max deposit inputs per AdvanceL1 (operational throttle, not part of protocol identity); default 32
-    value: "32"
-
-  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_BROADCAST # Optional, bool, debug only: skip broadcast; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_DEBUG_SKIP_TSO_POLLING # Optional, bool, debug only: skip TSO polling; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ROTATE_KEY_V2 # Optional, bool, enable RotateKey v2 path (when enabled, requires replay_sqlite_path + protocol_context_json); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ADVANCE_L1_BUILDER_V2 # Optional, bool, enable AdvanceL1 builder v2 (when enabled, requires replay_sqlite_path + protocol_context_json); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_ADVANCE_L2_BUILDER_V2 # Required for Ethereum DA mode; when true, requires replay/protocol context and [ethereum_da]
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_WF_WITHDRAWAL_PARITY_V1 # Optional, bool, enable wf withdrawal parity v1 (requires at least one of rotate_key_v2 / advance_l1_builder_v2 / advance_l2_builder_v2 to be enabled); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_REQUIRE_CHANGE_TRACKING # Optional, bool, whether to enforce change-tracking; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_STRICT_L2_VALIDATION # Optional, bool, strict L2 fork validation (false = lenient); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_STRICT_L1_VALIDATION # Optional, bool, strict L1 confirmation validation (false = lenient); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_LEAF_VERIFICATION_REQUIRED # Optional, bool, whether leaf verification is required; default false
-    value: "false"
-
-  # ===========================================================================
-  # Top-level Option fields (default None; enable as needed)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
-    value: "/app/data/replay.sqlite"
-
-  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; required by v2 builder paths
-    value: "/app/protocol_context.json"
-
-  # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional bootstrap/cutover cursor; leave unset unless bootstrapping a new L2 segment, then replace with a real height.
-  #   value: "<TODO>"
-
-  # ===========================================================================
-  # [dogecoin_indexer]
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__START_HEIGHT # Required, u64, indexer start height
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
-    value: "6"
-
-  - name: DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
-    value: "60000"
-
-  # ===========================================================================
-  # [dogeos_indexer]
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__RPC_URL # Required, DogeOS (L2) RPC URL
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__START_BLOCK # Required, u64, L2 event scan start block generated per deployment
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
-    value: "12"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
-    value: "30000"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSENGER_ADDRESS # Required, L2 Messenger contract address (non-empty)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__MESSAGE_QUEUE_ADDRESS # Required, L2 MessageQueue contract address (non-empty)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__LOG_QUERY_BATCH_SIZE # Required, u64, eth_getLogs batch size (>=1)
-    value: "10000"
-
-  # ===========================================================================
-  # [ethereum_da] - required; withdrawal-processor now runs Ethereum DA only
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL # Required, Ethereum execution JSON-RPC URL
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ETH_CHAIN_ID # Required, Ethereum chain id
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L2_CHAIN_ID # Required, DogeOS L2 chain id
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INDEXER_SQLITE_PATH # Required, indexer_eth_da SQLite path; must be writable
-    value: "/app/data/eth-da-indexer.sqlite"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_STORE_ROOT # Required, absolute root for raw EIP-4844 blob artifacts
-    value: "/app/data/eth-da-blob-artifacts"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ARTIFACT_METADATA_SQLITE_PATH # Required, metadata SQLite path for blob artifacts
-    value: "/app/data/eth-da-artifact-metadata.sqlite"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__MIN_FINALITY # Optional, one of pending/safe/finalized; default finalized
-    value: "finalized"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__ENABLED # Optional, run the Ethereum DA inbox worker inside withdrawal-processor; default false
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__WRITER_ID # Required when inbox_worker.enabled=true; singleton DB writer identity
-    value: "withdrawal-processor"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__CURSOR_ID # Optional, indexer cursor id; default eth_da_inbox
-    value: "eth_da_inbox"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__START_BLOCK # Optional, Ethereum inbox scan floor; set per deployment
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__EXPECTED_BATCHERS # Optional allowlist for batcher addresses; set to the KMS-derived eth-da-submitter address.
-    value: '["<TODO>"]'
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__INGEST_DEPTH # Optional, pending ingest depth; default 1
-    value: "1"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__SAFE_DEPTH # Optional, safe block depth; default 32
-    value: "32"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__FINALIZED_DEPTH # Optional, finalized block depth; default 64
-    value: "64"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__ROLLBACK_LOOKBACK # Optional, rollback repair lookback; default 128
-    value: "128"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__POLL_INTERVAL_MS # Optional, inbox worker poll interval; default 6000
-    value: "6000"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__MAX_BLOCKS_PER_CYCLE # Optional, max Ethereum blocks per indexer cycle; default 64
-    value: "64"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INBOX_WORKER__STATUS_POLL_INTERVAL_MS # Optional, health status refresh interval; default 5000
-    value: "5000"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__KIND # Required when inbox_worker.enabled=true; currently supported: anvil
-    value: "anvil"
-
-  # - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__URL # Optional; defaults to ethereum_da.l1_rpc_url when unset.
-  #   value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS # Optional, blob source request timeout; default 10000
-    value: "10000"
-
-  # ===========================================================================
-  # [utxo_manager_intermediate] (alias: utxo_manager; whole section has #[serde(default)])
-  # ===========================================================================
-  # [NO LONGER USED] HIGH_THRESH_SATS: the "change too large" threshold from the early simple change logic; the current production path has migrated to bridge_strategy (Band/Greedy), and UtxoConfig.high_thresh is no longer read by production code (only used as a test placeholder). The validator still requires >=1, so a non-zero value must be provided to pass startup validation.
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__HIGH_THRESH_SATS # [DEPRECATED / DEAD FIELD] only kept to satisfy the validator; actual coin selection is controlled by bridge_strategy.*
-    value: "1000000000000"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_MIN_CONFIRMATIONS # Required (when this section is enabled), u32, bridge UTXO minimum confirmations, range 1..=1000
-    value: "6"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__ALLOW_INFLIGHT_BRIDGE_OUTPUTS # Optional, bool, whether to allow using in-flight bridge outputs; default true
-    value: "true"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__PREFER_INFLIGHT_BRIDGE_OUTPUTS # Optional, bool, whether to prefer in-flight bridge outputs; default false
-    value: "false"
-
-  # ---------------------------------------------------------------------------
-  # [utxo_manager_intermediate.bridge_strategy] (Option; uses default Band strategy if unset)
-  # ---------------------------------------------------------------------------
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__STRATEGY # Optional, bridge UTXO strategy: band/greedy; default band
-    value: "band"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAX_INPUTS # Optional, usize, max inputs per tx, range 1..=500; default 60
-    value: "60"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__DUST_FLOOR_SATS # Optional, u64, dust floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
-    value: "1000000"
-
-  # - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__MAINTENANCE_TARGET_SATS # Optional; when unset the strategy derives the zero-withdrawal consolidation target.
-  #   value: "<TODO>"
-
-  # band sub-strategy
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__TARGET_ACTIVE_UTXOS # Optional, usize, target active UTXO count, range 1..=5000; default 100
-    value: "100"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__TARGET_SIZE_RATIO # Optional, f64, target size ratio; default 1.0
-    value: "1.0"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__SWEEP_FLOOR_RATIO # Optional, f64, sweep floor ratio; default 0.5
-    value: "0.5"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__BALANCE_BAND_RATIO # Optional, f64, balance band width ratio; default 0.10
-    value: "0.10"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__MAX_BALANCE_ADDITIONS # Optional, usize, max balance additions, range 0..=20; default 3
-    value: "3"
-
-  - name: DOGEOS_WITHDRAWAL_UTXO_MANAGER_INTERMEDIATE__BRIDGE_STRATEGY__BAND__FLOOR_ABSOLUTE_SATS # Optional, u64, absolute floor (sats); default dogecoin_constants::DUST_AMOUNT_SATS
-    value: "1000000"
-
-  # ===========================================================================
-  # [proof_task_policy] (whole section has #[serde(default)])
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_SCROLL_EXECUTION_PROOFS # Optional, bool, skip scroll_chunk/scroll_batch proofs (dev/test); default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_TASK_POLICY__SKIP_BRIDGE_STATE_PROOFS # Optional, bool, skip bridge_state proofs; default false; when false, proof_control_plane_gate must be configured
-    value: "false"
-
-  # ===========================================================================
-  # [proof_control_plane_gate] (Option; required when skip_bridge_state_proofs=false and WF builder is enabled)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__STORE_PATH # Optional section; required when skip_bridge_state_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_SYSTEM_ID # Optional section; proof system ID (e.g. "openvm")
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__CIRCUIT_ID # Optional section; bridge circuit ID (e.g. "bridge-transition-v1")
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_KEY_HASH_HEX # Optional section; bridge VK hash (hex, exactly 32 bytes / 64 hex chars)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__PROOF_MODE # Optional, proof mode: production/mock; default production
-    value: "production"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__VERIFICATION_POLICY # Optional, verification policy: production/local_mock_allowed; default production
-    value: "production"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_CHUNK_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_CIRCUIT_ID # Optional; required when skip_scroll_execution_proofs=false
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_CONTROL_PLANE_GATE__SCROLL_BATCH_VERIFICATION_KEY_HASH_HEX # Optional; required when skip_scroll_execution_proofs=false (hex, 32 bytes)
-    value: "<TODO>"
-
-  # ===========================================================================
-  # [local_bridge_proof_runtime] (Option; when enabled, proof_control_plane_gate must also be configured)
-  # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_LOCAL_BRIDGE_PROOF_RUNTIME__ARTIFACT_STORE_ROOT # Optional local proof runtime; not wired for normal production unless a local prover backend is intentionally deployed.
-  #   value: "<TODO>"
-
-  # ===========================================================================
-  # [scroll_leaf_proof_source] (Option; enabled when artifact_root is set)
-  # ===========================================================================
-  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT # Optional file-backed Scroll proof artifact source; leave unset unless runner-produced artifacts are mounted.
-  #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__AGG_VK_PATH # Optional; required only when SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT is enabled.
-  #   value: "<TODO>"
-
-  # - name: DOGEOS_WITHDRAWAL_SCROLL_LEAF_PROOF_SOURCE__EXPECTED_BATCH_APP_COMMITMENT_HEX # Optional; required only when SCROLL_LEAF_PROOF_SOURCE__ARTIFACT_ROOT is enabled.
-  #   value: "<TODO>"
-
-  # ===========================================================================
-  # [proof_execution_worker] (Option; worker only runs when enabled=true)
-  # ===========================================================================
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__ENABLED # Optional, bool; default false
-    value: "false"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_OWNER # Optional, non-empty worker lease owner; default wp-local
-    value: "wp-local"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__LEASE_TTL_MS # Optional, i64, lease duration; default 30000
-    value: "30000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__MAX_ITEMS_PER_TICK # Optional, u32; default 1
-    value: "1"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__POLL_INTERVAL_MS # Optional, u64; default 1000
-    value: "1000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_BASE_MS # Optional, u64; default 5000
-    value: "5000"
-
-  - name: DOGEOS_WITHDRAWAL_PROOF_EXECUTION_WORKER__RETRY_CAP_MS # Optional, u64; default 300000
-    value: "300000"
+  # Atomic projection of the single Helm switch into the four Rust activation
+  # fields. All remaining application configuration is TOML-owned; figment
+  # gives ENV precedence over TOML, so ad-hoc overrides remain possible via
+  # kubectl but are not persisted here.
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
+    value: '{{ ternary "production" "disabled" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ENABLED
+    value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
 
   # Logging
   - name: RUST_LOG
@@ -368,6 +95,12 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+      # This must be the same token mounted by proof-coordinator. WP requires
+      # authentication whenever proof-work binds beyond loopback.
+      - remoteRef:
+          key: scroll/proof-coordinator-secrets
+          property: proof-work-token
+        secretKey: DOGEOS_WITHDRAWAL_PROOF_WORK_API__AUTH__BEARER_TOKEN
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
@@ -402,6 +135,13 @@ persistence:
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
     readOnly: true
+  withdrawal-processor-config:
+    enabled: true
+    type: configMap
+    name: '{{ include "withdrawal-processor.fullname" . }}-config'
+    mountPath: /app/config/WithdrawalProcessor.toml
+    subPath: WithdrawalProcessor.toml
+    readOnly: true
   tso-signers-config:
     enabled: true
     type: configMap
@@ -426,40 +166,9 @@ serviceMonitor:
 defaultProbes:
   enabled: false
 
-# Note on TSO Signers:
-# The [[tso_signers]] array of tables from WithdrawalProcessor.toml
-# cannot be easily configured via Helm environment variables due to Figment limitations.
-# For local testing, ensure your local WithdrawalProcessor.toml (if used directly by the application)
-# or the TOML file mounted as a ConfigMap (if testing full K8s deployment)
-# has the correct TSO signer configurations for 'testnet', e.g.:
-# [[tso_signers]]
-# network = "testnet"
-# uri = "http://127.0.0.1:4001" # or http://tee-signer:3000 if in K8s
-# role = "Tee"
-# public_key_override = "02..."
-#
-# [[tso_signers]]
-# network = "testnet"
-# uri = "http://127.0.0.1:4002" # or http://cubesigner-signer-2:3000 if in K8s
-# role = "Attestation"
-# public_key_override = "03..."
-
-# As noted in values.yaml, [[tso_signers]] must be configured via the TOML file.
-# Ensure your production WithdrawalProcessor.toml (mounted as a configmap)
-# has the correct mainnet TSO signer configurations.
-# Example:
-# [[tso_signers]]
-# network = "mainnet"
-# uri = "http://mainnet-tee-signer:3000" # Adjust URI for your prod signer
-# role = "Tee"
-# public_key_override = "02..."
-#
-# [[tso_signers]]
-# network = "mainnet"
-# uri = "http://mainnet-cubesigner-signer-2:3000" # Adjust URI for your prod signer
-# role = "Attestation"
-# public_key_override = "03..."
-#
-# Note on Database: This production file uses SQLite on the /app/data PVC by default:
-# DOGEOS_WITHDRAWAL_DATABASE_URL=sqlite:///app/data/withdrawal_processor.db.
-# If you switch to PostgreSQL, update DOGEOS_WITHDRAWAL_DATABASE_URL and persistence accordingly.
+# `tsoSigners` is rendered by the chart as /app/config/signers.toml. The Rust
+# loader merges that file after the main WithdrawalProcessor.toml.
+# Note on Database: WithdrawalProcessor.toml uses SQLite on the /app/data PVC
+# by default (database_url). For PostgreSQL, point database_url at it — or
+# inject a secret-backed DOGEOS_WITHDRAWAL_DATABASE_URL env, which figment
+# gives precedence over the TOML value.

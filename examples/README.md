@@ -53,3 +53,58 @@ These scripts read configuration values from the `charts/scroll-sdk/config.toml`
 - Always review and understand a script before running it, especially when it involves sending transactions or modifying account balances.
 
 For more information on Scroll SDK, refer to the main README in the root directory of this repository.
+
+## Proof release files
+
+Production proof configuration uses a fixed working-directory layout shared by
+the example Makefile and `scrollsdk setup proof-config`:
+
+```text
+proof-artifacts/
+├── release.json
+└── manifests/
+    ├── scroll-chunk.json
+    ├── scroll-batch.json
+    └── bridge-transition.json
+
+proof-coordinator/
+└── ProofCoordinator.toml
+
+withdrawal-processor/
+└── WithdrawalProcessor.toml                  (native app config; TOML-owned)
+
+values/
+├── attestation-signer-production.yaml        (+ expanded -0.yaml, -1.yaml, ...)
+├── proof-coordinator-production.yaml
+└── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
+```
+
+`withdrawal-processor/WithdrawalProcessor.toml` holds ALL application
+configuration (no more DOGEOS_WITHDRAWAL_* env sprawl in values):
+`scrollsdk setup prep-charts` merges config.toml-derived facts into its managed
+deployment block — operator tuning of other keys inside the block survives —
+and `scrollsdk setup proof-config` owns the proof block. Both install targets
+pass the native TOML files to Helm via `--set-file`. Secrets and the
+`withdrawalProof.enabled` activation switch remain in values/ENV.
+
+After staging the released manifests, run
+`make proof-config SIGNER_PROOF_ARTIFACT_BASE_URL=https://...`. The CLI
+replaces only the marked verifier block in the native TOML and preserves all
+manually maintained sections, and additionally projects the signer envelope
+policy (`allowedProofTriples`, `maxProofArtifacts`, `proofArtifact.fetchMode`)
+into the attestation-signer values template and every expanded instance file —
+re-run `make install-attestation-signers` afterwards. Deployment passes the
+coordinator TOML to Helm with
+`--set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml`.
+Explicit path flags are only necessary for a non-standard layout.
+
+Two opt-in flags extend the pass (`PROOF_CONFIG_FLAGS` in the Makefile):
+
+- `--scaffold-coordinator-config` generates `proof-coordinator/ProofCoordinator.toml`
+  from the prepared withdrawal-processor values when the file does not exist
+  yet (never overwrites an existing config). Requires prep-charts to have
+  resolved all RPC/chain-id/blob-source values first.
+- `--enable-withdrawal-proof` flips `withdrawalProof.enabled: true` after
+  staging. Without it the activation switch is preserved as-is; leave it off
+  until coordinator readiness, S3 identity, released verifier artifacts, and an
+  external prover worker have all passed their own preflight.

@@ -1,4 +1,27 @@
 NAMESPACE ?= default
+PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
+PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
+WITHDRAWAL_PROCESSOR_CONFIG ?= withdrawal-processor/WithdrawalProcessor.toml
+# Stable credential-free public GET base used by attestation signers to fetch
+# accepted proof objects. Required by `make proof-config`.
+SIGNER_PROOF_ARTIFACT_BASE_URL ?=
+# AWS provisioning inputs for `make proof-aws-init` (S3 bucket, IRSA roles,
+# bearer-token secret). All three are required by that target.
+AWS_REGION ?=
+EKS_CLUSTER ?=
+NETWORK_ALIAS ?=
+PROOF_AWS_INIT_FLAGS ?=
+# Extra scrollsdk setup proof-config flags, e.g.:
+#   --scaffold-coordinator-config  generate $(PROOF_COORDINATOR_CONFIG) when missing
+#   --enable-withdrawal-proof      flip withdrawalProof.enabled after staging
+PROOF_CONFIG_FLAGS ?=
+PROOF_CONFIG_INPUTS = \
+	proof-artifacts/release.json \
+	proof-artifacts/manifests/scroll-chunk.json \
+	proof-artifacts/manifests/scroll-batch.json \
+	proof-artifacts/manifests/bridge-transition.json \
+	$(if $(findstring --scaffold-coordinator-config,$(PROOF_CONFIG_FLAGS)),,$(PROOF_COORDINATOR_CONFIG))
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.2
@@ -22,11 +45,13 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/contracts-production.yaml \
 	values/scroll-common-config-contracts.yaml \
 	values/scroll-common-config.yaml \
-	values/da-publisher-production.yaml \
+	values/eth-da-submitter-production.yaml \
 	values/fee-oracle-production.yaml \
 	values/cubesigner-signer-production-0.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
+	$(WITHDRAWAL_PROCESSOR_CONFIG) \
+	values/proof-coordinator-production.yaml \
 	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
@@ -34,23 +59,59 @@ INSTALL_ALL_REQUIRED_VALUES = \
 L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) \
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
-.PHONY: prepare install-dogecoin install-celestia install-scroll-core \
-	install-contracts install-da-publisher \
+.PHONY: prepare proof-aws-init proof-config check-proof-config-inputs install-dogecoin install-celestia install-scroll-core \
+	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	install-attestation-signers check-install-all-values \
 	install-fee-oracle \
-	install-cubesigner-signers install-tso install-withdrawal-processor \
+	install-cubesigner-signers install-tso install-withdrawal-processor install-proof-coordinator \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
-	delete-blockscout delete-withdrawal-processor delete-tso \
-	delete-da-publisher delete-fee-oracle delete-cubesigner-signers \
+	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
+	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
 	delete-testnet-activity-helper delete-attestation-signers \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
 
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
+
+# Standard proof release layout. With these names the CLI needs no path flags.
+check-proof-config-inputs:
+	@set -eu; \
+	missing=""; \
+	for file in $(PROOF_CONFIG_INPUTS); do \
+		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
+	done; \
+	if [ -n "$$missing" ]; then \
+		printf 'proof-config requires release files that are currently missing:%b\n' "$$missing" >&2; \
+		exit 1; \
+	fi
+
+# Provision the AWS side of the proof system (S3 bucket, IRSA IAM roles,
+# proof-work/prover-worker token secret) and project the results into
+# values/. Run once before proof-config; idempotent afterwards.
+proof-aws-init:
+	@test -n "$(AWS_REGION)" -a -n "$(EKS_CLUSTER)" -a -n "$(NETWORK_ALIAS)" || { \
+		echo 'Set AWS_REGION, EKS_CLUSTER, and NETWORK_ALIAS for proof-aws-init' >&2; \
+		exit 1; \
+	}
+	scrollsdk setup proof-aws-init \
+		--aws-region $(AWS_REGION) \
+		--eks-cluster $(EKS_CLUSTER) \
+		--network-alias $(NETWORK_ALIAS) \
+		--namespace $(NAMESPACE) \
+		$(PROOF_AWS_INIT_FLAGS)
+
+proof-config: check-proof-config-inputs
+	@test -n "$(SIGNER_PROOF_ARTIFACT_BASE_URL)" || { \
+		echo 'Set SIGNER_PROOF_ARTIFACT_BASE_URL to the public proof-artifact GET base (https://...)' >&2; \
+		exit 1; \
+	}
+	scrollsdk setup proof-config \
+		--signer-proof-artifact-base-url $(SIGNER_PROOF_ARTIFACT_BASE_URL) \
+		$(PROOF_CONFIG_FLAGS)
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
@@ -148,10 +209,10 @@ install-contracts:
 		--values values/scroll-common-config.yaml
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
-install-da-publisher:
-	helm upgrade -i da-publisher oci://ghcr.io/dogeos69/scroll-sdk/helm/da-publisher -n $(NAMESPACE) \
-		--version=0.0.7 \
-		--values values/da-publisher-production.yaml \
+install-eth-da-submitter:
+	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
+		--version=0.1.2 \
+		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
@@ -165,17 +226,13 @@ install-cubesigner-signers:
 		--values values/cubesigner-signer-production-0.yaml
 
 install-attestation-signers:
-	helm upgrade -i attestation-signer-0 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-0.yaml
-
-	helm upgrade -i attestation-signer-1 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-1.yaml
-
-	helm upgrade -i attestation-signer-2 $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-		--version $(ATTESTATION_SIGNER_CHART_VERSION) \
-		--values values/attestation-signer-production-2.yaml
+	@set -e; for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
+		[ -e "$$values_file" ] || { echo "No generated attestation signer values found"; exit 1; }; \
+		index=$${values_file##*-}; index=$${index%.yaml}; \
+		release="attestation-signer-$$index"; \
+		helm upgrade -i "$$release" $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
+			--version $(ATTESTATION_SIGNER_CHART_VERSION) --values "$$values_file"; \
+	done
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
@@ -186,7 +243,14 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.20 \
-		--values values/withdrawal-processor-production.yaml
+		--values values/withdrawal-processor-production.yaml \
+		--set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=$(WITHDRAWAL_PROCESSOR_CONFIG)
+
+install-proof-coordinator:
+	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
+		--version $(PROOF_COORDINATOR_CHART_VERSION) \
+		--values values/proof-coordinator-production.yaml \
+		--set-file proofCoordinator.config.content=$(PROOF_COORDINATOR_CONFIG)
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
@@ -236,11 +300,13 @@ install-all: check-install-all-values
 	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
 	$(MAKE) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) install-da-publisher
+	$(MAKE) install-eth-da-submitter
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers
 	$(MAKE) install-tso
+	$(MAKE) proof-config
 	$(MAKE) install-withdrawal-processor
+	$(MAKE) install-proof-coordinator
 	$(MAKE) install-blockscout
 	$(MAKE) install-frontends
 	$(MAKE) install-testnet-activity-helper
@@ -258,9 +324,10 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
+	helm delete -n $(NAMESPACE) proof-coordinator || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) delete-cubesigner-signers || true
-	helm delete -n $(NAMESPACE) da-publisher || true
+	helm delete -n $(NAMESPACE) eth-da-submitter || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) delete-testnet-activity-helper || true
 
@@ -289,11 +356,14 @@ delete-blockscout:
 delete-withdrawal-processor:
 	helm delete -n $(NAMESPACE) withdrawal-processor
 
+delete-proof-coordinator:
+	helm delete -n $(NAMESPACE) proof-coordinator
+
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
 
-delete-da-publisher:
-	helm delete -n $(NAMESPACE) da-publisher
+delete-eth-da-submitter:
+	helm delete -n $(NAMESPACE) eth-da-submitter
 
 delete-fee-oracle:
 	helm delete -n $(NAMESPACE) fee-oracle
@@ -302,9 +372,11 @@ delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
 
 delete-attestation-signers:
-	helm delete -n $(NAMESPACE) attestation-signer-0 || true
-	helm delete -n $(NAMESPACE) attestation-signer-1 || true
-	helm delete -n $(NAMESPACE) attestation-signer-2 || true
+	@for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
+		[ -e "$$values_file" ] || continue; \
+		index=$${values_file##*-}; index=$${index%.yaml}; \
+		helm delete -n $(NAMESPACE) "attestation-signer-$$index" || true; \
+	done
 	-kubectl delete pvc -n $(NAMESPACE) session-cache-0-cubesigner-signer-0-0
 
 delete-testnet-activity-helper:

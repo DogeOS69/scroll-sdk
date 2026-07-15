@@ -1,5 +1,11 @@
 # Devnet/staging template. `scrollsdk setup prep-charts` expands the instance
 # placeholder into one values file per attestation key.
+#
+# `scrollsdk setup proof-config` rewrites the proof projection here and in every
+# expanded instance file: envelopePolicy.allowedProofTriples is derived from the
+# released program manifests, envelopePolicy.maxProofArtifacts is raised to a
+# working cap when still at the deny-by-default 0, and proofArtifact.fetchMode
+# is switched to http. Re-run `make install-attestation-signers` afterwards.
 
 image:
   repository: dogeos69/attestation-signer

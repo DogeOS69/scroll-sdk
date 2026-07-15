@@ -61,6 +61,16 @@ Start from `values/production.yaml`, replace every `<TODO>`, pin the image,
 configure the KMS key ID, and configure an IRSA role scoped to
 `kms:Sign` and `kms:GetPublicKey` on exactly one key.
 
+The production interface exists now, but the current signer deliberately
+rejects every RotateKey request in `production_enforce`. Rotation testing must
+use a staging profile plus the explicit
+`allowRotateKeySigningInScaffold=true` test override; that path records the
+incomplete new-redeem-script verification in `bypassed_check_ids`.
+The current binary also reports `/ready = 503` while any production-required
+policy check remains unimplemented. Treat this profile as a stable deployment
+interface scaffold until the signer itself reports production readiness; the
+Chart does not weaken that gate.
+
 ### `staging-kms`
 
 For shared staging environments that need KMS-backed keys while production
@@ -125,9 +135,11 @@ Do not set `global.nameOverride`, `global.fullnameOverride`, ConfigMap names, PV
 names, or local Secret names in ordinary production values. A release named
 `attestation-signer-0` therefore owns `attestation-signer-0-config`,
 `attestation-signer-0-data`, and (for local WIF) `attestation-signer-0-env`.
-`serviceAccount.name` is the exception for AWS KMS deployments: when EKS IRSA
-trust pins `system:serviceaccount:<namespace>:<name>`, keep that workload
-identity explicit and aligned with the IAM role trust policy.
+The ServiceAccount also defaults to the release fullname so every signer gets
+an independent IRSA subject and one-key IAM role. Override
+`serviceAccount.name` only for a deliberately pre-created identity. The CLI
+computes the same stable release/ServiceAccount name before provisioning the
+IAM trust policy.
 
 The common chart adds configuration checksums to Pod annotations. Policy
 ConfigMap changes therefore trigger a controlled StatefulSet rollout. The

@@ -68,8 +68,8 @@ persistence:
     enabled: true
     type: configMap
     mountPath: /app/conf/
-    # Rendered by the common library from `configMaps.config` below as
-    # <fullname>-config; changes roll pods via the checksum/config annotation.
+    # The proof-coordinator template creates <fullname>-config without applying
+    # Helm `tpl` to the opaque TOML; content changes roll the pod by checksum.
   data:
     enabled: true
     type: pvc
@@ -130,32 +130,22 @@ ingress:
   main:
     enabled: false
 
-# Per-deployment scalar overrides. The binary layers
-# `DOGEOS_PROOF_COORDINATOR_*` env vars (Figment, `__` = section separator) on
-# top of ProofCoordinator.toml, so deployment-specific values belong here —
-# tooling (scroll-sdk-cli) should emit these instead of rewriting the TOML.
-# e.g. DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__BUCKET=my-bucket
 env: []
 envFrom: []
 externalSecrets: {}
 
+proofCoordinator:
+  # The TOML is opaque to Helm. In production inject a native file with:
+  #   --set-file proofCoordinator.config.content=ProofCoordinator.toml
+  # Alternatively point at a separately managed ConfigMap.
+  config:
+    content: ""
+    existingConfigMap: ""
+    key: ProofCoordinator.toml
+    required: false
+
 configMaps:
   config:
-    enabled: true
-    data:
-      # Static baseline configuration. Dev/regtest verify-only defaults;
-      # values/production.yaml replaces this with the production posture
-      # (auth, S3 store, verifier identity pins, prover_api) and moves the
-      # per-deployment scalars to `env` above.
-      ProofCoordinator.toml: |
-        proof_work_base_url = "http://127.0.0.1:9300"
-        coordinator_id = "proof-coordinator"
-        poll_interval_ms = 1000
-        lease_ttl_ms = 60000
-
-        [artifact_store]
-        kind = "local_fs"
-        root = "/app/data/proof-artifacts"
-
-        [verifier]
-        verifier_import_mode = "dev_dummy"
+    # A dedicated template renders opaque content without evaluating it via tpl.
+    enabled: false
+    data: {}

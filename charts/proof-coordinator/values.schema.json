@@ -1,7 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
+  "required": ["proofCoordinator"],
   "properties": {
+    "proofCoordinator": {
+      "type": "object",
+      "required": ["config"],
+      "properties": {
+        "config": {
+          "type": "object",
+          "required": ["content", "existingConfigMap", "key", "required"],
+          "properties": {
+            "content": { "type": "string" },
+            "existingConfigMap": { "type": "string" },
+            "key": { "type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._-]+$" },
+            "required": { "type": "boolean" }
+          }
+        }
+      }
+    },
     "controller": {
       "type": "object",
       "properties": {

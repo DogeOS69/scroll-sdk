@@ -1,0 +1,77 @@
+# Production proof-coordinator values. Run `make proof-config` after placing
+# the released proof manifests under proof-artifacts/; the CLI updates only the
+# marked verifier block in proof-coordinator/ProofCoordinator.toml.
+proofCoordinator:
+  config:
+    required: true
+
+# Supply the native config file at deploy time:
+#   --set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml
+image:
+  repository: dogeos69/proof-coordinator
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 9400
+        protocol: TCP
+
+probes:
+  liveness:
+    enabled: true
+  readiness:
+    enabled: true
+  startup:
+    enabled: true
+
+persistence:
+  secrets:
+    enabled: true
+    type: secret
+    mountPath: /run/secrets
+    readOnly: true
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+env:
+  - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
+    value: http://withdrawal-processor:9300
+  - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP
+    value: "true"
+  - name: DOGEOS_PROOF_COORDINATOR_COORDINATOR_ID
+    value: proof-coordinator-main
+  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__BUCKET
+    value: "<TODO>"
+  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__REGION
+    value: us-west-2
+  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__KEY_PREFIX
+    value: proof-topology
+  # Omit the internal endpoint for AWS regional S3. Uncomment for MinIO or
+  # another S3-compatible store.
+  # - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__ENDPOINT_URL
+  #   value: https://s3-internal.example
+  # Public worker/signer endpoint. Uncomment and set for remote workers.
+  # - name: DOGEOS_PROOF_COORDINATOR_PROVER_API__PUBLIC_S3_ENDPOINT_URL
+  #   value: https://s3-public.example
+
+externalSecrets:
+  secrets:
+    provider: aws
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+    data:
+      - remoteRef:
+          key: scroll/proof-coordinator-secrets
+          property: proof-work-token
+        secretKey: proof-work-token
+      - remoteRef:
+          key: scroll/proof-coordinator-secrets
+          property: prover-worker-token
+        secretKey: prover-worker-token

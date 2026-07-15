@@ -10,7 +10,22 @@ global:
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
 {{- $fullname := include "scroll.common.lib.chart.names.fullname" . -}}
-{{- $_ := set .Values.persistence.config "name" (printf "%s-config" $fullname) -}}
+{{- $config := .Values.proofCoordinator.config -}}
+{{- if dig "configMaps" "config" "data" "ProofCoordinator.toml" "" .Values -}}
+  {{- fail "configMaps.config.data.ProofCoordinator.toml is no longer supported; use --set-file proofCoordinator.config.content=ProofCoordinator.toml" -}}
+{{- end -}}
+{{- if and $config.content $config.existingConfigMap -}}
+  {{- fail "proofCoordinator.config.content and existingConfigMap are mutually exclusive" -}}
+{{- end -}}
+{{- if and $config.required (not (or $config.content $config.existingConfigMap)) -}}
+  {{- fail "production configuration is required: use --set-file proofCoordinator.config.content=ProofCoordinator.toml or set proofCoordinator.config.existingConfigMap" -}}
+{{- end -}}
+{{- $_ := set .Values.configMaps.config "enabled" false -}}
+{{- $_ := set .Values.persistence.config "name" (default (printf "%s-config" $fullname) $config.existingConfigMap) -}}
+{{- if not $config.existingConfigMap -}}
+  {{- $content := default (.Files.Get "files/default.toml") $config.content -}}
+  {{- $_ := set .Values.podAnnotations "checksum/proof-coordinator-config" ($content | sha256sum) -}}
+{{- end -}}
 {{- if not .Values.persistence.secrets.name -}}
   {{- $_ := set .Values.persistence.secrets "name" (printf "%s-secrets" $fullname) -}}
 {{- end -}}

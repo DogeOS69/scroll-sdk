@@ -1,0 +1,119 @@
+# WithdrawalProcessor.toml — native application configuration for
+# withdrawal-processor. Deployment passes this file to Helm with
+#   --set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=withdrawal-processor/WithdrawalProcessor.toml
+# (see Makefile.example install-withdrawal-processor).
+#
+# Ownership:
+# - The managed deployment block below is merged by `scrollsdk setup
+#   prep-charts`: keys derived from config.toml / doge-config (RPC URLs,
+#   contract addresses, chain ids, start heights, redeem script) are
+#   overwritten on every run; any OTHER key you tune inside the block (fee
+#   rate, timeouts, indexer cadence, UTXO strategy) is preserved. Comments
+#   inside the block are not preserved — keep commentary outside.
+# - The managed proof block at the bottom is owned by `scrollsdk setup
+#   proof-config`.
+# - Additional hand-maintained [tables] may be added between the two blocks.
+#
+# Secrets never live in this file: Dogecoin RPC credentials, signer keys, and
+# the proof-work bearer token stay ENV-injected from the external secret store
+# (see values/withdrawal-processor-production.yaml), and figment gives ENV
+# precedence over TOML for emergency overrides.
+
+# BEGIN scrollsdk managed deployment configuration
+advance_l1_builder_v2 = false
+advance_l2_builder_v2 = true
+api_port = 3000
+bridge_address = "<TODO>"
+cleanup_timeout_secs = 3600
+database_url = "sqlite:///app/data/withdrawal_processor.sqlite"
+debug_skip_broadcast = false
+debug_skip_tso_polling = false
+dogecoin_rpc_url = "http://dogecoin:22555"
+fee_rate_sat_per_kvb = 1000000
+genesis_sequencer_txid = "<TODO>"
+genesis_sequencer_vout = 0
+initial_bridge_redeem_script_hex = "<TODO>"
+leaf_verification_required = false
+max_deposits_per_advance_l1 = 32
+max_withdrawal_outputs_per_tx = 256
+network_str = "<TODO>"
+protocol_context_json = "/app/protocol_context.json"
+replay_sqlite_path = "/app/data/replay.sqlite"
+require_change_tracking = false
+rotate_key_v2 = false
+rotate_sequencer_signer_v2 = false
+strict_l1_validation = false
+strict_l2_validation = false
+tso_timeout_minutes = 30
+tso_url = "http://tso-service:3000"
+wf_withdrawal_parity_v1 = true
+
+[dogecoin_indexer]
+confirmations = 6
+poll_interval_ms = 1000
+start_height = 0
+
+[dogeos_indexer]
+confirmations = 12
+log_query_batch_size = 10000
+message_queue_address = "<TODO>"
+messenger_address = "<TODO>"
+poll_interval_ms = 1000
+rpc_url = "<TODO>"
+start_block = 0
+
+[ethereum_da]
+artifact_metadata_sqlite_path = "/app/data/eth-da-artifact-metadata.sqlite"
+artifact_store_root = "/app/data/eth-da-blob-artifacts"
+eth_chain_id = 0
+indexer_sqlite_path = "/app/data/eth-da-indexer.sqlite"
+l1_rpc_url = "<TODO>"
+l2_chain_id = 0
+min_finality = "finalized"
+
+[ethereum_da.inbox_worker]
+cursor_id = "eth_da_inbox"
+enabled = true
+expected_batchers = []
+finalized_depth = 64
+ingest_depth = 1
+max_blocks_per_cycle = 64
+poll_interval_ms = 6000
+rollback_lookback = 128
+safe_depth = 32
+start_block = 0
+status_poll_interval_ms = 5000
+writer_id = "withdrawal-processor"
+
+[ethereum_da.blob_source]
+timeout_ms = 10000
+
+[ethereum_da.blob_source.beacon_node]
+url = "<TODO>"
+
+[utxo_manager_intermediate]
+allow_inflight_bridge_outputs = true
+bridge_min_confirmations = 10
+high_thresh_sats = 10000000000
+prefer_inflight_bridge_outputs = false
+
+[utxo_manager_intermediate.bridge_strategy]
+dust_floor_sats = 1000000
+max_inputs = 60
+strategy = "band"
+
+[utxo_manager_intermediate.bridge_strategy.band]
+balance_band_ratio = 0.1
+floor_absolute_sats = 1000000
+max_balance_additions = 3
+sweep_floor_ratio = 0.5
+target_active_utxos = 100
+target_size_ratio = 1.0
+# END scrollsdk managed deployment configuration
+
+# BEGIN scrollsdk managed proof configuration
+[proof_system]
+mode = "disabled"
+require_bridge_state = false
+require_scroll_execution = false
+# END scrollsdk managed proof configuration

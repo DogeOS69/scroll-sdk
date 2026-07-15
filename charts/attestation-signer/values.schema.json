@@ -23,6 +23,7 @@
           "type": "string",
           "enum": ["staging-local", "staging-kms", "production-kms"]
         },
+        "expectedReleaseName": { "type": "string" },
         "network": {
           "type": "string",
           "enum": ["dogecoin", "mainnet", "testnet", "regtest"]
@@ -66,7 +67,7 @@
           "properties": {
             "keyId": { "type": "string" },
             "region": { "type": "string" },
-            "expectedSignerId": { "type": "string" },
+            "expectedSignerId": { "type": "string", "pattern": "^$|^0[23][0-9a-f]{64}$" },
             "endpointUrl": { "type": "string" }
           }
         },

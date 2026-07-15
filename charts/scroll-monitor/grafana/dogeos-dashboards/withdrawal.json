@@ -370,8 +370,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(indexer_dogecoin_last_synced_block)",
-          "legendFormat": "dogecoin_indexer_synced_block",
+          "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
+          "legendFormat": "{{job}} dogecoin synced height",
           "refId": "B"
         },
         {
@@ -510,92 +510,6 @@
       ],
       "title": "Replay Deprecation Cutoff WF Tx",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "active"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "0": {
-                        "text": "Stale"
-                      },
-                      "1": {
-                        "text": "Active"
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 16,
-        "y": 12
-      },
-      "id": 39,
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "max by (role, network, address, key_hash, script_pubkey_hex, deprecation_wf_tx_number) (withdrawal_processor_protocol_replay_bridge_address_info)",
-          "format": "table",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Replay Bridge Addresses",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            },
-            "indexByName": {
-              "role": 0,
-              "network": 1,
-              "address": 2,
-              "key_hash": 3,
-              "script_pubkey_hex": 4,
-              "deprecation_wf_tx_number": 5,
-              "Value": 6
-            },
-            "renameByName": {
-              "Value": "active"
-            }
-          }
-        }
-      ],
-      "type": "table"
     },
     {
       "datasource": {
@@ -1113,12 +1027,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(fee_wallet_total_unredeemed_utxo_amount) / 1e8",
-          "legendFormat": "amount",
+          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount) / 1e8",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
-      "title": "Fee Wallet Unredeemed UTXO (DOGE)",
+      "title": "Fee Wallet Unredeemed Balance by Job (DOGE)",
       "type": "stat"
     },
     {
@@ -1160,7 +1074,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
+          "unit": "ops",
           "custom": {
             "fillOpacity": 8,
             "showPoints": "never"
@@ -1181,12 +1095,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(withdrawal_processor_tso_handoff_recovery_blocked_age_seconds)",
-          "legendFormat": "blocked_age",
+          "expr": "sum by (source) (rate(withdrawal_processor_protocol_metrics_scrape_errors_total[$__rate_interval]))",
+          "legendFormat": "{{source}}",
           "refId": "A"
         }
       ],
-      "title": "TSO Handoff Blocked Age",
+      "title": "Protocol Metrics Scrape Error Rate",
       "type": "timeseries"
     },
     {
@@ -1413,8 +1327,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures)",
-          "legendFormat": "failures",
+          "expr": "max by (source) (withdrawal_processor_eth_da_inbox_worker_consecutive_failures)",
+          "legendFormat": "{{source}}",
           "refId": "A"
         }
       ],
@@ -1524,18 +1438,9 @@
           "expr": "sum by (outcome) (rate(withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total[$__rate_interval]))",
           "legendFormat": "{{outcome}}",
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "max by (source) (withdrawal_processor_eth_da_inbox_worker_consecutive_failures)",
-          "legendFormat": "consecutive_failures {{source}}",
-          "refId": "B"
         }
       ],
-      "title": "DA Inbox Status Pump Probes",
+      "title": "DA Inbox Status-pump Probe Rate",
       "type": "timeseries"
     },
     {
@@ -1616,7 +1521,7 @@
           "refId": "B"
         }
       ],
-      "title": "Blob Provider Requests / Latency",
+      "title": "Blob Provider Request Rate / p99 Latency",
       "type": "timeseries"
     },
     {
@@ -1653,6 +1558,184 @@
         }
       ],
       "title": "Blob Cache Events",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "DogeOS L2 indexer ingestion state: 0 initializing, 1 ready, 2 recovering, 3 provider unstable, 4 blocked.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Initializing"
+                },
+                "1": {
+                  "text": "Ready"
+                },
+                "2": {
+                  "text": "Recovering"
+                },
+                "3": {
+                  "text": "Provider unstable"
+                },
+                "4": {
+                  "text": "Blocked"
+                }
+              },
+              "type": "value"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 72
+      },
+      "id": 39,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(indexer_dogeos_ingestion_status)",
+          "legendFormat": "ingestion state",
+          "refId": "A"
+        }
+      ],
+      "title": "DogeOS L2 Indexer Ingestion State",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 72
+      },
+      "id": 40,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(indexer_dogeos_last_reorg_depth)",
+          "legendFormat": "blocks",
+          "refId": "A"
+        }
+      ],
+      "title": "DogeOS L2 Indexer Last Reorg Depth",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 72
+      },
+      "id": 41,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(dogeos_max_message_queue_index)",
+          "legendFormat": "message queue index",
+          "refId": "A"
+        }
+      ],
+      "title": "DogeOS L2 Max Message Queue Index",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "id": 42,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(indexer_dogeos_reorg_recovered_total[$__rate_interval]))",
+          "legendFormat": "reorg recovered",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(indexer_dogeos_ingestion_blocked_total[$__rate_interval]))",
+          "legendFormat": "ingestion blocked",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(indexer_dogeos_unmatched_append_message_total[$__rate_interval]))",
+          "legendFormat": "unmatched append message",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(dogeos_unsupported_envelope_version_total[$__rate_interval]))",
+          "legendFormat": "unsupported envelope version",
+          "refId": "D"
+        }
+      ],
+      "title": "DogeOS L2 Indexer Recovery / Validation Event Rate",
       "type": "timeseries"
     }
   ]
