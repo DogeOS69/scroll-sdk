@@ -2,6 +2,7 @@ NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
 PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
+WITHDRAWAL_PROCESSOR_CONFIG ?= withdrawal-processor/WithdrawalProcessor.toml
 # Stable credential-free public GET base used by attestation signers to fetch
 # accepted proof objects. Required by `make proof-config`.
 SIGNER_PROOF_ARTIFACT_BASE_URL ?=
@@ -49,6 +50,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/cubesigner-signer-production-0.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
+	$(WITHDRAWAL_PROCESSOR_CONFIG) \
 	values/proof-coordinator-production.yaml \
 	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
@@ -241,7 +243,8 @@ install-tso:
 install-withdrawal-processor:
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
 		--version=0.1.20 \
-		--values values/withdrawal-processor-production.yaml
+		--values values/withdrawal-processor-production.yaml \
+		--set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=$(WITHDRAWAL_PROCESSOR_CONFIG)
 
 install-proof-coordinator:
 	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \

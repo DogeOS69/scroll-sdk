@@ -70,11 +70,22 @@ proof-artifacts/
 proof-coordinator/
 └── ProofCoordinator.toml
 
+withdrawal-processor/
+└── WithdrawalProcessor.toml                  (native app config; TOML-owned)
+
 values/
 ├── attestation-signer-production.yaml        (+ expanded -0.yaml, -1.yaml, ...)
 ├── proof-coordinator-production.yaml
-└── withdrawal-processor-production.yaml
+└── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
 ```
+
+`withdrawal-processor/WithdrawalProcessor.toml` holds ALL application
+configuration (no more DOGEOS_WITHDRAWAL_* env sprawl in values):
+`scrollsdk setup prep-charts` merges config.toml-derived facts into its managed
+deployment block — operator tuning of other keys inside the block survives —
+and `scrollsdk setup proof-config` owns the proof block. Both install targets
+pass the native TOML files to Helm via `--set-file`. Secrets and the
+`withdrawalProof.enabled` activation switch remain in values/ENV.
 
 After staging the released manifests, run
 `make proof-config SIGNER_PROOF_ARTIFACT_BASE_URL=https://...`. The CLI
