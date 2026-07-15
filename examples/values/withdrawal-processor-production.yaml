@@ -5,6 +5,16 @@ image:
   pullPolicy: IfNotPresent
   tag: newda
 
+# The main API remains on 3000. The external proof-coordinator talks to the
+# dedicated WP proof-work authority API on the deployment-standard port 9300.
+service:
+  main:
+    ports:
+      proof-work:
+        enabled: true
+        port: 9300
+        protocol: TCP
+
 # Deep proof topology is native TOML. Simple deployment scalars and secrets
 # remain ENV overrides (`DOGEOS_WITHDRAWAL_*`) below.
 args:
@@ -56,6 +66,12 @@ env:
     value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
   - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ENABLED
     value: '{{ ternary "true" "false" .Values.withdrawalProof.enabled }}'
+  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__BIND_ADDR
+    value: "0.0.0.0:9300"
+  # The proof-work server currently speaks HTTP. Keep this traffic on a trusted
+  # private network or put TLS/service-mesh termination in front of it.
+  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ALLOW_INSECURE_HTTP
+    value: "true"
 
   # ===========================================================================
   # Top-level required fields (no default; missing values cause startup failure)
@@ -357,6 +373,12 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
+      # This must be the same token mounted by proof-coordinator. WP requires
+      # authentication whenever proof-work binds beyond loopback.
+      - remoteRef:
+          key: scroll/proof-coordinator-secrets
+          property: proof-work-token
+        secretKey: DOGEOS_WITHDRAWAL_PROOF_WORK_API__AUTH__BEARER_TOKEN
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
