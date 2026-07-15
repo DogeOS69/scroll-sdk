@@ -135,7 +135,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "description": "Dogecoin block height through the deposit pipeline: the node chain tip, what each indexer has synced, and the height the protocol state has confirmed in l1-interface and withdrawal-processor.",
+      "description": "Dogecoin block height through the protocol pipeline: the node chain tip, each embedded Dogecoin indexer's synced height, and the height committed by the l1-interface and withdrawal-processor protocol state.",
       "fieldConfig": {
         "defaults": {
           "unit": "none",
@@ -158,27 +158,21 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "expr": "max(dogecoin_indexer_last_synced_block)",
-          "legendFormat": "deposit-indexer (synced)",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
-          "legendFormat": "{{job}} (synced)",
-          "refId": "C"
+          "legendFormat": "{{job}} (indexer synced)",
+          "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number)",
           "legendFormat": "l1-interface (confirmed)",
-          "refId": "D"
+          "refId": "C"
         },
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
           "legendFormat": "withdrawal-processor (confirmed)",
-          "refId": "E"
+          "refId": "D"
         }
       ],
       "title": "Dogecoin Block Height (node → indexers → confirmed)",
@@ -416,12 +410,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "expr": "max(fee_wallet_total_unredeemed_utxo_amount)",
-          "legendFormat": "amount",
+          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount) / 1e8",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
-      "title": "Fee Wallet Unredeemed UTXO",
+      "title": "Fee Wallet Unredeemed Balance by Job (DOGE)",
       "type": "stat"
     }
   ]

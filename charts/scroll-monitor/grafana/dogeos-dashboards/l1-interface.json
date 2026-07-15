@@ -253,12 +253,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(indexer_dogecoin_last_synced_block)",
-          "legendFormat": "block",
+          "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
-      "title": "Dogecoin Indexer Last Synced Block",
+      "title": "Embedded Dogecoin Indexer Height by Job",
       "type": "stat"
     },
     {
@@ -546,8 +546,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(indexer_dogecoin_last_synced_block)",
-          "legendFormat": "indexer_last_synced_block",
+          "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
+          "legendFormat": "{{job}} indexer synced height",
           "refId": "B"
         }
       ],
@@ -1014,92 +1014,6 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "active"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "0": {
-                        "text": "Stale"
-                      },
-                      "1": {
-                        "text": "Active"
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 40
-      },
-      "id": 45,
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "max by (role, network, address, key_hash, script_pubkey_hex, deprecation_wf_tx_number) (l1_interface_protocol_replay_bridge_address_info)",
-          "format": "table",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Replay Bridge Addresses",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            },
-            "indexByName": {
-              "role": 0,
-              "network": 1,
-              "address": 2,
-              "key_hash": 3,
-              "script_pubkey_hex": 4,
-              "deprecation_wf_tx_number": 5,
-              "Value": 6
-            },
-            "renameByName": {
-              "Value": "active"
-            }
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "custom": {
             "fillOpacity": 8,
             "showPoints": "never"
           }
@@ -1430,7 +1344,7 @@
           "refId": "B"
         }
       ],
-      "title": "Database Query Rate",
+      "title": "Database Query / Error Rate",
       "type": "timeseries"
     },
     {
@@ -1808,12 +1722,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(fee_wallet_total_unredeemed_utxo_amount)",
-          "legendFormat": "amount",
+          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount) / 1e8",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
-      "title": "Fee Wallet Unredeemed UTXO Amount",
+      "title": "Fee Wallet Unredeemed Balance by Job (DOGE)",
       "type": "stat"
     },
     {

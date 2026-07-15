@@ -536,7 +536,7 @@ groups:
             datasourceUid: PBFA97CFB590B2093
             model:
               editorMode: code
-              expr: max(dogecoin_synced_headers_total) - max(dogecoin_indexer_last_synced_block)
+              expr: clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0)
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -574,11 +574,11 @@ groups:
         execErrState: Error
         for: 10m
         annotations:
-          summary: Dogecoin indexer is more than 12 headers behind the node.
-          description: Current lag is {{ printf "%.0f" $values.A.Value }} blocks.
+          summary: Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
+          description: Job {{ $labels.job }} currently lags by {{ printf "%.0f" $values.A.Value }} blocks.
         labels:
           severity: warning
-          service: withdrawal-processor
+          service: embedded-dogecoin-indexer
         notification_settings:
           receiver: dogeos default slack alert
           repeat_interval: 10m

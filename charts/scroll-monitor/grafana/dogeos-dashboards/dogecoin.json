@@ -114,7 +114,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_synced_headers_total",
+      "title": "Synced Header Height",
       "type": "timeseries"
     },
     {
@@ -210,7 +210,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_difficulty (average)",
+      "title": "Network Difficulty (average)",
       "type": "timeseries"
     },
     {
@@ -286,12 +286,12 @@
           "editorMode": "code",
           "expr": "dogecoin_errors_total{}",
           "interval": "",
-          "legendFormat": "${metric} (overall per-second rate)",
+          "legendFormat": "cumulative errors",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Total Errors",
+      "title": "Cumulative Node Errors",
       "type": "stat"
     },
     {
@@ -387,7 +387,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_chain_block_height",
+      "title": "Chain Block Height",
       "type": "timeseries"
     },
     {
@@ -483,7 +483,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_peer_connections_total",
+      "title": "Peer Connections",
       "type": "timeseries"
     },
     {
@@ -580,7 +580,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_size_on_disk_bytes",
+      "title": "Blockchain Data Size (bytes)",
       "type": "timeseries"
     },
     {
@@ -676,7 +676,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_network_hash_ps",
+      "title": "Network Hash Rate",
       "type": "timeseries"
     },
     {
@@ -771,7 +771,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_mempool_bytes_total (overall per-second rate)",
+      "title": "Mempool Byte Counter Rate",
       "type": "timeseries"
     },
     {
@@ -867,7 +867,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_mempool_size_bytes",
+      "title": "Mempool Size (bytes)",
       "type": "timeseries"
     },
     {
@@ -962,7 +962,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_bytes_recv_total (overall per-second rate)",
+      "title": "Inbound Network Traffic (bytes/s)",
       "type": "timeseries"
     },
     {
@@ -1058,7 +1058,7 @@
           "refId": "A"
         }
       ],
-      "title": "dogecoin_bytes_sent_total (overall per-second rate)",
+      "title": "Outbound Network Traffic (bytes/s)",
       "type": "timeseries"
     }
   ],

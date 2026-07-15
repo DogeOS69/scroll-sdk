@@ -590,6 +590,212 @@
       ],
       "title": "Cost per Blob (dogewei)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "Disjoint pending-row buckets observed by the live contract-write lifecycle after its most recent cycle.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "id": 15,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_oracle_live_pending_in_flight)",
+          "legendFormat": "in flight",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_oracle_live_pending_unsent)",
+          "legendFormat": "unsent",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_oracle_live_pending_orphans)",
+          "legendFormat": "orphans",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_oracle_live_pending_nonce_drift)",
+          "legendFormat": "nonce drift",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(fee_oracle_live_pending_rbf_eligible)",
+          "legendFormat": "RBF eligible",
+          "refId": "E"
+        }
+      ],
+      "title": "Live Contract-write Pending Rows",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "id": 16,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (outcome) (rate(fee_oracle_live_submits_total[$__rate_interval]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum(rate(fee_oracle_live_submit_errors_total[$__rate_interval]))",
+          "legendFormat": "pre-broadcast error",
+          "refId": "B"
+        }
+      ],
+      "title": "Live Contract Submit Outcome Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 36
+      },
+      "id": 17,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (class) (rate(fee_oracle_live_confirmer_total[$__rate_interval]))",
+          "legendFormat": "{{class}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Confirmer Row-transition Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 36
+      },
+      "id": 18,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (phase, result) (rate(fee_oracle_live_recovery_total[$__rate_interval]))",
+          "legendFormat": "{{phase}} {{result}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Recovery Row-transition Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 36
+      },
+      "id": 19,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "sum by (result, kind) (rate(fee_oracle_live_rbf_total[$__rate_interval]))",
+          "legendFormat": "{{result}} {{kind}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Live RBF Row-transition Rate",
+      "type": "timeseries"
     }
   ]
 }
