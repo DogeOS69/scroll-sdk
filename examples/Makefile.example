@@ -2,12 +2,25 @@ NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
 PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
+# Stable credential-free public GET base used by attestation signers to fetch
+# accepted proof objects. Required by `make proof-config`.
+SIGNER_PROOF_ARTIFACT_BASE_URL ?=
+# AWS provisioning inputs for `make proof-aws-init` (S3 bucket, IRSA roles,
+# bearer-token secret). All three are required by that target.
+AWS_REGION ?=
+EKS_CLUSTER ?=
+NETWORK_ALIAS ?=
+PROOF_AWS_INIT_FLAGS ?=
+# Extra scrollsdk setup proof-config flags, e.g.:
+#   --scaffold-coordinator-config  generate $(PROOF_COORDINATOR_CONFIG) when missing
+#   --enable-withdrawal-proof      flip withdrawalProof.enabled after staging
+PROOF_CONFIG_FLAGS ?=
 PROOF_CONFIG_INPUTS = \
 	proof-artifacts/release.json \
 	proof-artifacts/manifests/scroll-chunk.json \
 	proof-artifacts/manifests/scroll-batch.json \
 	proof-artifacts/manifests/bridge-transition.json \
-	$(PROOF_COORDINATOR_CONFIG)
+	$(if $(findstring --scaffold-coordinator-config,$(PROOF_CONFIG_FLAGS)),,$(PROOF_COORDINATOR_CONFIG))
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.2
@@ -44,7 +57,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) \
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
-.PHONY: prepare proof-config check-proof-config-inputs install-dogecoin install-celestia install-scroll-core \
+.PHONY: prepare proof-aws-init proof-config check-proof-config-inputs install-dogecoin install-celestia install-scroll-core \
 	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
@@ -74,8 +87,29 @@ check-proof-config-inputs:
 		exit 1; \
 	fi
 
+# Provision the AWS side of the proof system (S3 bucket, IRSA IAM roles,
+# proof-work/prover-worker token secret) and project the results into
+# values/. Run once before proof-config; idempotent afterwards.
+proof-aws-init:
+	@test -n "$(AWS_REGION)" -a -n "$(EKS_CLUSTER)" -a -n "$(NETWORK_ALIAS)" || { \
+		echo 'Set AWS_REGION, EKS_CLUSTER, and NETWORK_ALIAS for proof-aws-init' >&2; \
+		exit 1; \
+	}
+	scrollsdk setup proof-aws-init \
+		--aws-region $(AWS_REGION) \
+		--eks-cluster $(EKS_CLUSTER) \
+		--network-alias $(NETWORK_ALIAS) \
+		--namespace $(NAMESPACE) \
+		$(PROOF_AWS_INIT_FLAGS)
+
 proof-config: check-proof-config-inputs
-	scrollsdk setup proof-config
+	@test -n "$(SIGNER_PROOF_ARTIFACT_BASE_URL)" || { \
+		echo 'Set SIGNER_PROOF_ARTIFACT_BASE_URL to the public proof-artifact GET base (https://...)' >&2; \
+		exit 1; \
+	}
+	scrollsdk setup proof-config \
+		--signer-proof-artifact-base-url $(SIGNER_PROOF_ARTIFACT_BASE_URL) \
+		$(PROOF_CONFIG_FLAGS)
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \

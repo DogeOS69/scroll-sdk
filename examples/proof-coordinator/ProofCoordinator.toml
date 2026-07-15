@@ -1,5 +1,10 @@
 # Human-maintained production configuration. scrollsdk only replaces the
 # explicitly marked verifier block; all other sections are preserved verbatim.
+#
+# A first version of this file can be generated from the prepared
+# withdrawal-processor values (after prep-charts, no <TODO>s left) with:
+#   scrollsdk setup proof-config --scaffold-coordinator-config ...
+# The scaffold is only written when this file does not exist yet.
 poll_interval_ms = 1000
 lease_ttl_ms = 60000
 

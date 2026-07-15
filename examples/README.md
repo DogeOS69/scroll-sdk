@@ -71,16 +71,29 @@ proof-coordinator/
 └── ProofCoordinator.toml
 
 values/
+├── attestation-signer-production.yaml        (+ expanded -0.yaml, -1.yaml, ...)
 ├── proof-coordinator-production.yaml
 └── withdrawal-processor-production.yaml
 ```
 
-After staging the released manifests, run `make proof-config` or simply
-`scrollsdk setup proof-config`. The CLI replaces only the marked verifier block
-in the native TOML and preserves all manually maintained sections. Deployment
-passes that file to Helm with
+After staging the released manifests, run
+`make proof-config SIGNER_PROOF_ARTIFACT_BASE_URL=https://...`. The CLI
+replaces only the marked verifier block in the native TOML and preserves all
+manually maintained sections, and additionally projects the signer envelope
+policy (`allowedProofTriples`, `maxProofArtifacts`, `proofArtifact.fetchMode`)
+into the attestation-signer values template and every expanded instance file —
+re-run `make install-attestation-signers` afterwards. Deployment passes the
+coordinator TOML to Helm with
 `--set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml`.
-Explicit path flags are only necessary for a non-standard layout. The aggregate verifying key remains binary release
-material and must be made available to both trusted services at the configured
-runtime path `/app/data/verifier/agg-vk.bin`; it is deliberately not copied into
-a values YAML or ConfigMap.
+Explicit path flags are only necessary for a non-standard layout.
+
+Two opt-in flags extend the pass (`PROOF_CONFIG_FLAGS` in the Makefile):
+
+- `--scaffold-coordinator-config` generates `proof-coordinator/ProofCoordinator.toml`
+  from the prepared withdrawal-processor values when the file does not exist
+  yet (never overwrites an existing config). Requires prep-charts to have
+  resolved all RPC/chain-id/blob-source values first.
+- `--enable-withdrawal-proof` flips `withdrawalProof.enabled: true` after
+  staging. Without it the activation switch is preserved as-is; leave it off
+  until coordinator readiness, S3 identity, released verifier artifacts, and an
+  external prover worker have all passed their own preflight.
