@@ -25,40 +25,46 @@ The whole exchange is three steps:
 
 ## Step 1 — key + descriptor
 
+`signer init` writes everything into one directory (`signer-<id>/`) — a
+complete deployment env plus the descriptor. The rest of the flow reads
+from that directory; there is nothing to copy by hand or remember.
+
 **Local WIF backend** (simplest):
 
 ```bash
-scrollsdk signer init --id <agreed-signer-id> --network testnet \
-  --endpoint https://signer.your-org.example:4040
-# → signer-<id>/attestation-signer.env   (SECRET — your signing key)
-# → signer-<id>/descriptor.json          (public — send to bridge operator)
+scrollsdk signer init --id <agreed-signer-id> --network testnet
+# → signer-<id>/attestation-signer.env   (SECRET — holds the signing key)
+# → signer-<id>/descriptor.json          (public — finalized in step 3)
 ```
 
-**AWS KMS backend** (recommended for production): create the signing key in
-your own AWS account, derive its public key, fill the KMS block in
-`docker-compose/.env.example`, deploy (step 2), then emit the descriptor
-from the running signer.
+**AWS KMS backend** (recommended for production) — one command instead of
+key-juggling; the derived public key lands in the env and descriptor
+automatically:
 
 ```bash
-# 1. Create the key (one-time; note the KeyId/Arn in the output)
-aws kms create-key --key-spec ECC_SECG_P256K1 --key-usage SIGN_VERIFY \
-  --description "dogeos attestation signer <agreed-signer-id>" --region <region>
+# Using a key you already created (ECC_SECG_P256K1, SIGN_VERIFY):
+scrollsdk signer init --id <agreed-signer-id> --network testnet \
+  --backend aws-kms --kms-key-id <KeyId-or-Arn> --kms-region <region>
 
-# 2. Derive the compressed public key the signer must attest to
-scrollsdk signer kms-pubkey --key-id <KeyId-or-Arn> --region <region>
-#    → paste into ATTESTATION_SIGNER_KMS_EXPECTED_SIGNER_ID (plus key id and
-#      region into the other KMS fields of attestation-signer.env)
-
-# 3. Deploy (step 2 below), then emit the descriptor from the running signer
-scrollsdk signer preflight --endpoint https://signer.your-org.example:4040 \
-  --id <agreed-signer-id> \
-  --expected-public-key <output of signer kms-pubkey> \
-  --out descriptor.json
+# Or let the CLI create the key in your account:
+scrollsdk signer init --id <agreed-signer-id> --network testnet \
+  --backend aws-kms --create-key --kms-region <region>
 ```
 
-The container also needs AWS credentials that allow `kms:Sign` +
-`kms:GetPublicKey` on that key (EC2 instance role, or static keys in the
-env file — see `.env.example`).
+The container additionally needs AWS credentials with `kms:Sign` +
+`kms:GetPublicKey` on that key (EC2 instance role, or static keys — see the
+commented lines in the generated env).
+
+Low-level alternative: `scrollsdk signer kms-pubkey --key-id ... --region ...`
+prints just the compressed public key, and the same value falls out of
+standard tooling if your policy forbids vendor CLIs near AWS credentials:
+
+```bash
+aws kms get-public-key --key-id <KeyId> --region <region> --query PublicKey --output text \
+  | base64 -d \
+  | openssl ec -pubin -inform DER -conv_form compressed -outform DER 2>/dev/null \
+  | tail -c 33 | xxd -p -c 33
+```
 
 ## Step 2 — deploy
 
@@ -66,12 +72,13 @@ env file — see `.env.example`).
 
 ```bash
 cd docker-compose/
-cp .env.example attestation-signer.env && chmod 600 attestation-signer.env
-# paste the WIF from signer init (or fill the KMS block)
+cp ../signer-<id>/attestation-signer.env . && chmod 600 attestation-signer.env
 mkdir -p policy
 docker compose up -d
 curl -fsS http://localhost:4040/health   # → shows your public_key
 ```
+
+(`.env.example` documents the same fields for hand-rolled setups.)
 
 ### Helm (if you already run Kubernetes)
 
@@ -82,11 +89,13 @@ yourself as described in the values file.
 ## Step 3 — verify and hand over
 
 ```bash
-scrollsdk signer preflight --endpoint https://signer.your-org.example:4040 \
-  --id <agreed-signer-id> \
-  --expected-public-key <publicKey from signer init, if used> \
-  --out descriptor.json
+scrollsdk signer preflight --dir signer-<agreed-signer-id> \
+  --endpoint https://signer.your-org.example:4040
 ```
+
+`--dir` pulls the id, network, and expected public key from step 1's
+descriptor, checks them against the running signer, and writes the verified
+endpoint back into `signer-<id>/descriptor.json`.
 
 Send `descriptor.json` to the bridge operator. **The public key in it enters
 the bridge multisig permanently at genesis — make sure it is the key you
