@@ -9,7 +9,7 @@
 
 image:
   repository: dogeos69/attestation-signer
-  tag: latest # pin to the release the bridge operator names in the runbook
+  tag: dev-20260712-2b27af6b # pin to the release the bridge operator names in the runbook
   pullPolicy: IfNotPresent
 
 attestationSigner:
