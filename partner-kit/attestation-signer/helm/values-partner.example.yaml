@@ -1,0 +1,57 @@
+# Standalone partner values for the attestation-signer Helm chart
+# (charts/attestation-signer in this repo). Use this when your organization
+# already runs Kubernetes; otherwise prefer ../docker-compose/.
+#
+# Everything cluster-internal to the bridge operator's stack has been
+# removed: no tso-service service name, no external-secrets wiring, no
+# bridge policy. TSO URL and productionPolicy come from the bridge
+# operator's post-genesis policy bundle (values-overlay.yaml in the bundle).
+
+image:
+  repository: dogeos69/attestation-signer
+  tag: latest # pin to the release the bridge operator names in the runbook
+  pullPolicy: IfNotPresent
+
+attestationSigner:
+  profile: staging-local # switch per the policy bundle (production-kms for KMS setups)
+  network: testnet
+  port: 4040
+  logFilter: info,attestation_signer=info
+  tso:
+    # Placeholder until the policy bundle arrives; its values-overlay.yaml
+    # carries the real, externally reachable TSO URL.
+    url: http://tso-not-yet-configured.invalid
+    callbackPhase: attestation
+  database:
+    path: /app/data/attestation-signer.sqlite
+  local:
+    wifSecretRef:
+      # Create the Secret yourself from `scrollsdk signer init` output:
+      #   kubectl create secret generic my-signer-env \
+      #     --from-env-file=signer-<id>/attestation-signer.env
+      name: my-signer-env
+      key: ATTESTATION_SIGNER_WIF
+  # For an AWS KMS backend delete `local` above and set:
+  # kms:
+  #   keyId: arn:aws:kms:...
+  #   region: us-east-1
+  #   expectedSignerId: "02..."
+
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    retain: true
+
+# Expose the signer to the bridge operator's TSO. How you terminate TLS /
+# restrict sources is your call — see the runbook's network requirements.
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 4040
