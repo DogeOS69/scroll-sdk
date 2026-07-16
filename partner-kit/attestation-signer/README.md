@@ -34,14 +34,31 @@ scrollsdk signer init --id <agreed-signer-id> --network testnet \
 # → signer-<id>/descriptor.json          (public — send to bridge operator)
 ```
 
-**AWS KMS backend**: create a secp256k1 signing key in your own AWS account,
-fill the KMS block in `docker-compose/.env.example`, deploy (step 2), then
-emit the descriptor from the running signer:
+**AWS KMS backend** (recommended for production): create the signing key in
+your own AWS account, derive its public key, fill the KMS block in
+`docker-compose/.env.example`, deploy (step 2), then emit the descriptor
+from the running signer.
 
 ```bash
+# 1. Create the key (one-time; note the KeyId/Arn in the output)
+aws kms create-key --key-spec ECC_SECG_P256K1 --key-usage SIGN_VERIFY \
+  --description "dogeos attestation signer <agreed-signer-id>" --region <region>
+
+# 2. Derive the compressed public key the signer must attest to
+scrollsdk signer kms-pubkey --key-id <KeyId-or-Arn> --region <region>
+#    → paste into ATTESTATION_SIGNER_KMS_EXPECTED_SIGNER_ID (plus key id and
+#      region into the other KMS fields of attestation-signer.env)
+
+# 3. Deploy (step 2 below), then emit the descriptor from the running signer
 scrollsdk signer preflight --endpoint https://signer.your-org.example:4040 \
-  --id <agreed-signer-id> --out descriptor.json
+  --id <agreed-signer-id> \
+  --expected-public-key <output of signer kms-pubkey> \
+  --out descriptor.json
 ```
+
+The container also needs AWS credentials that allow `kms:Sign` +
+`kms:GetPublicKey` on that key (EC2 instance role, or static keys in the
+env file — see `.env.example`).
 
 ## Step 2 — deploy
 
