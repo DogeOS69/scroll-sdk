@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/attestation-signer
   pullPolicy: Always
-  tag: latest
+  tag: dev-20260712-2b27af6b
 
 # Structured application configuration. The chart renders non-secret values
 # into /etc/dogeos/attestation-signer.toml; WIF key material and release

@@ -1,0 +1,35 @@
+# Partner-operated DogeOS attestation-signer (docker-compose reference
+# deployment). See ../README.md for the full runbook.
+#
+# Files expected next to this compose file:
+#   attestation-signer.env  — your key backend + network (see .env.example;
+#                             `scrollsdk signer init` generates the WIF form)
+#   signer-policy.env       — post-genesis policy bundle from the bridge
+#                             operator (placeholder until you receive it)
+#   policy/                 — verifier-registry.toml + source-set.toml from
+#                             the same bundle (empty until you receive it)
+services:
+  attestation-signer:
+    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-dev-20260712-2b27af6b}
+    restart: unless-stopped
+    env_file:
+      - attestation-signer.env
+      - signer-policy.env
+    environment:
+      PORT: "4040"
+      ATTESTATION_SIGNER_DB_PATH: /app/data/attestation-signer.sqlite
+    ports:
+      - "4040:4040"
+    volumes:
+      - signer-data:/app/data
+      - ./policy:/etc/dogeos:ro
+    healthcheck:
+      # The image ships no curl; bash /dev/tcp + $PORT keeps this correct
+      # regardless of the container port.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/$${PORT:-4040}; printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; head -1 <&3 | grep -q ' 200 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  signer-data:

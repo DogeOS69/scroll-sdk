@@ -10,7 +10,7 @@
 image:
   repository: dogeos69/attestation-signer
   pullPolicy: IfNotPresent
-  tag: latest # Pin to a release tag for shared environments.
+  tag: dev-20260712-2b27af6b # Pin to a release tag for shared environments.
 
 attestationSigner:
   profile: staging-local
