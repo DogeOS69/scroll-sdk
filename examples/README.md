@@ -74,9 +74,19 @@ withdrawal-processor/
 └── WithdrawalProcessor.toml                  (native app config; TOML-owned)
 
 values/
-├── attestation-signer-production.yaml        (+ expanded -0.yaml, -1.yaml, ...)
 ├── proof-coordinator-production.yaml
+├── tso-service-production.yaml
 └── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
+
+prover-worker-mock/
+└── docker-compose/                            (generated only in mock mode)
+
+signer-policy-bundle/                         (sent to partner signer operators)
+├── PARTNER-COMMANDS.md                       (resolved mode, IP/domain and commands)
+├── signer-policy.env
+├── signer-policy.json
+├── source-set.toml
+└── verifier-registry.toml
 ```
 
 `withdrawal-processor/WithdrawalProcessor.toml` holds ALL application
@@ -87,24 +97,30 @@ and `scrollsdk setup proof-config` owns the proof block. Both install targets
 pass the native TOML files to Helm via `--set-file`. Secrets and the
 `withdrawalProof.enabled` activation switch remain in values/ENV.
 
-After staging the released manifests, run
-`make proof-config SIGNER_PROOF_ARTIFACT_BASE_URL=https://...`. The CLI
-replaces only the marked verifier block in the native TOML and preserves all
-manually maintained sections, and additionally projects the signer envelope
-policy (`allowedProofTriples`, `maxProofArtifacts`, `proofArtifact.fetchMode`)
-into the attestation-signer values template and every expanded instance file —
-re-run `make install-attestation-signers` afterwards. Deployment passes the
-coordinator TOML to Helm with
+Production uses `make proof-config PROVING_MODE=production PROOF_ARTIFACT_BASE_URL=https://...`;
+mock uses the same topology command with `PROVING_MODE=mock` and needs no
+`proof-artifacts/` release files. The CLI
+replaces only the marked verifier/proof blocks in the native TOML files and
+preserves manually maintained sections. In mock mode it also writes the
+ordinary-Linux `prover-worker-mock/docker-compose/` bundle. Deployment passes
+the coordinator TOML to Helm with
 `--set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml`.
-Explicit path flags are only necessary for a non-standard layout.
+All paths are derived from this deployment root; `--deployment-dir` is the only
+path normally needed when invoking the CLI from elsewhere.
 
-Two opt-in flags extend the pass (`PROOF_CONFIG_FLAGS` in the Makefile):
+`ProofCoordinator.toml` is scaffolded automatically when absent (and is never
+overwritten once present). One opt-in flag extends the pass
+(`PROOF_CONFIG_FLAGS` in the Makefile):
 
-- `--scaffold-coordinator-config` generates `proof-coordinator/ProofCoordinator.toml`
-  from the prepared withdrawal-processor values when the file does not exist
-  yet (never overwrites an existing config). Requires prep-charts to have
-  resolved all RPC/chain-id/blob-source values first.
 - `--enable-withdrawal-proof` flips `withdrawalProof.enabled: true` after
   staging. Without it the activation switch is preserved as-is; leave it off
   until coordinator readiness, S3 identity, released verifier artifacts, and an
   external prover worker have all passed their own preflight.
+
+`attestation-signer` is intentionally not a Helm chart in this repository. Each
+partner operates it with `partner-kit/attestation-signer/docker-compose/`; after
+bridge genesis, `scrollsdk setup export-signer-policy` produces the common
+`signer-policy-bundle/` derived from the staged verifier identities. The bundle
+inherits the `proof-config` mode: mock selects e2e-harness-compatible audited
+`staging_scaffold`, production selects fail-closed `production_enforce`, while
+the partner commands and network directions remain identical.

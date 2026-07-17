@@ -3,9 +3,12 @@ PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordina
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
 PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
 WITHDRAWAL_PROCESSOR_CONFIG ?= withdrawal-processor/WithdrawalProcessor.toml
-# Stable credential-free public GET base used by attestation signers to fetch
-# accepted proof objects. Required by `make proof-config`.
-SIGNER_PROOF_ARTIFACT_BASE_URL ?=
+# One switch selects release-artifact proving or the e2e_harness-compatible
+# deterministic mock lane. Values: production | mock.
+PROVING_MODE ?= production
+# Stable credential-free public GET root for proof objects. The external worker
+# reads inputs and partner signers read accepted proofs below the same root.
+PROOF_ARTIFACT_BASE_URL ?=
 # AWS provisioning inputs for `make proof-aws-init` (S3 bucket, IRSA roles,
 # bearer-token secret). All three are required by that target.
 AWS_REGION ?=
@@ -13,20 +16,20 @@ EKS_CLUSTER ?=
 NETWORK_ALIAS ?=
 PROOF_AWS_INIT_FLAGS ?=
 # Extra scrollsdk setup proof-config flags, e.g.:
-#   --scaffold-coordinator-config  generate $(PROOF_COORDINATOR_CONFIG) when missing
 #   --enable-withdrawal-proof      flip withdrawalProof.enabled after staging
 PROOF_CONFIG_FLAGS ?=
+ifeq ($(PROVING_MODE),mock)
+PROOF_CONFIG_INPUTS =
+else
 PROOF_CONFIG_INPUTS = \
 	proof-artifacts/release.json \
 	proof-artifacts/manifests/scroll-chunk.json \
 	proof-artifacts/manifests/scroll-batch.json \
-	proof-artifacts/manifests/bridge-transition.json \
-	$(if $(findstring --scaffold-coordinator-config,$(PROOF_CONFIG_FLAGS)),,$(PROOF_COORDINATOR_CONFIG))
+	proof-artifacts/manifests/bridge-transition.json
+endif
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.2
-ATTESTATION_SIGNER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/attestation-signer
-ATTESTATION_SIGNER_CHART_VERSION ?= 0.2.1
 L2_RETH_GENESIS_NORMALIZER_VALUES ?= values/l2-reth-genesis-normalizer.yaml
 L2_RETH_GENESIS_NORMALIZER_SCRIPT ?= scripts/upgrade/normalize-reth-genesis.sh
 INSTALL_ALL_REQUIRED_VALUES = \
@@ -63,14 +66,14 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
-	install-attestation-signers check-install-all-values \
+	check-install-all-values \
 	install-fee-oracle \
 	install-cubesigner-signers install-tso install-withdrawal-processor install-proof-coordinator \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
-	delete-testnet-activity-helper delete-attestation-signers \
+	delete-testnet-activity-helper \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
 
 prepare:
@@ -79,6 +82,7 @@ prepare:
 
 # Standard proof release layout. With these names the CLI needs no path flags.
 check-proof-config-inputs:
+ifneq ($(strip $(PROOF_CONFIG_INPUTS)),)
 	@set -eu; \
 	missing=""; \
 	for file in $(PROOF_CONFIG_INPUTS); do \
@@ -88,6 +92,7 @@ check-proof-config-inputs:
 		printf 'proof-config requires release files that are currently missing:%b\n' "$$missing" >&2; \
 		exit 1; \
 	fi
+endif
 
 # Provision the AWS side of the proof system (S3 bucket, IRSA IAM roles,
 # proof-work/prover-worker token secret) and project the results into
@@ -105,13 +110,13 @@ proof-aws-init:
 		$(PROOF_AWS_INIT_FLAGS)
 
 proof-config: check-proof-config-inputs
-	@test -n "$(SIGNER_PROOF_ARTIFACT_BASE_URL)" || { \
-		echo 'Set SIGNER_PROOF_ARTIFACT_BASE_URL to the public proof-artifact GET base (https://...)' >&2; \
+	@test -n "$(PROOF_ARTIFACT_BASE_URL)" || { \
+		echo 'Set PROOF_ARTIFACT_BASE_URL to the public proof-object GET root (https://...)' >&2; \
 		exit 1; \
 	}
 	scrollsdk setup proof-config \
-		--signer-proof-artifact-base-url $(SIGNER_PROOF_ARTIFACT_BASE_URL) \
-		$(PROOF_CONFIG_FLAGS)
+		--proving-mode $(PROVING_MODE) \
+		--proof-artifact-base-url $(PROOF_ARTIFACT_BASE_URL) $(PROOF_CONFIG_FLAGS)
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
@@ -224,15 +229,6 @@ install-cubesigner-signers:
 	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
 	 	--version=0.1.7 \
 		--values values/cubesigner-signer-production-0.yaml
-
-install-attestation-signers:
-	@set -e; for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
-		[ -e "$$values_file" ] || { echo "No generated attestation signer values found"; exit 1; }; \
-		index=$${values_file##*-}; index=$${index%.yaml}; \
-		release="attestation-signer-$$index"; \
-		helm upgrade -i "$$release" $(ATTESTATION_SIGNER_CHART) -n $(NAMESPACE) \
-			--version $(ATTESTATION_SIGNER_CHART_VERSION) --values "$$values_file"; \
-	done
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
@@ -370,14 +366,6 @@ delete-fee-oracle:
 
 delete-cubesigner-signers:
 	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
-
-delete-attestation-signers:
-	@for values_file in values/attestation-signer-production-[0-9]*.yaml; do \
-		[ -e "$$values_file" ] || continue; \
-		index=$${values_file##*-}; index=$${index%.yaml}; \
-		helm delete -n $(NAMESPACE) "attestation-signer-$$index" || true; \
-	done
-	-kubectl delete pvc -n $(NAMESPACE) session-cache-0-cubesigner-signer-0-0
 
 delete-testnet-activity-helper:
 	helm delete -n $(NAMESPACE) testnet-activity-helper

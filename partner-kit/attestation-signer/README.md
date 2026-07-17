@@ -6,7 +6,9 @@ infrastructure, holding your own signing key. The bridge operator never sees
 your key; they only receive your **endpoint URL and public key**, and later
 send you a **policy bundle** that binds your signer to the generated bridge.
 
-The whole exchange is three steps:
+The whole exchange is three steps. They are deliberately identical for mock
+and production; the bridge operator's policy bundle selects the proof/signer
+posture, so you do not pass a second mode flag:
 
 ```
  ①  You:              generate key → deploy signer → send descriptor.json
@@ -32,7 +34,8 @@ from that directory; there is nothing to copy by hand or remember.
 **Local WIF backend** (simplest):
 
 ```bash
-scrollsdk signer init --id <agreed-signer-id> --network testnet
+scrollsdk signer init --id <agreed-signer-id> --network testnet \
+  --endpoint https://signer.your-org.example:4040
 # → signer-<id>/attestation-signer.env   (SECRET — holds the signing key)
 # → signer-<id>/descriptor.json          (public — finalized in step 3)
 ```
@@ -44,11 +47,17 @@ automatically:
 ```bash
 # Using a key you already created (ECC_SECG_P256K1, SIGN_VERIFY):
 scrollsdk signer init --id <agreed-signer-id> --network testnet \
-  --backend aws-kms --kms-key-id <KeyId-or-Arn> --kms-region <region>
+  --endpoint https://signer.your-org.example:4040 \
+  --backend aws-kms --kms-key-id <KeyId-or-Arn> --kms-region <region> \
+  --allowed-release-version <approved-cargo-version> \
+  --allowed-git-commit <approved-full-40-character-git-sha>
 
 # Or let the CLI create the key in your account:
 scrollsdk signer init --id <agreed-signer-id> --network testnet \
-  --backend aws-kms --create-key --kms-region <region>
+  --endpoint https://signer.your-org.example:4040 \
+  --backend aws-kms --create-key --kms-region <region> \
+  --allowed-release-version <approved-cargo-version> \
+  --allowed-git-commit <approved-full-40-character-git-sha>
 ```
 
 The container additionally needs AWS credentials with `kms:Sign` +
@@ -68,6 +77,19 @@ aws kms get-public-key --key-id <KeyId> --region <region> --query PublicKey --ou
 
 ## Step 2 — deploy
 
+Specify the signer endpoint once during init whenever it is already known:
+
+```bash
+scrollsdk signer init --id <agreed-signer-id> --network testnet \
+  --endpoint https://signer.your-org.example:4040
+```
+
+The endpoint is the base URL reachable **from the bridge operator's TSO
+network**, not necessarily the signer's public Internet address. Production
+normally uses a TLS domain. An isolated mock/VPN test may use a private address
+such as `http://10.20.30.40:4040`. Never use `localhost`, a Docker service name,
+or a Kubernetes-only name in the descriptor.
+
 ### docker-compose (reference path)
 
 ```bash
@@ -78,19 +100,14 @@ docker compose up -d
 curl -fsS http://localhost:4040/health   # → shows your public_key
 ```
 
-(`.env.example` documents the same fields for hand-rolled setups.)
-
-### Helm (if you already run Kubernetes)
-
-Use `helm/values-partner.example.yaml` with the `attestation-signer` chart
-from this repository (`charts/attestation-signer`). Create the WIF Secret
-yourself as described in the values file.
+The generated `attestation-signer.env` is the authoritative field list for
+this signer; keep it private and do not rebuild it by hand.
 
 ## Step 3 — verify and hand over
 
 ```bash
-scrollsdk signer preflight --dir signer-<agreed-signer-id> \
-  --endpoint https://signer.your-org.example:4040
+scrollsdk signer preflight --dir signer-<agreed-signer-id>
+# Add --endpoint https://... only when signer init did not set it.
 ```
 
 `--dir` pulls the id, network, and expected public key from step 1's
@@ -109,12 +126,41 @@ The bridge operator sends back a bundle directory:
 |---|---|
 | `signer-policy.env` | replaces `docker-compose/signer-policy.env` |
 | `verifier-registry.toml`, `source-set.toml` | copy into `docker-compose/policy/` |
-| `values-overlay.yaml` | Helm deployments: merge into your values instead |
 | `signer-policy.json` | machine-readable summary (for your records) |
+| `PARTNER-COMMANDS.md` | exact mode, addresses, compose/apply commands, and bridge-side reachability probe for this deployment |
 
-Then `docker compose up -d` (or `helm upgrade`). The signer now enforces the
+Place the received directory at `signer-policy-bundle/` beside
+`docker-compose/`, then apply it exactly as follows:
+
+```bash
+cp signer-policy-bundle/signer-policy.env docker-compose/signer-policy.env
+cp signer-policy-bundle/verifier-registry.toml docker-compose/policy/verifier-registry.toml
+cp signer-policy-bundle/source-set.toml docker-compose/policy/source-set.toml
+docker compose --project-directory docker-compose config --quiet
+docker compose --project-directory docker-compose up -d
+```
+
+The signer now enforces the
 bridge identity (protocol instance, namespace, active bridge key hash) and
 will start receiving `/sign` requests from the bridge operator's TSO.
+
+The bundle also sets the positive, bounded proof-artifact cap and both TEE
+allowlists required by the enriched evidence envelope. In mock mode it selects
+the same audited `staging_scaffold` posture as dogeos-core's e2e harness; in
+production it selects fail-closed `production_enforce`. Your commands and
+network routes stay the same.
+
+Before applying a production bundle, `attestation-signer.env` must contain the
+approved image identity pins. `scrollsdk signer init` writes them when passed
+`--allowed-release-version` and `--allowed-git-commit`, and always writes the
+approved signing-policy version. Missing or mismatched pins make the production
+signer refuse to start.
+
+The current dogeos-core signer still reports cryptographic STARK proof-byte
+verification as `NotImplemented`; a production-enforce build therefore refuses
+proof-backed signing until that check exists in the selected release. The mock
+lane is the supported way to test the complete deployment/network/callback
+flow with deterministic non-cryptographic proofs.
 
 ## Network requirements (agree these with the bridge operator)
 
@@ -123,7 +169,20 @@ will start receiving `/sign` requests from the bridge operator's TSO.
 2. **Outbound** — your signer calls back the TSO URL from the policy bundle
    to submit signatures.
 3. **Outbound** — your signer fetches proof artifacts over HTTPS GET from
-   the `signerProofArtifactBaseUrl` in the policy bundle.
+   the full `required_proof_artifacts[].proof_artifact_fetch.url` carried in
+   each signing request. `signer-policy.json` records the deployment's base URL
+   for audit; the runtime request contains the concrete object URL.
+
+After applying the policy, verify the TSO callback address from the signer host:
+
+```bash
+curl -fsS https://tso.bridge-operator.example/health
+curl -fsS https://signer.your-org.example:4040/health
+```
+
+The bridge operator must separately repeat the signer `/health` request from
+the TSO Kubernetes namespace. A successful laptop probe alone does not prove
+the production route works.
 
 There is currently **no application-layer authentication** on the
 signer↔TSO HTTP path: connectivity must be private (VPN / WireGuard /
