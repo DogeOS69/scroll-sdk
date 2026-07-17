@@ -54,10 +54,10 @@ These scripts read configuration values from the `charts/scroll-sdk/config.toml`
 
 For more information on Scroll SDK, refer to the main README in the root directory of this repository.
 
-## Proof release files
+## Proof helper interface
 
-Production proof configuration uses a fixed working-directory layout shared by
-the example Makefile and `scrollsdk setup proof-config`:
+The example Makefile and `scrollsdk` share the following conventional paths.
+Using this layout avoids per-file path flags:
 
 ```text
 proof-artifacts/
@@ -80,47 +80,26 @@ values/
 
 prover-worker-mock/
 └── docker-compose/                            (generated only in mock mode)
-
-signer-policy-bundle/                         (sent to partner signer operators)
-├── PARTNER-COMMANDS.md                       (resolved mode, IP/domain and commands)
-├── signer-policy.env
-├── signer-policy.json
-├── source-set.toml
-└── verifier-registry.toml
 ```
 
-`withdrawal-processor/WithdrawalProcessor.toml` holds ALL application
-configuration (no more DOGEOS_WITHDRAWAL_* env sprawl in values):
-`scrollsdk setup prep-charts` merges config.toml-derived facts into its managed
-deployment block — operator tuning of other keys inside the block survives —
-and `scrollsdk setup proof-config` owns the proof block. Both install targets
-pass the native TOML files to Helm via `--set-file`. Secrets and the
-`withdrawalProof.enabled` activation switch remain in values/ENV.
+The proof-related Makefile variables are:
 
-Production uses `make proof-config PROVING_MODE=production PROOF_ARTIFACT_BASE_URL=https://...`;
-mock uses the same topology command with `PROVING_MODE=mock` and needs no
-`proof-artifacts/` release files. The CLI
-replaces only the marked verifier/proof blocks in the native TOML files and
-preserves manually maintained sections. In mock mode it also writes the
-ordinary-Linux `prover-worker-mock/docker-compose/` bundle. Deployment passes
-the coordinator TOML to Helm with
-`--set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml`.
-All paths are derived from this deployment root; `--deployment-dir` is the only
-path normally needed when invoking the CLI from elsewhere.
+| variable | purpose |
+|---|---|
+| `PROVING_MODE` | `production` or the e2e-harness-compatible `mock` lane |
+| `PROOF_ARTIFACT_BASE_URL` | credential-free HTTP(S) GET root used by proof consumers |
+| `PROOF_CONFIG_FLAGS` | optional extra `scrollsdk setup proof-config` flags |
+| `AWS_REGION`, `EKS_CLUSTER`, `NETWORK_ALIAS` | required AWS/EKS inputs for `proof-aws-init` |
+| `PROOF_AWS_INIT_FLAGS` | optional extra `proof-aws-init` flags |
+| `PROOF_COORDINATOR_CONFIG` | native coordinator TOML passed to Helm with `--set-file` |
+| `WITHDRAWAL_PROCESSOR_CONFIG` | native withdrawal-processor TOML passed to Helm with `--set-file` |
 
-`ProofCoordinator.toml` is scaffolded automatically when absent (and is never
-overwritten once present). One opt-in flag extends the pass
-(`PROOF_CONFIG_FLAGS` in the Makefile):
+The corresponding targets are `make proof-aws-init`, `make proof-config`,
+`make install-withdrawal-processor`, `make install-proof-coordinator`, and
+`make install-tso`. The Makefile is the executable chart interface; it is not
+the deployment runbook.
 
-- `--enable-withdrawal-proof` flips `withdrawalProof.enabled: true` after
-  staging. Without it the activation switch is preserved as-is; leave it off
-  until coordinator readiness, S3 identity, released verifier artifacts, and an
-  external prover worker have all passed their own preflight.
-
-`attestation-signer` is intentionally not a Helm chart in this repository. Each
-partner operates it with `partner-kit/attestation-signer/docker-compose/`; after
-bridge genesis, `scrollsdk setup export-signer-policy` produces the common
-`signer-policy-bundle/` derived from the staged verifier identities. The bundle
-inherits the `proof-config` mode: mock selects e2e-harness-compatible audited
-`staging_scaffold`, production selects fail-closed `production_enforce`, while
-the partner commands and network directions remain identical.
+For the authoritative end-to-end order, partner descriptor/policy handoff,
+activation gates, mock-versus-production behavior, and lifecycle acceptance,
+follow the
+[DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).

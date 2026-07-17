@@ -1,12 +1,19 @@
 # Running a DogeOS Attestation Signer (Signer-Operator Runbook)
 
+This is the generic, static manual for every signer operator. It explains the
+roles, one-time setup, handoff, network contract, and operating rules, but it
+does not contain addresses or commands for a particular bridge deployment.
+After bridge genesis, the generated
+`signer-policy-bundle/PARTNER-COMMANDS.md` supplied by the bridge operator is
+the authoritative instruction file for that deployment.
+
 You are one of N independent attestation signers securing a DogeOS bridge.
 You deploy and operate **one service** — `attestation-signer` — on your own
 infrastructure, holding your own signing key. The bridge operator never sees
 your key; they only receive your **endpoint URL and public key**, and later
 send you a **policy bundle** that binds your signer to the generated bridge.
 
-The whole exchange is three steps. They are deliberately identical for mock
+The whole exchange has three phases. They are deliberately identical for mock
 and production; the bridge operator's policy bundle selects the proof/signer
 posture, so you do not pass a second mode flag:
 
@@ -127,28 +134,25 @@ The bridge operator sends back a bundle directory:
 | `signer-policy.env` | replaces `docker-compose/signer-policy.env` |
 | `verifier-registry.toml`, `source-set.toml` | copy into `docker-compose/policy/` |
 | `signer-policy.json` | machine-readable summary (for your records) |
-| `PARTNER-COMMANDS.md` | exact mode, addresses, compose/apply commands, and bridge-side reachability probe for this deployment |
+| `PARTNER-COMMANDS.md` | authoritative mode, addresses, apply/restart commands, and reachability checks for this deployment |
 
-Place the received directory at `signer-policy-bundle/` beside
-`docker-compose/`, then apply it exactly as follows:
+Keep the received directory intact, open its `PARTNER-COMMANDS.md`, and execute
+the partner-operator section exactly as generated. Those commands place the
+files, validate the resolved Compose configuration, restart the signer, and
+probe the deployment-specific addresses. Do not reconstruct those commands
+from examples in this static manual or substitute addresses from another
+deployment.
 
-```bash
-cp signer-policy-bundle/signer-policy.env docker-compose/signer-policy.env
-cp signer-policy-bundle/verifier-registry.toml docker-compose/policy/verifier-registry.toml
-cp signer-policy-bundle/source-set.toml docker-compose/policy/source-set.toml
-docker compose --project-directory docker-compose config --quiet
-docker compose --project-directory docker-compose up -d
-```
+After those generated commands succeed, the signer enforces the bridge
+identity (protocol instance, namespace, active bridge key hash) and starts
+receiving `/sign` requests from the bridge operator's TSO.
 
-The signer now enforces the
-bridge identity (protocol instance, namespace, active bridge key hash) and
-will start receiving `/sign` requests from the bridge operator's TSO.
-
-The bundle also sets the positive, bounded proof-artifact cap and both TEE
-allowlists required by the enriched evidence envelope. In mock mode it selects
-the same audited `staging_scaffold` posture as dogeos-core's e2e harness; in
-production it selects fail-closed `production_enforce`. Your commands and
-network routes stay the same.
+Every bundle sets a positive, bounded proof-artifact cap. Mock mode selects the
+same audited `staging_scaffold` posture as dogeos-core's e2e harness and leaves
+both TEE allowlists empty by default because mock evidence has no TEE receipt.
+Production selects fail-closed `production_enforce` and requires both TEE
+allowlists to be non-empty. Your generated commands and network routes stay
+the same.
 
 Before applying a production bundle, `attestation-signer.env` must contain the
 approved image identity pins. `scrollsdk signer init` writes them when passed
@@ -181,8 +185,8 @@ curl -fsS https://signer.your-org.example:4040/health
 ```
 
 The bridge operator must separately repeat the signer `/health` request from
-the TSO Kubernetes namespace. A successful laptop probe alone does not prove
-the production route works.
+the actual TSO network. A successful laptop probe alone does not prove the
+production route works.
 
 There is currently **no application-layer authentication** on the
 signer↔TSO HTTP path: connectivity must be private (VPN / WireGuard /
