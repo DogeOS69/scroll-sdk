@@ -11,7 +11,10 @@
 #   rate, timeouts, indexer cadence, UTXO strategy) is preserved. Comments
 #   inside the block are not preserved — keep commentary outside.
 # - The managed proof block at the bottom is owned by `scrollsdk setup
-#   proof-config`.
+#   proof-config`. Mode-specific activation fields are projected atomically by
+#   scrollsdk into deployment values; the generic chart does not interpret
+#   them. This file never persists [proof_system.dev_dummy], which must be
+#   absent while proof is disabled.
 # - Additional hand-maintained [tables] may be added between the two blocks.
 #
 # Secrets never live in this file: Dogecoin RPC credentials, signer keys, and
