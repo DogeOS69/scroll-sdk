@@ -21,7 +21,7 @@ dependencies:
     repository: "https://prometheus-community.github.io/helm-charts"
     version: 59.0.0
     condition: kube-prometheus-stack.enabled
-  - name: scroll-monitor-agent
-    repository: "file://../scroll-monitor-agent"
-    version: 0.1.0-dogeos
-    condition: scroll-monitor-agent.enabled
+  - name: alloy
+    repository: "https://grafana.github.io/helm-charts"
+    version: 1.0.2
+    condition: alloy.enabled

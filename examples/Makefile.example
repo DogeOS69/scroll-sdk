@@ -196,13 +196,6 @@ install-scroll-monitor:
 		--version=0.1.21-dogeos \
 		--values values/scroll-monitor-production.yaml
 
-# Use this target instead of install-scroll-monitor when Grafana, Prometheus,
-# and Loki are managed externally.
-install-scroll-monitor-agent:
-	helm upgrade -i scroll-monitor-agent oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor-agent -n $(NAMESPACE) \
-		--version=0.1.0-dogeos \
-		--values values/scroll-monitor-agent-production.yaml
-
 install-scroll-common:
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
 		--version=0.3.2-dogeos \
@@ -373,7 +366,6 @@ delete-all:
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
-	helm delete -n $(NAMESPACE) scroll-monitor-agent || true
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true

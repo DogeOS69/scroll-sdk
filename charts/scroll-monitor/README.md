@@ -19,10 +19,10 @@ The chart vendors the following dependencies:
 | Grafana | 8.5.0 | enabled |
 | Loki | 6.10.2 | enabled |
 | kube-prometheus-stack | 59.0.0 | enabled |
-| scroll-monitor-agent | 0.1.0-dogeos | enabled |
+| Grafana Alloy | 1.0.2 | enabled |
 
 Promtail is not supported. Log and OTLP collection is provided by Grafana Alloy
-through the independently installable `scroll-monitor-agent` chart.
+directly through the official Alloy chart dependency.
 
 ## Standalone installation
 
@@ -34,18 +34,7 @@ helm upgrade --install scroll-monitor ./charts/scroll-monitor \
 
 The default service endpoints assume every component is in the same namespace.
 They are configurable under `monitoring.datasources` and
-`scroll-monitor-agent`.
-
-## External backends
-
-Install `scroll-monitor-agent` directly when Grafana, Loki, and Prometheus are
-managed externally:
-
-```shell
-helm upgrade --install scroll-monitor-agent ./charts/scroll-monitor-agent \
-  --namespace scroll \
-  --values examples/values/scroll-monitor-agent-production.yaml
-```
+`alloy`.
 
 ## Dashboard and alert assets
 
@@ -70,8 +59,8 @@ keeps discovery scoped to the Scroll deployment namespace without requiring
 monitoring-specific labels or version bumps in application charts.
 
 Alloy limits pod-log discovery to the release namespace by default. Set
-`scroll-monitor-agent.logs.namespaces` for an explicit namespace allowlist and
-`scroll-monitor-agent.logs.podLabels` to require matching pod labels.
+`alloy.logs.namespaces` for an explicit namespace allowlist and
+`alloy.logs.podLabels` to require matching pod labels.
 
 ## Required cluster services
 

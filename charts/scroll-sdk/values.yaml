@@ -143,7 +143,7 @@ scroll-monitor:
         - grafana.scrollsdk
   loki:
     enabled: true
-  scroll-monitor-agent:
+  alloy:
     enabled: true
   kube-prometheus-stack:
     enabled: true

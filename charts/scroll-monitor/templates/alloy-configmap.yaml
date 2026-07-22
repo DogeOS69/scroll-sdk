@@ -1,5 +1,5 @@
-{{- if .Values.enabled }}
-{{- $namespaces := .Values.logs.namespaces -}}
+{{- if .Values.alloy.enabled }}
+{{- $namespaces := .Values.alloy.logs.namespaces -}}
 {{- if not $namespaces -}}
   {{- $namespaces = list .Release.Namespace -}}
 {{- end -}}
@@ -10,7 +10,7 @@ metadata:
   name: grafana-alloy-config
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: scroll-monitor-agent
+    app.kubernetes.io/name: grafana-alloy
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
@@ -21,11 +21,11 @@ data:
       format = "logfmt"
     }
 
-    {{- if .Values.logs.enabled }}
+    {{- if .Values.alloy.logs.enabled }}
     loki.write "scroll" {
       endpoint {
-        url       = {{ .Values.logs.loki.url | quote }}
-        tenant_id = {{ .Values.logs.loki.tenantId | quote }}
+        url       = {{ .Values.alloy.logs.loki.url | quote }}
+        tenant_id = {{ .Values.alloy.logs.loki.tenantId | quote }}
       }
     }
 
@@ -39,7 +39,7 @@ data:
     discovery.relabel "pod_logs" {
       targets = discovery.kubernetes.pods.targets
 
-      {{- range $key, $value := .Values.logs.podLabels }}
+      {{- range $key, $value := .Values.alloy.logs.podLabels }}
       rule {
         source_labels = [{{ printf "__meta_kubernetes_pod_label_%s" ($key | replace "." "_" | replace "/" "_" | replace "-" "_") | quote }}]
         regex         = {{ $value | quote }}
@@ -80,7 +80,7 @@ data:
     }
 
     loki.process "pod_logs" {
-      {{- if .Values.logs.l1InterfaceMetrics.enabled }}
+      {{- if .Values.alloy.logs.l1InterfaceMetrics.enabled }}
       stage.match {
         selector = "{service=\"l1-interface\"}"
 
@@ -159,7 +159,7 @@ data:
     }
     {{- end }}
 
-    {{- if .Values.metrics.otlp.enabled }}
+    {{- if .Values.alloy.metrics.otlp.enabled }}
     otelcol.receiver.otlp "scroll" {
       http {
         endpoint = "0.0.0.0:4318"
@@ -179,14 +179,14 @@ data:
         action        = "replace"
         source_labels = ["job"]
         regex         = "(.*)/(.*)"
-        replacement   = {{ printf "%s-$1-$2" .Values.metrics.prometheusRemoteWrite.jobPrefix | quote }}
+        replacement   = {{ printf "%s-$1-$2" .Values.alloy.metrics.prometheusRemoteWrite.jobPrefix | quote }}
         target_label  = "job"
       }
     }
 
     prometheus.remote_write "scroll" {
       endpoint {
-        url = {{ .Values.metrics.prometheusRemoteWrite.url | quote }}
+        url = {{ .Values.alloy.metrics.prometheusRemoteWrite.url | quote }}
       }
     }
     {{- end }}

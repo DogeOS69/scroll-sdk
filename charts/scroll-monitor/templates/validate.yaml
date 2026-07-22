@@ -1,12 +1,20 @@
-{{- $agent := index .Values "scroll-monitor-agent" -}}
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
-  {{- fail "promtail has been removed; use scroll-monitor-agent (Grafana Alloy)" }}
+  {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
 {{- end }}
-{{- if and $agent.enabled $agent.logs.enabled (not .Values.loki.enabled) }}
-  {{- fail "standalone log collection requires loki.enabled=true; install scroll-monitor-agent separately when using an external Loki" }}
+{{- if and .Values.alloy.enabled .Values.alloy.logs.enabled (empty .Values.alloy.logs.loki.url) }}
+  {{- fail "alloy.logs.enabled=true requires alloy.logs.loki.url" }}
 {{- end }}
-{{- if and $agent.enabled $agent.metrics.otlp.enabled (not (index .Values "kube-prometheus-stack").enabled) }}
-  {{- fail "standalone OTLP collection requires kube-prometheus-stack.enabled=true; install scroll-monitor-agent separately when using external Prometheus" }}
+{{- if and .Values.alloy.enabled .Values.alloy.metrics.otlp.enabled (empty .Values.alloy.metrics.prometheusRemoteWrite.url) }}
+  {{- fail "alloy.metrics.otlp.enabled=true requires alloy.metrics.prometheusRemoteWrite.url" }}
+{{- end }}
+{{- if and .Values.alloy.enabled (gt (int .Values.alloy.controller.replicas) 1) (not .Values.alloy.alloy.clustering.enabled) }}
+  {{- fail "Alloy replicas greater than one require alloy.alloy.clustering.enabled=true to avoid duplicate collection" }}
+{{- end }}
+{{- if and .Values.alloy.enabled .Values.alloy.logs.enabled (not .Values.loki.enabled) }}
+  {{- fail "Alloy log collection requires loki.enabled=true" }}
+{{- end }}
+{{- if and .Values.alloy.enabled .Values.alloy.metrics.otlp.enabled (not (index .Values "kube-prometheus-stack").enabled) }}
+  {{- fail "Alloy OTLP collection requires kube-prometheus-stack.enabled=true" }}
 {{- end }}
 {{- if and .Values.grafana.enabled (not (index .Values "kube-prometheus-stack").enabled) }}
   {{- fail "standalone Grafana requires kube-prometheus-stack.enabled=true" }}

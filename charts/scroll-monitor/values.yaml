@@ -139,7 +139,7 @@ loki:
   write:
     replicas: 0
 
-scroll-monitor-agent:
+alloy:
   enabled: true
   logs:
     enabled: true
@@ -148,12 +148,42 @@ scroll-monitor-agent:
     loki:
       url: http://loki:3100/loki/api/v1/push
       tenantId: "1"
+    l1InterfaceMetrics:
+      enabled: true
   metrics:
     otlp:
       enabled: true
     prometheusRemoteWrite:
       url: http://prometheus-prometheus:9090/api/v1/write
       jobPrefix: scroll-sdk
+  fullnameOverride: grafana-alloy
+  alloy:
+    configMap:
+      create: false
+      name: grafana-alloy-config
+      key: config.alloy
+    clustering:
+      enabled: false
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+    extraPorts:
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+        protocol: TCP
+  controller:
+    type: statefulset
+    replicas: 1
+    autoscaling:
+      enabled: false
+  serviceMonitor:
+    enabled: true
+    interval: 15s
 
 kube-prometheus-stack:
   enabled: true

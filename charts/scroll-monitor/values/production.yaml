@@ -80,16 +80,15 @@ loki:
   chunksCache:
     enabled: false
 
-scroll-monitor-agent:
+alloy:
   alloy:
-    alloy:
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: 200m
-        limits:
-          memory: 2Gi
-          cpu: 1000m
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
 
 kube-prometheus-stack:
   prometheus:
