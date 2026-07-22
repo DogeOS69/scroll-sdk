@@ -78,8 +78,6 @@ command: ["/usr/local/bin/fee_oracle"]
 serviceMonitor:
   main:
     enabled: true
-    labels:
-      release: scroll-sdk
     endpoints:
       - port: metrics
         scheme: http

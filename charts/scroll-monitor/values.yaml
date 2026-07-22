@@ -178,11 +178,13 @@ kube-prometheus-stack:
             port: web
       serviceMonitorSelector:
         matchExpressions:
-          - key: release
-            operator: In
-            values:
-              - scroll-monitor
-              - scroll-sdk
+          - key: app.kubernetes.io/instance
+            operator: Exists
+      # Scope discovery to the Helm release namespace without requiring
+      # monitoring-specific labels on application ServiceMonitors.
+      serviceMonitorNamespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
 
   alertmanager:
     enabled: true

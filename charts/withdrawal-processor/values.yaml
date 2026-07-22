@@ -80,8 +80,6 @@ resources:
 serviceMonitor:
   main:
     enabled: false
-    labels:
-      release: scroll-sdk
 
 # Application env/config is intentionally supplied by deployment values such as
 # examples/values/withdrawal-processor-production.yaml.

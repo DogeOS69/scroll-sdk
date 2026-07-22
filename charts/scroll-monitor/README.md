@@ -65,8 +65,9 @@ The provisioned datasource UIDs are stable:
 
 ## Discovery boundaries
 
-Prometheus selects ServiceMonitors labeled with `release=scroll-monitor` or
-`release=scroll-sdk`. Scroll application charts use `release=scroll-sdk`.
+Prometheus selects Helm-managed ServiceMonitors in its own namespace. This
+keeps discovery scoped to the Scroll deployment namespace without requiring
+monitoring-specific labels or version bumps in application charts.
 
 Alloy limits pod-log discovery to the release namespace by default. Set
 `scroll-monitor-agent.logs.namespaces` for an explicit namespace allowlist and
