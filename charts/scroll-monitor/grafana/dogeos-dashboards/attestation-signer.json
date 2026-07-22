@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "description": "Readiness reported by each configured attestation policy mode; 1 means the service is ready.",
       "fieldConfig": {
@@ -43,7 +43,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode) (attestation_signer_ready)",
           "legendFormat": "{{mode}}",
@@ -56,7 +56,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "description": "Active sign-request rows loaded by the most recent background-worker tick.",
       "fieldConfig": {
@@ -76,7 +76,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(attestation_signer_worker_active_rows_loaded)",
           "legendFormat": "active rows",
@@ -89,7 +89,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -108,7 +108,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (result, kind) (rate(attestation_signer_intake_requests_total[$__rate_interval]))",
           "legendFormat": "{{result}} {{kind}}",
@@ -121,7 +121,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -140,7 +140,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (result, kind) (rate(attestation_signer_worker_ticks_total[$__rate_interval]))",
           "legendFormat": "{{result}} {{kind}}",
@@ -153,7 +153,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -172,7 +172,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (starting_status, result, kind) (rate(attestation_signer_worker_rows_total[$__rate_interval]))",
           "legendFormat": "{{starting_status}} → {{result}} ({{kind}})",
@@ -185,7 +185,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -204,7 +204,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (kind, terminal) (rate(attestation_signer_worker_failures_total[$__rate_interval]))",
           "legendFormat": "{{kind}} terminal={{terminal}}",
@@ -217,7 +217,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -236,7 +236,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (mode, classification, reason_code) (rate(attestation_signer_policy_decisions_total[$__rate_interval]))",
           "legendFormat": "{{mode}} {{classification}} ({{reason_code}})",
@@ -249,7 +249,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -268,7 +268,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (result) (rate(attestation_signer_signing_attempts_total[$__rate_interval]))",
           "legendFormat": "{{result}}",
@@ -281,7 +281,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -300,7 +300,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (path, result) (rate(attestation_signer_tso_callbacks_total[$__rate_interval]))",
           "legendFormat": "{{path}} {{result}}",

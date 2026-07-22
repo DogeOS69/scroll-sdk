@@ -59,6 +59,8 @@ resources:
 serviceMonitor:
   main:
     enabled: false
+    labels:
+      release: scroll-sdk
 
 ingress:
   main:

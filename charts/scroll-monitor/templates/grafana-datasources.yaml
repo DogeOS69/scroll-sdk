@@ -1,0 +1,41 @@
+{{- if .Values.grafana.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  datasources.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: {{ .Values.monitoring.datasources.prometheus.name | quote }}
+        uid: {{ .Values.monitoring.datasources.prometheus.uid | quote }}
+        type: prometheus
+        url: {{ .Values.monitoring.datasources.prometheus.url | quote }}
+        access: proxy
+        isDefault: true
+        jsonData:
+          timeInterval: 30s
+      {{- if .Values.monitoring.datasources.loki.enabled }}
+      - name: {{ .Values.monitoring.datasources.loki.name | quote }}
+        uid: {{ .Values.monitoring.datasources.loki.uid | quote }}
+        type: loki
+        url: {{ .Values.monitoring.datasources.loki.url | quote }}
+        access: proxy
+        jsonData:
+          maxLines: 5000
+          httpHeaderName1: X-Scope-OrgID
+        secureJsonData:
+          httpHeaderValue1: {{ .Values.monitoring.datasources.loki.tenantId | quote }}
+      {{- end }}
+      - name: Infinity
+        uid: dogeos-infinity
+        type: yesoreyeram-infinity-datasource
+        access: proxy
+        isDefault: false
+{{- end }}

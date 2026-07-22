@@ -1,0 +1,16 @@
+{{- $agent := index .Values "scroll-monitor-agent" -}}
+{{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
+  {{- fail "promtail has been removed; use scroll-monitor-agent (Grafana Alloy)" }}
+{{- end }}
+{{- if and $agent.enabled $agent.logs.enabled (not .Values.loki.enabled) }}
+  {{- fail "standalone log collection requires loki.enabled=true; install scroll-monitor-agent separately when using an external Loki" }}
+{{- end }}
+{{- if and $agent.enabled $agent.metrics.otlp.enabled (not (index .Values "kube-prometheus-stack").enabled) }}
+  {{- fail "standalone OTLP collection requires kube-prometheus-stack.enabled=true; install scroll-monitor-agent separately when using external Prometheus" }}
+{{- end }}
+{{- if and .Values.grafana.enabled (not (index .Values "kube-prometheus-stack").enabled) }}
+  {{- fail "standalone Grafana requires kube-prometheus-stack.enabled=true" }}
+{{- end }}
+{{- if and .Values.grafana.enabled .Values.monitoring.datasources.loki.enabled (not .Values.loki.enabled) }}
+  {{- fail "the bundled Grafana Loki datasource requires loki.enabled=true; disable monitoring.datasources.loki.enabled when logs are not installed" }}
+{{- end }}

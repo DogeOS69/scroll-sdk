@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -42,7 +42,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(tso_core_registered_signers_count)",
           "legendFormat": "registered signers",
@@ -55,7 +55,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -74,7 +74,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (event_type) (rate(tso_core_signer_transaction_events_total[$__rate_interval]))",
           "legendFormat": "{{event_type}}",
@@ -87,7 +87,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -106,7 +106,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (outcome) (tso_core_signer_response_latency_seconds{quantile=\"0.99\"})",
           "legendFormat": "p99 {{outcome}}",
@@ -115,7 +115,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (outcome) (tso_core_signer_response_latency_seconds{quantile=\"0.9\"})",
           "legendFormat": "p90 {{outcome}}",
@@ -124,7 +124,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (outcome) (tso_core_signer_response_latency_seconds{quantile=\"0.5\"})",
           "legendFormat": "p50 {{outcome}}",
@@ -137,7 +137,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -156,7 +156,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(tso_core_registered_signers_by_role{role=\"Attestation\"})",
           "legendFormat": "attestation",
@@ -169,7 +169,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -188,7 +188,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (role) (tso_core_registered_signers_by_role)",
           "legendFormat": "{{role}}",
@@ -201,7 +201,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -220,7 +220,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status) (tso_core_transactions_by_status)",
           "legendFormat": "{{status}}",
@@ -233,7 +233,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -252,7 +252,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (role, public_key) (tso_core_registered_signer_info)",
           "legendFormat": "{{role}} {{public_key}}",

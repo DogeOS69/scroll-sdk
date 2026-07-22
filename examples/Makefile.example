@@ -61,7 +61,6 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/genesis.yaml \
 	values/protocol_context.yaml \
 	values/l1-interface-production.yaml \
-	values/grafana-alloy-production.yaml \
 	values/metrics-exporter-production.yaml \
 	values/l2-reth-sequencer-production-0.yaml \
 	values/l2-reth-sequencer-production-1.yaml \
@@ -183,7 +182,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.21 \
+		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
@@ -194,8 +193,15 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.20-dogeos \
+		--version=0.1.21-dogeos \
 		--values values/scroll-monitor-production.yaml
+
+# Use this target instead of install-scroll-monitor when Grafana, Prometheus,
+# and Loki are managed externally.
+install-scroll-monitor-agent:
+	helm upgrade -i scroll-monitor-agent oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor-agent -n $(NAMESPACE) \
+		--version=0.1.0-dogeos \
+		--values values/scroll-monitor-agent-production.yaml
 
 install-scroll-common:
 	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
@@ -207,10 +213,6 @@ install-scroll-core:
 	$(MAKE) install-scroll-monitor
 	$(MAKE) install-scroll-common
 	$(MAKE) install-l1-interface
-
-	helm upgrade -i grafana-alloy grafana/alloy -n $(NAMESPACE) \
-		--version=1.0.2 \
-		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
 		--version=0.1.8 \
@@ -264,13 +266,13 @@ install-contracts:
 
 install-eth-da-submitter:
 	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
-		--version=0.0.10 \
+		--version=0.0.11 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signers:
@@ -280,13 +282,13 @@ install-cubesigner-signers:
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.5 \
+		--version=0.1.6 \
 		--values values/tso-service-production.yaml \
 		--wait
 
 install-withdrawal-processor: check-withdrawal-proof-install-inputs
 	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.20 \
+		--version=0.1.21 \
 		--values values/withdrawal-processor-production.yaml \
 		--set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=$(WITHDRAWAL_PROCESSOR_CONFIG) \
 		--set-file 'configMaps.proof-manifests.data.$(PROOF_CHUNK_MANIFEST_KEY)'=$(PROOF_CHUNK_MANIFEST) \
@@ -371,7 +373,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
-	helm delete -n $(NAMESPACE) grafana-alloy || true
+	helm delete -n $(NAMESPACE) scroll-monitor-agent || true
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true

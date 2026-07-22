@@ -1,0 +1,118 @@
+{{- if .Values.prometheusRules.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-dogeos
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    {{- with .Values.prometheusRules.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: dogeos.metrics
+      interval: 1m
+      rules:
+        - alert: EthDASubmitterNotReady
+          expr: max(eth_da_submitter_ready) < 1 or absent(eth_da_submitter_ready)
+          for: 2m
+          labels:
+            severity: critical
+            service: eth-da-submitter
+          annotations:
+            summary: Eth DA submitter readiness is below 1.
+            description: Eth DA submitter is not reporting a ready state.
+
+        - alert: EthDAPublishBacklogStalled
+          expr: max(eth_da_publish_ready_backlog > 0 and eth_da_publish_oldest_ready_age_seconds > 3600) > 0
+          for: 5m
+          labels:
+            severity: critical
+            service: eth-da-submitter
+          annotations:
+            summary: Eth DA has pending publish rows older than one hour.
+            description: Check eth_da_publish_ready_backlog and eth_da_publish_oldest_ready_age_seconds.
+
+        - alert: EthDASubmitterFailures
+          expr: sum(increase(eth_da_submitter_submission_failures_total[10m])) + sum(increase(eth_da_submitter_cycle_failures_total[10m])) + sum(increase(eth_da_submitter_lifecycle_failures_total[10m])) + sum(increase(eth_da_submitter_l2_reorg_failures_total[10m])) + sum(increase(eth_da_publish_canonicality_events_total[10m])) > 0
+          labels:
+            severity: critical
+            service: eth-da-submitter
+          annotations:
+            summary: Eth DA submitter failure counters increased in the last 10 minutes.
+            description: Combined failure increase is {{ "{{ $value }}" }}.
+
+        - alert: WithdrawalInboxWorkerFailures
+          expr: max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures) > 0
+          for: 5m
+          labels:
+            severity: critical
+            service: withdrawal-processor
+          annotations:
+            summary: Withdrawal processor Ethereum DA inbox worker has consecutive failures.
+            description: Maximum consecutive failure count is {{ "{{ $value }}" }}.
+
+        - alert: WithdrawalInboxWorkerStale
+          expr: (time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds) > 900) or absent(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds)
+          for: 5m
+          labels:
+            severity: warning
+            service: withdrawal-processor
+          annotations:
+            summary: Withdrawal processor has not observed an Ethereum DA inbox update recently.
+            description: The last observation is stale or the metric is absent.
+
+        - alert: L1InterfaceNotReady
+          expr: max(l1_interface_service_ready) < 1 or absent(l1_interface_service_ready)
+          for: 2m
+          labels:
+            severity: critical
+            service: l1-interface
+          annotations:
+            summary: Dogecoin L1 interface readiness is below 1.
+            description: The L1 interface is not ready or is not exporting its readiness metric.
+
+        - alert: FeeOracleStale
+          expr: (time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900) or absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
+          for: 5m
+          labels:
+            severity: critical
+            service: fee-oracle
+          annotations:
+            summary: Fee oracle Ethereum DA oracle value has not updated recently.
+            description: The latest computed value is stale or the metric is absent.
+
+        - alert: FeeOracleErrors
+          expr: sum(increase(fee_oracle_updates_failed_total[10m])) + sum(increase(fee_oracle_errors_total[10m])) + sum(increase(fee_oracle_chain_rpc_errors_total[10m])) > 0
+          labels:
+            severity: warning
+            service: fee-oracle
+          annotations:
+            summary: Fee oracle error counters increased in the last 10 minutes.
+            description: Combined failure increase is {{ "{{ $value }}" }}.
+
+        - alert: TSONoRegisteredSigners
+          expr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+          for: 5m
+          labels:
+            severity: critical
+            service: tso-service
+          annotations:
+            summary: TSO has no registered signers.
+            description: TSO reports fewer than one registered signer or the metric is absent.
+
+        - alert: DogecoinIndexerLag
+          expr: clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
+          for: 10m
+          labels:
+            severity: warning
+            service: embedded-dogecoin-indexer
+          annotations:
+            summary: Embedded Dogecoin indexer {{ "{{ $labels.job }}" }} is more than 12 headers behind the node.
+            description: Job {{ "{{ $labels.job }}" }} currently lags by {{ "{{ $value }}" }} blocks.
+{{- end }}

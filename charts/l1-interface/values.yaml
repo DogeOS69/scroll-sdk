@@ -98,6 +98,8 @@ command: ["/usr/local/bin/l1_interface"]
 serviceMonitor:
   main:
     enabled: true
+    labels:
+      release: scroll-sdk
     endpoints:
       - port: http
         scheme: http

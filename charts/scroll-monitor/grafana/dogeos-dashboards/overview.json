@@ -48,7 +48,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Same L2 batch height as seen by each stage of the pipeline: eth-da-submitter publishes it, then it lands in Dogecoin DA and is recognized by the l1-interface and withdrawal-processor protocol state. The gap between the published line and the protocol-state lines is the DA settlement lag.",
       "fieldConfig": {
         "defaults": {
@@ -65,19 +65,19 @@
       "id": 2,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(eth_da_submitter_latest_batch_height)",
           "legendFormat": "eth-da-submitter (published)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_state_l2_batch_height)",
           "legendFormat": "l1-interface (protocol state)",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_state_l2_batch_height)",
           "legendFormat": "withdrawal-processor (protocol state)",
           "refId": "C"
@@ -87,7 +87,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Canonical WF transaction number as tracked by each service's protocol state and replay read-model.",
       "fieldConfig": {
         "defaults": {
@@ -104,19 +104,19 @@
       "id": 3,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_state_wf_tx_number)",
           "legendFormat": "l1-interface (state)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
           "legendFormat": "withdrawal-processor (state)",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number)",
           "legendFormat": "withdrawal-processor (replay)",
           "refId": "C"
@@ -134,7 +134,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Dogecoin block height through the protocol pipeline: the node chain tip, each embedded Dogecoin indexer's synced height, and the height committed by the l1-interface and withdrawal-processor protocol state.",
       "fieldConfig": {
         "defaults": {
@@ -151,25 +151,25 @@
       "id": 5,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(dogecoin_chain_block_height)",
           "legendFormat": "dogecoin-node (chain tip)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
           "legendFormat": "{{job}} (indexer synced)",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number)",
           "legendFormat": "l1-interface (confirmed)",
           "refId": "C"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
           "legendFormat": "withdrawal-processor (confirmed)",
           "refId": "D"
@@ -179,7 +179,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "DogeOS L2 chain height: the indexer chain tip and synced block, plus the latest L2 block eth-da-submitter has published to DA.",
       "fieldConfig": {
         "defaults": {
@@ -196,19 +196,19 @@
       "id": 6,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(indexer_dogeos_latest_block_number)",
           "legendFormat": "l2-indexer (chain tip)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(indexer_dogeos_last_synced_block)",
           "legendFormat": "l2-indexer (synced)",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(eth_da_submitter_latest_l2_block)",
           "legendFormat": "eth-da-submitter (latest L2)",
           "refId": "C"
@@ -226,7 +226,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Ethereum L1 block height: the latest L1 block eth-da-submitter has reached vs. the L1 block the withdrawal-processor DA inbox worker has indexed up to.",
       "fieldConfig": {
         "defaults": {
@@ -243,13 +243,13 @@
       "id": 8,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(eth_da_submitter_latest_l1_block)",
           "legendFormat": "eth-da-submitter (latest L1)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block)",
           "legendFormat": "withdrawal-processor (indexed L1)",
           "refId": "B"
@@ -259,7 +259,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Next withdraw index as tracked by l1-interface and withdrawal-processor protocol state — these should track each other closely.",
       "fieldConfig": {
         "defaults": {
@@ -276,13 +276,13 @@
       "id": 9,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_state_next_withdraw_index)",
           "legendFormat": "l1-interface",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index)",
           "legendFormat": "withdrawal-processor",
           "refId": "B"
@@ -292,7 +292,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "description": "Next relayed deposit index across services, plus the l1-interface replay deposit-queue next index (the leading edge before relay).",
       "fieldConfig": {
         "defaults": {
@@ -309,19 +309,19 @@
       "id": 10,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_deposit_queue_next_index)",
           "legendFormat": "l1-interface (queue next)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(l1_interface_protocol_state_next_relayed_deposit_index)",
           "legendFormat": "l1-interface (relayed)",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index)",
           "legendFormat": "withdrawal-processor (relayed)",
           "refId": "C"
@@ -339,13 +339,13 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
       "gridPos": { "h": 4, "w": 5, "x": 0, "y": 40 },
       "id": 12,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(tso_core_transactions_by_status{status=\"completed\"})",
           "legendFormat": "completed",
           "refId": "A"
@@ -355,13 +355,13 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
       "gridPos": { "h": 4, "w": 5, "x": 5, "y": 40 },
       "id": 13,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(tso_core_registered_signers_count)",
           "legendFormat": "signers",
           "refId": "A"
@@ -371,13 +371,13 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
       "gridPos": { "h": 4, "w": 5, "x": 10, "y": 40 },
       "id": 14,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(dummy_signer_pending_queue_size)",
           "legendFormat": "queue",
           "refId": "A"
@@ -387,13 +387,13 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
       "gridPos": { "h": 4, "w": 4, "x": 15, "y": 40 },
       "id": 15,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max(eth_da_publish_ready_backlog)",
           "legendFormat": "backlog",
           "refId": "A"
@@ -403,13 +403,13 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
       "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
       "gridPos": { "h": 4, "w": 5, "x": 19, "y": 40 },
       "id": 16,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "datasource": { "type": "prometheus", "uid": "scroll-prometheus" },
           "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount) / 1e8",
           "legendFormat": "{{job}}",
           "refId": "A"

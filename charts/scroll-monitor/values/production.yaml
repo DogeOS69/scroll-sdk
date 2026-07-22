@@ -8,15 +8,6 @@ grafana:
     ingressClassName: nginx
     hosts:
       - ""
-
-
-  additionalDataSources:
-    - name: Loki
-      type: loki
-      access: proxy
-      url: http://loki:3100
-      jsonData:
-        maxLines: 5000
   resources:
     requests:
       cpu: 200m
@@ -25,26 +16,18 @@ grafana:
       cpu: 500m
       memory: 1Gi
 
-# Keep bundled dashboards/alerts by default. Production environments can set
-# these false and point grafana.dashboardsConfigMaps / extraConfigmapMounts at
-# externally managed ConfigMaps to update panels without publishing this chart.
+# Keep bundled dashboards and Prometheus rules by default. Production
+# environments can manage the dashboard ConfigMaps separately.
 dashboards:
   bundled:
     enabled: true
-alerts:
-  bundled:
-    enabled: true
+prometheusRules:
+  enabled: true
 
 loki:
   enabled: true
   fullnameOverride: loki
   deploymentMode: SingleBinary
-  persistence:
-    enabled: true
-    accessModes:
-      - ReadWriteOnce
-    size: 10Gi
-    name: loki-pvc
   loki:
     commonConfig:
       replication_factor: 1
@@ -61,6 +44,12 @@ loki:
           schema: v13
   singleBinary:
     replicas: 1
+    persistence:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+      enableStatefulSetAutoDeletePVC: false
     resources:
       requests:
         cpu: 300m
@@ -91,8 +80,16 @@ loki:
   chunksCache:
     enabled: false
 
-promtail:
-  enabled: false
+scroll-monitor-agent:
+  alloy:
+    alloy:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 200m
+        limits:
+          memory: 2Gi
+          cpu: 1000m
 
 kube-prometheus-stack:
   prometheus:
@@ -109,11 +106,11 @@ kube-prometheus-stack:
     config:
       global:
         resolve_timeout: 5m
-        slack_api_url: "" # your webhook url
+        slack_api_url: "" # replace with your Slack webhook URL
       receivers:
       - name: "slack-alerts"
         slack_configs:
-        - channel: "" # your channel name
+        - channel: "" # replace with your channel name
           send_resolved: true
           text: "{{ .CommonAnnotations.description }}"
           title: "{{ .CommonAnnotations.summary }}"

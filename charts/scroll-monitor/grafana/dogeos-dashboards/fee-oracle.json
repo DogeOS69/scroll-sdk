@@ -42,7 +42,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -61,7 +61,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_uptime_seconds)",
           "legendFormat": "uptime",
@@ -74,7 +74,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -93,7 +93,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode) (fee_oracle_active_da_mode == 1)",
           "legendFormat": "{{mode}}",
@@ -109,7 +109,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -128,7 +128,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode) (fee_oracle_ethereum_da_contract_write_mode == 1)",
           "legendFormat": "{{mode}}",
@@ -144,7 +144,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -163,7 +163,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (status) (fee_oracle_ethereum_da_status == 1)",
           "legendFormat": "{{status}}",
@@ -179,7 +179,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -198,7 +198,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_sample_available)",
           "legendFormat": "available",
@@ -211,7 +211,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -230,7 +230,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms) / 1000",
           "legendFormat": "age",
@@ -243,7 +243,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -266,7 +266,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (status, reason) (fee_oracle_ethereum_da_oracle_value_latest_status)",
           "legendFormat": "{{status}}: {{reason}}",
@@ -279,7 +279,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -302,7 +302,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(rate(fee_oracle_ethereum_da_oracle_value_persisted_total[$__rate_interval]))",
           "legendFormat": "persisted",
@@ -311,7 +311,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(rate(fee_oracle_ethereum_da_oracle_value_persisted_degraded_total[$__rate_interval]))",
           "legendFormat": "degraded",
@@ -324,7 +324,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -347,7 +347,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_sample_age_seconds)",
           "legendFormat": "sample_age",
@@ -356,7 +356,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms) / 1000",
           "legendFormat": "oracle_value_age",
@@ -369,7 +369,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -392,7 +392,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_l1_base_fee_per_gas_wei)",
           "legendFormat": "l1_base_fee_per_gas",
@@ -401,7 +401,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei)",
           "legendFormat": "blob_base_fee_per_blob_gas",
@@ -410,7 +410,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_priority_fee_per_gas_wei)",
           "legendFormat": "priority_fee_per_gas",
@@ -423,7 +423,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -446,7 +446,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas)",
           "legendFormat": "base_fee_per_exec_gas",
@@ -455,7 +455,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas)",
           "legendFormat": "blob_base_fee_per_blob_gas",
@@ -468,7 +468,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -491,7 +491,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode) (fee_oracle_ethereum_da_effective_blobs_per_tx)",
           "legendFormat": "{{mode}}",
@@ -504,7 +504,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -527,7 +527,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode, role) (fee_oracle_ethereum_da_cost_per_blob_wei)",
           "legendFormat": "total {{mode}}",
@@ -536,7 +536,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode, role) (fee_oracle_ethereum_da_blob_cost_per_blob_wei)",
           "legendFormat": "blob {{mode}}",
@@ -545,7 +545,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode, role) (fee_oracle_ethereum_da_execution_cost_per_blob_wei)",
           "legendFormat": "execution {{mode}}",
@@ -558,7 +558,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -581,7 +581,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max by (mode, role) (fee_oracle_ethereum_da_cost_per_blob_dogewei)",
           "legendFormat": "{{mode}} ({{role}})",
@@ -594,7 +594,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "description": "Disjoint pending-row buckets observed by the live contract-write lifecycle after its most recent cycle.",
       "fieldConfig": {
@@ -614,7 +614,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_live_pending_in_flight)",
           "legendFormat": "in flight",
@@ -623,7 +623,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_live_pending_unsent)",
           "legendFormat": "unsent",
@@ -632,7 +632,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_live_pending_orphans)",
           "legendFormat": "orphans",
@@ -641,7 +641,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_live_pending_nonce_drift)",
           "legendFormat": "nonce drift",
@@ -650,7 +650,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "max(fee_oracle_live_pending_rbf_eligible)",
           "legendFormat": "RBF eligible",
@@ -663,7 +663,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -682,7 +682,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (outcome) (rate(fee_oracle_live_submits_total[$__rate_interval]))",
           "legendFormat": "{{outcome}}",
@@ -691,7 +691,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(rate(fee_oracle_live_submit_errors_total[$__rate_interval]))",
           "legendFormat": "pre-broadcast error",
@@ -704,7 +704,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -723,7 +723,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (class) (rate(fee_oracle_live_confirmer_total[$__rate_interval]))",
           "legendFormat": "{{class}}",
@@ -736,7 +736,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -755,7 +755,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (phase, result) (rate(fee_oracle_live_recovery_total[$__rate_interval]))",
           "legendFormat": "{{phase}} {{result}}",
@@ -768,7 +768,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -787,7 +787,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (result, kind) (rate(fee_oracle_live_rbf_total[$__rate_interval]))",
           "legendFormat": "{{result}} {{kind}}",

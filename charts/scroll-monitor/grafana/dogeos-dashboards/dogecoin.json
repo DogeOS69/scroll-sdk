@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -104,7 +104,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_synced_headers_total{}",
@@ -120,7 +120,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -200,7 +200,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "avg(dogecoin_difficulty{})",
@@ -216,7 +216,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -281,7 +281,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_errors_total{}",
@@ -297,7 +297,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -377,7 +377,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_chain_block_height{}",
@@ -393,7 +393,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -473,7 +473,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_peer_connections_total{}",
@@ -489,7 +489,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -569,7 +569,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_size_on_disk_bytes{}",
@@ -586,7 +586,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -666,7 +666,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "avg(dogecoin_network_hash_ps{})",
@@ -682,7 +682,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -761,7 +761,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(dogecoin_mempool_bytes_total{}[$__rate_interval]))",
@@ -777,7 +777,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -857,7 +857,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "dogecoin_mempool_size_bytes{}",
@@ -873,7 +873,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -952,7 +952,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(dogecoin_bytes_recv_total{}[$__rate_interval]))",
@@ -968,7 +968,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1048,7 +1048,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(dogecoin_bytes_sent_total{}[$__rate_interval]))",

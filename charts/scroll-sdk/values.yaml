@@ -142,8 +142,8 @@ scroll-monitor:
       hosts:
         - grafana.scrollsdk
   loki:
-    enabled: false
-  promtail:
+    enabled: true
+  scroll-monitor-agent:
     enabled: true
   kube-prometheus-stack:
     enabled: true
