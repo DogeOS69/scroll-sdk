@@ -6,15 +6,7 @@
     {{- end }}
   {{- end }}
 {{- end }}
-{{- $alertsBundledEnabled := true -}}
-{{- with .Values.alerts }}
-  {{- with .bundled }}
-    {{- if hasKey . "enabled" }}
-      {{- $alertsBundledEnabled = .enabled }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-{{- if and .Values.grafana.enabled $dashboardsBundledEnabled }}
+{{- if $dashboardsBundledEnabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -51,17 +43,4 @@ metadata:
     grafana_dashboard: "4"
 data:
 {{ (.Files.Glob "grafana/blockscout-dashboards/*.json").AsConfig | indent 2 }}
-{{- end }}
-{{- if and .Values.grafana.enabled $alertsBundledEnabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-alerts-config
-  labels:
-     grafana_alerts: "5"
-data:
-  provisioned_alerts.yaml: |-
-{{ .Files.Get "grafana/alerts/provisioned_alerts.yaml" | indent 4 }} 
-
 {{- end }}

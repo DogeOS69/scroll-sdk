@@ -1,3 +1,16 @@
+monitoring:
+  datasources:
+    prometheus:
+      name: Prometheus
+      uid: scroll-prometheus
+      url: http://prometheus-prometheus:9090
+    loki:
+      enabled: true
+      name: Loki
+      uid: scroll-loki
+      url: http://loki:3100
+      tenantId: "1"
+
 grafana:
   enabled: true
   fullnameOverride: grafana
@@ -11,37 +24,6 @@ grafana:
   # Prometheus metrics.
   plugins:
     - yesoreyeram-infinity-datasource
-  additionalDataSources:
-    - name: Loki
-      type: loki
-      access: proxy
-      url: http://loki:3100
-      jsonData:
-        maxLines: 5000
-  datasources:
-    datasources.yaml:
-      apiVersion: 1
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          url: http://prometheus-prometheus:9090
-          access: proxy
-          isDefault: true
-          jsonData:
-            timeInterval: 30s
-        - name: Loki
-          type: loki
-          url: http://loki:3100
-          access: proxy
-          jsonData:
-            httpHeaderName1: 'X-Scope-OrgID'
-          secureJsonData:
-            httpHeaderValue1: '1'
-        - name: Infinity
-          type: yesoreyeram-infinity-datasource
-          uid: dogeos-infinity
-          access: proxy
-          isDefault: false
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -91,10 +73,10 @@ grafana:
     hosts:
       - "grafana.scrollsdk"
   extraConfigmapMounts:
-    - name: grafana-alerts
-      mountPath: /etc/grafana/provisioning/alerting/provisioned_alerts.yaml
-      subPath: provisioned_alerts.yaml
-      configMap: grafana-alerts-config
+    - name: grafana-datasources
+      mountPath: /etc/grafana/provisioning/datasources/scroll-datasources.yaml
+      subPath: datasources.yaml
+      configMap: grafana-datasources-config
   persistence:
     enabled: true
     type: pvc
@@ -111,14 +93,14 @@ dashboards:
     # referenced through grafana.dashboardsConfigMaps.
     enabled: true
 
-alerts:
-  bundled:
-    # Set false when Grafana alert provisioning is managed outside this chart
-    # and mounted through grafana.extraConfigmapMounts.
-    enabled: true
+prometheusRules:
+  # Metric alerts are independent of the bundled Grafana instance and can be
+  # consumed by any Prometheus Operator watching this namespace.
+  enabled: true
+  labels: {}
 
 loki:
-  enabled: false
+  enabled: true
   fullnameOverride: loki
   deploymentMode: SingleBinary
   loki:
@@ -157,12 +139,51 @@ loki:
   write:
     replicas: 0
 
-promtail:
+alloy:
   enabled: true
-  config:
-    clients:
-      - url: http://loki:3100/loki/api/v1/push
-        tenant_id: 1
+  logs:
+    enabled: true
+    namespaces: []
+    podLabels: {}
+    loki:
+      url: http://loki:3100/loki/api/v1/push
+      tenantId: "1"
+    l1InterfaceMetrics:
+      enabled: true
+  metrics:
+    otlp:
+      enabled: true
+    prometheusRemoteWrite:
+      url: http://prometheus-prometheus:9090/api/v1/write
+      jobPrefix: scroll-sdk
+  fullnameOverride: grafana-alloy
+  alloy:
+    configMap:
+      create: false
+      name: grafana-alloy-config
+      key: config.alloy
+    clustering:
+      enabled: false
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+    extraPorts:
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+        protocol: TCP
+  controller:
+    type: statefulset
+    replicas: 1
+    autoscaling:
+      enabled: false
+  serviceMonitor:
+    enabled: true
+    interval: 15s
 
 kube-prometheus-stack:
   enabled: true
@@ -171,6 +192,7 @@ kube-prometheus-stack:
   prometheus:
     enabled: true
     prometheusSpec:
+      enableRemoteWriteReceiver: true
       storageSpec:
         volumeClaimTemplate:
           spec:
@@ -188,6 +210,11 @@ kube-prometheus-stack:
         matchExpressions:
           - key: app.kubernetes.io/instance
             operator: Exists
+      # Scope discovery to the Helm release namespace without requiring
+      # monitoring-specific labels on application ServiceMonitors.
+      serviceMonitorNamespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
 
   alertmanager:
     enabled: true

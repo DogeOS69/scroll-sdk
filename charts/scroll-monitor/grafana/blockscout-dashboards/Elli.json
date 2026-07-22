@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -87,7 +87,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_uptime_seconds{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -102,7 +102,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -170,7 +170,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(process_cpu_seconds_total{instance=\"$node\"}[30s])) without (kind) * 100",
           "intervalFactor": 2,
@@ -185,7 +185,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -252,7 +252,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(rate(http_request_duration_microseconds_sum{instance=\"$node\"}[30s]))/sum(rate(http_request_duration_microseconds_count{instance=\"$node\"}[30s]))",
           "intervalFactor": 2,
@@ -266,7 +266,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -333,7 +333,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_requests_total{instance=\"$node\"}[30s])) + sum(irate(http_requests_failed_total{instance=\"$node\"}[30s]))",
           "intervalFactor": 2,
@@ -348,7 +348,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -459,7 +459,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"informational\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"informational\"}[5m]))",
           "hide": false,
@@ -471,7 +471,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"success\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"success\"}[5m]))",
           "intervalFactor": 2,
@@ -483,7 +483,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"redirection\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"redirection\"}[5m]))",
           "intervalFactor": 2,
@@ -494,7 +494,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"client-error\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"client-error\"}[5m]))",
           "intervalFactor": 2,
@@ -505,7 +505,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"server-error\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"server-error\"}[5m]))",
           "intervalFactor": 2,
@@ -516,7 +516,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(http_request_duration_microseconds_sum{instance=\"$node\", status_class=\"unknown\"}[5m]))/sum(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"unknown\"}[5m]))",
           "intervalFactor": 2,
@@ -531,7 +531,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -642,7 +642,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"informational\"}[1m]))",
           "hide": false,
@@ -654,7 +654,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"success\"}[1m]))",
           "hide": false,
@@ -667,7 +667,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"redirection\"}[1m]))",
           "hide": false,
@@ -679,7 +679,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"client-error\"}[1m]))",
           "hide": false,
@@ -691,7 +691,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"server-error\"}[1m]))",
           "hide": false,
@@ -703,7 +703,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (status_class)(irate(http_request_duration_microseconds_count{instance=\"$node\", status_class=\"unknown\"}[1m]))",
           "hide": false,
@@ -715,7 +715,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (reason)(irate(http_requests_failed_total{instance=\"$node\", reason=\"request_closed\"}[1m]))",
           "intervalFactor": 2,
@@ -726,7 +726,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum by (reason)(irate(http_requests_failed_total{instance=\"$node\", reason=\"timeout\"}[1m]))",
           "intervalFactor": 2,
@@ -741,7 +741,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -821,7 +821,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_process_limit{instance=\"$node\"}",
           "hide": true,
@@ -833,7 +833,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_process_count{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -844,7 +844,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_statistics_run_queues_length_total{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -859,7 +859,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -952,7 +952,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_context_switches{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -963,7 +963,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_reductions_total{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -974,7 +974,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_runtime_milliseconds{instance=\"$node\"}[5m])",
           "hide": true,
@@ -990,7 +990,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1070,7 +1070,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_bytes_output_total{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -1082,7 +1082,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_bytes_received_total{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -1098,7 +1098,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1211,7 +1211,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_garbage_collection_number_of_gcs{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -1223,7 +1223,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "irate(erlang_vm_statistics_garbage_collection_bytes_reclaimed{instance=\"$node\"}[5m])",
           "intervalFactor": 2,
@@ -1239,7 +1239,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1319,7 +1319,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_memory_bytes_total{instance=\"$node\", kind=\"processes\"}",
           "intervalFactor": 2,
@@ -1330,7 +1330,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_memory_system_bytes_total{instance=\"$node\", usage=\"atom\"}",
           "intervalFactor": 2,
@@ -1341,7 +1341,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_memory_system_bytes_total{instance=\"$node\", usage=\"binary\"}",
           "intervalFactor": 2,
@@ -1352,7 +1352,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_memory_system_bytes_total{instance=\"$node\", usage=\"code\"}",
           "intervalFactor": 2,
@@ -1363,7 +1363,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_memory_system_bytes_total{instance=\"$node\", usage=\"ets\"}",
           "intervalFactor": 2,
@@ -1378,7 +1378,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1458,7 +1458,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_virtual_memory_bytes{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1469,7 +1469,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_resident_memory_bytes{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1484,7 +1484,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1597,7 +1597,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_open_fds{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1609,7 +1609,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_max_fds{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1620,7 +1620,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_port_limit{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1631,7 +1631,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "erlang_vm_port_count{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1646,7 +1646,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "uid": "scroll-prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -1743,7 +1743,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "process_threads_total{instance=\"$node\"}",
           "intervalFactor": 2,
@@ -1755,7 +1755,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
+            "uid": "scroll-prometheus"
           },
           "expr": "sum(irate(process_cpu_seconds_total{instance=\"$node\"}[30s])) without (kind) * 100",
           "intervalFactor": 2,
@@ -1782,7 +1782,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "PBFA97CFB590B2093"
+          "uid": "scroll-prometheus"
         },
         "definition": "",
         "hide": 0,

@@ -1,0 +1,193 @@
+{{- if .Values.alloy.enabled }}
+{{- $namespaces := .Values.alloy.logs.namespaces -}}
+{{- if not $namespaces -}}
+  {{- $namespaces = list .Release.Namespace -}}
+{{- end -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alloy-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: grafana-alloy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
+data:
+  config.alloy: |-
+    logging {
+      level  = "info"
+      format = "logfmt"
+    }
+
+    {{- if .Values.alloy.logs.enabled }}
+    loki.write "scroll" {
+      endpoint {
+        url       = {{ .Values.alloy.logs.loki.url | quote }}
+        tenant_id = {{ .Values.alloy.logs.loki.tenantId | quote }}
+      }
+    }
+
+    discovery.kubernetes "pods" {
+      role = "pod"
+      namespaces {
+        names = {{ toJson $namespaces }}
+      }
+    }
+
+    discovery.relabel "pod_logs" {
+      targets = discovery.kubernetes.pods.targets
+
+      {{- range $key, $value := .Values.alloy.logs.podLabels }}
+      rule {
+        source_labels = [{{ printf "__meta_kubernetes_pod_label_%s" ($key | replace "." "_" | replace "/" "_" | replace "-" "_") | quote }}]
+        regex         = {{ $value | quote }}
+        action        = "keep"
+      }
+      {{- end }}
+
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+        action        = "replace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+        action        = "replace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+        action        = "replace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "service"
+        action        = "replace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node"
+        action        = "replace"
+      }
+    }
+
+    loki.source.kubernetes "pods" {
+      targets    = discovery.relabel.pod_logs.output
+      forward_to = [loki.process.pod_logs.receiver]
+    }
+
+    loki.process "pod_logs" {
+      {{- if .Values.alloy.logs.l1InterfaceMetrics.enabled }}
+      stage.match {
+        selector = "{service=\"l1-interface\"}"
+
+        stage.json {
+          expressions = {
+            level              = "",
+            component          = "",
+            currentHeight      = "",
+            currentChainHeight = "",
+            balance            = "",
+            queueNumber        = "",
+            depositValue       = "",
+            errors             = "error.name",
+          }
+        }
+        stage.labels {
+          values = {
+            level     = "",
+            component = "",
+            errors    = "",
+          }
+        }
+        stage.metrics {
+          metric.gauge {
+            name        = "current_indexer_height"
+            description = "Current indexer height"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "currentHeight"
+            action      = "set"
+          }
+          metric.gauge {
+            name        = "current_chain_height"
+            description = "Current chain height"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "currentChainHeight"
+            action      = "set"
+          }
+          metric.histogram {
+            name        = "deposit"
+            description = "Deposit value distribution"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "depositValue"
+            buckets     = [1e+12, 1e+15, 1e+16, 1e+17, 1e+18, 1e+19, 1e+20]
+          }
+          metric.histogram {
+            name        = "balance"
+            description = "Deposit balance distribution"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "balance"
+            buckets     = [1e+12, 1e+15, 1e+16, 1e+17, 1e+18, 1e+19, 1e+20]
+          }
+          metric.gauge {
+            name        = "queue_height"
+            description = "Current queue height"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "queueNumber"
+            action      = "set"
+          }
+          metric.counter {
+            name        = "error_total"
+            description = "Total errors"
+            prefix      = "dogeos_deposit_processor_"
+            source      = "errors"
+            action      = "inc"
+          }
+        }
+      }
+      {{- end }}
+
+      stage.static_labels {
+        values = {
+          source = "grafana-alloy",
+        }
+      }
+      forward_to = [loki.write.scroll.receiver]
+    }
+    {{- end }}
+
+    {{- if .Values.alloy.metrics.otlp.enabled }}
+    otelcol.receiver.otlp "scroll" {
+      http {
+        endpoint = "0.0.0.0:4318"
+      }
+      output {
+        metrics = [otelcol.exporter.prometheus.scroll.input]
+      }
+    }
+
+    otelcol.exporter.prometheus "scroll" {
+      forward_to = [prometheus.relabel.scroll.receiver]
+    }
+
+    prometheus.relabel "scroll" {
+      forward_to = [prometheus.remote_write.scroll.receiver]
+      rule {
+        action        = "replace"
+        source_labels = ["job"]
+        regex         = "(.*)/(.*)"
+        replacement   = {{ printf "%s-$1-$2" .Values.alloy.metrics.prometheusRemoteWrite.jobPrefix | quote }}
+        target_label  = "job"
+      }
+    }
+
+    prometheus.remote_write "scroll" {
+      endpoint {
+        url = {{ .Values.alloy.metrics.prometheusRemoteWrite.url | quote }}
+      }
+    }
+    {{- end }}
+{{- end }}

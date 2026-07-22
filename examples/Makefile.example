@@ -61,7 +61,6 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/genesis.yaml \
 	values/protocol_context.yaml \
 	values/l1-interface-production.yaml \
-	values/grafana-alloy-production.yaml \
 	values/metrics-exporter-production.yaml \
 	values/l2-reth-sequencer-production-0.yaml \
 	values/l2-reth-sequencer-production-1.yaml \
@@ -194,7 +193,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.20-dogeos \
+		--version=0.1.21-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:
@@ -207,10 +206,6 @@ install-scroll-core:
 	$(MAKE) install-scroll-monitor
 	$(MAKE) install-scroll-common
 	$(MAKE) install-l1-interface
-
-	helm upgrade -i grafana-alloy grafana/alloy -n $(NAMESPACE) \
-		--version=1.0.2 \
-		--values values/grafana-alloy-production.yaml
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
 		--version=0.1.8 \
@@ -371,7 +366,6 @@ delete-all:
 	helm delete -n $(NAMESPACE) contracts || true
 	helm delete -n $(NAMESPACE) scroll-monitor || true
 	helm delete -n $(NAMESPACE) metrics-exporter || true
-	helm delete -n $(NAMESPACE) grafana-alloy || true
 	helm delete -n $(NAMESPACE) blockscout || true
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true

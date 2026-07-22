@@ -1,8 +1,8 @@
 ---
 apiVersion: v2
-description: helm chart to deploy grafana, prometheus and loki to monitor scroll-sdk
+description: Helm chart to deploy Grafana, Prometheus, Loki, and Alloy for Scroll SDK
 name: scroll-monitor
-version: 0.1.20-dogeos
+version: 0.1.21-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -21,7 +21,7 @@ dependencies:
     repository: "https://prometheus-community.github.io/helm-charts"
     version: 59.0.0
     condition: kube-prometheus-stack.enabled
-  - name: promtail
+  - name: alloy
     repository: "https://grafana.github.io/helm-charts"
-    version: 6.16.5
-    condition: promtail.enabled
+    version: 1.0.2
+    condition: alloy.enabled
