@@ -37,7 +37,7 @@
   "timezone": "",
   "title": "DogeOS Ethereum DA Submitter",
   "uid": "dengy26ra2ry8a",
-  "version": 2,
+  "version": 3,
   "weekStart": "",
   "panels": [
     {
@@ -261,7 +261,7 @@
             "uid": "scroll-prometheus"
           },
           "expr": "max(eth_da_submitter_latest_batch_height)",
-          "legendFormat": "latest_batch_height",
+          "legendFormat": "proposed",
           "refId": "A"
         },
         {
@@ -269,8 +269,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(eth_da_submitter_latest_l1_block)",
-          "legendFormat": "latest_l1_block",
+          "expr": "max(eth_da_submitter_latest_submitted_batch_index)",
+          "legendFormat": "submitted",
           "refId": "B"
         },
         {
@@ -278,12 +278,21 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(eth_da_submitter_latest_l2_block)",
-          "legendFormat": "latest_l2_block",
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_index)",
+          "legendFormat": "confirmed",
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_index)",
+          "legendFormat": "finalized",
+          "refId": "D"
         }
       ],
-      "title": "Heights Progression",
+      "title": "DA Batch Index Frontiers",
       "type": "timeseries"
     },
     {
@@ -1287,6 +1296,125 @@
         }
       ],
       "title": "L2 History Recovery Event Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 64
+      },
+      "id": 29,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_l2_block)",
+          "legendFormat": "L2 indexed",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block)",
+          "legendFormat": "submitted",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block)",
+          "legendFormat": "confirmed",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block)",
+          "legendFormat": "finalized",
+          "refId": "D"
+        }
+      ],
+      "title": "DA Batch L2 End-block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 64
+      },
+      "id": 30,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_l1_block)",
+          "legendFormat": "Ethereum tip",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_ethereum_block)",
+          "legendFormat": "confirmed batch inclusion",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_ethereum_block)",
+          "legendFormat": "finalized batch inclusion",
+          "refId": "C"
+        }
+      ],
+      "title": "Ethereum Block Frontiers",
       "type": "timeseries"
     }
   ]

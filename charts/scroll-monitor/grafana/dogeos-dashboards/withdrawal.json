@@ -36,7 +36,7 @@
   "timezone": "",
   "title": "DogeOS Withdrawal Processor",
   "uid": "fenhqb57bmfpce",
-  "version": 4,
+  "version": 5,
   "weekStart": "",
   "panels": [
     {
@@ -289,8 +289,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
-          "legendFormat": "state_wf_tx_number",
+          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number)",
+          "legendFormat": "replay head",
           "refId": "A"
         },
         {
@@ -298,8 +298,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number)",
-          "legendFormat": "replay_wf_tx_number",
+          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
+          "legendFormat": "protocol state",
           "refId": "B"
         },
         {
@@ -307,30 +307,12 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height)",
-          "legendFormat": "l2_batch_height",
+          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_latest_wf_tx_number)",
+          "legendFormat": "{{action_kind}} / {{status}}",
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "scroll-prometheus"
-          },
-          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index)",
-          "legendFormat": "next_relayed_deposit_index",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "scroll-prometheus"
-          },
-          "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index)",
-          "legendFormat": "next_withdraw_index",
-          "refId": "E"
         }
       ],
-      "title": "Protocol State Progression",
+      "title": "WF Transaction Frontiers",
       "type": "timeseries"
     },
     {
@@ -361,8 +343,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
-          "legendFormat": "dogecoin_confirmed_block",
+          "expr": "max(indexer_dogeos_latest_block_number)",
+          "legendFormat": "L2 RPC tip",
           "refId": "A"
         },
         {
@@ -370,8 +352,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
-          "legendFormat": "{{job}} dogecoin synced height",
+          "expr": "max(indexer_dogeos_last_synced_block)",
+          "legendFormat": "L2 indexer",
           "refId": "B"
         },
         {
@@ -379,8 +361,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(indexer_dogeos_last_synced_block)",
-          "legendFormat": "dogeos_indexer_synced_block",
+          "expr": "max(eth_da_submitter_latest_l2_block)",
+          "legendFormat": "DA submitter indexed",
           "refId": "C"
         },
         {
@@ -388,12 +370,21 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(indexer_dogeos_latest_block_number)",
-          "legendFormat": "dogeos_latest_block",
+          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height)",
+          "legendFormat": "WP DA indexed",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_ending_block_height)",
+          "legendFormat": "WP protocol processed",
+          "refId": "E"
         }
       ],
-      "title": "L1/L2 Block Progression",
+      "title": "L2 Block Frontiers",
       "type": "timeseries"
     },
     {
@@ -1131,8 +1122,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height)",
-          "legendFormat": "latest_da_batch_height",
+          "expr": "max(eth_da_submitter_latest_batch_height)",
+          "legendFormat": "proposed",
           "refId": "A"
         },
         {
@@ -1140,8 +1131,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_l2_starting_block_height)",
-          "legendFormat": "latest_da_l2_start",
+          "expr": "max(eth_da_submitter_latest_submitted_batch_index)",
+          "legendFormat": "submitted",
           "refId": "B"
         },
         {
@@ -1149,8 +1140,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height)",
-          "legendFormat": "latest_da_l2_end",
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_index)",
+          "legendFormat": "confirmed",
           "refId": "C"
         },
         {
@@ -1158,8 +1149,8 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_last_batch_index)",
-          "legendFormat": "l2_bootstrap_last_batch",
+          "expr": "max(eth_da_submitter_latest_finalized_batch_index)",
+          "legendFormat": "finalized",
           "refId": "D"
         },
         {
@@ -1167,12 +1158,30 @@
             "type": "prometheus",
             "uid": "scroll-prometheus"
           },
-          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height)",
-          "legendFormat": "l2_bootstrap_next_start",
+          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height)",
+          "legendFormat": "WP indexed",
           "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_last_batch_index)",
+          "legendFormat": "WP bootstrap processed",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height)",
+          "legendFormat": "WP protocol state",
+          "refId": "G"
         }
       ],
-      "title": "Local DA Batch / L2 Bootstrap Frontier",
+      "title": "DA Batch Index Frontiers",
       "type": "timeseries"
     },
     {
@@ -1736,6 +1745,263 @@
         }
       ],
       "title": "DogeOS L2 Indexer Recovery / Validation Event Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 84
+      },
+      "id": 43,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block)",
+          "legendFormat": "submitted batch",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block)",
+          "legendFormat": "confirmed batch",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block)",
+          "legendFormat": "finalized batch",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height)",
+          "legendFormat": "WP indexed batch",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_ending_block_height)",
+          "legendFormat": "WP processed state",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "clamp_min(max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height) - 1, 0)",
+          "legendFormat": "WP bootstrap processed",
+          "refId": "F"
+        }
+      ],
+      "title": "Batch L2 End-block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 84
+      },
+      "id": 44,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_l1_block)",
+          "legendFormat": "Ethereum tip observed by submitter",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_ethereum_block)",
+          "legendFormat": "latest confirmed batch inclusion",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_ethereum_block)",
+          "legendFormat": "latest finalized batch inclusion",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block)",
+          "legendFormat": "WP inbox indexed",
+          "refId": "D"
+        }
+      ],
+      "title": "Ethereum Block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 92
+      },
+      "id": 45,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_item_count)",
+          "legendFormat": "{{proof_family}} / {{phase}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Proof Work Items by Stage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 92
+      },
+      "id": 46,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_oldest_age_seconds{status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable|failed_terminal\"})",
+          "legendFormat": "{{proof_family}} / {{phase}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Oldest Active Proof Work Age",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "id": 47,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "sum by (status) (tso_core_transactions_by_status)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "TSO Transactions by Status",
       "type": "timeseries"
     }
   ]

@@ -311,6 +311,198 @@
       ],
       "title": "Dogecoin Block Processing Duration by Job (summary)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 9,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(dogecoin_synced_headers_total)",
+          "legendFormat": "Dogecoin node tip",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(indexer_dogecoin_last_synced_block)",
+          "legendFormat": "deposit indexer",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number)",
+          "legendFormat": "L1 interface processed",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
+          "legendFormat": "withdrawal processor state",
+          "refId": "D"
+        }
+      ],
+      "title": "Deposit: Dogecoin Block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 20
+      },
+      "id": 10,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_replay_discovered_up_to)",
+          "legendFormat": "discovered",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_replay_validated_up_to)",
+          "legendFormat": "validated",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_state_wf_tx_number)",
+          "legendFormat": "L1 interface state",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
+          "legendFormat": "withdrawal processor state",
+          "refId": "D"
+        }
+      ],
+      "title": "Deposit: WF Transaction Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "scroll-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 20
+      },
+      "id": 11,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_deposit_queue_covered_message_count)",
+          "legendFormat": "covered deposits",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_deposit_queue_next_index)",
+          "legendFormat": "replay queue next",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(l1_interface_protocol_state_next_relayed_deposit_index)",
+          "legendFormat": "L1 interface relayed next",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "scroll-prometheus"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index)",
+          "legendFormat": "withdrawal processor relayed next",
+          "refId": "D"
+        }
+      ],
+      "title": "Deposit: Queue Index Frontiers",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -331,6 +523,6 @@
   "timezone": "",
   "title": "DogeOS Dogecoin L1 Indexer",
   "uid": "cen2jvuipspa8e",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
