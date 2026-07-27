@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "Operations-first dashboard for the eight DogeOS Kubernetes services, combining fleet health, resource saturation, native application metrics, business frontiers, and logs without fabricating telemetry for uninstrumented binaries.",
+  "description": "Operations-first dashboard for the DogeOS services and Scroll L2 Reth fleet, combining Kubernetes health, resource saturation, native application metrics, business frontiers, and logs without fabricating telemetry for uninstrumented binaries.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -78,7 +78,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Runtime scope\n\nThis dashboard intentionally tracks the eight deployed services:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, ETH DA submitter, and fee oracle.\n\n**Exporter-backed:** Dogecoin.\n\n**Kubernetes + Loki only:** proof coordinator and CubeSigner signer. Their current binaries expose no Prometheus endpoint, so this dashboard does not invent application metrics for them. The dashboard selectors also accept numbered signer and fee-oracle workload variants.",
+        "content": "### Runtime scope\n\nThis dashboard tracks the DogeOS application services plus all Scroll L2 Reth workloads:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n- `l2-reth-sequencer-0/1`\n- `l2-reth-bootnode-0/1`\n- `l2-reth-rpc` and `l2-reth-rpc-public`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, ETH DA submitter, fee oracle, and Scroll L2 Reth.\n\n**Exporter-backed:** Dogecoin.\n\n**Kubernetes + Loki only:** proof coordinator and CubeSigner signer. Their current binaries expose no Prometheus endpoint, so this dashboard does not invent application metrics for them. Use the dedicated `reth` folder for rollup-node application metrics and node-to-node comparison.",
         "mode": "markdown"
       },
       "title": "Coverage and metric ownership",
@@ -3232,14 +3232,14 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(kube_pod_container_info{container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin\"}, namespace)",
+        "definition": "label_values(kube_pod_container_info{container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin|l2-reth-(sequencer|bootnode)-[0-9]+|l2-reth-rpc(-public)?\"}, namespace)",
         "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "namespace",
         "options": [],
         "query": {
-          "query": "label_values(kube_pod_container_info{container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin\"}, namespace)",
+          "query": "label_values(kube_pod_container_info{container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin|l2-reth-(sequencer|bootnode)-[0-9]+|l2-reth-rpc(-public)?\"}, namespace)",
           "refId": "PrometheusVariableQueryEditor-namespace"
         },
         "refresh": 1,
@@ -3259,14 +3259,14 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(kube_pod_container_info{namespace=~\"$namespace\",container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin\"}, container)",
+        "definition": "label_values(kube_pod_container_info{namespace=~\"$namespace\",container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin|l2-reth-(sequencer|bootnode)-[0-9]+|l2-reth-rpc(-public)?\"}, container)",
         "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "service",
         "options": [],
         "query": {
-          "query": "label_values(kube_pod_container_info{namespace=~\"$namespace\",container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin\"}, container)",
+          "query": "label_values(kube_pod_container_info{namespace=~\"$namespace\",container=~\"tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin|l2-reth-(sequencer|bootnode)-[0-9]+|l2-reth-rpc(-public)?\"}, container)",
           "refId": "PrometheusVariableQueryEditor-service"
         },
         "refresh": 2,

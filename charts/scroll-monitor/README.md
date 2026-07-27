@@ -71,6 +71,25 @@ Embedded indexer queries are additionally constrained to their owning service
 job so identically named metrics from `l1-interface` and
 `withdrawal-processor` are not merged accidentally.
 
+The dedicated `reth` folder monitors the six Scroll L2 rollup-node workloads
+deployed by the production example: two sequencers, two bootnodes, the internal
+RPC service, and the public RPC service. Use **Scroll L2 Reth Fleet** for
+multi-node health, chain-height divergence, derivation/L1-watcher progress,
+resources, and logs. The other five dashboards are intended for a single-pod
+drill-down.
+
+The drill-down dashboards are Kubernetes adaptations of the official
+`scroll-tech/rollup-node` dashboards at tag `v1.0.7-rc6` (commit
+`bc3d5006c41b38cc442ebe92d1afc4285fc43ca1`), matching the rollup-node image
+version used by the production values. The import is pinned and reproducible:
+
+```shell
+node charts/scroll-monitor/scripts/import-rollup-node-dashboards.mjs
+```
+
+Upstream source:
+<https://github.com/scroll-tech/rollup-node/tree/v1.0.7-rc6/docker-compose/resource/dashboards>
+
 ## Discovery boundaries
 
 Prometheus selects Helm-managed ServiceMonitors in its own namespace. This

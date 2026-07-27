@@ -48,6 +48,15 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/dogeos/
+        - name: 'reth'
+          orgId: 1
+          folder: 'reth'
+          type: file
+          disableDeletion: false
+          allowUiUpdates: true
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/reth/
         - name: 'blockscout'
           orgId: 1
           folder: 'blockscout'
@@ -61,6 +70,7 @@ grafana:
     scroll: grafana-scroll-dashboards
     kubernetes: grafana-kubernetes-dashboards
     dogeos: grafana-dogeos-dashboards
+    reth: grafana-reth-dashboards
     blockscout: grafana-blockscout-dashboards
   ingress:
     enabled: true
