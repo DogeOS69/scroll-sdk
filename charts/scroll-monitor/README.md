@@ -50,7 +50,26 @@ The provisioned datasource UIDs are stable:
 
 - Prometheus: `scroll-prometheus`
 - Loki: `scroll-loki`
-- Infinity: `dogeos-infinity`
+
+The bundled DogeOS dashboards are scoped to the services deployed by the
+production stack:
+
+| Dashboard coverage | Services | Source |
+| --- | --- | --- |
+| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `eth-da-submitter`, `fee-oracle-0` | Prometheus ServiceMonitor |
+| Exporter-backed application metrics | `dogecoin` | Prometheus metrics exporter |
+| Runtime health and logs | `proof-coordinator`, `cubesigner-signer` | kube-state-metrics, cAdvisor, and Loki |
+
+`proof-coordinator` and `cubesigner-signer` do not currently expose a
+Prometheus endpoint. The operations overview deliberately uses Kubernetes
+readiness, restarts, resource saturation, and logs for them instead of showing
+nonexistent application metrics. Proof queue depth and age remain visible from
+the `withdrawal-processor`, which owns and exports those work-item gauges.
+
+All service dashboards provide Prometheus datasource and namespace variables.
+Embedded indexer queries are additionally constrained to their owning service
+job so identically named metrics from `l1-interface` and
+`withdrawal-processor` are not merged accidentally.
 
 ## Discovery boundaries
 
