@@ -199,3 +199,35 @@ eth_da_submitter_lifecycle_batch_chunks{quantile="0.999"} 0.9998999999999999
 eth_da_submitter_lifecycle_batch_chunks{quantile="1"} 1
 eth_da_submitter_lifecycle_batch_chunks_sum 228
 eth_da_submitter_lifecycle_batch_chunks_count 228
+
+# HELP eth_da_submitter_latest_submitted_batch_index Highest DA batch index submitted to Ethereum
+# TYPE eth_da_submitter_latest_submitted_batch_index gauge
+eth_da_submitter_latest_submitted_batch_index 13471
+
+# HELP eth_da_submitter_latest_submitted_batch_l2_end_block Ending L2 block of the highest submitted DA batch
+# TYPE eth_da_submitter_latest_submitted_batch_l2_end_block gauge
+eth_da_submitter_latest_submitted_batch_l2_end_block 4409100
+
+# HELP eth_da_submitter_latest_confirmed_batch_index Highest DA batch index confirmed on Ethereum
+# TYPE eth_da_submitter_latest_confirmed_batch_index gauge
+eth_da_submitter_latest_confirmed_batch_index 13469
+
+# HELP eth_da_submitter_latest_confirmed_batch_l2_end_block Ending L2 block of the highest confirmed DA batch
+# TYPE eth_da_submitter_latest_confirmed_batch_l2_end_block gauge
+eth_da_submitter_latest_confirmed_batch_l2_end_block 4408900
+
+# HELP eth_da_submitter_latest_confirmed_batch_ethereum_block Ethereum block containing the highest confirmed DA batch
+# TYPE eth_da_submitter_latest_confirmed_batch_ethereum_block gauge
+eth_da_submitter_latest_confirmed_batch_ethereum_block 149040
+
+# HELP eth_da_submitter_latest_finalized_batch_index Highest DA batch index finalized on Ethereum
+# TYPE eth_da_submitter_latest_finalized_batch_index gauge
+eth_da_submitter_latest_finalized_batch_index 13460
+
+# HELP eth_da_submitter_latest_finalized_batch_l2_end_block Ending L2 block of the highest finalized DA batch
+# TYPE eth_da_submitter_latest_finalized_batch_l2_end_block gauge
+eth_da_submitter_latest_finalized_batch_l2_end_block 4408000
+
+# HELP eth_da_submitter_latest_finalized_batch_ethereum_block Ethereum block containing the highest finalized DA batch
+# TYPE eth_da_submitter_latest_finalized_batch_ethereum_block gauge
+eth_da_submitter_latest_finalized_batch_ethereum_block 148900

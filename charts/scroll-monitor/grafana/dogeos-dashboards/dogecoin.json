@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -104,10 +104,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_synced_headers_total{}",
+          "expr": "dogecoin_synced_headers_total{namespace=~\"$namespace\"}",
           "interval": "",
           "legendFormat": "header",
           "range": true,
@@ -120,7 +120,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -200,10 +200,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg(dogecoin_difficulty{})",
+          "expr": "avg(dogecoin_difficulty{namespace=~\"$namespace\"})",
           "interval": "",
           "legendFormat": "difficulty",
           "range": true,
@@ -216,7 +216,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -281,10 +281,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_errors_total{}",
+          "expr": "dogecoin_errors_total{namespace=~\"$namespace\"}",
           "interval": "",
           "legendFormat": "cumulative errors",
           "range": true,
@@ -297,7 +297,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -377,10 +377,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_chain_block_height{}",
+          "expr": "dogecoin_chain_block_height{namespace=~\"$namespace\"}",
           "interval": "",
           "legendFormat": "height",
           "range": true,
@@ -393,7 +393,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -473,10 +473,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_peer_connections_total{}",
+          "expr": "dogecoin_peer_connections_total{namespace=~\"$namespace\"}",
           "interval": "",
           "legendFormat": "peers",
           "range": true,
@@ -489,7 +489,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -569,10 +569,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_size_on_disk_bytes{}",
+          "expr": "dogecoin_size_on_disk_bytes{namespace=~\"$namespace\"}",
           "instant": true,
           "interval": "",
           "legendFormat": "size_on_disk_bytes",
@@ -586,7 +586,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -666,10 +666,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg(dogecoin_network_hash_ps{})",
+          "expr": "avg(dogecoin_network_hash_ps{namespace=~\"$namespace\"})",
           "interval": "",
           "legendFormat": "avg hash ps",
           "range": true,
@@ -682,7 +682,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -761,10 +761,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_mempool_bytes_total{}[$__rate_interval]))",
+          "expr": "sum(rate(dogecoin_mempool_bytes_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "interval": "",
           "legendFormat": "total bytes rate",
           "range": true,
@@ -777,7 +777,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -857,10 +857,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_mempool_size_bytes{}",
+          "expr": "dogecoin_mempool_size_bytes{namespace=~\"$namespace\"}",
           "interval": "",
           "legendFormat": "size bytes",
           "range": true,
@@ -873,7 +873,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -952,10 +952,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_bytes_recv_total{}[$__rate_interval]))",
+          "expr": "sum(rate(dogecoin_bytes_recv_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "interval": "",
           "legendFormat": "bytes received per second",
           "range": true,
@@ -968,7 +968,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1048,10 +1048,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_bytes_sent_total{}[$__rate_interval]))",
+          "expr": "sum(rate(dogecoin_bytes_sent_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "interval": "",
           "legendFormat": "bytes sent per second",
           "range": true,
@@ -1063,18 +1063,79 @@
     }
   ],
   "schemaVersion": 39,
-  "tags": [],
+  "tags": [
+    "dogeos",
+    "service",
+    "dogecoin"
+  ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "Prometheus",
+          "value": "scroll-prometheus"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kube_pod_container_info{container=~\"dogecoin\"}, namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "query": "label_values(kube_pod_container_info{container=~\"dogecoin\"}, namespace)",
+          "refId": "PrometheusVariableQueryEditor-namespace"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
   "timezone": "browser",
-  "title": "Dogecoin L1 Node",
+  "title": "DogeOS Dogecoin Node",
   "uid": "aen2u88pbyy2oa",
-  "version": 1,
-  "weekStart": ""
+  "version": 2,
+  "weekStart": "",
+  "description": "Dogecoin node chain, peer, mempool, storage, network, and error telemetry exported by the metrics-exporter integration.",
+  "refresh": "30s"
 }

@@ -33,9 +33,4 @@ data:
         secureJsonData:
           httpHeaderValue1: {{ .Values.monitoring.datasources.loki.tenantId | quote }}
       {{- end }}
-      - name: Infinity
-        uid: dogeos-infinity
-        type: yesoreyeram-infinity-datasource
-        access: proxy
-        isDefault: false
 {{- end }}

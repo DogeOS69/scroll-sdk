@@ -363,3 +363,20 @@ withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_ki
 withdrawal_processor_protocol_dispatch_duration_seconds{phase="normal",action_kind="advance_l1_build",outcome="dispatched",quantile="1"} 0.090972996
 withdrawal_processor_protocol_dispatch_duration_seconds_sum{phase="normal",action_kind="advance_l1_build",outcome="dispatched"} 0.713182259
 withdrawal_processor_protocol_dispatch_duration_seconds_count{phase="normal",action_kind="advance_l1_build",outcome="dispatched"} 8
+
+# HELP withdrawal_processor_protocol_job_latest_wf_tx_number Highest target WF transaction number represented by a protocol job, by action kind and status
+# TYPE withdrawal_processor_protocol_job_latest_wf_tx_number gauge
+withdrawal_processor_protocol_job_latest_wf_tx_number{status="queued",action_kind="advance_l2_build"} 143
+withdrawal_processor_protocol_job_latest_wf_tx_number{status="building",action_kind="advance_l2_build"} 142
+withdrawal_processor_protocol_job_latest_wf_tx_number{status="completed",action_kind="advance_l2_build"} 141
+
+# HELP withdrawal_processor_proof_work_item_count Durable proof work item count by bounded proof family, phase, and status
+# TYPE withdrawal_processor_proof_work_item_count gauge
+withdrawal_processor_proof_work_item_count{proof_family="scroll_batch",phase="materialize",status="succeeded"} 141
+withdrawal_processor_proof_work_item_count{proof_family="scroll_batch",phase="prove",status="running"} 1
+withdrawal_processor_proof_work_item_count{proof_family="scroll_batch",phase="verify",status="pending"} 2
+
+# HELP withdrawal_processor_proof_work_oldest_age_seconds Age of the oldest durable proof work item by bounded proof family, phase, and status
+# TYPE withdrawal_processor_proof_work_oldest_age_seconds gauge
+withdrawal_processor_proof_work_oldest_age_seconds{proof_family="scroll_batch",phase="prove",status="running"} 38
+withdrawal_processor_proof_work_oldest_age_seconds{proof_family="scroll_batch",phase="verify",status="pending"} 12

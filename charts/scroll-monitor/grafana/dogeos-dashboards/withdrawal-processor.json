@@ -23,26 +23,82 @@
   "schemaVersion": 39,
   "tags": [
     "dogeos",
+    "service",
     "withdrawal-processor"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "Prometheus",
+          "value": "scroll-prometheus"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kube_pod_container_info{container=~\"withdrawal-processor\"}, namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "query": "label_values(kube_pod_container_info{container=~\"withdrawal-processor\"}, namespace)",
+          "refId": "PrometheusVariableQueryEditor-namespace"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
   "timezone": "",
   "title": "DogeOS Withdrawal Processor",
   "uid": "fenhqb57bmfpce",
-  "version": 4,
+  "version": 6,
   "weekStart": "",
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -66,9 +122,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
+          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
           "legendFormat": "wf_tx",
           "refId": "A"
         }
@@ -79,7 +135,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -103,9 +159,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number)",
+          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"})",
           "legendFormat": "replay_wf_tx",
           "refId": "A"
         }
@@ -116,7 +172,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -140,9 +196,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
+          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"})",
           "legendFormat": "block",
           "refId": "A"
         }
@@ -153,7 +209,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -177,9 +233,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height)",
+          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
           "legendFormat": "batch",
           "refId": "A"
         }
@@ -190,7 +246,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -214,9 +270,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index)",
+          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
           "legendFormat": "deposit",
           "refId": "A"
         }
@@ -227,7 +283,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -251,9 +307,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index)",
+          "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
           "legendFormat": "withdraw",
           "refId": "A"
         }
@@ -264,7 +320,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -287,56 +343,38 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number)",
-          "legendFormat": "state_wf_tx_number",
+          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"})",
+          "legendFormat": "replay head",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number)",
-          "legendFormat": "replay_wf_tx_number",
+          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
+          "legendFormat": "protocol state",
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height)",
-          "legendFormat": "l2_batch_height",
+          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_latest_wf_tx_number{namespace=~\"$namespace\"})",
+          "legendFormat": "{{action_kind}} / {{status}}",
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "scroll-prometheus"
-          },
-          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index)",
-          "legendFormat": "next_relayed_deposit_index",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "scroll-prometheus"
-          },
-          "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index)",
-          "legendFormat": "next_withdraw_index",
-          "refId": "E"
         }
       ],
-      "title": "Protocol State Progression",
+      "title": "WF Transaction Frontiers",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -359,47 +397,56 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number)",
-          "legendFormat": "dogecoin_confirmed_block",
+          "expr": "max(indexer_dogeos_latest_block_number{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
+          "legendFormat": "L2 RPC tip",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (job) (indexer_dogecoin_last_synced_block)",
-          "legendFormat": "{{job}} dogecoin synced height",
+          "expr": "max(indexer_dogeos_last_synced_block{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
+          "legendFormat": "L2 indexer",
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(indexer_dogeos_last_synced_block)",
-          "legendFormat": "dogeos_indexer_synced_block",
+          "expr": "max(eth_da_submitter_latest_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "DA submitter indexed",
           "refId": "C"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(indexer_dogeos_latest_block_number)",
-          "legendFormat": "dogeos_latest_block",
+          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP DA indexed",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_ending_block_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP protocol processed",
+          "refId": "E"
         }
       ],
-      "title": "L1/L2 Block Progression",
+      "title": "L2 Block Frontiers",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -449,9 +496,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (role, key_hash) (withdrawal_processor_protocol_replay_bridge_key_info)",
+          "expr": "max by (role, key_hash) (withdrawal_processor_protocol_replay_bridge_key_info{namespace=~\"$namespace\"})",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -481,7 +528,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -500,9 +547,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number)",
+          "expr": "max(withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number{namespace=~\"$namespace\"})",
           "instant": true,
           "legendFormat": "wf_tx",
           "refId": "B"
@@ -514,7 +561,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -537,9 +584,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum by (status, action_kind) (withdrawal_processor_protocol_job_count{status!~\"completed|failed_terminal\"})",
+          "expr": "sum by (status, action_kind) (withdrawal_processor_protocol_job_count{namespace=~\"$namespace\",status!~\"completed|failed_terminal\"})",
           "legendFormat": "{{status}} {{action_kind}}",
           "refId": "A"
         }
@@ -550,7 +597,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -573,9 +620,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_count{status=~\"completed|failed_terminal\"})",
+          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_count{namespace=~\"$namespace\",status=~\"completed|failed_terminal\"})",
           "legendFormat": "{{status}} {{action_kind}}",
           "refId": "A"
         }
@@ -586,7 +633,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -609,9 +656,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds) > 0",
+          "expr": "max by (status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{namespace=~\"$namespace\"}) > 0",
           "legendFormat": "{{status}} {{action_kind}}",
           "refId": "A"
         }
@@ -622,7 +669,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -645,18 +692,18 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (outcome) (withdrawal_processor_protocol_tick_duration_seconds{quantile=\"0.99\"})",
+          "expr": "max by (outcome) (withdrawal_processor_protocol_tick_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
           "legendFormat": "p99 {{outcome}}",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (outcome) (withdrawal_processor_protocol_tick_duration_seconds{quantile=\"0.5\"})",
+          "expr": "max by (outcome) (withdrawal_processor_protocol_tick_duration_seconds{namespace=~\"$namespace\",quantile=\"0.5\"})",
           "legendFormat": "p50 {{outcome}}",
           "refId": "B"
         }
@@ -667,7 +714,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -690,9 +737,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (action_kind, outcome) (withdrawal_processor_protocol_planner_duration_seconds{quantile=\"0.99\"})",
+          "expr": "max by (action_kind, outcome) (withdrawal_processor_protocol_planner_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
           "legendFormat": "p99 {{action_kind}} {{outcome}}",
           "refId": "A"
         }
@@ -703,7 +750,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -726,9 +773,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (phase, action_kind, outcome) (withdrawal_processor_protocol_dispatch_duration_seconds{quantile=\"0.99\"})",
+          "expr": "max by (phase, action_kind, outcome) (withdrawal_processor_protocol_dispatch_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
           "legendFormat": "p99 {{phase}} {{action_kind}} {{outcome}}",
           "refId": "A"
         }
@@ -739,7 +786,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -762,18 +809,18 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (outcome) (withdrawal_processor_protocol_replay_advance_duration_seconds{quantile=\"0.99\"})",
+          "expr": "max by (outcome) (withdrawal_processor_protocol_replay_advance_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
           "legendFormat": "p99 {{outcome}}",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (outcome) (withdrawal_processor_protocol_replay_advance_duration_seconds{quantile=\"0.5\"})",
+          "expr": "max by (outcome) (withdrawal_processor_protocol_replay_advance_duration_seconds{namespace=~\"$namespace\",quantile=\"0.5\"})",
           "legendFormat": "p50 {{outcome}}",
           "refId": "B"
         }
@@ -784,7 +831,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -807,9 +854,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (payload_type) (withdrawal_processor_protocol_wf_event_count)",
+          "expr": "max by (payload_type) (withdrawal_processor_protocol_wf_event_count{namespace=~\"$namespace\"})",
           "legendFormat": "{{payload_type}}",
           "refId": "A"
         }
@@ -820,7 +867,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -843,18 +890,18 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status) (withdrawal_processor_protocol_deposit_count)",
+          "expr": "max by (status) (withdrawal_processor_protocol_deposit_count{namespace=~\"$namespace\"})",
           "legendFormat": "count {{status}}",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status) (withdrawal_processor_protocol_deposit_amount_sats) / 1e8",
+          "expr": "max by (status) (withdrawal_processor_protocol_deposit_amount_sats{namespace=~\"$namespace\"}) / 1e8",
           "legendFormat": "DOGE {{status}}",
           "refId": "B"
         }
@@ -865,7 +912,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -888,18 +935,18 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status) (withdrawal_processor_protocol_withdrawal_count)",
+          "expr": "max by (status) (withdrawal_processor_protocol_withdrawal_count{namespace=~\"$namespace\"})",
           "legendFormat": "count {{status}}",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (status) (withdrawal_processor_protocol_withdrawal_amount_sats) / 1e8",
+          "expr": "max by (status) (withdrawal_processor_protocol_withdrawal_amount_sats{namespace=~\"$namespace\"}) / 1e8",
           "legendFormat": "DOGE {{status}}",
           "refId": "B"
         }
@@ -910,7 +957,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -929,9 +976,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_tso_handoff_recovery_enabled)",
+          "expr": "max(withdrawal_processor_tso_handoff_recovery_enabled{namespace=~\"$namespace\"})",
           "legendFormat": "enabled",
           "refId": "A"
         }
@@ -942,7 +989,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -961,9 +1008,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_tso_handoff_recovery_age_probe_ok)",
+          "expr": "max(withdrawal_processor_tso_handoff_recovery_age_probe_ok{namespace=~\"$namespace\"})",
           "legendFormat": "probe_ok",
           "refId": "A"
         }
@@ -974,7 +1021,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -993,9 +1040,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_tso_handoff_recovery_blocked_age_seconds)",
+          "expr": "max(withdrawal_processor_tso_handoff_recovery_blocked_age_seconds{namespace=~\"$namespace\"})",
           "legendFormat": "age",
           "refId": "A"
         }
@@ -1006,7 +1053,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1025,9 +1072,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount) / 1e8",
+          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}) / 1e8",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -1038,7 +1085,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1057,9 +1104,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height)",
+          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
           "legendFormat": "batch",
           "refId": "A"
         }
@@ -1070,7 +1117,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1093,9 +1140,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum by (source) (rate(withdrawal_processor_protocol_metrics_scrape_errors_total[$__rate_interval]))",
+          "expr": "sum by (source) (rate(withdrawal_processor_protocol_metrics_scrape_errors_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "legendFormat": "{{source}}",
           "refId": "A"
         }
@@ -1106,7 +1153,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1129,56 +1176,74 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height)",
-          "legendFormat": "latest_da_batch_height",
+          "expr": "max(eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "proposed",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_l2_starting_block_height)",
-          "legendFormat": "latest_da_l2_start",
+          "expr": "max(eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "submitted",
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height)",
-          "legendFormat": "latest_da_l2_end",
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "confirmed",
           "refId": "C"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_last_batch_index)",
-          "legendFormat": "l2_bootstrap_last_batch",
+          "expr": "max(eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "finalized",
           "refId": "D"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height)",
-          "legendFormat": "l2_bootstrap_next_start",
+          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP indexed",
           "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_l2_bootstrap_last_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "WP bootstrap processed",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP protocol state",
+          "refId": "G"
         }
       ],
-      "title": "Local DA Batch / L2 Bootstrap Frontier",
+      "title": "DA Batch Index Frontiers",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1197,9 +1262,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_eth_da_inbox_worker_enabled)",
+          "expr": "max(withdrawal_processor_eth_da_inbox_worker_enabled{namespace=~\"$namespace\"})",
           "legendFormat": "enabled",
           "refId": "A"
         }
@@ -1210,7 +1275,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1229,9 +1294,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block)",
+          "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block{namespace=~\"$namespace\"})",
           "legendFormat": "block",
           "refId": "A"
         }
@@ -1242,7 +1307,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1261,9 +1326,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds)",
+          "expr": "time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds{namespace=~\"$namespace\"})",
           "legendFormat": "age",
           "refId": "A"
         }
@@ -1274,7 +1339,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1293,9 +1358,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "time() - max(withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds)",
+          "expr": "time() - max(withdrawal_processor_eth_da_inbox_worker_last_status_pump_timestamp_seconds{namespace=~\"$namespace\"})",
           "legendFormat": "age",
           "refId": "A"
         }
@@ -1306,7 +1371,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1325,9 +1390,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (source) (withdrawal_processor_eth_da_inbox_worker_consecutive_failures)",
+          "expr": "max by (source) (withdrawal_processor_eth_da_inbox_worker_consecutive_failures{namespace=~\"$namespace\"})",
           "legendFormat": "{{source}}",
           "refId": "A"
         }
@@ -1338,7 +1403,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1361,9 +1426,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (finality) (withdrawal_processor_eth_da_inbox_worker_finality_rows)",
+          "expr": "max by (finality) (withdrawal_processor_eth_da_inbox_worker_finality_rows{namespace=~\"$namespace\"})",
           "legendFormat": "{{finality}}",
           "refId": "A"
         }
@@ -1374,7 +1439,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1397,9 +1462,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (kind) (withdrawal_processor_eth_da_inbox_worker_lifetime_rejections)",
+          "expr": "max by (kind) (withdrawal_processor_eth_da_inbox_worker_lifetime_rejections{namespace=~\"$namespace\"})",
           "legendFormat": "{{kind}}",
           "refId": "A"
         }
@@ -1410,7 +1475,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1433,9 +1498,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum by (outcome) (rate(withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total[$__rate_interval]))",
+          "expr": "sum by (outcome) (rate(withdrawal_processor_eth_da_inbox_worker_status_pump_probes_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "legendFormat": "{{outcome}}",
           "refId": "A"
         }
@@ -1446,7 +1511,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1469,9 +1534,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (kind) (eth_da_blob_source_providers_active)",
+          "expr": "max by (kind) (eth_da_blob_source_providers_active{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
           "legendFormat": "{{kind}}",
           "refId": "A"
         }
@@ -1482,7 +1547,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1505,18 +1570,18 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum by (provider, outcome) (rate(eth_da_blob_provider_requests_total[$__rate_interval]))",
+          "expr": "sum by (provider, outcome) (rate(eth_da_blob_provider_requests_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "rate {{provider}} {{outcome}}",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max by (provider) (eth_da_blob_provider_request_duration_seconds{quantile=\"0.99\"})",
+          "expr": "max by (provider) (eth_da_blob_provider_request_duration_seconds{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\",quantile=\"0.99\"})",
           "legendFormat": "p99 latency {{provider}}",
           "refId": "B"
         }
@@ -1527,7 +1592,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1550,9 +1615,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum by (event, outcome) (rate(eth_da_blob_cache_events_total[$__rate_interval]))",
+          "expr": "sum by (event, outcome) (rate(eth_da_blob_cache_events_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "{{event}} {{outcome}}",
           "refId": "A"
         }
@@ -1563,7 +1628,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "description": "DogeOS L2 indexer ingestion state: 0 initializing, 1 ready, 2 recovering, 3 provider unstable, 4 blocked.",
       "fieldConfig": {
@@ -1605,9 +1670,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(indexer_dogeos_ingestion_status)",
+          "expr": "max(indexer_dogeos_ingestion_status{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
           "legendFormat": "ingestion state",
           "refId": "A"
         }
@@ -1618,7 +1683,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1637,9 +1702,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(indexer_dogeos_last_reorg_depth)",
+          "expr": "max(indexer_dogeos_last_reorg_depth{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
           "legendFormat": "blocks",
           "refId": "A"
         }
@@ -1650,7 +1715,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1669,9 +1734,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "max(dogeos_max_message_queue_index)",
+          "expr": "max(dogeos_max_message_queue_index{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"})",
           "legendFormat": "message queue index",
           "refId": "A"
         }
@@ -1682,7 +1747,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "scroll-prometheus"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1701,42 +1766,300 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum(rate(indexer_dogeos_reorg_recovered_total[$__rate_interval]))",
+          "expr": "sum(rate(indexer_dogeos_reorg_recovered_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "reorg recovered",
           "refId": "A"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum(rate(indexer_dogeos_ingestion_blocked_total[$__rate_interval]))",
+          "expr": "sum(rate(indexer_dogeos_ingestion_blocked_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "ingestion blocked",
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum(rate(indexer_dogeos_unmatched_append_message_total[$__rate_interval]))",
+          "expr": "sum(rate(indexer_dogeos_unmatched_append_message_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "unmatched append message",
           "refId": "C"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "scroll-prometheus"
+            "uid": "${datasource}"
           },
-          "expr": "sum(rate(dogeos_unsupported_envelope_version_total[$__rate_interval]))",
+          "expr": "sum(rate(dogeos_unsupported_envelope_version_total{namespace=~\"$namespace\",job=~\".*withdrawal-processor.*\"}[$__rate_interval]))",
           "legendFormat": "unsupported envelope version",
           "refId": "D"
         }
       ],
       "title": "DogeOS L2 Indexer Recovery / Validation Event Rate",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 84
+      },
+      "id": 43,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "submitted batch",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "confirmed batch",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "finalized batch",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_latest_da_l2_ending_block_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP indexed batch",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_ending_block_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP processed state",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "clamp_min(max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height{namespace=~\"$namespace\"}) - 1, 0)",
+          "legendFormat": "WP bootstrap processed",
+          "refId": "F"
+        }
+      ],
+      "title": "Batch L2 End-block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 84
+      },
+      "id": 44,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_l1_block{namespace=~\"$namespace\"})",
+          "legendFormat": "Ethereum tip observed by submitter",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_ethereum_block{namespace=~\"$namespace\"})",
+          "legendFormat": "latest confirmed batch inclusion",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_ethereum_block{namespace=~\"$namespace\"})",
+          "legendFormat": "latest finalized batch inclusion",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_eth_da_inbox_worker_last_indexed_l1_block{namespace=~\"$namespace\"})",
+          "legendFormat": "WP inbox indexed",
+          "refId": "D"
+        }
+      ],
+      "title": "Ethereum Block Frontiers",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 92
+      },
+      "id": 45,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_item_count{namespace=~\"$namespace\"})",
+          "legendFormat": "{{proof_family}} / {{phase}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Proof Work Items by Stage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 92
+      },
+      "id": 46,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable|failed_terminal\"})",
+          "legendFormat": "{{proof_family}} / {{phase}} / {{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Oldest Active Proof Work Age",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "id": 47,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (status) (tso_core_transactions_by_status{namespace=~\"$namespace\"})",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "TSO Transactions by Status",
+      "type": "timeseries"
     }
-  ]
+  ],
+  "description": "Withdrawal processor protocol state, job queues, replay, proof-work, DA inbox, embedded indexers, and TSO handoff telemetry."
 }
