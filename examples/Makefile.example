@@ -1,56 +1,14 @@
 NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
-PROOF_COORDINATOR_CONFIG ?= proof-coordinator/ProofCoordinator.toml
-WITHDRAWAL_PROCESSOR_CONFIG ?= withdrawal-processor/WithdrawalProcessor.toml
-PROOF_STATEMENT_NAMESPACE_CONFIG ?= proof-artifacts/manifests/statement-namespace.json
-# One switch selects release-artifact proving or the e2e_harness-compatible
-# deterministic mock lane. Values: production | mock.
-PROVING_MODE ?= production
-# Stable credential-free public GET root for proof objects. The external worker
-# reads inputs and partner signers read accepted proofs below the same root.
-PROOF_ARTIFACT_BASE_URL ?=
+WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.20
 # AWS provisioning inputs for `make proof-aws-init` (S3 bucket, IRSA roles,
 # bearer-token secret). All three are required by that target.
 AWS_REGION ?=
 EKS_CLUSTER ?=
 NETWORK_ALIAS ?=
 PROOF_AWS_INIT_FLAGS ?=
-# Extra scrollsdk setup proof-config flags, e.g.:
-#   --enable-withdrawal-proof      flip withdrawalProof.enabled after staging
-PROOF_CONFIG_FLAGS ?=
-ifeq ($(PROVING_MODE),mock)
-PROOF_CONFIG_INPUTS =
-PROOF_CHUNK_MANIFEST ?= proof-artifacts/mock-manifests/scroll-chunk-topology-program.json
-PROOF_BATCH_MANIFEST ?= proof-artifacts/mock-manifests/scroll-batch-topology-program.json
-PROOF_BRIDGE_MANIFEST ?= proof-artifacts/mock-manifests/bridge-topology-program.json
-PROOF_CHUNK_MANIFEST_KEY := scroll-chunk-topology-program\.json
-PROOF_BATCH_MANIFEST_KEY := scroll-batch-topology-program\.json
-PROOF_BRIDGE_MANIFEST_KEY := bridge-topology-program\.json
-else
-PROOF_CONFIG_INPUTS = \
-	proof-artifacts/release.json \
-	proof-artifacts/manifests/scroll-chunk.json \
-	proof-artifacts/manifests/scroll-batch.json \
-	proof-artifacts/manifests/bridge-transition.json
-PROOF_CHUNK_MANIFEST ?= proof-artifacts/manifests/scroll-chunk.json
-PROOF_BATCH_MANIFEST ?= proof-artifacts/manifests/scroll-batch.json
-PROOF_BRIDGE_MANIFEST ?= proof-artifacts/manifests/bridge-transition.json
-PROOF_CHUNK_MANIFEST_KEY := scroll-chunk\.json
-PROOF_BATCH_MANIFEST_KEY := scroll-batch\.json
-PROOF_BRIDGE_MANIFEST_KEY := bridge-transition\.json
-endif
-WITHDRAWAL_PROOF_INSTALL_INPUTS = \
-	$(WITHDRAWAL_PROCESSOR_CONFIG) \
-	$(PROOF_CHUNK_MANIFEST) \
-	$(PROOF_BATCH_MANIFEST) \
-	$(PROOF_BRIDGE_MANIFEST)
-PROOF_COORDINATOR_INSTALL_INPUTS = \
-	$(PROOF_COORDINATOR_CONFIG) \
-	$(PROOF_CHUNK_MANIFEST) \
-	$(PROOF_BATCH_MANIFEST) \
-	$(PROOF_BRIDGE_MANIFEST) \
-	$(PROOF_STATEMENT_NAMESPACE_CONFIG)
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.2
@@ -76,8 +34,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/cubesigner-signer-production-0.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
-	$(WITHDRAWAL_PROCESSOR_CONFIG) \
-	values/proof-coordinator-production.yaml \
+	withdrawal-processor/WithdrawalProcessor.toml \
 	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
@@ -85,8 +42,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) \
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
-.PHONY: prepare proof-aws-init proof-config check-proof-config-inputs \
-	check-withdrawal-proof-install-inputs check-proof-coordinator-install-inputs \
+.PHONY: prepare proof-aws-init proof-config check-proof-deployment \
 	install-dogecoin install-celestia install-scroll-core \
 	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
@@ -105,45 +61,10 @@ prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
 
-# Standard proof release layout. With these names the CLI needs no path flags.
-check-proof-config-inputs:
-ifneq ($(strip $(PROOF_CONFIG_INPUTS)),)
-	@set -eu; \
-	missing=""; \
-	for file in $(PROOF_CONFIG_INPUTS); do \
-		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
-	done; \
-	if [ -n "$$missing" ]; then \
-		printf 'proof-config requires release files that are currently missing:%b\n' "$$missing" >&2; \
-		exit 1; \
-	fi
-endif
-
-check-withdrawal-proof-install-inputs:
-	@set -eu; \
-	missing=""; \
-	for file in $(WITHDRAWAL_PROOF_INSTALL_INPUTS); do \
-		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
-	done; \
-	if [ -n "$$missing" ]; then \
-		printf 'withdrawal-processor proof install requires files that are currently missing:%b\nRun make proof-config first.\n' "$$missing" >&2; \
-		exit 1; \
-	fi
-
-check-proof-coordinator-install-inputs:
-	@set -eu; \
-	missing=""; \
-	for file in $(PROOF_COORDINATOR_INSTALL_INPUTS); do \
-		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
-	done; \
-	if [ -n "$$missing" ]; then \
-		printf 'proof-coordinator install requires files that are currently missing:%b\nRun make proof-config first.\n' "$$missing" >&2; \
-		exit 1; \
-	fi
-
 # Provision the AWS side of the proof system (S3 bucket, IRSA IAM roles,
 # proof-work/prover-worker token secret) and project the results into
-# values/. Run once before proof-config; idempotent afterwards.
+# values/. Run before selecting mock/production; disabled mode does not need it.
+# The command is idempotent afterwards.
 proof-aws-init:
 	@test -n "$(AWS_REGION)" -a -n "$(EKS_CLUSTER)" -a -n "$(NETWORK_ALIAS)" || { \
 		echo 'Set AWS_REGION, EKS_CLUSTER, and NETWORK_ALIAS for proof-aws-init' >&2; \
@@ -156,14 +77,11 @@ proof-aws-init:
 		--namespace $(NAMESPACE) \
 		$(PROOF_AWS_INIT_FLAGS)
 
-proof-config: check-proof-config-inputs
-	@test -n "$(PROOF_ARTIFACT_BASE_URL)" || { \
-		echo 'Set PROOF_ARTIFACT_BASE_URL to the public proof-object GET root (https://...)' >&2; \
-		exit 1; \
-	}
-	scrollsdk setup proof-config \
-		--proving-mode $(PROVING_MODE) \
-		--proof-artifact-base-url $(PROOF_ARTIFACT_BASE_URL) $(PROOF_CONFIG_FLAGS)
+proof-config:
+	scrollsdk setup proof-config --deployment-dir .
+
+check-proof-deployment:
+	scrollsdk setup proof-config-check --deployment-dir .
 
 install-dogecoin:
 	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
@@ -279,24 +197,21 @@ install-tso:
 		--values values/tso-service-production.yaml \
 		--wait
 
-install-withdrawal-processor: check-withdrawal-proof-install-inputs
-	helm upgrade -i withdrawal-processor oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor -n $(NAMESPACE) \
-		--version=0.1.20 \
-		--values values/withdrawal-processor-production.yaml \
-		--set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=$(WITHDRAWAL_PROCESSOR_CONFIG) \
-		--set-file 'configMaps.proof-manifests.data.$(PROOF_CHUNK_MANIFEST_KEY)'=$(PROOF_CHUNK_MANIFEST) \
-		--set-file 'configMaps.proof-manifests.data.$(PROOF_BATCH_MANIFEST_KEY)'=$(PROOF_BATCH_MANIFEST) \
-		--set-file 'configMaps.proof-manifests.data.$(PROOF_BRIDGE_MANIFEST_KEY)'=$(PROOF_BRIDGE_MANIFEST)
+install-withdrawal-processor: check-proof-deployment
+	scrollsdk helper proof-helm \
+		--component withdrawal-processor \
+		--release withdrawal-processor \
+		--chart $(WITHDRAWAL_PROCESSOR_CHART) \
+		--version $(WITHDRAWAL_PROCESSOR_CHART_VERSION) \
+		--namespace $(NAMESPACE)
 
-install-proof-coordinator: check-proof-coordinator-install-inputs
-	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
+install-proof-coordinator: check-proof-deployment
+	scrollsdk helper proof-helm \
+		--component proof-coordinator \
+		--release proof-coordinator \
+		--chart $(PROOF_COORDINATOR_CHART) \
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
-		--values values/proof-coordinator-production.yaml \
-		--set-file proofCoordinator.config.content=$(PROOF_COORDINATOR_CONFIG) \
-		--set-file 'configMaps.manifests.data.$(PROOF_CHUNK_MANIFEST_KEY)'=$(PROOF_CHUNK_MANIFEST) \
-		--set-file 'configMaps.manifests.data.$(PROOF_BATCH_MANIFEST_KEY)'=$(PROOF_BATCH_MANIFEST) \
-		--set-file 'configMaps.manifests.data.$(PROOF_BRIDGE_MANIFEST_KEY)'=$(PROOF_BRIDGE_MANIFEST) \
-		--set-file 'configMaps.manifests.data.statement-namespace\.json'=$(PROOF_STATEMENT_NAMESPACE_CONFIG)
+		--namespace $(NAMESPACE)
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
@@ -349,8 +264,8 @@ install-all: check-install-all-values
 	$(MAKE) install-eth-da-submitter
 	$(MAKE) install-fee-oracle
 	$(MAKE) install-cubesigner-signers
+	$(MAKE) check-proof-deployment
 	$(MAKE) install-tso
-	$(MAKE) proof-config
 	$(MAKE) install-withdrawal-processor
 	$(MAKE) install-proof-coordinator
 	$(MAKE) install-blockscout

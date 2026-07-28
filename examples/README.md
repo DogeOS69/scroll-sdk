@@ -68,13 +68,13 @@ proof-artifacts/
     └── bridge-transition.json
 
 proof-coordinator/
-└── ProofCoordinator.toml
+└── ProofCoordinator.toml                      (mock/production only)
 
 withdrawal-processor/
 └── WithdrawalProcessor.toml                  (native app config; TOML-owned)
 
 values/
-├── proof-coordinator-production.yaml
+├── proof-coordinator-production.yaml          (mock/production only)
 ├── tso-service-production.yaml
 └── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
 
@@ -82,24 +82,45 @@ prover-worker-mock/
 └── docker-compose/                            (generated only in mock mode)
 ```
 
-The proof-related Makefile variables are:
+The proof posture is selected once during setup, not in Make:
+
+```bash
+# Proof system off; attestation-signer uses direct-sign/dev_permissive policy.
+scrollsdk setup proof-config --deployment-dir . --mode disabled
+
+# Complete deterministic mock proof lifecycle.
+scrollsdk setup proof-config --deployment-dir . --mode mock \
+  --proof-artifact-base-url https://proofs.example.com/proof-topology
+
+# Production-enforced proof lifecycle (supported, but validate separately).
+scrollsdk setup proof-config --deployment-dir . --mode production \
+  --proof-artifact-base-url https://proofs.example.com/proof-topology
+```
+
+Setup persists the chosen mode in `.data/doge-config.toml` and writes
+`.data/proof-deployment.json`. That contract records the enabled components,
+values files, dynamic Helm `--set-file` bindings, checksums, signer posture,
+and mock-worker bundle identity. The Makefile does not interpret proof modes;
+its install targets validate and consume the contract through `scrollsdk`.
+
+The remaining proof-related Makefile variables are:
 
 | variable | purpose |
 |---|---|
-| `PROVING_MODE` | `production` or the e2e-harness-compatible `mock` lane |
-| `PROOF_ARTIFACT_BASE_URL` | credential-free HTTP(S) GET root used by proof consumers |
-| `PROOF_CONFIG_FLAGS` | optional extra `scrollsdk setup proof-config` flags |
 | `AWS_REGION`, `EKS_CLUSTER`, `NETWORK_ALIAS` | required AWS/EKS inputs for `proof-aws-init` |
 | `PROOF_AWS_INIT_FLAGS` | optional extra `proof-aws-init` flags |
-| `PROOF_COORDINATOR_CONFIG` | native coordinator TOML passed to Helm with `--set-file` |
-| `WITHDRAWAL_PROCESSOR_CONFIG` | native withdrawal-processor TOML passed to Helm with `--set-file` |
+| `PROOF_COORDINATOR_CHART`, `PROOF_COORDINATOR_CHART_VERSION` | proof-coordinator chart selection |
+| `WITHDRAWAL_PROCESSOR_CHART`, `WITHDRAWAL_PROCESSOR_CHART_VERSION` | withdrawal-processor chart selection |
 
 The corresponding targets are `make proof-aws-init`, `make proof-config`,
-`make install-withdrawal-processor`, `make install-proof-coordinator`, and
-`make install-tso`. The Makefile is the executable chart interface; it is not
-the deployment runbook.
+`make check-proof-deployment`, `make install-withdrawal-processor`,
+`make install-proof-coordinator`, and `make install-tso`. `make proof-config`
+is only a convenience wrapper that reuses the mode already persisted by setup;
+`install-all` deliberately does not rerun setup. In disabled mode the Helm
+adapter installs the withdrawal processor with proof runtime disabled and
+skips proof-coordinator cleanly.
 
 For the authoritative end-to-end order, partner descriptor/policy handoff,
-activation gates, mock-versus-production behavior, and lifecycle acceptance,
+three-state behavior, partner handoff, and lifecycle acceptance,
 follow the
 [DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).
