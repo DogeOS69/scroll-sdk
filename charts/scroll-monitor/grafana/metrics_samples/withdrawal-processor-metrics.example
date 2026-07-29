@@ -43,6 +43,14 @@ withdrawal_processor_protocol_state_next_fulfilled_withdraw_index 37
 # TYPE withdrawal_processor_protocol_state_unfulfilled_withdrawal_count gauge
 withdrawal_processor_protocol_state_unfulfilled_withdrawal_count 13047
 
+# HELP withdrawal_processor_advance_l2_l2_end_block Highest L2 ending block represented by a current AdvanceL2 job at each durable processing stage
+# TYPE withdrawal_processor_advance_l2_l2_end_block gauge
+withdrawal_processor_advance_l2_l2_end_block{stage="planned"} 5364900
+withdrawal_processor_advance_l2_l2_end_block{stage="built"} 5364800
+withdrawal_processor_advance_l2_l2_end_block{stage="proposed_to_tso"} 5364700
+withdrawal_processor_advance_l2_l2_end_block{stage="broadcast"} 5364600
+withdrawal_processor_advance_l2_l2_end_block{stage="completed"} 5364500
+
 # HELP withdrawal_processor_withdrawal_fulfilled_through_l2_block Conservative L2 block frontier through which every canonical withdrawal is replay-confirmed fulfilled
 # TYPE withdrawal_processor_withdrawal_fulfilled_through_l2_block gauge
 withdrawal_processor_withdrawal_fulfilled_through_l2_block 5299999

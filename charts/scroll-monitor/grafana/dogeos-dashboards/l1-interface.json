@@ -1758,6 +1758,44 @@
       ],
       "title": "Service Startup Duration",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Highest L2 ending block observed by the in-process AdvanceL2 replay path at the detected and validated stages. These gauges reset when the replay state is reset or unconfigured.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 80
+      },
+      "id": 45,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (stage) (l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{stage}}",
+          "refId": "A"
+        }
+      ],
+      "title": "AdvanceL2 L2 End-block Frontiers",
+      "type": "timeseries"
     }
   ],
   "description": "L1 interface service readiness, protocol/replay state, Ethereum-compatible RPC, database, embedded Dogecoin indexer, and DA blob-provider telemetry."

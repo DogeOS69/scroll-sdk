@@ -1863,6 +1863,7 @@
         "x": 0,
         "y": 84
       },
+      "description": "End-to-end L2 batch boundary from DA publication through the withdrawal-processor durable AdvanceL2 stages and the l1-interface replay detected/validated stages.",
       "id": 43,
       "targets": [
         {
@@ -1918,9 +1919,27 @@
           "expr": "clamp_min(max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height{namespace=~\"$namespace\"}) - 1, 0)",
           "legendFormat": "WP bootstrap processed",
           "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (stage) (withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "WP {{stage}}",
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (stage) (l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "L1 interface {{stage}}",
+          "refId": "H"
         }
       ],
-      "title": "Batch L2 End-block Frontiers",
+      "title": "Batch / AdvanceL2 End-block Frontiers",
       "type": "timeseries"
     },
     {
