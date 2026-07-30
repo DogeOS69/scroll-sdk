@@ -302,6 +302,7 @@
         "x": 20,
         "y": 0
       },
+      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and their difference is the acknowledged unfulfilled backlog.",
       "id": 6,
       "targets": [
         {
@@ -310,11 +311,29 @@
             "uid": "${datasource}"
           },
           "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "withdraw",
+          "legendFormat": "acknowledged next index",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"})",
+          "legendFormat": "fulfilled next index",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"})",
+          "legendFormat": "unfulfilled backlog",
+          "refId": "C"
         }
       ],
-      "title": "Next Withdraw Index",
+      "title": "Withdrawal Queue State",
       "type": "timeseries"
     },
     {
@@ -392,6 +411,7 @@
         "x": 8,
         "y": 8
       },
+      "description": "End-to-end L2 block frontiers. For a withdrawal created in block M, withdrawals fulfilled through >= M means every canonical withdrawal in M and earlier is replay-confirmed fulfilled. Oldest unfulfilled is 0 when there is no acknowledged backlog.",
       "id": 8,
       "targets": [
         {
@@ -438,6 +458,24 @@
           "expr": "max(withdrawal_processor_protocol_state_l2_ending_block_height{namespace=~\"$namespace\"})",
           "legendFormat": "WP protocol processed",
           "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "withdrawals fulfilled through",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "oldest unfulfilled withdrawal",
+          "refId": "G"
         }
       ],
       "title": "L2 Block Frontiers",
@@ -1825,6 +1863,7 @@
         "x": 0,
         "y": 84
       },
+      "description": "End-to-end L2 batch boundary from DA publication through the withdrawal-processor durable AdvanceL2 stages and the l1-interface replay detected/validated stages.",
       "id": 43,
       "targets": [
         {
@@ -1880,9 +1919,27 @@
           "expr": "clamp_min(max(withdrawal_processor_protocol_l2_bootstrap_next_starting_block_height{namespace=~\"$namespace\"}) - 1, 0)",
           "legendFormat": "WP bootstrap processed",
           "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (stage) (withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "WP {{stage}}",
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (stage) (l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "L1 interface {{stage}}",
+          "refId": "H"
         }
       ],
-      "title": "Batch L2 End-block Frontiers",
+      "title": "Batch / AdvanceL2 End-block Frontiers",
       "type": "timeseries"
     },
     {

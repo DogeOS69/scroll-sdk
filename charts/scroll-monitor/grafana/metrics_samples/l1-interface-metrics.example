@@ -49,6 +49,11 @@ l1_interface_genesis_mode_active 0
 # TYPE l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number gauge
 l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number 0
 
+# HELP l1_interface_advance_l2_l2_end_block Highest L2 ending block reached by the L1 Interface AdvanceL2 replay path at each in-process stage
+# TYPE l1_interface_advance_l2_l2_end_block gauge
+l1_interface_advance_l2_l2_end_block{stage="detected"} 5364400
+l1_interface_advance_l2_l2_end_block{stage="validated"} 5364300
+
 # HELP l1_interface_protocol_replay_configured Whether L1 Interface has replay_read enabled with a replay SQLite path configured
 # TYPE l1_interface_protocol_replay_configured gauge
 l1_interface_protocol_replay_configured 1
