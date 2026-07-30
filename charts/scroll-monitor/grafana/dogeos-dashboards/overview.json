@@ -1647,7 +1647,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 35
       },
@@ -1712,7 +1712,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "L2 batch index across publication, discovery, and protocol-state consumers.",
+      "description": "L2 batch index across proposal, Ethereum settlement, discovery, and protocol-state consumers.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1764,8 +1764,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 35
       },
       "id": 25,
@@ -1790,7 +1790,7 @@
             "uid": "${datasource}"
           },
           "expr": "max(eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "eth-da-submitter · published",
+          "legendFormat": "DA · proposed",
           "refId": "A"
         },
         {
@@ -1798,8 +1798,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawal-processor · latest DA",
+          "expr": "max(eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · submitted",
           "refId": "B"
         },
         {
@@ -1807,8 +1807,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "l1-interface · protocol",
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · confirmed",
           "refId": "C"
         },
         {
@@ -1816,12 +1816,183 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawal-processor · protocol",
+          "expr": "max(eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · finalized",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP · indexed",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(l1_interface_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "L1I · protocol",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "WP · protocol",
+          "refId": "G"
         }
       ],
       "title": "L2 Batch Pipeline",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Selected comparable L2 ending-block frontiers from DA settlement through durable AdvanceL2 processing, replay validation, and withdrawal fulfillment. Use the service dashboards for every intermediate stage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 35
+      },
+      "id": 42,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · submitted",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · confirmed",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "DA · finalized",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"completed\"})",
+          "legendFormat": "WP · completed",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"validated\"})",
+          "legendFormat": "L1I · validated",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "withdrawals · fulfilled through",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "withdrawals · oldest unfulfilled",
+          "refId": "G"
+        }
+      ],
+      "title": "L2 End-block Frontiers",
       "type": "timeseries"
     },
     {
@@ -1881,7 +2052,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 43
       },
@@ -1946,7 +2117,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Deposit and withdrawal queue indices. Compare like-for-like series within each domain.",
+      "description": "Deposit queue discovery and relayed cursors across the two protocol consumers.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1998,8 +2169,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 43
       },
       "id": 27,
@@ -2044,15 +2215,96 @@
           "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
           "legendFormat": "deposit · withdrawal-processor relayed",
           "refId": "C"
+        }
+      ],
+      "title": "Deposit Queue Indices",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and the backlog is their difference.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 43
+      },
+      "id": 43,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
           "expr": "max(l1_interface_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "withdraw · l1-interface next",
-          "refId": "D"
+          "legendFormat": "L1I · acknowledged next",
+          "refId": "A"
         },
         {
           "datasource": {
@@ -2060,11 +2312,29 @@
             "uid": "${datasource}"
           },
           "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "withdraw · withdrawal-processor next",
-          "refId": "E"
+          "legendFormat": "WP · acknowledged next",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"})",
+          "legendFormat": "WP · fulfilled next",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"})",
+          "legendFormat": "WP · unfulfilled backlog",
+          "refId": "D"
         }
       ],
-      "title": "Bridge Message Indices",
+      "title": "Withdrawal Queue State",
       "type": "timeseries"
     },
     {
@@ -3322,6 +3592,6 @@
   "timezone": "browser",
   "title": "DogeOS Service Operations",
   "uid": "dogeos-overview",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
