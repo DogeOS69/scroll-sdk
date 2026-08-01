@@ -43,7 +43,20 @@ service:
     annotations: {}
 
 probes:
+  startup:
+    enabled: true
+    spec:
+      periodSeconds: 10
+      failureThreshold: 720
+      timeoutSeconds: 1
+  liveness:
+    enabled: true
+    spec:
+      periodSeconds: 20
+      timeoutSeconds: 3
+      failureThreshold: 6
   readiness:
+    enabled: true
     spec:
       periodSeconds: 30
       timeoutSeconds: 12
