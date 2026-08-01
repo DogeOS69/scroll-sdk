@@ -404,34 +404,63 @@ main:
 {{- end -}}
 
 {{- define "l2-reth.probes" -}}
-{{- $readinessSpec := omit (deepCopy .Values.probes.readiness.spec) "exec" "tcpSocket" "httpGet" "grpc" -}}
-{{- $curlTimeoutSeconds := max 1 (sub (int $readinessSpec.timeoutSeconds) 1) -}}
+{{- range $probeName := list "startup" "liveness" "readiness" -}}
+  {{- $probe := index $.Values.probes $probeName -}}
+  {{- $handlers := pick (default (dict) $probe.spec) "exec" "tcpSocket" "httpGet" "grpc" -}}
+  {{- if gt (len $handlers) 1 -}}
+    {{- fail (printf "probes.%s.spec must configure at most one of exec, tcpSocket, httpGet, or grpc" $probeName) -}}
+  {{- end -}}
+{{- end -}}
+{{- $startupSpec := deepCopy .Values.probes.startup.spec -}}
+{{- $startupHandlers := pick $startupSpec "exec" "tcpSocket" "httpGet" "grpc" -}}
+{{- $livenessSpec := deepCopy .Values.probes.liveness.spec -}}
+{{- $livenessHandlers := pick $livenessSpec "exec" "tcpSocket" "httpGet" "grpc" -}}
+{{- $readinessSpec := deepCopy .Values.probes.readiness.spec -}}
+{{- $readinessHandlers := pick $readinessSpec "exec" "tcpSocket" "httpGet" "grpc" -}}
+{{- $curlTimeoutSeconds := max 1 (sub (int (default 3 $readinessSpec.timeoutSeconds)) 1) -}}
 startup:
-  enabled: true
+  enabled: {{ .Values.probes.startup.enabled }}
   custom: true
   spec:
+{{- if $startupHandlers }}
+{{ toYaml $startupSpec | nindent 4 }}
+{{- else }}
     tcpSocket:
       port: {{ .Values.reth.ports.http }}
-    periodSeconds: 10
-    failureThreshold: 720
-    timeoutSeconds: 1
+{{ toYaml (omit $startupSpec "exec" "tcpSocket" "httpGet" "grpc") | nindent 4 }}
+{{- end }}
 liveness:
-  enabled: true
+  enabled: {{ .Values.probes.liveness.enabled }}
   custom: true
   spec:
+{{- if $livenessHandlers }}
+{{ toYaml $livenessSpec | nindent 4 }}
+{{- else }}
     tcpSocket:
       port: {{ .Values.reth.ports.http }}
-    periodSeconds: 20
-    timeoutSeconds: 3
-    failureThreshold: 6
+{{ toYaml (omit $livenessSpec "exec" "tcpSocket" "httpGet" "grpc") | nindent 4 }}
+{{- end }}
 readiness:
   enabled: {{ .Values.probes.readiness.enabled }}
   custom: true
   spec:
-{{- if eq .Values.role "bootnode" }}
+{{- if $readinessHandlers }}
+{{ toYaml $readinessSpec | nindent 4 }}
+{{- else if eq .Values.role "bootnode" }}
     tcpSocket:
       port: {{ .Values.reth.ports.p2p }}
-{{- else }}
+{{- else if eq .Values.role "rpc" }}
+    exec:
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          resp="$(curl -fsS -m {{ $curlTimeoutSeconds }} \
+            -H 'Content-Type: application/json' \
+            --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+            http://127.0.0.1:{{ .Values.reth.ports.http }})"
+          printf '%s' "$resp" | grep -Eq '"result"[[:space:]]*:[[:space:]]*"0x[0-9a-fA-F]+"'
+{{- else if eq .Values.role "sequencer" }}
     exec:
       command:
         - /bin/sh
@@ -444,5 +473,7 @@ readiness:
           printf '%s' "$resp" | grep -Fq '"result":{"l1":{"status":"Synced"'
           printf '%s' "$resp" | grep -Fq '"l2":{"status":"Synced"'
 {{- end }}
-{{ toYaml $readinessSpec | nindent 4 }}
+{{- if not $readinessHandlers }}
+{{ toYaml (omit $readinessSpec "exec" "tcpSocket" "httpGet" "grpc") | nindent 4 }}
+{{- end }}
 {{- end -}}
