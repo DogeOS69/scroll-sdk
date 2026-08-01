@@ -42,6 +42,13 @@ service:
     type: ClusterIP
     annotations: {}
 
+probes:
+  readiness:
+    spec:
+      periodSeconds: 30
+      timeoutSeconds: 12
+      failureThreshold: 3
+
 reth:
   networkId: "4444444"
   l1Url: http://l1-interface:8545
@@ -136,14 +143,6 @@ reth:
     p2p:
       enabled: false
     extra: {}
-
-  readinessProbe:
-    # Maximum time allowed for the rollupNode_status RPC used by non-bootnode
-    # readiness checks. Keep this below timeoutSeconds so curl can exit cleanly.
-    rollupNodeStatusTimeoutSeconds: 10
-    periodSeconds: 30
-    timeoutSeconds: 12
-    failureThreshold: 3
 
 ingress: {}
 serviceMonitor: {}

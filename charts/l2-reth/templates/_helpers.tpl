@@ -404,6 +404,8 @@ main:
 {{- end -}}
 
 {{- define "l2-reth.probes" -}}
+{{- $readinessSpec := omit (deepCopy .Values.probes.readiness.spec) "exec" "tcpSocket" "httpGet" "grpc" -}}
+{{- $curlTimeoutSeconds := max 1 (sub (int $readinessSpec.timeoutSeconds) 1) -}}
 startup:
   enabled: true
   custom: true
@@ -423,7 +425,7 @@ liveness:
     timeoutSeconds: 3
     failureThreshold: 6
 readiness:
-  enabled: true
+  enabled: {{ .Values.probes.readiness.enabled }}
   custom: true
   spec:
 {{- if eq .Values.role "bootnode" }}
@@ -435,14 +437,12 @@ readiness:
         - /bin/sh
         - -ec
         - |
-          resp="$(curl -fsS -m {{ .Values.reth.readinessProbe.rollupNodeStatusTimeoutSeconds }} \
+          resp="$(curl -fsS -m {{ $curlTimeoutSeconds }} \
             -H 'Content-Type: application/json' \
             --data '{"jsonrpc":"2.0","method":"rollupNode_status","params":[],"id":1}' \
             http://127.0.0.1:{{ .Values.reth.ports.http }})"
           printf '%s' "$resp" | grep -Fq '"result":{"l1":{"status":"Synced"'
           printf '%s' "$resp" | grep -Fq '"l2":{"status":"Synced"'
 {{- end }}
-    periodSeconds: {{ .Values.reth.readinessProbe.periodSeconds }}
-    timeoutSeconds: {{ .Values.reth.readinessProbe.timeoutSeconds }}
-    failureThreshold: {{ .Values.reth.readinessProbe.failureThreshold }}
+{{ toYaml $readinessSpec | nindent 4 }}
 {{- end -}}
