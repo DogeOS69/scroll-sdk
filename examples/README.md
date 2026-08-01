@@ -56,10 +56,17 @@ For more information on Scroll SDK, refer to the main README in the root directo
 
 ## Proof helper interface
 
-The example Makefile and `scrollsdk` share the following conventional paths.
-Using this layout avoids per-file path flags:
+`scrollsdk setup prep-charts` owns proof mode selection, configuration
+generation, and validation. The example Makefile only installs or removes the
+generated Kubernetes releases; it does not provide a second proof setup
+interface.
+
+The generated deployment uses the following conventional paths:
 
 ```text
+.data/
+└── proof-deployment.json                      (single K8s install contract)
+
 proof-artifacts/
 ├── release.json
 └── manifests/
@@ -68,7 +75,7 @@ proof-artifacts/
     └── bridge-transition.json
 
 proof-coordinator/
-└── ProofCoordinator.toml
+└── ProofCoordinator.toml                     (generated for the selected mode)
 
 withdrawal-processor/
 └── WithdrawalProcessor.toml                  (native app config; TOML-owned)
@@ -82,22 +89,56 @@ prover-worker-mock/
 └── docker-compose/                            (generated only in mock mode)
 ```
 
-The proof-related Makefile variables are:
+Copy `Makefile.example` into the deployment root as `Makefile`. From that root,
+alongside `values/` and the native config directories, prepare and validate
+disabled-mode configuration with the CLI, then install through Make:
 
-| variable | purpose |
-|---|---|
-| `PROVING_MODE` | `production` or the e2e-harness-compatible `mock` lane |
-| `PROOF_ARTIFACT_BASE_URL` | credential-free HTTP(S) GET root used by proof consumers |
-| `PROOF_CONFIG_FLAGS` | optional extra `scrollsdk setup proof-config` flags |
-| `AWS_REGION`, `EKS_CLUSTER`, `NETWORK_ALIAS` | required AWS/EKS inputs for `proof-aws-init` |
-| `PROOF_AWS_INIT_FLAGS` | optional extra `proof-aws-init` flags |
-| `PROOF_COORDINATOR_CONFIG` | native coordinator TOML passed to Helm with `--set-file` |
-| `WITHDRAWAL_PROCESSOR_CONFIG` | native withdrawal-processor TOML passed to Helm with `--set-file` |
+```bash
+cp Makefile.example Makefile
+# Complete the normal bridge-init and local/KMS service-signer setup first.
+scrollsdk setup prep-charts -N
+scrollsdk setup proof-config-check --deployment-dir .
+make install-proof-stack
+```
 
-The corresponding targets are `make proof-aws-init`, `make proof-config`,
-`make install-withdrawal-processor`, `make install-proof-coordinator`, and
-`make install-tso`. The Makefile is the executable chart interface; it is not
-the deployment runbook.
+Before bridge genesis, give each external signer operator the complete
+`partner-kit/attestation-signer/` directory, collect the descriptor produced by
+their `scrollsdk signer preflight`, and import the descriptors with
+`scrollsdk setup attestation-signer`. After genesis, send every partner the
+complete `signer-policy-bundle/` produced by
+`scrollsdk setup export-signer-policy`.
+
+For mock and production AWS deployments, provision first. The command writes
+stable resource facts to `.data/proof-aws.json`; `prep-charts` then projects
+that configuration into final values and the deployment contract in one pass:
+
+```bash
+scrollsdk setup proof-aws-init \
+  --aws-region <region> \
+  --eks-cluster <cluster> \
+  --network-alias <network> \
+  --namespace <namespace>
+scrollsdk setup prep-charts -N
+scrollsdk setup proof-worker --deployment-dir .
+scrollsdk setup proof-config-check --deployment-dir .
+make install-proof-stack
+```
+
+`install-withdrawal-processor` and `install-proof-coordinator` call the
+mode-agnostic `scrollsdk helper proof-helm` adapter. It reads values and
+`--set-file` bindings only from `.data/proof-deployment.json`; the Makefile
+does not choose mock/production manifests or repeat proof paths. Disabled mode
+skips proof-coordinator automatically.
+
+The default installation check blocks proof-owned managed-block or manifest
+drift, while ordinary WP/TSO values and shared native-config drift are warnings.
+Use `scrollsdk setup proof-config-check --strict` for byte-for-byte immutable
+CI artifacts.
+
+The remaining proof-related Makefile variables are only Kubernetes deployment
+overrides: `NAMESPACE`, `PROOF_COORDINATOR_CHART`,
+`PROOF_COORDINATOR_CHART_VERSION`, `WITHDRAWAL_PROCESSOR_CHART`, and
+`WITHDRAWAL_PROCESSOR_CHART_VERSION`.
 
 For the authoritative end-to-end order, partner descriptor/policy handoff,
 activation gates, mock-versus-production behavior, and lifecycle acceptance,

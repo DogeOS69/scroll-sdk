@@ -1,12 +1,11 @@
-# Production proof-coordinator values. Run `make proof-config` after placing
-# the released proof manifests under proof-artifacts/; the CLI updates only the
-# marked verifier block in proof-coordinator/ProofCoordinator.toml.
+# Production proof-coordinator values. `scrollsdk setup prep-charts` validates
+# released proof artifacts and updates only the marked verifier block in
+# proof-coordinator/ProofCoordinator.toml.
 proofCoordinator:
   config:
     required: true
 
-# Supply the native config file at deploy time:
-#   --set-file proofCoordinator.config.content=proof-coordinator/ProofCoordinator.toml
+# The generated deployment contract supplies the native config at deploy time.
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
@@ -43,7 +42,7 @@ persistence:
     mountPath: /app/secrets
     readOnly: true
 
-# Deployment policy, not chart behavior. `scrollsdk setup proof-config`
+# Deployment policy, not chart behavior. `scrollsdk setup prep-charts`
 # replaces this entry with every coordinator-owned writable directory derived
 # from ProofCoordinator.toml and validates that all paths stay under /app/data.
 initContainers:

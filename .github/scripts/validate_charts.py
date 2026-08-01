@@ -82,15 +82,33 @@ def validate_example_makefile():
         return True
 
     with open(makefile_path, "r") as f:
+        raw_makefile_content = f.read()
         # Replace line continuations (\newline) with spaces
-        makefile_content = re.sub(r"\\\n\s*", " ", f.read())
+        makefile_content = re.sub(r"\\\n\s*", " ", raw_makefile_content)
 
     # Modified regex to extract service name from URL and version
     # Modified regex to support versions with suffixes like -dogeos
-    version_patterns = re.findall(
+    version_patterns = set(re.findall(
         r"helm upgrade -i [^\s]+\s+oci://.+?/helm/?.*?([^/\s]+)\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
         makefile_content,
-    )
+    ))
+
+    # Mode-agnostic installers such as `scrollsdk helper proof-helm` receive
+    # their chart and version through variables rather than a literal Helm
+    # command. Keep those examples covered by the same chart-sync check.
+    chart_variables = dict(re.findall(
+        r"^([A-Z][A-Z0-9_]*)_CHART\s*\?=\s*oci://[^\s]+/helm/([^\s]+)\s*$",
+        raw_makefile_content,
+        re.MULTILINE,
+    ))
+    version_variables = dict(re.findall(
+        r"^([A-Z][A-Z0-9_]*)_CHART_VERSION\s*\?=\s*([0-9A-Za-z.-]+)\s*$",
+        raw_makefile_content,
+        re.MULTILINE,
+    ))
+    for variable, service in chart_variables.items():
+        if variable in version_variables:
+            version_patterns.add((service, version_variables[variable]))
 
     success = True
     for service, version in version_patterns:
@@ -114,6 +132,57 @@ def validate_example_makefile():
     return success
 
 
+def validate_attestation_signer_partner_kit():
+    """Keep the partner-owned Compose handoff from being removed as unused."""
+    root = Path("partner-kit/attestation-signer")
+    required_files = [
+        root / "README.md",
+        root / "docker-compose/.env.example",
+        root / "docker-compose/docker-compose.yml",
+        root / "docker-compose/signer-policy.env",
+    ]
+    success = True
+
+    for file_path in required_files:
+        if not file_path.is_file():
+            print(f"❌ Missing attestation-signer partner-kit file: {file_path}")
+            success = False
+
+    if not success:
+        return False
+
+    if (root / "helm").exists():
+        print("❌ attestation-signer partner kit must remain Docker Compose-only")
+        success = False
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    for command in [
+        "scrollsdk signer init",
+        "scrollsdk signer preflight",
+        "docker compose --project-directory docker-compose",
+        "signer-policy-bundle/PARTNER-COMMANDS.md",
+    ]:
+        if command not in readme:
+            print(f"❌ Partner README is missing the canonical flow: {command}")
+            success = False
+
+    compose, _ = load_yaml_file(root / "docker-compose/docker-compose.yml")
+    signer = (compose or {}).get("services", {}).get("attestation-signer", {})
+    if signer.get("env_file") != [
+        "attestation-signer.env",
+        "signer-policy.env",
+    ]:
+        print("❌ Partner Compose must load operator key env before bridge policy env")
+        success = False
+
+    volumes = signer.get("volumes", [])
+    if "./policy:/etc/dogeos:ro" not in volumes:
+        print("❌ Partner Compose must mount the generated policy directory read-only")
+        success = False
+
+    return success
+
+
 def main():
     success = True
 
@@ -123,6 +192,9 @@ def main():
 
     # Check example Makefile versions
     if not validate_example_makefile():
+        success = False
+
+    if not validate_attestation_signer_partner_kit():
         success = False
 
     if not success:

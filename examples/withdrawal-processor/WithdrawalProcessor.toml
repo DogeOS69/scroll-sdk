@@ -1,7 +1,7 @@
 # WithdrawalProcessor.toml — native application configuration for
-# withdrawal-processor. Deployment passes this file to Helm with
-#   --set-file 'configMaps.config.data.WithdrawalProcessor\.toml'=withdrawal-processor/WithdrawalProcessor.toml
-# (see Makefile.example install-withdrawal-processor).
+# withdrawal-processor. `setup prep-charts` records this file in
+# .data/proof-deployment.json; the mode-agnostic Helm adapter supplies the
+# corresponding --set-file binding during installation.
 #
 # Ownership:
 # - The managed deployment block below is merged by `scrollsdk setup
@@ -10,8 +10,8 @@
 #   overwritten on every run; any OTHER key you tune inside the block (fee
 #   rate, timeouts, indexer cadence, UTXO strategy) is preserved. Comments
 #   inside the block are not preserved — keep commentary outside.
-# - The managed proof block at the bottom is owned by `scrollsdk setup
-#   proof-config`. Mode-specific activation fields are projected atomically by
+# - The managed proof block at the bottom is also owned by `scrollsdk setup
+#   prep-charts`. Mode-specific activation fields are projected atomically by
 #   scrollsdk into deployment values; the generic chart does not interpret
 #   them. This file never persists [proof_system.dev_dummy], which must be
 #   absent while proof is disabled.

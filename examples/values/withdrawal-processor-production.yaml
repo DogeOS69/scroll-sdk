@@ -3,10 +3,9 @@
 #
 # Application configuration is NOT defined here: it lives in the native
 # withdrawal-processor/WithdrawalProcessor.toml, maintained by
-# `scrollsdk setup prep-charts` (deployment block) and
-# `scrollsdk setup proof-config` (proof block), and is passed to Helm with
-# --set-file (see Makefile.example). This values file carries only Kubernetes
-# shape, secrets wiring, and the proof activation switch.
+# `scrollsdk setup prep-charts`, and is passed to Helm through the generated
+# deployment contract. This values file carries only Kubernetes shape, secrets
+# wiring, and the proof activation switch.
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
@@ -37,16 +36,17 @@ configMaps:
 podAnnotations:
   checksum/tso-signers: '{{ .Values.tsoSigners | toJson | sha256sum }}'
 
-# CLI-owned proof activation state. `setup proof-config` updates provingMode,
+# CLI-owned proof activation state. `setup prep-charts` updates provingMode,
 # preserves enabled unless explicitly activated, and atomically projects both
 # into the explicit env entries below. The generic chart does not interpret
 # these fields or any proof business semantics.
 withdrawalProof:
   enabled: false
   provingMode: production
-  # Required by `setup proof-config`: use `irsa` for EKS, or explicitly use
+  # Required by `setup prep-charts`: use `irsa` for EKS, or explicitly use
   # `ambient` only when credentials are supplied by another controlled path.
-  # `setup proof-aws-init` provisions the role and fills the annotation below.
+  # `setup proof-aws-init` records the provisioned role in
+  # `.data/proof-aws.json`; `setup prep-charts` projects it below.
   s3AuthMode: irsa
 
 # Proof artifact S3 access is fail-closed in IRSA mode until a real role ARN
@@ -58,7 +58,7 @@ serviceAccount:
 
 env:
   # CLI-owned atomic proof activation projection. Default posture is disabled;
-  # setup proof-config/prep-charts replaces all five managed entries together.
+  # setup prep-charts replaces all five managed entries together.
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
     value: "disabled"
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
