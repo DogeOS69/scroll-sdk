@@ -429,23 +429,20 @@ readiness:
 {{- if eq .Values.role "bootnode" }}
     tcpSocket:
       port: {{ .Values.reth.ports.p2p }}
-    periodSeconds: 10
-    timeoutSeconds: 3
-    failureThreshold: 3
 {{- else }}
     exec:
       command:
         - /bin/sh
         - -ec
         - |
-          resp="$(curl -fsS -m 2 \
+          resp="$(curl -fsS -m {{ .Values.reth.readinessProbe.rollupNodeStatusTimeoutSeconds }} \
             -H 'Content-Type: application/json' \
             --data '{"jsonrpc":"2.0","method":"rollupNode_status","params":[],"id":1}' \
             http://127.0.0.1:{{ .Values.reth.ports.http }})"
           printf '%s' "$resp" | grep -Fq '"result":{"l1":{"status":"Synced"'
           printf '%s' "$resp" | grep -Fq '"l2":{"status":"Synced"'
-    periodSeconds: 10
-    timeoutSeconds: 3
-    failureThreshold: 3
 {{- end }}
+    periodSeconds: {{ .Values.reth.readinessProbe.periodSeconds }}
+    timeoutSeconds: {{ .Values.reth.readinessProbe.timeoutSeconds }}
+    failureThreshold: {{ .Values.reth.readinessProbe.failureThreshold }}
 {{- end -}}
