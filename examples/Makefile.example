@@ -53,7 +53,7 @@ PROOF_COORDINATOR_INSTALL_INPUTS = \
 	$(PROOF_STATEMENT_NAMESPACE_CONFIG)
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
-L2_RETH_CHART_VERSION ?= 0.1.2
+L2_RETH_CHART_VERSION ?= 0.1.3
 L2_RETH_GENESIS_NORMALIZER_VALUES ?= values/l2-reth-genesis-normalizer.yaml
 L2_RETH_GENESIS_NORMALIZER_SCRIPT ?= scripts/upgrade/normalize-reth-genesis.sh
 INSTALL_ALL_REQUIRED_VALUES = \

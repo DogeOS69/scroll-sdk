@@ -42,6 +42,13 @@ service:
     type: ClusterIP
     annotations: {}
 
+probes:
+  readiness:
+    spec:
+      periodSeconds: 30
+      timeoutSeconds: 12
+      failureThreshold: 3
+
 reth:
   networkId: "4444444"
   l1Url: http://l1-interface:8545
