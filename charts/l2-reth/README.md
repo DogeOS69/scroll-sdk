@@ -46,9 +46,9 @@ reth:
     failureThreshold: 3
 ```
 
-The defaults preserve the original chart behavior: a 2-second status RPC
-timeout, a 10-second probe period, a 3-second Kubernetes timeout, and a failure
-threshold of 3.
+These are also the chart defaults. They give reth enough time to answer the
+status RPC while it is replaying or catching up after a restart, and avoid
+probing more frequently than necessary.
 
 `service.main.fullname` optionally overrides only the Kubernetes Service name. This
 is useful when the Helm release must keep a reth-specific name for StatefulSet

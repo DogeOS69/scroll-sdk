@@ -140,9 +140,9 @@ reth:
   readinessProbe:
     # Maximum time allowed for the rollupNode_status RPC used by non-bootnode
     # readiness checks. Keep this below timeoutSeconds so curl can exit cleanly.
-    rollupNodeStatusTimeoutSeconds: 2
-    periodSeconds: 10
-    timeoutSeconds: 3
+    rollupNodeStatusTimeoutSeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 12
     failureThreshold: 3
 
 ingress: {}
