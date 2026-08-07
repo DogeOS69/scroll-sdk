@@ -53,7 +53,7 @@ probes:
     custom: true
     spec:
       httpGet:
-        path: "/health"
+        path: "/api/v1/health/ready"
         port: http
       periodSeconds: 10
       timeoutSeconds: 2
@@ -63,7 +63,7 @@ probes:
     custom: true
     spec:
       httpGet:
-        path: "/health"
+        path: "/api/v1/health/ready"
         port: http
       initialDelaySeconds: 10
       periodSeconds: 10

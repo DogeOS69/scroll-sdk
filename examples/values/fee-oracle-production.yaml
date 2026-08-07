@@ -1,118 +1,61 @@
 ---
-# Production environment overrides
+# Example production values for the Ethereum-DA fee oracle.
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: IfNotPresent
-  tag: newda
+  tag: TODO_TAG_TO_REPLACE
 
-# Direct environment variables
 env:
-  - name: "RUST_LOG"
-    value: "info"     # info
+  - name: RUST_LOG
+    value: info
 
-probes:
-  liveness:
-    spec:
-      timeoutSeconds: 15
-  readiness:
-    spec:
-      httpGet:
-        path: "/health"
-        port: http
-      timeoutSeconds: 15
-  startup:
-    spec:
-      httpGet:
-        path: "/health"
-        port: http
-      timeoutSeconds: 15
-
-# ConfigMap overrides for production
 configMaps:
   env:
     enabled: true
     data:
-      DOGEOS_FEE_ORACLE_DATABASE__SQLITE_PATH: "/data/fee_oracle.db"
+      DOGEOS_FEE_ORACLE_DATABASE__SQLITE_PATH: /data/fee_oracle.db
+      DOGEOS_FEE_ORACLE_DATABASE__CONNECTION_POOL_SIZE: "10"
       DOGEOS_FEE_ORACLE_MONITORING__METRICS_PORT: "9090"
       DOGEOS_FEE_ORACLE_MONITORING__HEALTH_CHECK_PORT: "8080"
-      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_BIND_ADDRESS: "0.0.0.0"
-      DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY_ENV: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-      # DOGEOS_FEE_ORACLE_WALLET__KMS_CONFIG__KMS_KEY_ID: "<TODO>"                 # Optional KMS signer; comment PRIVATE_KEY_ENV out before enabling.
-      # DOGEOS_FEE_ORACLE_WALLET__KMS_CONFIG__KMS_REGION: "<TODO>"                 # Optional KMS signer; comment PRIVATE_KEY_ENV out before enabling.
-      # DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY: "<TODO>"                            # Deprecated plaintext key; do not enable in production.
-      DOGEOS_FEE_ORACLE_L2__RPC_URL: "<TODO>"                                      # L2 RPC endpoint
-      DOGEOS_FEE_ORACLE_L2__CHAIN_ID: "<TODO>"                                     # DogeOS L2 chain id
-      DOGEOS_FEE_ORACLE_L2__GAS_ORACLE_CONTRACT: "<TODO>"                          # L1GasPriceOracle contract address
-      DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "3"                                     # predefined
-      DOGEOS_FEE_ORACLE_L2__MAX_GAS_PRICE: "1000000000000"                         # predefined
-      DOGEOS_FEE_ORACLE_L2__PRIORITY_FEE: "1000000000"                             # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__RPC_URL: "http://dogecoin:44555"                 # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL
-      # DOGEOS_FEE_ORACLE_DOGECOIN__RPC_USER: "<TODO>"                             # Optional RPC username; normally supplied by fee-oracle-secret-env.
-      # DOGEOS_FEE_ORACLE_DOGECOIN__RPC_PASSWORD: "<TODO>"                         # Optional RPC password; normally supplied by fee-oracle-secret-env.
-      DOGEOS_FEE_ORACLE_DOGECOIN__NETWORK_STR: "<TODO>"                            # Dogecoin network: mainnet/testnet/regtest
-      DOGEOS_FEE_ORACLE_DOGECOIN__POLL_INTERVAL: "60"                              # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__FEE_LOOKBACK_BLOCKS: "10"                        # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__MEMPOOL_SAMPLE_SIZE: "1000"                      # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__BASE_FEE_RATE: "1000000"                         # predefined
-      DOGEOS_FEE_ORACLE_DOGECOIN__EMPTY_MEMPOOL_FEE_RATE: "1500000"                # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__ENABLED: "false"                                 # Ethereum DA mode disables the Celestia monitor.
-      DOGEOS_FEE_ORACLE_CELESTIA__GRPC_URL: "http://unused-celestia-grpc:9090"      # Required by schema/URL validation even when Celestia is disabled.
-      # DOGEOS_FEE_ORACLE_CELESTIA__GRPC_PORT: "<TODO>"                            # Optional gRPC port override; unused while Celestia is disabled.
-      # DOGEOS_FEE_ORACLE_CELESTIA__GRPC_X_TOKEN: "<TODO>"                         # Optional gRPC auth token; unused while Celestia is disabled.
-      DOGEOS_FEE_ORACLE_CELESTIA__POLL_INTERVAL: "60"                              # predefined
-      # DOGEOS_FEE_ORACLE_CELESTIA__NAMESPACE_ID: "<TODO>"                         # Optional Celestia namespace; unused while Celestia is disabled.
-      DOGEOS_FEE_ORACLE_CELESTIA__BASE_FEE_PER_BLOB: "100000"                   # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__CATCHUP_FEE_PER_BLOB: "200000"                # predefined
-      DOGEOS_FEE_ORACLE_CELESTIA__FALLBACK_FEE_PER_BLOB: "150000"               # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__DOGECOIN_FEE_CHANGE_PERCENT: "5.0"             # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__CELESTIA_FEE_CHANGE_PERCENT: "10.0"            # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__MIN_UPDATE_INTERVAL: "300"                     # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__HIGH_GAS_MODE_THRESHOLD: "1000000000000"       # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__DEFAULT_DOGECOIN_FEE: "1000000"                # predefined
-      DOGEOS_FEE_ORACLE_THRESHOLDS__DEFAULT_CELESTIA_FEE: "100000000"              # predefined
-      DOGEOS_FEE_ORACLE_DATABASE__CONNECTION_POOL_SIZE: "10"                       # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__UPDATE_ON_EACH_CYCLE: "true"                 # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__CACHE_DURATION: "60"                         # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__KRAKEN_ENABLED: "true"                       # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINBASE_ENABLED: "true"                     # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINGECKO_ENABLED: "false"                   # optional price source; default false
-      # DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINGECKO_API_KEY: "<TODO>"                # Optional; required only when COINGECKO_ENABLED=true.
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__GATEIO_ENABLED: "true"                       # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__REQUEST_TIMEOUT: "30"                        # predefined
-      DOGEOS_FEE_ORACLE_PRICE_ORACLE__MAX_RETRIES: "3"                             # predefined
-      DOGEOS_FEE_ORACLE_DEPLOYMENT__DRY_RUN: "false"                               # predefined
+      DOGEOS_FEE_ORACLE_MONITORING__HEALTH_BIND_ADDRESS: 0.0.0.0
+      DOGEOS_FEE_ORACLE_L2__RPC_URL: http://l2-rpc:8545
+      DOGEOS_FEE_ORACLE_L2__CHAIN_ID: "<TODO>"
+      DOGEOS_FEE_ORACLE_L2__GAS_ORACLE_CONTRACT: "<TODO>"
+      DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "3"
+      DOGEOS_FEE_ORACLE_L2__MAX_GAS_PRICE: "1000000000000"
+      DOGEOS_FEE_ORACLE_L2__PRIORITY_FEE: "1000000000"
+      DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL: "<TODO>"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__CACHE_DURATION: "60"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__KRAKEN_ENABLED: "true"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINBASE_ENABLED: "true"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__COINGECKO_ENABLED: "false"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__GATEIO_ENABLED: "true"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__REQUEST_TIMEOUT: "30"
+      DOGEOS_FEE_ORACLE_PRICE_ORACLE__MAX_RETRIES: "3"
+      DOGEOS_FEE_ORACLE_WALLET__SIGNER_BACKEND: local
+      DOGEOS_FEE_ORACLE_WALLET__PRIVATE_KEY_ENV: DOGEOS_FEE_ORACLE_PRIVATE_KEY
 
 envFrom:
-  - secretRef:
-      name: "fee-oracle-secret-env"
   - configMapRef:
-      name: "fee-oracle-env"
+      name: fee-oracle-env
+  - secretRef:
+      name: fee-oracle-secret-env
 
-# External Secrets configuration for production
 externalSecrets:
   fee-oracle-secret-env:
-    provider: "aws"
+    provider: aws
     data:
       - remoteRef:
-          key: "dogeos/fee-oracle-secret-env"
-          property: "DOGEOS_FEE_ORACLE_DOGECOIN__RPC_USER"
-        secretKey: "DOGEOS_FEE_ORACLE_DOGECOIN__RPC_USER"
-      - remoteRef:
-          key: "dogeos/fee-oracle-secret-env"
-          property: "DOGEOS_FEE_ORACLE_DOGECOIN__RPC_PASSWORD"
-        secretKey: "DOGEOS_FEE_ORACLE_DOGECOIN__RPC_PASSWORD"
-      - remoteRef:
-          key: "dogeos/fee-oracle-secret-env"
-          property: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-        secretKey: "DOGEOS_FEE_ORACLE_PRIVATE_KEY"
-    refreshInterval: "2m"
-    serviceAccount: "external-secrets"
+          key: dogeos/fee-oracle-secret-env
+          property: DOGEOS_FEE_ORACLE_PRIVATE_KEY
+        secretKey: DOGEOS_FEE_ORACLE_PRIVATE_KEY
+    refreshInterval: 2m
+    serviceAccount: external-secrets
 
-# Production resource limits
 resources:
   requests:
-    memory: "256Mi"
-    cpu: "50m"
+    memory: 256Mi
+    cpu: 50m
   limits:
-    memory: "512Mi"
+    memory: 512Mi
     cpu: "1"

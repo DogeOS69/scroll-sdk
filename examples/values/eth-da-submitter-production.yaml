@@ -41,6 +41,7 @@ configMaps:
       # Cutover mode only; requires the matching BATCH__CUTOVER__* fields below.
       # DOGEOS_ETH_DA_SUBMITTER_L2__START_BLOCK_NUMBER: "<TODO>"
 
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_JSON_PATH: /app/genesis/genesis.json
       DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_BATCH_HASH: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_STATE_ROOT: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_WITHDRAW_ROOT: "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -95,6 +96,13 @@ persistence:
     accessMode: ReadWriteOnce
     size: 10Gi
     retain: true
+  genesis:
+    enabled: true
+    name: genesis-config
+    type: configMap
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    readOnly: true
 
 resources:
   requests:

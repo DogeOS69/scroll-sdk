@@ -4,9 +4,9 @@
 
 NAMESPACE ?= default
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.0
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.1
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.20
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.21
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.4
@@ -75,7 +75,7 @@ install-celestia:
 
 install-l1-interface:
 	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
-		--version=0.0.21 \
+		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:

@@ -1,129 +1,86 @@
 ---
-# Production environment overrides
+# Production overrides for l1-interface. Deployment-specific fields are filled
+# by scrollsdk from DeploymentSpec/doge-config and generated artifacts.
 image:
-  repository: "dogeos69/l1-interface"
-  pullPolicy: "IfNotPresent"
-  tag: "newda"
+  repository: dogeos69/l1-interface
+  pullPolicy: IfNotPresent
+  tag: TODO_TAG_TO_REPLACE
 
-# Direct environment variables
 env:
-  - name: "RUST_LOG"
-    value: "info" # info, l1_interface=debug
+  - name: RUST_LOG
+    value: info
 
-# ConfigMap overrides for production
 configMaps:
   env:
     enabled: true
     data:
-      # -----------------------------------------------------------------------------
-      # [core] - Required core configuration
-      # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_NETWORK_STR: "<TODO>" # [REQUIRED] Dogecoin network name (mainnet/testnet/regtest, etc.), used by Network::from_str; alias: network
-      DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite" # [REQUIRED] Primary database connection string (e.g. sqlite:///path/to.db or postgres://...); alias: db_url
-      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "0.0.0.0:8545" # Main RPC API listen address (host:port)
-      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "0.0.0.0:5052" # Beacon API listen address (host:port)
-      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "0.0.0.0:9090" # Health check API listen address (host:port)
-      # Derived from genesis.json; keep unset unless intentionally overriding genesis-derived values.
-      # DOGEOS_L1_INTERFACE_CHAIN_ID: "534352" # Optional L2 chain ID default; normally sourced from genesis.json
-      # DOGEOS_L1_INTERFACE_L1_CHAIN_ID: "1" # Optional L1 chain ID default; normally sourced from genesis.json
-      # DOGEOS_L1_INTERFACE_SCROLL_CHAIN_ADDRESS: "<TODO>" # Optional ScrollChain contract address override; normally sourced from genesis.json
-      #DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS:                                  # [DEPRECATED] L1ScrollMessenger address override; public RPC startup hard-rejects this field, use protocol_context_json instead
-      # DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_ADDRESS: "<TODO>" # Optional L1MessageQueue V1 override; normally sourced from genesis.json
-      # DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_ADDRESS: "<TODO>" # Optional L1MessageQueue V2 override; normally sourced from genesis.json
-      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "<TODO>" # First L1 block height containing real data (u64); should align with dogecoin_indexer.start_height
-      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: "<TODO>" # [REQUIRED] L2 Moat contract address; finalizes deposit accounting
-      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: "<TODO>" # [REQUIRED] L2 Messenger contract address; forwards deposits to Moat
-      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000" # L1 block gas limit simulation parameter (u64), default 30_000_000
-      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000" # L1 base fee per gas (u64, in wei), default 1_000_000_000 (1 gwei)
-      # DOGEOS_L1_INTERFACE_SYSTEM_CONFIG_ADDRESS: "0x5300000000000000000000000000000000000013" # Optional SystemConfig override; normally sourced from genesis.json
-      DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: "<TODO>" # [REQUIRED] Initial system signer address; deployment-specific, do not use placeholder defaults
-      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] genesis.json file path; existence is validated and parsed at startup
-      DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "false" # Whether to enable sequencer genesis controlled-init mode (true/false); default false
-      # DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: "<TODO>" # Optional historical event-plane artifact SQLite path; leave unset unless serving pre-genesis historical logs/blocks.
-      # DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "<TODO>" # Optional first post-genesis block number (u64); required only with EVENT_PLANE_ARTIFACT_PATH.
-
-      # -----------------------------------------------------------------------------
-      # [dogecoin_rpc] - Dogecoin JSON-RPC client
-      # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: "http://dogecoin:44555" # [REQUIRED] Dogecoin node RPC URL; use http://dogecoin:22555 for mainnet
-      # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER: "<TODO>" # Optional RPC username; normally supplied by l1-interface-secret-env.
-      # DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS: "<TODO>" # Optional RPC password; normally supplied by l1-interface-secret-env.
-
-      # -----------------------------------------------------------------------------
-      # [dogecoin_indexer] - Dogecoin indexer
-      # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "<TODO>" # [REQUIRED] Index start height (u64); set at or before first deployment-specific Dogecoin event
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6" # [REQUIRED] Confirmation depth (u32); confirmations required to consider a block finalized
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "false" # Whether to index UTXOs (true/false)
-      # DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_WITHDRAWALS: "true" # Unused by current l1_interface DogecoinIndexerConfig; withdrawals are replay-backed.
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "false" # Whether to index deposits (true/false); default false
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000" # Dogecoin node poll interval (milliseconds, u64)
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: "<TODO>" # [REQUIRED] Bridge Dogecoin address generated for this deployment
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>" # [REQUIRED] Fee wallet Dogecoin address for this deployment
-      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>" # [REQUIRED] Sequencer Dogecoin address for this deployment
-
-      # -----------------------------------------------------------------------------
-      # [replay_read] - Replay read (required for public RPC)
-      # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
-      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
-      # DOGEOS_L1_INTERFACE_REPLAY_READ__FULFILLED_WITHDRAWALS_DB_PATH: "<TODO>" # Optional fulfilled-withdrawals database path.
-      DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true" # Optional, true in normal service operation
-      DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false" # Whether to require full replay validation (true/false)
-      DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Protocol context JSON file path; required for public RPC, provides ProtocolParams/GenesisParams/ProtocolConfigSeed
-      # DOGEOS_L1_INTERFACE_REPLAY_READ__L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT: "<TODO>" # Optional L2 bootstrap next-segment start block height; leave unset unless bootstrapping a new segment.
-
-      # -----------------------------------------------------------------------------
-      # [ethereum_da] - Optional replay-side blob sidecar serving
-      # -----------------------------------------------------------------------------
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL: "<TODO>" # Ethereum execution JSON-RPC URL used to verify committed blob txs
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__ETH_CHAIN_ID: "<TODO>" # Ethereum chain id
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L2_CHAIN_ID: "<TODO>" # DogeOS L2 chain id
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__KIND: "anvil" # Blob source kind; currently supported: anvil
-      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__URL: "<TODO>" # Optional; defaults to ethereum_da.l1_rpc_url when unset.
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000" # Blob source request timeout in milliseconds
+      DOGEOS_L1_INTERFACE_NETWORK_STR: "<TODO>"
+      DOGEOS_L1_INTERFACE_DATABASE_URL: sqlite:///data/l1-interface.sqlite
+      DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: 0.0.0.0:8545
+      DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: 0.0.0.0:5052
+      DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: 0.0.0.0:9090
+      DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "<TODO>"
+      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: "<TODO>"
+      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: "<TODO>"
+      DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"
+      DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"
+      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: /app/genesis/genesis.json
+      DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "false"
+      DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: http://dogecoin:44555
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "<TODO>"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS: "6"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_UTXOS: "false"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__INDEX_DEPOSITS: "false"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__POLL_INTERVAL_MS: "10000"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: "<TODO>"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>"
+      DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>"
+      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true"
+      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: /data/replay.sqlite
+      DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true"
+      DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false"
+      DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL: "<TODO>"
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__ETH_CHAIN_ID: "<TODO>"
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L2_CHAIN_ID: "<TODO>"
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000"
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL: "<TODO>"
 
 envFrom:
   - secretRef:
-      name: "l1-interface-secret-env"
+      name: l1-interface-secret-env
   - configMapRef:
-      name: "l1-interface-env"
+      name: l1-interface-env
 
-# External Secrets configuration for production
 externalSecrets:
   l1-interface-secret-env:
-    provider: "aws"
+    provider: aws
     data:
       - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER"
+          key: dogeos/l1-interface-secret-env
+          property: DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER
+        secretKey: DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER
       - remoteRef:
-          key: "dogeos/l1-interface-secret-env"
-          property: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-        secretKey: "DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS"
-    refreshInterval: "2m"
-    serviceAccount: "external-secrets"
+          key: dogeos/l1-interface-secret-env
+          property: DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS
+        secretKey: DOGEOS_L1_INTERFACE_DOGECOIN_RPC__PASS
+    refreshInterval: 2m
+    serviceAccount: external-secrets
 
-# Production resource limits
-resources:
-  requests:
-    memory: "2Gi"
-    cpu: "500m"
-  limits:
-    memory: "4Gi"
-    cpu: "2000m"
-
-# Storage size override for production
 persistence:
   data:
-    size: "1000Gi"
+    enabled: true
+    type: pvc
+    name: l1-interface-data-pvc
+    mountPath: /data
+    size: 100Gi
     retain: true
   genesis:
     enabled: true
     type: configMap
-    mountPath: /app/genesis/
     name: genesis-config
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
     readOnly: true
   protocol-context:
     enabled: true
@@ -132,3 +89,11 @@ persistence:
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
     readOnly: true
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 1000m

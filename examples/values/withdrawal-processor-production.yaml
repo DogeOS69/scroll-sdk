@@ -112,6 +112,7 @@ tsoSigners:
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
     role: "Tee"
+    signatureMode: "ecdsa"
 
 # Persistence Configuration
 persistence:

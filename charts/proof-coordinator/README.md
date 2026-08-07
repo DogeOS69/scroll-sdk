@@ -1,6 +1,6 @@
 # proof-coordinator
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.3.1](https://img.shields.io/badge/Version-0.3.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS proof-coordinator service
 
@@ -106,21 +106,21 @@ production values require an explicit source.
 | podSecurityContext.runAsUser | int | `65532` |  |
 | podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | probes.liveness.<<.custom | bool | `true` |  |
-| probes.liveness.<<.enabled | bool | `false` |  |
+| probes.liveness.<<.enabled | bool | `true` |  |
 | probes.liveness.<<.spec.failureThreshold | int | `3` |  |
 | probes.liveness.<<.spec.httpGet.path | string | `"/healthz"` |  |
 | probes.liveness.<<.spec.httpGet.port | string | `"http"` |  |
 | probes.liveness.<<.spec.periodSeconds | int | `10` |  |
 | probes.liveness.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.readiness.<<.custom | bool | `true` |  |
-| probes.readiness.<<.enabled | bool | `false` |  |
+| probes.readiness.<<.enabled | bool | `true` |  |
 | probes.readiness.<<.spec.failureThreshold | int | `3` |  |
-| probes.readiness.<<.spec.httpGet.path | string | `"/healthz"` |  |
+| probes.readiness.spec.httpGet.path | string | `"/readyz"` |  |
 | probes.readiness.<<.spec.httpGet.port | string | `"http"` |  |
 | probes.readiness.<<.spec.periodSeconds | int | `10` |  |
 | probes.readiness.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.<<.custom | bool | `true` |  |
-| probes.startup.<<.enabled | bool | `false` |  |
+| probes.startup.<<.enabled | bool | `true` |  |
 | probes.startup.<<.spec.failureThreshold | int | `3` |  |
 | probes.startup.<<.spec.httpGet.path | string | `"/healthz"` |  |
 | probes.startup.<<.spec.httpGet.port | string | `"http"` |  |

@@ -27,43 +27,11 @@ service:
         port: 9400
         protocol: TCP
 
-probes:
-  liveness:
-    enabled: true
-    custom: true
-    spec:
-      httpGet:
-        path: /healthz
-        port: http
-      periodSeconds: 15
-      timeoutSeconds: 2
-      failureThreshold: 3
-  readiness:
-    enabled: true
-    custom: true
-    spec:
-      httpGet:
-        path: /healthz
-        port: http
-      periodSeconds: 10
-      timeoutSeconds: 2
-      failureThreshold: 3
-  startup:
-    enabled: true
-    custom: true
-    spec:
-      httpGet:
-        path: /healthz
-        port: http
-      periodSeconds: 5
-      timeoutSeconds: 2
-      failureThreshold: 60
-
 persistence:
   secrets:
     enabled: true
     type: secret
-    mountPath: /run/secrets
+    mountPath: /app/secrets
     readOnly: true
 
 # Grant the pod's ServiceAccount an AWS IAM role via IRSA so the S3 artifact
@@ -86,7 +54,7 @@ env:
   # non-loopback http:// URL — prefer https:// or service-mesh TLS if the
   # network path is not private/trusted.
   - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
-    value: "http://withdrawal-processor:3000"
+    value: "http://withdrawal-processor:9300"
   - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP
     value: "true"
   - name: DOGEOS_PROOF_COORDINATOR_COORDINATOR_ID
