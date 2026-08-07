@@ -110,17 +110,8 @@ externalSecrets:
 # which is then mounted as /app/config/signers.toml
 tsoSigners:
   - network: "<TODO>"
-    uri: "<TODO>" # External Tee signer URL generated per deployment
+    uri: "http://cubesigner-signer:3000"
     role: "Tee"
-  - network: "<TODO>"
-    uri: "http://cubesigner-signer-0:3000"
-    role: "Attestation"
-  - network: "<TODO>"
-    uri: "http://cubesigner-signer-1:3000"
-    role: "Attestation"
-  - network: "<TODO>"
-    uri: "http://cubesigner-signer-2:3000"
-    role: "Attestation"
 
 # Persistence Configuration
 persistence:

@@ -29,7 +29,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/scroll-common-config.yaml \
 	values/eth-da-submitter-production.yaml \
 	values/fee-oracle-production.yaml \
-	values/cubesigner-signer-production-0.yaml \
+	values/cubesigner-signer-production.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
 	withdrawal-processor/WithdrawalProcessor.toml \
@@ -46,11 +46,11 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
-	install-cubesigner-signers install-tso install-withdrawal-processor install-proof-coordinator install-proof-stack \
+	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-proof-stack \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
-	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signers \
+	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
 
@@ -161,10 +161,10 @@ install-fee-oracle:
 		--version=0.0.10 \
 		--values values/fee-oracle-production.yaml
 
-install-cubesigner-signers:
-	helm upgrade -i cubesigner-signer-0 oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
+install-cubesigner-signer:
+	helm upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
 	 	--version=0.1.7 \
-		--values values/cubesigner-signer-production-0.yaml
+		--values values/cubesigner-signer-production.yaml
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
@@ -245,7 +245,7 @@ install-all: check-install-all-values
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signers
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-stack
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-blockscout
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
@@ -265,7 +265,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) proof-coordinator || true
 	helm delete -n $(NAMESPACE) tso-service || true
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-cubesigner-signers || true
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-cubesigner-signer || true
 	helm delete -n $(NAMESPACE) eth-da-submitter || true
 	helm delete -n $(NAMESPACE) l1-interface || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-testnet-activity-helper || true
@@ -307,8 +307,8 @@ delete-eth-da-submitter:
 delete-fee-oracle:
 	helm delete -n $(NAMESPACE) fee-oracle
 
-delete-cubesigner-signers:
-	helm delete -n $(NAMESPACE) cubesigner-signer-0 || true
+delete-cubesigner-signer:
+	helm delete -n $(NAMESPACE) cubesigner-signer || true
 
 delete-testnet-activity-helper:
 	helm delete -n $(NAMESPACE) testnet-activity-helper

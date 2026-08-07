@@ -4,57 +4,133 @@ image:
   tag: newda
 
 global:
-  fullnameOverride: "cubesigner-signer-__INSTANCE_INDEX__"
+  fullnameOverride: "cubesigner-signer"
+
+# Keep the production health contract self-contained. These values override
+# chart defaults so operators do not need to inspect a chart version to know
+# which endpoint controls restart versus traffic readiness.
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/ready"
+        port: http
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/health"
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 12
 env:
+  - name: "DOGEOS_CUBESIGNER_SIGNER_LOG_LEVEL"
+    value: "info"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PORT"
     value: "3000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_NETWORK"
     value: "testnet"
+  - name: "NETWORK"
+    value: "testnet"
   - name: "DOGEOS_CUBESIGNER_SIGNER_TSO_URL"
     value: "http://tso-service:3000"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_BRIDGE_NAMESPACE_ID"
+    value: "__BRIDGE_NAMESPACE_ID__"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY"
     value: "0"
   - name: "DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL"
     value: "5000"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_SESSION_KEEP_ALIVE_INTERVAL"
+    value: "3600000"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_PSBT_BASE64_LEN"
+    value: "130048"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_SIGN_REQUEST_JSON_BYTES"
+    value: "262144"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_REQUEST_JSON_BYTES"
+    value: "393216"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_RESPONSE_JSON_BYTES"
+    value: "393216"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_MODE"
+    value: "production_verifier_key_policy"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_SDK_VERSION"
+    value: "0.4.152-0"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_KEY_IDENTIFIER"
+    valueFrom:
+      secretKeyRef:
+        name: "cubesigner-signer-env"
+        key: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
+  # Reviewed, non-secret static policy evidence. Empty values intentionally
+  # keep /ready fail-closed until the deployment operator supplies them.
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_IDENTIFIER"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_ARTIFACT_DIGEST"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_VERIFIER_IDENTITY_DIGEST"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROGRAM_IDENTITY_DIGEST"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROOF_RESOLVER_AUTHORITY"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_REQUEST_CONTRACT"
+    value: "dogeos-cubesigner-psbt-no-metadata-sign-all-scripts-false-unprefixed-hex-v1"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_LIVE_EVIDENCE_REPORT_PATH"
+    value: ""
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_LIVE_EVIDENCE_REPORT_DIGEST"
+    value: ""
   - name: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
     valueFrom:
       secretKeyRef:
-        name: "cubesigner-signer-__INSTANCE_INDEX__-env"
+        name: "cubesigner-signer-env"
         key: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
   - name: "DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH"
     value: "/etc/cubesigner/session.json"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_MODE"
+    value: "ecdsa"
   - name: "DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"
     value: "5mb"
+  - name: "CS_SESSIONS_DIR"
+    value: "/app/.sessions"
 
 persistence:
   session:
-    name: "cubesigner-signer-__INSTANCE_INDEX__-session"
+    name: "cubesigner-signer-session"
     enabled: true
     type: "secret"
-    secretName: "cubesigner-signer-__INSTANCE_INDEX__-session"
+    secretName: "cubesigner-signer-session"
     mountPath: "/etc/cubesigner"
     readOnly: true
 volumeClaimTemplates:
-  - name: "session-cache-__INSTANCE_INDEX__"
+  - name: "session-cache"
     accessMode: "ReadWriteOnce"
     size: "1Gi"
     mountPath: "/app/.sessions"
 externalSecrets:
-  cubesigner-signer-__INSTANCE_INDEX__-env:
+  cubesigner-signer-env:
     provider: "aws"
     data:
       - remoteRef:
-          key: "dogeos/cubesigner-signer-__INSTANCE_INDEX__-env"
+          key: "dogeos/cubesigner-signer-env"
           property: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
         secretKey: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
     secretRegion: "us-west-2"
-  cubesigner-signer-__INSTANCE_INDEX__-session:
+  cubesigner-signer-session:
     provider: "aws"
     data:
       - remoteRef:
-          key: "dogeos/cubesigner-signer-__INSTANCE_INDEX__-session"
+          key: "dogeos/cubesigner-signer-session"
           property: "session.json"
         secretKey: "session.json"
     refreshInterval: "2m"
