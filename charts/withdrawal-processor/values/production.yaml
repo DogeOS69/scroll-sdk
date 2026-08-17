@@ -1,9 +1,58 @@
 ---
 # Production environment overrides for withdrawal-processor
+global:
+  nameOverride: withdrawal-processor
+  fullnameOverride: withdrawal-processor
+
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: 110525-00
+  tag: TODO_TAG_TO_REPLACE
+
+# Empty command/args explicitly retain the image ENTRYPOINT for this
+# environment-variable-driven reference profile.
+command: []
+args: []
+
+service:
+  main:
+    enabled: true
+    annotations: {}
+    ports:
+      http:
+        enabled: true
+        port: 3000
+        targetPort: 3000
+        protocol: TCP
+
+probes:
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 60
+      timeoutSeconds: 2
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 2
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 2
 
 env:
   # ===========================================================================
@@ -29,20 +78,11 @@ env:
   # - name: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY # Required, sequencer signer key (non-empty)
   #   value: "<TODO>"
 
-  - name: DOGEOS_WITHDRAWAL_BRIDGE_ADDRESS # Required, bridge address; at startup must be derivable from initial_bridge_redeem_script_hex
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_INITIAL_BRIDGE_REDEEM_SCRIPT_HEX # Required, initial/genesis bridge redeem script (hex); alias: bridge_script_hex; after RotateKey provided by replay+wf_bridge_contexts, bootstrap-only
+  - name: DOGEOS_WITHDRAWAL_INITIAL_BRIDGE_REDEEM_SCRIPT_HEX # Required bridge-script preimage; validated against protocol_context.json
     value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_API_PORT # Required, u16, this service's API listening port
     value: "3000"
-
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_TXID # Required, genesis sequencer UTXO txid (hex), used for validation
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_GENESIS_SEQUENCER_VOUT # Required, u32, genesis sequencer UTXO vout
-    value: "<TODO>"
 
   # ===========================================================================
   # Top-level fields with default values
@@ -108,7 +148,7 @@ env:
   - name: DOGEOS_WITHDRAWAL_REPLAY_SQLITE_PATH # Optional path; required (and the file must exist) when any of rotate_key_v2/advance_l1_builder_v2/advance_l2_builder_v2/l2_bootstrap_next_starting_block_height is enabled
     value: "/app/data/replay.sqlite"
 
-  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Optional path; lives and dies with replay_sqlite_path; when protocol-lane mode is enabled, requires fetch_and_decode_blobs=true and discovery_mode≠fulfillment_driven
+  - name: DOGEOS_WITHDRAWAL_PROTOCOL_CONTEXT_JSON # Required canonical protocol identity and opening authority
     value: "/app/protocol_context.json"
 
   # - name: DOGEOS_WITHDRAWAL_L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT # Optional, u64, next starting block height for L2 bootstrap; if set, must be >=1 and requires replay_sqlite_path + protocol_context_json
@@ -215,12 +255,6 @@ env:
   # [ethereum_da] - required when advance_l2_builder_v2 is enabled
   # ===========================================================================
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL # Required, Ethereum execution JSON-RPC URL
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__ETH_CHAIN_ID # Required, Ethereum chain id
-    value: "<TODO>"
-
-  - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L2_CHAIN_ID # Required, DogeOS L2 chain id
     value: "<TODO>"
 
   - name: DOGEOS_WITHDRAWAL_ETHEREUM_DA__INDEXER_SQLITE_PATH # Required, indexer_eth_da SQLite path; must be writable
@@ -491,9 +525,23 @@ persistence:
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    annotations: {}
     size: 1000Gi
     retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
+    readOnly: true
 
 # Resource configuration for production
 resources:
@@ -506,7 +554,13 @@ resources:
 
 serviceMonitor:
   main:
-    enabled: true # Enable if you have Prometheus monitoring in production
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /metrics
+        interval: 1m
+        scrapeTimeout: 10s
 
 defaultProbes:
   enabled: false

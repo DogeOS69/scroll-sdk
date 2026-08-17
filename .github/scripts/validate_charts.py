@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yaml
 
+from validate_production_values import validate as validate_production_values
+
 
 def load_yaml_file(file_path):
     if not os.path.exists(file_path):
@@ -185,6 +187,9 @@ def validate_attestation_signer_partner_kit():
 
 def main():
     success = True
+
+    if not validate_production_values():
+        success = False
 
     # Check production files sync
     # if not validate_production_files():

@@ -1,15 +1,22 @@
 # Production proof-coordinator values. `scrollsdk setup prep-charts` validates
 # released proof artifacts and updates only the marked verifier block in
 # proof-coordinator/ProofCoordinator.toml.
+global:
+  nameOverride: proof-coordinator
+  fullnameOverride: proof-coordinator
+
 proofCoordinator:
   config:
+    content: ""
+    existingConfigMap: ""
+    key: ProofCoordinator.toml
     required: true
 
 # The generated deployment contract supplies the native config at deploy time.
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: TODO_TAG_TO_REPLACE
 
 # Application process and arguments are deployment policy. Keep them in the
 # production values rather than introducing a chart revision for this rollout.
@@ -25,22 +32,73 @@ service:
       http:
         enabled: true
         port: 9400
+        targetPort: 9400
         protocol: TCP
 
 probes:
   liveness:
     enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
   readiness:
     enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /readyz, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
   startup:
     enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 24
 
 persistence:
+  config:
+    enabled: true
+    type: configMap
+    name: proof-coordinator-config
+    mountPath: /app/conf/
+    readOnly: true
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    retain: true
   secrets:
     enabled: true
     type: secret
+    name: proof-coordinator-secrets
     mountPath: /app/secrets
     readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
+    readOnly: true
+  tmp:
+    enabled: true
+    type: emptyDir
+    mountPath: /tmp
+    sizeLimit: 1Gi
 
 # Deployment policy, not chart behavior. `scrollsdk setup prep-charts`
 # replaces this entry with every coordinator-owned writable directory derived
@@ -59,9 +117,43 @@ initContainers:
 
 serviceAccount:
   create: true
+  name: proof-coordinator
   annotations: {}
 
+resources:
+  requests: {memory: 256Mi, cpu: 100m}
+  limits: {memory: 1Gi, cpu: 500m}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile: {type: RuntimeDefault}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+serviceMonitor:
+  main:
+    enabled: false
+
+ingress:
+  main:
+    enabled: false
+
+configMaps:
+  config:
+    enabled: false
+    data: {}
+
 env:
+  - name: DOGEOS_PROOF_COORDINATOR_PROTOCOL_CONTEXT_JSON
+    value: /app/protocol_context.json
   - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
     value: http://withdrawal-processor:9300
   - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP
@@ -81,6 +173,8 @@ env:
   # Public worker/signer endpoint. Uncomment and set for remote workers.
   # - name: DOGEOS_PROOF_COORDINATOR_PROVER_API__PUBLIC_S3_ENDPOINT_URL
   #   value: https://s3-public.example
+
+envFrom: []
 
 externalSecrets:
   secrets:

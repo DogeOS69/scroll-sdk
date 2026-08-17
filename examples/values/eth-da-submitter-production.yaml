@@ -1,7 +1,54 @@
+global:
+  nameOverride: eth-da-submitter
+  fullnameOverride: eth-da-submitter
+
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: newda
+  tag: TODO_TAG_TO_REPLACE
+
+# Empty command/args explicitly retain the image ENTRYPOINT and CMD.
+command: []
+args: []
+
+service:
+  main:
+    enabled: true
+    ports:
+      http: {enabled: true, port: 3004, targetPort: 3004, protocol: TCP}
+
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /ready, port: http}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 24
+
+ingress:
+  main:
+    enabled: false
 
 env:
   - name: RUST_LOG
@@ -16,10 +63,9 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__STATUS_POLL_INTERVAL_MS: "5000"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__SHUTDOWN_GRACE_PERIOD_SEC: "30"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__CYCLE_INTERVAL_MS: "1000"
+      DOGEOS_ETH_DA_SUBMITTER_PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
 
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__ETH_CHAIN_ID: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__L2_CHAIN_ID: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SIGNER_BACKEND: "aws_kms" # local or aws_kms
       # Fee cap defaults are provided by eth_da_submitter. If overriding via env,
       # use plain integer strings; do not include inner TOML quotes.
@@ -41,12 +87,7 @@ configMaps:
       # Cutover mode only; requires the matching BATCH__CUTOVER__* fields below.
       # DOGEOS_ETH_DA_SUBMITTER_L2__START_BLOCK_NUMBER: "<TODO>"
 
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_BATCH_HASH: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_STATE_ROOT: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_WITHDRAW_ROOT: "0x0000000000000000000000000000000000000000000000000000000000000000"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_WITHDRAW_INDEX: "0"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_RELAYED_DEPOSIT_INDEX: "0"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_RELAYED_DEPOSIT_QUEUE_HASH: "0x0000000000000000000000000000000000000000000000000000000000000000"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_JSON_PATH: /app/genesis/genesis.json
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MIN_CODEC_VERSION: "10"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "auto"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "15000000"
@@ -95,6 +136,26 @@ persistence:
     accessMode: ReadWriteOnce
     size: 10Gi
     retain: true
+  genesis:
+    enabled: true
+    name: genesis-config
+    type: configMap
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    items:
+      - key: genesis.json
+        path: genesis.json
+    readOnly: true
+  protocol-context:
+    enabled: true
+    name: protocol-context-config
+    type: configMap
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
+    readOnly: true
 
 resources:
   requests:
@@ -107,3 +168,8 @@ resources:
 serviceMonitor:
   main:
     enabled: true
+    endpoints:
+      - {port: http, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
+
+# AWS KMS supplies the signer; no application Secret is mounted by this profile.
+externalSecrets: {}

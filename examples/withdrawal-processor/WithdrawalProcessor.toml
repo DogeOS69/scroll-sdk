@@ -26,15 +26,12 @@
 advance_l1_builder_v2 = false
 advance_l2_builder_v2 = true
 api_port = 3000
-bridge_address = "<TODO>"
 cleanup_timeout_secs = 3600
 database_url = "sqlite:///app/data/withdrawal_processor.sqlite"
 debug_skip_broadcast = false
 debug_skip_tso_polling = false
 dogecoin_rpc_url = "http://dogecoin:22555"
 fee_rate_sat_per_kvb = 1000000
-genesis_sequencer_txid = "<TODO>"
-genesis_sequencer_vout = 0
 initial_bridge_redeem_script_hex = "<TODO>"
 leaf_verification_required = false
 max_deposits_per_advance_l1 = 32
@@ -68,10 +65,8 @@ start_block = 0
 [ethereum_da]
 artifact_metadata_sqlite_path = "/app/data/eth-da-artifact-metadata.sqlite"
 artifact_store_root = "/app/data/eth-da-blob-artifacts"
-eth_chain_id = 0
 indexer_sqlite_path = "/app/data/eth-da-indexer.sqlite"
 l1_rpc_url = "<TODO>"
-l2_chain_id = 0
 min_finality = "finalized"
 
 [ethereum_da.inbox_worker]

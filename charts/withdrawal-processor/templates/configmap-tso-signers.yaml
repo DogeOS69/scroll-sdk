@@ -15,5 +15,8 @@ data:
 {{- with .publicKeyOverride }}
     public_key_override = "{{ . }}"
 {{- end }}
+{{- with .signatureMode }}
+    signature_mode = "{{ . }}"
+{{- end }}
 {{- end }}
 {{- end }}

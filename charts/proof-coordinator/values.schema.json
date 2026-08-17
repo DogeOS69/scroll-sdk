@@ -22,11 +22,19 @@
     "controller": {
       "type": "object",
       "properties": {
+        "type": {
+          "const": "statefulset",
+          "description": "proof-coordinator has a fixed StatefulSet workload model."
+        },
         "replicas": {
           "type": "integer",
           "minimum": 0,
           "maximum": 1,
           "description": "proof-coordinator is singleton-only: it holds work leases under a single coordinator_id and its artifact store / data PVC are ReadWriteOnce. Do not run multiple replicas."
+        },
+        "strategy": {
+          "const": "RollingUpdate",
+          "description": "proof-coordinator uses the chart-owned RollingUpdate strategy."
         }
       }
     }

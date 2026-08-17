@@ -38,7 +38,7 @@ service:
         protocol: TCP
 
 defaultProbes: &default_probes
-  enabled: false
+  enabled: true
   custom: true
   spec:
     httpGet:
@@ -52,7 +52,15 @@ probes:
   liveness:
     <<: *default_probes
   readiness:
-    <<: *default_probes
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: /readyz
+        port: http
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
   startup:
     <<: *default_probes
     spec:

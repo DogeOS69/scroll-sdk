@@ -7,17 +7,17 @@
       "properties": {
         "type": {
           "const": "statefulset",
-          "description": "l1-interface has a fixed StatefulSet workload model."
+          "description": "cubesigner-signer has a fixed StatefulSet workload model."
         },
         "replicas": {
           "type": "integer",
           "minimum": 0,
           "maximum": 1,
-          "description": "l1-interface is singleton-only and does not support multiple replicas."
+          "description": "cubesigner-signer is singleton-only to avoid duplicate signing requests for the same signer identity."
         },
         "strategy": {
           "const": "RollingUpdate",
-          "description": "l1-interface uses the chart-owned RollingUpdate strategy."
+          "description": "cubesigner-signer uses the chart-owned RollingUpdate strategy."
         }
       }
     }

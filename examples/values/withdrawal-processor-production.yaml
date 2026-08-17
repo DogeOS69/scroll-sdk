@@ -6,20 +6,64 @@
 # `scrollsdk setup prep-charts`, and is passed to Helm through the generated
 # deployment contract. This values file carries only Kubernetes shape, secrets
 # wiring, and the proof activation switch.
+global:
+  nameOverride: withdrawal-processor
+  fullnameOverride: withdrawal-processor
+
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: newda
+  tag: TODO_TAG_TO_REPLACE
+
+# The image entrypoint is retained; args select the checked-in native config.
+command: []
 
 # The main API remains on 3000. The external proof-coordinator talks to the
 # dedicated WP proof-work authority API on the deployment-standard port 9300.
 service:
   main:
+    enabled: true
+    annotations: {}
     ports:
+      http:
+        enabled: true
+        port: 3000
+        targetPort: 3000
+        protocol: TCP
       proof-work:
         enabled: true
         port: 9300
+        targetPort: 9300
         protocol: TCP
+
+probes:
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 60
+      timeoutSeconds: 2
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 2
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 2
 
 args:
   - --config
@@ -112,12 +156,17 @@ tsoSigners:
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
     role: "Tee"
+    signatureMode: "ecdsa"
 
 # Persistence Configuration
 persistence:
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    annotations: {}
     size: 1000Gi
     retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
@@ -127,6 +176,9 @@ persistence:
     name: protocol-context-config
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
     readOnly: true
   withdrawal-processor-config:
     enabled: true
@@ -134,6 +186,9 @@ persistence:
     name: '{{ include "withdrawal-processor.fullname" . }}-config'
     mountPath: /app/config/WithdrawalProcessor.toml
     subPath: WithdrawalProcessor.toml
+    items:
+      - key: WithdrawalProcessor.toml
+        path: WithdrawalProcessor.toml
     readOnly: true
   tso-signers-config:
     enabled: true
@@ -141,6 +196,9 @@ persistence:
     name: "{{ include \"withdrawal-processor.fullname\" . }}-tso-signers"
     mountPath: /app/config/signers.toml
     subPath: signers.toml
+    items:
+      - key: signers.toml
+        path: signers.toml
     readOnly: true
 
 # Resource configuration for production
@@ -154,7 +212,13 @@ resources:
 
 serviceMonitor:
   main:
-    enabled: true # Enable if you have Prometheus monitoring in production
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /metrics
+        interval: 1m
+        scrapeTimeout: 10s
 
 defaultProbes:
   enabled: false

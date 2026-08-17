@@ -9,13 +9,25 @@
 #     part deployment tooling (scroll-sdk-cli) generates; `__` separates TOML
 #     sections, e.g. ARTIFACT_STORE__BUCKET -> [artifact_store] bucket.
 #   - secrets: mounted files via externalSecrets, referenced by *_file keys.
+global:
+  nameOverride: proof-coordinator
+  fullnameOverride: proof-coordinator
+
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: TODO_TAG_TO_REPLACE
+
+command:
+  - sh
+  - -ec
+  - exec proof-coordinator --config /app/conf/ProofCoordinator.toml
 
 proofCoordinator:
   config:
+    content: ""
+    existingConfigMap: ""
+    key: ProofCoordinator.toml
     required: true
 
 service:
@@ -25,6 +37,7 @@ service:
       http:
         enabled: true
         port: 9400
+        targetPort: 9400
         protocol: TCP
 
 probes:
@@ -32,19 +45,17 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet:
-        path: /healthz
-        port: http
-      periodSeconds: 15
+      httpGet: {path: /healthz, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
       timeoutSeconds: 2
       failureThreshold: 3
   readiness:
     enabled: true
     custom: true
     spec:
-      httpGet:
-        path: /healthz
-        port: http
+      httpGet: {path: /readyz, port: http}
+      initialDelaySeconds: 0
       periodSeconds: 10
       timeoutSeconds: 2
       failureThreshold: 3
@@ -52,25 +63,95 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet:
-        path: /healthz
-        port: http
+      httpGet: {path: /healthz, port: http}
+      initialDelaySeconds: 0
       periodSeconds: 5
       timeoutSeconds: 2
-      failureThreshold: 60
+      failureThreshold: 24
 
 persistence:
+  config:
+    enabled: true
+    type: configMap
+    name: proof-coordinator-config
+    mountPath: /app/conf/
+    readOnly: true
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    retain: true
   secrets:
     enabled: true
     type: secret
-    mountPath: /run/secrets
+    name: proof-coordinator-secrets
+    mountPath: /app/secrets
     readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
+    readOnly: true
+  tmp:
+    enabled: true
+    type: emptyDir
+    mountPath: /tmp
+    sizeLimit: 1Gi
+
+initContainers:
+  prepare-proof-data-directories:
+    image: busybox:1.36.1
+    command: [/bin/sh, -ec]
+    args:
+      - mkdir -p '/app/data/proof-artifacts'
+    volumeMounts:
+      - name: data
+        mountPath: /app/data
+
+resources:
+  requests: {memory: 256Mi, cpu: 100m}
+  limits: {memory: 1Gi, cpu: 500m}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile: {type: RuntimeDefault}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+serviceMonitor:
+  main:
+    enabled: false
+
+ingress:
+  main:
+    enabled: false
+
+configMaps:
+  config:
+    enabled: false
+    data: {}
 
 # Grant the pod's ServiceAccount an AWS IAM role via IRSA so the S3 artifact
 # store needs no static credentials. Uncomment and set the role ARN; leave the
 # annotations empty and use env/envFrom below for MinIO or static credentials.
 serviceAccount:
   create: true
+  name: proof-coordinator
   # Set name explicitly together with an IRSA role annotation when the IAM
   # trust policy pins a namespace/ServiceAccount OIDC subject.
   annotations: {}
@@ -82,11 +163,13 @@ serviceAccount:
 # AWS_SECRET_ACCESS_KEY / AWS_REGION (via secretKeyRef or envFrom); with IRSA
 # none are needed.
 env:
+  - name: DOGEOS_PROOF_COORDINATOR_PROTOCOL_CONTEXT_JSON
+    value: "/app/protocol_context.json"
   # WP proof-work API base URL. `allow_insecure_http` is required for a
   # non-loopback http:// URL — prefer https:// or service-mesh TLS if the
   # network path is not private/trusted.
   - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
-    value: "http://withdrawal-processor:3000"
+    value: "http://withdrawal-processor:9300"
   - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP
     value: "true"
   - name: DOGEOS_PROOF_COORDINATOR_COORDINATOR_ID

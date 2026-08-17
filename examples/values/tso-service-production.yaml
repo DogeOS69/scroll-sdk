@@ -12,6 +12,10 @@ env:
     value: "http://withdrawal-processor:3000"
   - name: TIMEOUT_CHECK_INTERVAL_SECONDS
     value: "60"
+  - name: TSO_CORRECTNESS_MAX_PSBT_BASE64_LEN
+    value: "130048"
+  - name: TSO_CUBESIGNER_MAX_PSBT_BASE64_LEN
+    value: "130048"
   - name: RUST_LOG
     value: "debug"
 

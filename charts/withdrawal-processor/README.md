@@ -1,6 +1,6 @@
 # withdrawal-processor
 
-![Version: 0.1.20](https://img.shields.io/badge/Version-0.1.20-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.21](https://img.shields.io/badge/Version-0.1.21-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
@@ -32,7 +32,7 @@ Kubernetes: `>=1.22.0-0`
 | image.repository | string | `"dogeos69/withdrawal-processor"` |  |
 | image.tag | string | `"110325-00"` |  |
 | persistence.data.accessMode | string | `"ReadWriteOnce"` |  |
-| persistence.data.annotations.placeholder | string | `"annotation"` |  |
+| persistence.data.annotations | object | `{}` |  |
 | persistence.data.enabled | bool | `true` |  |
 | persistence.data.mountPath | string | `"/app/data"` |  |
 | persistence.data.name | string | `"withdrawal-processor-data-pvc"` |  |
@@ -64,7 +64,7 @@ Kubernetes: `>=1.22.0-0`
 | resources.limits.memory | string | `"512Mi"` |  |
 | resources.requests.cpu | string | `"100m"` |  |
 | resources.requests.memory | string | `"128Mi"` |  |
-| service.main.annotations.placeholder | string | `"annotation"` |  |
+| service.main.annotations | object | `{}` |  |
 | service.main.enabled | bool | `true` |  |
 | service.main.ports.http.enabled | bool | `true` |  |
 | service.main.ports.http.port | int | `3000` |  |

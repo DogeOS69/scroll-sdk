@@ -2,7 +2,7 @@ apiVersion: v2
 name: proof-coordinator
 description: A Helm chart for the DogeOS proof-coordinator service
 type: application
-version: 0.3.0
+version: 0.3.1
 appVersion: "0.1.0"
 kubeVersion: ">=1.22.0-0"
 home: https://github.com/DogeOS69/dogeos-core
