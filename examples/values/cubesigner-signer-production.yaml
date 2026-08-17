@@ -45,8 +45,8 @@ env:
     value: "testnet"
   - name: "DOGEOS_CUBESIGNER_SIGNER_TSO_URL"
     value: "http://tso-service:3000"
-  - name: "DOGEOS_CUBESIGNER_SIGNER_BRIDGE_NAMESPACE_ID"
-    value: "__BRIDGE_NAMESPACE_ID__"
+  - name: "DOGEOS_CUBESIGNER_SIGNER_PROTOCOL_CONTEXT_JSON"
+    value: "/app/protocol_context.json"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY"
     value: "0"
   - name: "DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL"
@@ -109,6 +109,13 @@ persistence:
     type: "secret"
     secretName: "cubesigner-signer-session"
     mountPath: "/etc/cubesigner"
+    readOnly: true
+  protocol-context:
+    name: "protocol-context-config"
+    enabled: true
+    type: "configMap"
+    mountPath: "/app/protocol_context.json"
+    subPath: "protocol_context.json"
     readOnly: true
 volumeClaimTemplates:
   - name: "session-cache"

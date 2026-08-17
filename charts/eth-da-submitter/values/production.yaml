@@ -16,10 +16,9 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__STATUS_POLL_INTERVAL_MS: "5000"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__SHUTDOWN_GRACE_PERIOD_SEC: "30"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__CYCLE_INTERVAL_MS: "1000"
+      DOGEOS_ETH_DA_SUBMITTER_PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json"
 
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__ETH_CHAIN_ID: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__L2_CHAIN_ID: "<TODO>"
       # Fee cap defaults are provided by eth_da_submitter. If overriding via env,
       # keep the inner TOML string quotes, for example: '"50000000000"'.
       # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__MAX_BLOB_BASE_FEE_WEI: '"50000000000"'
@@ -33,12 +32,7 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_L2__CONFIRMATIONS: "0"
       DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_LIMIT: "128"
 
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_BATCH_HASH: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_STATE_ROOT: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_WITHDRAW_ROOT: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_WITHDRAW_INDEX: "0"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_NEXT_RELAYED_DEPOSIT_INDEX: "0"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_RELAYED_DEPOSIT_QUEUE_HASH: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_JSON_PATH: "/app/genesis/genesis.json"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MIN_CODEC_VERSION: "10"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "none"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "15000000"
@@ -65,6 +59,20 @@ persistence:
     accessMode: ReadWriteOnce
     size: 10Gi
     retain: true
+  genesis:
+    enabled: true
+    name: genesis-config
+    type: configMap
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    readOnly: true
+  protocol-context:
+    enabled: true
+    name: protocol-context-config
+    type: configMap
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true
 
 resources:
   requests:

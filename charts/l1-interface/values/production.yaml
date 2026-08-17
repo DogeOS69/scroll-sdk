@@ -24,20 +24,10 @@ configMaps:
       #DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "<TODO>"           # Main RPC API listen address (host:port)
       #DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "<TODO>"  # Beacon API listen address (host:port)
       #DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "<TODO>"      # Health check API listen address (host:port)
-      DOGEOS_L1_INTERFACE_CHAIN_ID: "0" # L2 chain ID (u64), defaults to Scroll Sepolia; usually overridden by genesis.json
-      DOGEOS_L1_INTERFACE_L1_CHAIN_ID: "0" # L1 chain ID (u64), default 1 (Ethereum mainnet); used by cross-chain operations
-      DOGEOS_L1_INTERFACE_SCROLL_CHAIN_ADDRESS: "<TODO>" # ScrollChain contract address (rollup batch commit contract), used for eth_call simulation, optional
-      #DOGEOS_L1_INTERFACE_SCROLL_MESSENGER_ADDRESS:                                  # [DEPRECATED] L1ScrollMessenger address override; public RPC startup hard-rejects this field, use protocol_context_json instead
-      #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_ADDRESS:                                  # L1MessageQueue V1 address (used pre-V2 deployment), optional
-      #DOGEOS_L1_INTERFACE_L1_MESSAGE_QUEUE_V2_ADDRESS:                               # L1MessageQueue V2 address (used post-V2 deployment), optional
       DOGEOS_L1_INTERFACE_L1_GENESIS_BLOCK: "4725000" # First L1 block height containing real data (u64); should align with dogecoin_indexer.start_height
-      DOGEOS_L1_INTERFACE_L2_MOAT_CONTRACT_ADDRESS: "<TODO>" # [REQUIRED] L2 Moat contract address; finalizes deposit accounting
-      DOGEOS_L1_INTERFACE_L2_MESSENGER_ADDRESS: "<TODO>" # [REQUIRED] L2 Messenger contract address; forwards deposits to Moat
       DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000" # L1 block gas limit simulation parameter (u64), default 30_000_000
       DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000" # L1 base fee per gas (u64, in wei), default 1_000_000_000 (1 gwei)
-      DOGEOS_L1_INTERFACE_SYSTEM_CONFIG_ADDRESS: "0x5300000000000000000000000000000000000013" # SystemConfig contract address (Scroll default)
-      DOGEOS_L1_INTERFACE_INITIAL_SYSTEM_SIGNER: "0x0000000000000000000000000000000000000001" # Initial system signer address (placeholder default)
-      #DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] genesis.json file path; existence is validated and parsed at startup
+      DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: "/app/genesis/genesis.json" # [REQUIRED] execution genesis, cross-validated against protocol_context.json
       DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true" # Whether to enable sequencer genesis controlled-init mode (true/false)
       #DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: "<TODO>"                                # Historical event-plane artifact JSON file path, optional; serves eth_getLogs for pre-genesis blocks
       #DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "0"                             # First post-genesis block number (u64), optional; pairs with the artifact — without artifact, queries below this value hard-fail
@@ -89,11 +79,11 @@ configMaps:
       # -----------------------------------------------------------------------------
       # [replay_read] - Replay read (required for public RPC)
       # -----------------------------------------------------------------------------
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Whether to enable replay read (true/false); must be true for public RPC startup
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Replay SQLite database file path; required for public RPC and the file must exist
+      DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true" # Required for public RPC startup
+      DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: "/data/replay.sqlite" # Context-bound replay SQLite database; the file must exist
       #DOGEOS_L1_INTERFACE_REPLAY_READ__FULFILLED_WITHDRAWALS_DB_PATH: "<TODO>"                    # Fulfilled-withdrawals database path, optional
       DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false" # Whether to require full replay validation (true/false)
-      #DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Protocol context JSON file path; required for public RPC, provides ProtocolParams/GenesisParams/ProtocolConfigSeed
+      DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: "/app/protocol_context.json" # Canonical protocol identity and opening authority; required for public RPC
       #DOGEOS_L1_INTERFACE_REPLAY_READ__L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT: "<TODO>"         # L2 bootstrap next-segment start block height (u64), optional; if set must be > 1
 
       # -----------------------------------------------------------------------------
@@ -139,3 +129,17 @@ persistence:
   data:
     size: "1000Gi"
     retain: true
+  genesis:
+    enabled: true
+    type: configMap
+    name: genesis-config
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true

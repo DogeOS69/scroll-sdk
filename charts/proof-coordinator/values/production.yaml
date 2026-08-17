@@ -33,6 +33,13 @@ persistence:
     type: secret
     mountPath: /app/secrets
     readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true
 
 # Grant the pod's ServiceAccount an AWS IAM role via IRSA so the S3 artifact
 # store needs no static credentials. Uncomment and set the role ARN; leave the
@@ -50,6 +57,8 @@ serviceAccount:
 # AWS_SECRET_ACCESS_KEY / AWS_REGION (via secretKeyRef or envFrom); with IRSA
 # none are needed.
 env:
+  - name: DOGEOS_PROOF_COORDINATOR_PROTOCOL_CONTEXT_JSON
+    value: "/app/protocol_context.json"
   # WP proof-work API base URL. `allow_insecure_http` is required for a
   # non-loopback http:// URL — prefer https:// or service-mesh TLS if the
   # network path is not private/trusted.

@@ -41,6 +41,13 @@ persistence:
     type: secret
     mountPath: /app/secrets
     readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    readOnly: true
 
 # Deployment policy, not chart behavior. `scrollsdk setup prep-charts`
 # replaces this entry with every coordinator-owned writable directory derived
@@ -62,6 +69,8 @@ serviceAccount:
   annotations: {}
 
 env:
+  - name: DOGEOS_PROOF_COORDINATOR_PROTOCOL_CONTEXT_JSON
+    value: /app/protocol_context.json
   - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
     value: http://withdrawal-processor:9300
   - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP

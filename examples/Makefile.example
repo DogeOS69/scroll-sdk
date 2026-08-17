@@ -152,7 +152,7 @@ install-contracts:
 
 install-eth-da-submitter:
 	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.2 \
+		--version=0.1.3 \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
@@ -163,7 +163,7 @@ install-fee-oracle:
 
 install-cubesigner-signer:
 	helm upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-	 	--version=0.1.7 \
+		--version=0.1.8 \
 		--values values/cubesigner-signer-production.yaml
 
 install-tso:
