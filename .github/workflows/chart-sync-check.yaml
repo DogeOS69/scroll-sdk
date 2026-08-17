@@ -3,12 +3,20 @@ name: Chart Sync Validation
 on:
   push:
     paths:
+      - ".github/scripts/validate_charts.py"
+      - ".github/scripts/validate_production_values.py"
+      - "charts/**/values.yaml"
+      - "charts/**/values.schema.json"
       - "charts/**/values/production.yaml"
       - "examples/values/*-production.yaml"
       - "charts/**/Chart.yaml"
       - "examples/Makefile.example"
   pull_request:
     paths:
+      - ".github/scripts/validate_charts.py"
+      - ".github/scripts/validate_production_values.py"
+      - "charts/**/values.yaml"
+      - "charts/**/values.schema.json"
       - "charts/**/values/production.yaml"
       - "examples/values/*-production.yaml"
       - "charts/**/Chart.yaml"

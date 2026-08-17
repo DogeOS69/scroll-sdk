@@ -5,11 +5,19 @@
     "controller": {
       "type": "object",
       "properties": {
+        "type": {
+          "const": "statefulset",
+          "description": "eth-da-submitter has a fixed StatefulSet workload model."
+        },
         "replicas": {
           "type": "integer",
           "minimum": 0,
           "maximum": 1,
           "description": "eth-da-submitter is singleton-only and does not support multiple replicas."
+        },
+        "strategy": {
+          "const": "RollingUpdate",
+          "description": "eth-da-submitter uses the chart-owned RollingUpdate strategy."
         }
       }
     }

@@ -1,6 +1,6 @@
 # cubesigner-signer
 
-![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS CubeSigner Attestation Signer
 
@@ -36,21 +36,29 @@ Kubernetes: `>=1.22.0-0`
 | env[1].value | string | `"testnet"` |  |
 | env[2].name | string | `"DOGEOS_CUBESIGNER_SIGNER_TSO_URL"` |  |
 | env[2].value | string | `"http://dogeos-tso:3000"` |  |
-| env[3].name | string | `"DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY"` |  |
-| env[3].value | string | `"1"` |  |
-| env[4].name | string | `"DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL"` |  |
-| env[4].value | string | `"5000"` |  |
-| env[5].name | string | `"DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"` |  |
-| env[5].value | string | `""` |  |
-| env[6].name | string | `"DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH"` |  |
-| env[6].value | string | `"/etc/cubesigner/session.json"` |  |
-| env[7].name | string | `"DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"` |  |
-| env[7].value | string | `"5mb"` |  |
+| env[3].name | string | `"DOGEOS_CUBESIGNER_SIGNER_PROTOCOL_CONTEXT_JSON"` |  |
+| env[3].value | string | `"/app/protocol_context.json"` |  |
+| env[4].name | string | `"DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY"` |  |
+| env[4].value | string | `"1"` |  |
+| env[5].name | string | `"DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL"` |  |
+| env[5].value | string | `"5000"` |  |
+| env[6].name | string | `"DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"` |  |
+| env[6].value | string | `""` |  |
+| env[7].name | string | `"DOGEOS_CUBESIGNER_SIGNER_CS_SESSION_PATH"` |  |
+| env[7].value | string | `"/etc/cubesigner/session.json"` |  |
+| env[8].name | string | `"DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"` |  |
+| env[8].value | string | `"5mb"` |  |
 | global.fullnameOverride | string | `"cubesigner-signer"` |  |
 | global.nameOverride | string | `"cubesigner-signer"` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/cubesigner-signer"` |  |
 | image.tag | string | `"091025-01"` |  |
+| persistence.protocol-context.enabled | bool | `true` |  |
+| persistence.protocol-context.mountPath | string | `"/app/protocol_context.json"` |  |
+| persistence.protocol-context.name | string | `"protocol-context-config"` |  |
+| persistence.protocol-context.readOnly | bool | `true` |  |
+| persistence.protocol-context.subPath | string | `"protocol_context.json"` |  |
+| persistence.protocol-context.type | string | `"configMap"` |  |
 | persistence.session.enabled | bool | `true` |  |
 | persistence.session.mountPath | string | `"/etc/cubesigner"` |  |
 | persistence.session.name | string | `"cubesigner-session-secret-vol"` |  |

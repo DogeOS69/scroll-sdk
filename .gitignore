@@ -12,3 +12,4 @@ charts/**/charts/
 
 # Generated environment files
 charts/scroll-sdk/configs/*.env
+__pycache__/

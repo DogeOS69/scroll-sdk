@@ -19,7 +19,7 @@ service:
       http:
         enabled: true
         port: 3000
-    annotations: {placeholder: "annotation"}
+    annotations: {}
 
 probes:
   startup:
@@ -64,7 +64,7 @@ persistence:
     mountPath: /app/data
     accessMode: ReadWriteOnce
     size: 1Gi
-    annotations: {placeholder: "annotation"}
+    annotations: {}
     retain: true
 
 # Resource configuration

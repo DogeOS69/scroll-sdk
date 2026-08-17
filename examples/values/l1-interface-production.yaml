@@ -1,10 +1,55 @@
 ---
 # Production overrides for l1-interface. Deployment-specific fields are filled
 # by scrollsdk from DeploymentSpec/doge-config and generated artifacts.
+global:
+  nameOverride: l1-interface
+  fullnameOverride: l1-interface
+
 image:
   repository: dogeos69/l1-interface
   pullPolicy: IfNotPresent
   tag: TODO_TAG_TO_REPLACE
+
+command:
+  - /usr/local/bin/l1_interface
+
+service:
+  main:
+    enabled: true
+    ports:
+      jsonrpc: {enabled: true, port: 8545, targetPort: 8545, protocol: TCP}
+      beacon: {enabled: true, port: 5052, targetPort: 5052, protocol: TCP}
+      http: {enabled: true, port: 9090, targetPort: 9090, protocol: TCP}
+      admin: {enabled: true, port: 9091, targetPort: 9091, protocol: TCP}
+
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/ready, port: http}
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 60
 
 env:
   - name: RUST_LOG
@@ -69,6 +114,7 @@ persistence:
     type: pvc
     name: l1-interface-data-pvc
     mountPath: /data
+    accessMode: ReadWriteOnce
     size: 100Gi
     retain: true
   genesis:
@@ -77,6 +123,9 @@ persistence:
     name: genesis-config
     mountPath: /app/genesis/genesis.json
     subPath: genesis.json
+    items:
+      - key: genesis.json
+        path: genesis.json
     readOnly: true
   protocol-context:
     enabled: true
@@ -84,6 +133,9 @@ persistence:
     name: protocol-context-config
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
     readOnly: true
 
 resources:
@@ -93,3 +145,13 @@ resources:
   limits:
     memory: 1Gi
     cpu: 1000m
+
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /api/v1/metrics
+        interval: 10s
+        scrapeTimeout: 5s

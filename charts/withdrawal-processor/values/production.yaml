@@ -1,9 +1,58 @@
 ---
 # Production environment overrides for withdrawal-processor
+global:
+  nameOverride: withdrawal-processor
+  fullnameOverride: withdrawal-processor
+
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: 110525-00
+  tag: TODO_TAG_TO_REPLACE
+
+# Empty command/args explicitly retain the image ENTRYPOINT for this
+# environment-variable-driven reference profile.
+command: []
+args: []
+
+service:
+  main:
+    enabled: true
+    annotations: {}
+    ports:
+      http:
+        enabled: true
+        port: 3000
+        targetPort: 3000
+        protocol: TCP
+
+probes:
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 60
+      timeoutSeconds: 2
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 2
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /healthz/ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 2
 
 env:
   # ===========================================================================
@@ -476,6 +525,10 @@ persistence:
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
+    type: pvc
+    mountPath: /app/data
+    accessMode: ReadWriteOnce
+    annotations: {}
     size: 1000Gi
     retain: true
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
@@ -485,6 +538,9 @@ persistence:
     name: protocol-context-config
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
     readOnly: true
 
 # Resource configuration for production
@@ -498,7 +554,13 @@ resources:
 
 serviceMonitor:
   main:
-    enabled: true # Enable if you have Prometheus monitoring in production
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /metrics
+        interval: 1m
+        scrapeTimeout: 10s
 
 defaultProbes:
   enabled: false

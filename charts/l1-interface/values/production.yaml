@@ -1,14 +1,81 @@
 ---
 # Production environment overrides
+global:
+  nameOverride: l1-interface
+  fullnameOverride: l1-interface
+
 image:
   repository: "dogeos69/l1-interface"
   pullPolicy: "IfNotPresent"
-  tag: "latest"
+  tag: "TODO_TAG_TO_REPLACE"
+
+command:
+  - /usr/local/bin/l1_interface
+
+service:
+  main:
+    enabled: true
+    ports:
+      jsonrpc:
+        enabled: true
+        port: 8545
+        targetPort: 8545
+        protocol: TCP
+      beacon:
+        enabled: true
+        port: 5052
+        targetPort: 5052
+        protocol: TCP
+      http:
+        enabled: true
+        port: 9090
+        targetPort: 9090
+        protocol: TCP
+      admin:
+        enabled: true
+        port: 9091
+        targetPort: 9091
+        protocol: TCP
+
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/v1/health/ready, port: http}
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 60
 
 # Direct environment variables
 env:
   - name: "RUST_LOG"
     value: "info" # info, l1_interface=debug
+
+envFrom:
+  - secretRef:
+      name: l1-interface-secret-env
+  - configMapRef:
+      name: l1-interface-env
 
 # ConfigMap overrides for production
 configMaps:
@@ -20,7 +87,7 @@ configMaps:
       # -----------------------------------------------------------------------------
       DOGEOS_L1_INTERFACE_NETWORK_STR: "<TODO>" # [REQUIRED] Dogecoin network name (mainnet/testnet/regtest, etc.), used by Network::from_str; alias: network
       #DOGEOS_L1_INTERFACE_DATABASE_URL: "sqlite:///data/l1-interface.sqlite" # [REQUIRED] Primary database connection string (e.g. sqlite:///path/to.db or postgres://...); alias: db_url
-      # Listen addresses are wired to service.main.ports in values.yaml — managed by chart, do not override here.
+      # Listen addresses are wired to the explicit service.main.ports above.
       #DOGEOS_L1_INTERFACE_API_BIND_ADDRESS: "<TODO>"           # Main RPC API listen address (host:port)
       #DOGEOS_L1_INTERFACE_BEACON_API_LISTEN_ADDRESS: "<TODO>"  # Beacon API listen address (host:port)
       #DOGEOS_L1_INTERFACE_HEALTH_LISTEN_ADDRESS: "<TODO>"      # Health check API listen address (host:port)
@@ -127,6 +194,10 @@ resources:
 # Storage size override for production
 persistence:
   data:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
     size: "1000Gi"
     retain: true
   genesis:
@@ -135,6 +206,9 @@ persistence:
     name: genesis-config
     mountPath: /app/genesis/genesis.json
     subPath: genesis.json
+    items:
+      - key: genesis.json
+        path: genesis.json
     readOnly: true
   protocol-context:
     enabled: true
@@ -142,4 +216,17 @@ persistence:
     name: protocol-context-config
     mountPath: /app/protocol_context.json
     subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
     readOnly: true
+
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: http
+        scheme: http
+        path: /api/v1/metrics
+        interval: 10s
+        scrapeTimeout: 5s
