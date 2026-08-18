@@ -114,4 +114,10 @@ target_size_ratio = 1.0
 mode = "disabled"
 require_bridge_state = false
 require_scroll_execution = false
+# Temporary Issue #843 testnet recovery only. `scrollsdk setup prep-charts`
+# materializes this table from proofSystem.preTsukiDirectSign; it is deliberately
+# absent by default and must be retired before proof mode is enabled.
+#
+# [proof_system.pre_tsuki_direct_sign]
+# max_end_batch_height = <TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
 # END scrollsdk managed proof configuration

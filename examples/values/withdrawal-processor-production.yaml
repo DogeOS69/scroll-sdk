@@ -103,6 +103,8 @@ serviceAccount:
 env:
   # CLI-owned atomic proof activation projection. Default posture is disabled;
   # setup prep-charts replaces all five managed entries together.
+  # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
+  # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
     value: "disabled"
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION

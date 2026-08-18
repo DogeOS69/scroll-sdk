@@ -165,6 +165,36 @@ proof-backed signing until that check exists in the selected release. The mock
 lane is the supported way to test the complete deployment/network/callback
 flow with deterministic non-cryptographic proofs.
 
+### Temporary pre-Tsuki direct-sign recovery
+
+An Issue #843 recovery bundle may contain:
+
+```dotenv
+ATTESTATION_SIGNER_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
+```
+
+This is a bounded, testnet-only exception for already-persisted pre-Tsuki work,
+not a normal disabled-mode default. Apply only the generated value: the bridge
+operator must use the exact same pin on Withdrawal Processor and TSO. The signer
+hard-rejects the posture on mainnet. The pin belongs in the generated
+`signer-policy.env`; do not copy it into operator-owned
+`attestation-signer.env`, where it could survive a later retirement bundle.
+
+After restart, inspect `/policy`. The
+`advance_l1_pre_tsuki_direct_sign` and
+`advance_l2_pre_tsuki_direct_sign` capabilities must be serving. They are
+excluded from `/ready`, so a healthy/ready response alone does not prove that
+the temporary capability is enabled. CubeSigner has no matching setting; the
+attestation role requires this Rust signer.
+
+After the bridge operator confirms the authoritative completion predicate is
+stable, apply the generated retirement bundle without the env value and restart
+the signer. Before restart, verify the resolved Compose environment contains no
+stale copy from `attestation-signer.env`. The bridge operator retires the
+deployment in reverse order: WP, Rust signer, then TSO, before enabling proofs.
+See
+[`docs/pre-tsuki-direct-sign-recovery.md`](../../docs/pre-tsuki-direct-sign-recovery.md).
+
 ## Network requirements (agree these with the bridge operator)
 
 1. **Inbound** — the bridge operator's TSO must reach your signer's

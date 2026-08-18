@@ -16,6 +16,11 @@ env:
     value: "130048"
   - name: TSO_CUBESIGNER_MAX_PSBT_BASE64_LEN
     value: "130048"
+  # Temporary Issue #843 testnet recovery only. Do not enable by default.
+  # scrollsdk prep-charts adds/removes this from deployment proof intent and
+  # binds the same reviewed height in WP and the Rust signer policy bundle.
+  # - name: TSO_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT
+  #   value: "<TSUKI_BOUNDARY_L2_BATCH_HEIGHT>"
   - name: RUST_LOG
     value: "debug"
 
