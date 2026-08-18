@@ -168,7 +168,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.6 \
+		--version=0.1.5 \
 		--values values/tso-service-production.yaml \
 		--wait
 

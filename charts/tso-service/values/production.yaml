@@ -10,10 +10,6 @@ env:
     value: "testnet"
   - name: WITHDRAWAL_PROCESSOR_URL
     value: "http://withdrawal-processor:3000"
-  # Temporary Issue #843 testnet recovery only. Prefer scrollsdk-generated
-  # deployment values so WP, TSO, and the Rust signer receive one reviewed pin.
-  # - name: TSO_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT
-  #   value: "<TSUKI_BOUNDARY_L2_BATCH_HEIGHT>"
   - name: RUST_LOG
     value: "debug"
 
