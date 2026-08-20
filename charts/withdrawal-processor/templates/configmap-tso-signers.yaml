@@ -8,10 +8,14 @@ metadata:
 data:
   signers.toml: |
 {{- range .Values.tsoSigners }}
+{{- $role := required "tsoSigners[].role is required" .role }}
+{{- if not (has $role (list "Correctness" "Attestation")) }}
+{{- fail (printf "tsoSigners[].role must be Correctness or Attestation; got %q" $role) }}
+{{- end }}
     [[tso_signers]]
     network = "{{ .network }}"
     uri = "{{ .uri }}"
-    role = "{{ .role }}"
+    role = "{{ $role }}"
 {{- with .publicKeyOverride }}
     public_key_override = "{{ . }}"
 {{- end }}

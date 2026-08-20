@@ -508,17 +508,21 @@ externalSecrets:
 # which is then mounted as /app/config/signers.toml
 tsoSigners:
   - network: "testnet"
-    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Tee signer is local
-    role: "Tee"
+    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Correctness signer is local
+    role: "Correctness"
+    signatureMode: "ecdsa"
   - network: "testnet"
     uri: "http://cubesigner-signer-0:3000"
     role: "Attestation"
+    signatureMode: "ecdsa"
   - network: "testnet"
     uri: "http://cubesigner-signer-1:3000"
     role: "Attestation"
+    signatureMode: "ecdsa"
   - network: "testnet"
     uri: "http://cubesigner-signer-2:3000"
     role: "Attestation"
+    signatureMode: "ecdsa"
 
 # Persistence Configuration
 persistence:
@@ -574,7 +578,7 @@ defaultProbes:
 # [[tso_signers]]
 # network = "testnet"
 # uri = "http://127.0.0.1:4001" # or http://tee-signer:3000 if in K8s
-# role = "Tee"
+# role = "Correctness"
 # public_key_override = "02..."
 #
 # [[tso_signers]]
@@ -590,7 +594,7 @@ defaultProbes:
 # [[tso_signers]]
 # network = "mainnet"
 # uri = "http://mainnet-tee-signer:3000" # Adjust URI for your prod signer
-# role = "Tee"
+# role = "Correctness"
 # public_key_override = "02..."
 #
 # [[tso_signers]]

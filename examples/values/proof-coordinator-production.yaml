@@ -1,6 +1,7 @@
-# Production proof-coordinator values. `scrollsdk setup prep-charts` validates
-# released proof artifacts and updates only the marked verifier block in
-# proof-coordinator/ProofCoordinator.toml.
+# Production proof-coordinator values. `scrollsdk setup prep-charts` reconciles
+# the marked deployment-derived runtime and verifier blocks in
+# proof-coordinator/ProofCoordinator.toml while preserving operator-owned
+# configuration outside those blocks.
 global:
   nameOverride: proof-coordinator
   fullnameOverride: proof-coordinator

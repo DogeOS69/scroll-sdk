@@ -157,7 +157,7 @@ externalSecrets:
 tsoSigners:
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
-    role: "Tee"
+    role: "Correctness"
     signatureMode: "ecdsa"
 
 # Persistence Configuration
