@@ -10,16 +10,6 @@ This chart supports three roles through `role`:
 
 The chart generates `rollup-node node` as Kubernetes `command`/`args` instead of using shell string concatenation. This avoids argument quoting issues for flags such as `--signer.aws-kms-key-id`.
 
-`reth.engineSyncAtStartup` defaults to `"true"`, matching rollup-node itself.
-This reconciles the execution engine with the canonical rollup head after a
-restart before the node serves or sequences new work. Disable it only for
-controlled replay/testing workflows that provide their own engine state.
-
-The chart's generic defaults retain the upstream Scroll image. DogeOS
-production values must select an immutable `dogeos69/rollup-node` release that
-matches the deployed protocol/core release; the examples intentionally leave
-the tag as `TODO_TAG_TO_REPLACE` instead of silently choosing a stale build.
-
 Use `reth.extraArgs` for rollup-node flags that are not modeled by the chart yet. It can be configured as a whitespace-delimited string:
 
 ```yaml

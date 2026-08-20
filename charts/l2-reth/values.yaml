@@ -70,9 +70,7 @@ reth:
   blobS3Url: ""
   trustedPeers: ""
   builderGasLimit: ""
-  # Match rollup-node's safe default: reconcile the execution engine with the
-  # canonical rollup head before serving or sequencing after a restart.
-  engineSyncAtStartup: "true"
+  engineSyncAtStartup: "false"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
   ipcPermissions: "0600"
