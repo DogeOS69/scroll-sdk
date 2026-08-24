@@ -80,12 +80,35 @@ configMaps:
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>"
       DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true"
       DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: /data/replay.sqlite
+      # Host replay compatibility policy. 0 means every P2PKH withdrawal uses
+      # the versioned recipient envelope; P2SH is always versioned.
+      DOGEOS_L1_INTERFACE_REPLAY_READ__P2PKH_VERSIONED_ENVELOPE_START_WITHDRAW_INDEX: "0"
       DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true"
       DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false"
       DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
+      # Cutover/snapshot deployments only; prep-charts fills this from the
+      # deployment's first real L2 height when one is configured.
+      # DOGEOS_L1_INTERFACE_REPLAY_READ__L2_BOOTSTRAP_NEXT_STARTING_BLOCK_HEIGHT: "<TODO>"
+
+      # Optional pre-genesis event-plane artifact. Configure both fields
+      # together and mount the matching SQLite artifact under /data.
+      # DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: /data/event-plane.sqlite
+      # DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "<TODO>"
+
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL: "<TODO>"
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000"
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL: "<TODO>"
+      # Optional provider-local timeout; otherwise the parent timeout is used.
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__TIMEOUT_MS: "10000"
+      # Additional production providers may be configured alongside Beacon.
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BLOB_SCAN__URL: "<TODO>"
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BLOCK_NATIVE__URL: "<TODO>"
+      # S3 archive routing is filled by prep-charts when enabled. Timeout and
+      # forbidden-as-missing remain template/operator policy.
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__URL: "<TODO>"
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__KEY_PREFIX: ""
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__TIMEOUT_MS: "10000"
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__AWS_S3__TREAT_FORBIDDEN_AS_MISSING: "false"
 
 envFrom:
   - secretRef:

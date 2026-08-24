@@ -102,7 +102,7 @@ serviceAccount:
 
 env:
   # CLI-owned atomic proof activation projection. Default posture is disabled;
-  # setup prep-charts replaces all five managed entries together.
+  # setup prep-charts replaces the proof-system entries together.
   # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
   # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
@@ -111,9 +111,6 @@ env:
     value: "false"
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
     value: "false"
-  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ENABLED
-    value: "false"
-
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
@@ -158,6 +155,9 @@ tsoSigners:
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
     role: "Correctness"
+    # prep-charts derives the canonical compressed key from doge-config. It is
+    # required by the production bridge-proof-reference transport.
+    publicKeyOverride: "<TODO>"
     signatureMode: "ecdsa"
 
 # Persistence Configuration

@@ -24,6 +24,8 @@
 
 # BEGIN scrollsdk managed deployment configuration
 advance_l1_builder_v2 = false
+advance_l1_deposit_stale_after_eligible_blocks = 5
+advance_l1_frontier_stale_after_eligible_blocks = 30
 advance_l2_builder_v2 = true
 api_port = 3000
 cleanup_timeout_secs = 3600
@@ -55,11 +57,14 @@ start_height = 0
 
 [dogeos_indexer]
 confirmations = 12
+allow_sparse_block_hash_probe = false
 log_query_batch_size = 10000
 message_queue_address = "<TODO>"
 messenger_address = "<TODO>"
 poll_interval_ms = 1000
+reorg_lookback_blocks = 256
 rpc_url = "<TODO>"
+skip_block_hash_probe = false
 start_block = 0
 
 [ethereum_da]
@@ -89,6 +94,22 @@ timeout_ms = 10000
 [ethereum_da.blob_source.beacon_node]
 url = "<TODO>"
 
+# Optional production fallbacks. Uncomment only the providers this deployment
+# operates; the resolver tries Beacon, BlobScan, BlockNative, then S3.
+# [ethereum_da.blob_source.blob_scan]
+# url = "<TODO>"
+# timeout_ms = 10000
+#
+# [ethereum_da.blob_source.block_native]
+# url = "<TODO>"
+# timeout_ms = 10000
+#
+# [ethereum_da.blob_source.aws_s3]
+# url = "<TODO>"
+# key_prefix = ""
+# timeout_ms = 10000
+# treat_forbidden_as_missing = false
+
 [utxo_manager_intermediate]
 allow_inflight_bridge_outputs = true
 bridge_min_confirmations = 10
@@ -111,6 +132,7 @@ target_size_ratio = 1.0
 
 # BEGIN scrollsdk managed proof configuration
 [proof_system]
+correctness_policy_transport = "plain"
 mode = "disabled"
 require_bridge_state = false
 require_scroll_execution = false
@@ -121,3 +143,14 @@ require_scroll_execution = false
 # [proof_system.pre_tsuki_direct_sign]
 # max_end_batch_height = <TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
 # END scrollsdk managed proof configuration
+
+# One-shot operator recovery tools. Keep both declarations absent during
+# normal operation. Use Unix milliseconds and remove the selected declaration
+# after startup confirms the recovery action.
+#
+# [proof_execution.reset]
+# statement_hash = "<0x-prefixed-32-byte-hex>"
+# created_before_ms = 1577836800000
+#
+# [proof_execution.regenerate]
+# created_before_ms = 1577836800000

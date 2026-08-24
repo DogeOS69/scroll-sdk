@@ -107,7 +107,7 @@ env:
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROOF_RESOLVER_AUTHORITY"
     value: ""
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_REQUEST_CONTRACT"
-    value: "dogeos-cubesigner-psbt-no-metadata-sign-all-scripts-false-unprefixed-hex-v1"
+    value: "dogeos-cubesigner-compact-psbt-bridge-proof-ref-v1-sign-all-scripts-false-unprefixed-hex-v2"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_LIVE_EVIDENCE_REPORT_PATH"
     value: ""
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_LIVE_EVIDENCE_REPORT_DIGEST"
