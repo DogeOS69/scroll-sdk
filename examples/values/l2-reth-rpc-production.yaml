@@ -49,7 +49,9 @@ reth:
   ipcPermissions: "0600"
   logFormat: log-fmt
   verbosity: 3
-  extraArgs: []
+  extraArgs:
+    - "--network.legacy-geth-header-transform"
+    - "true"
 
   ports:
     http: 8545
