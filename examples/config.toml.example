@@ -165,3 +165,6 @@ ADMIN_SYSTEM_DASHBOARD_HOST = "admin-system-dashboard.scrollsdk"
 L1_DEVNET_HOST = "l1-devnet.scrollsdk"
 L1_EXPLORER_HOST = "l1-explorer.scrollsdk"
 GRAFANA_HOST = "grafana.scrollsdk"
+# Stable proof-coordinator endpoint. It may be reserved before proof services
+# are started and does not activate proof execution by itself.
+PROOF_COORDINATOR_HOST = "proof-coordinator.scrollsdk"

@@ -61,10 +61,13 @@ For more information on Scroll SDK, refer to the main README in the root directo
 
 ## Proof helper interface
 
-`scrollsdk setup prep-charts` owns proof mode selection, configuration
-generation, and validation. The example Makefile only installs or removes the
-generated Kubernetes releases; it does not provide a second proof setup
-interface.
+`scrollsdk setup prep-charts` prepares and validates proof configuration. The
+example Makefile only installs or removes the generated Kubernetes releases;
+it does not provide a second proof setup interface. Resource coordinates and
+infrastructure may be prepared while proof mode remains disabled, and the CLI
+retains any previously prepared inactive Worker bundle. Later mode cutovers are
+a native service configuration and operator start/stop/drain operation, not a
+reason to regenerate deployment configuration with the CLI.
 
 The generated deployment uses the following conventional paths:
 
@@ -91,7 +94,10 @@ values/
 └── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
 
 prover-worker-mock/
-└── docker-compose/                            (generated only in mock mode)
+└── docker-compose/                            (prepared bundle; retained while inactive)
+
+prover-worker-production/
+└── docker-compose/                            (prepared bundle; retained while inactive)
 ```
 
 Copy `Makefile.example` into the deployment root as `Makefile`. From that root,
@@ -113,9 +119,11 @@ their `scrollsdk signer preflight`, and import the descriptors with
 complete `signer-policy-bundle/` produced by
 `scrollsdk setup export-signer-policy`.
 
-For mock and production AWS deployments, provision first. The command writes
+For a deployment that will later use mock or production, provision the shared
+AWS resources during initial preparation. The command writes
 stable resource facts to `.data/proof-aws.json`; `prep-charts` then projects
-that configuration into final values and the deployment contract in one pass:
+that configuration into final values and the deployment contract without
+requiring proof execution to be active:
 
 ```bash
 scrollsdk setup proof-aws-init \
@@ -133,7 +141,8 @@ make install-proof-stack
 mode-agnostic `scrollsdk helper proof-helm` adapter. It reads values and
 `--set-file` bindings only from `.data/proof-deployment.json`; the Makefile
 does not choose mock/production manifests or repeat proof paths. Disabled mode
-skips proof-coordinator automatically.
+skips proof-coordinator automatically; the prepared resource facts and any
+inactive Worker bundles remain in place.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
