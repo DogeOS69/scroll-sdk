@@ -1,229 +1,252 @@
-# Running a DogeOS Attestation Signer (Signer-Operator Runbook)
+# Running a DogeOS Attestation Signer
 
-This is the generic, static manual for every signer operator. It explains the
-roles, one-time setup, handoff, network contract, and operating rules, but it
-does not contain addresses or commands for a particular bridge deployment.
-After bridge genesis, the generated
-`signer-policy-bundle/PARTNER-COMMANDS.md` supplied by the bridge operator is
-the authoritative instruction file for that deployment.
+This kit is for a partner that operates one Rust `attestation-signer` outside
+the bridge operator's cluster. The bridge operator receives only the signer's
+HTTPS endpoint and compressed public key. It never receives the WIF, KMS
+credentials, private RPC credentials, or the partner's trust policy.
 
-You are one of N independent attestation signers securing a DogeOS bridge.
-You deploy and operate **one service** — `attestation-signer` — on your own
-infrastructure, holding your own signing key. The bridge operator never sees
-your key; they only receive your **endpoint URL and public key**, and later
-send you a **policy bundle** that binds your signer to the generated bridge.
-
-The whole exchange has three phases. They are deliberately identical for mock
-and production; the bridge operator's policy bundle selects the proof/signer
-posture, so you do not pass a second mode flag:
+The current dogeos-core contract is `attestation_evidence_v2`:
 
 ```text
- ①  You:              generate key → deploy signer → send descriptor.json
- ②  Bridge operator:  collects all descriptors → generates the bridge
- ③  Bridge operator:  sends you the policy bundle → you apply it & restart
+partner creates key + descriptor
+            ↓
+bridge operator fixes keyset and generates canonical protocol context
+            ↓
+bridge operator exports selected proof-mode bundle
+            ↓
+partner installs bundle + partner-owned TOML, starts signer, runs preflight
 ```
 
-## What you need
+Unlike older signer builds, the current binary requires canonical protocol
+context in every mode. Therefore the pre-genesis step creates the identity and
+descriptor but does not start the service. Runtime preflight happens after the
+bridge operator returns the generated policy bundle.
 
-- A host for one small container (2 vCPU / 1 GB is plenty) with a stable,
-  reachable HTTPS endpoint (see Network requirements below).
-- The `scrollsdk` CLI (only for key generation and preflight; the signer
-  itself has no dependency on it).
-- Optional but recommended for production: an AWS KMS key instead of a
-  local WIF file.
+## What the signer exposes
 
-## Step 1 — key + descriptor
+TSO needs one inbound application API and three status surfaces:
 
-Run every command from this `partner-kit/attestation-signer/` directory.
-`signer init` writes everything into one directory (`signer-<id>/`) — a
-complete deployment env plus the descriptor. The rest of the flow reads
-from that directory; there is nothing to reconstruct by hand.
+- `POST /sign` receives signing requests.
+- `GET /health` reports process health, public key, network, and build identity.
+- `GET /ready` is HTTP 503 in `production_enforce` until every production V2
+  capability can serve.
+- `GET /policy` reports the active V2 contract, capability rows, and blocks.
 
-**Local WIF backend** (simplest):
+The signer makes two outbound connections:
+
+- callbacks to the bridge operator's TSO URL;
+- HTTPS GET requests for the concrete proof-artifact URLs carried by requests.
+
+Use a private network/VPN or an IP-allowlisted TLS proxy. There is no
+application-layer authentication on the signer↔TSO HTTP path today.
+
+## Ownership boundary
+
+The bridge operator's generated bundle owns facts derived from bridge/proof
+configuration:
+
+- `protocol_context.json`;
+- selected mode and TSO URL in `signer-policy.env`;
+- accepted proof-artifact HTTPS origin;
+- in production, the aggregate verifying key plus direct-batch and
+  L2-range-aggregation program commitments;
+- a machine-readable summary and SHA-256 manifest.
+
+The partner-owned `attestation-signer.toml` owns operational trust choices:
+
+- Dogecoin terminal-anchor source set;
+- Ethereum canonicality/finality source set;
+- DogeOS L2 state-root source set;
+- allowed next bridge script hashes;
+- allowed next sequencer signers.
+
+`scrollsdk signer init` creates that TOML once and never overwrites it, even
+with `--force`. The bridge bundle must never contain a common source-set file:
+different partners are expected to use independently operated sources.
+
+## Step 1 — create the key, policy template, and descriptor
+
+Run from this directory. Choose a stable DNS-label-shaped signer id agreed with
+the bridge operator.
+
+Local WIF backend:
 
 ```bash
-scrollsdk signer init --id <agreed-signer-id> --network testnet \
+scrollsdk signer init \
+  --id <agreed-signer-id> \
+  --network testnet \
   --endpoint https://signer.your-org.example:4040
-# → signer-<id>/attestation-signer.env   (SECRET — holds the signing key)
-# → signer-<id>/descriptor.json          (public — finalized in step 3)
 ```
 
-**AWS KMS backend** (recommended for production) — one command instead of
-key-juggling; the derived public key lands in the env and descriptor
-automatically:
+AWS KMS backend (recommended for production):
 
 ```bash
-# Using a key you already created (ECC_SECG_P256K1, SIGN_VERIFY):
-scrollsdk signer init --id <agreed-signer-id> --network testnet \
+scrollsdk signer init \
+  --id <agreed-signer-id> \
+  --network testnet \
   --endpoint https://signer.your-org.example:4040 \
-  --backend aws-kms --kms-key-id <KeyId-or-Arn> --kms-region <region> \
-  --allowed-release-version <approved-cargo-version> \
-  --allowed-git-commit <approved-full-40-character-git-sha>
-
-# Or let the CLI create the key in your account:
-scrollsdk signer init --id <agreed-signer-id> --network testnet \
-  --endpoint https://signer.your-org.example:4040 \
-  --backend aws-kms --create-key --kms-region <region> \
+  --backend aws-kms \
+  --kms-key-id <ECC_SECG_P256K1-key-id-or-arn> \
+  --kms-region <region> \
   --allowed-release-version <approved-cargo-version> \
   --allowed-git-commit <approved-full-40-character-git-sha>
 ```
 
-The container additionally needs AWS credentials with `kms:Sign` +
-`kms:GetPublicKey` on that key (EC2 instance role, or static keys — see the
-commented lines in the generated env).
+The output is:
 
-Low-level alternative: `scrollsdk signer kms-pubkey --key-id ... --region ...`
-prints just the compressed public key, and the same value falls out of
-standard tooling if your policy forbids vendor CLIs near AWS credentials:
-
-```bash
-aws kms get-public-key --key-id <KeyId> --region <region> --query PublicKey --output text \
-  | base64 -d \
-  | openssl ec -pubin -inform DER -conv_form compressed -outform DER 2>/dev/null \
-  | tail -c 33 | xxd -p -c 33
+```text
+signer-<id>/
+├── attestation-signer.env    # secret key/backend and image approval pins
+├── attestation-signer.toml   # partner-owned V2 source/rotation policy
+└── descriptor.json           # public endpoint + key handoff
 ```
 
-## Step 2 — deploy
+For KMS, the container needs `kms:Sign` and `kms:GetPublicKey` on the selected
+key. For a local backend, `attestation-signer.env` contains the WIF and must be
+stored with secret-file permissions.
 
-The endpoint is the base URL reachable **from the bridge operator's TSO
-network**, not necessarily the signer's public Internet address. Production
-normally uses a TLS domain. An isolated mock/VPN test may use a private address
-such as `http://10.20.30.40:4040`. Never use `localhost`, a Docker service name,
-or a Kubernetes-only name in the descriptor.
+Send only `descriptor.json` to the bridge operator. The public key enters the
+bridge keyset at genesis, so review it carefully. Do not send either signer
+configuration file.
 
-Deploy the Docker Compose reference:
+## Step 2 — prepare partner-owned production policy
+
+Open `signer-<id>/attestation-signer.toml`. Its examples use the exact current
+dogeos-core section names. In production, configure all of the following:
+
+1. `[advance_l1_policy.terminal_anchor_sources]` with independently trusted
+   Dogecoin sources. Production quorum needs at least two trust domains.
+2. `[advance_l2_policy.ethereum_sources]` for Ethereum canonicality/finality.
+3. `[advance_l2_policy.l2_sources]` for the exact L2 state root. A deliberate
+   one-source deployment must use `explicit_single_source`; quorum is better
+   when independent sources exist.
+4. `[rotation_policy].allowed_next_bridge_script_hashes`.
+5. `[rotation_policy].allowed_next_sequencer_signers`.
+
+RPC credentials may be kept in the operator secret env where supported. Never
+put credentials in URLs. dogeos-core rejects URL userinfo/query/fragment and
+strictly validates source thresholds, unique trust domains, timeouts, and
+canonical hex.
+
+Missing optional policy does not silently become production-safe. The signer
+may start, but production `/ready` stays HTTP 503 and the relevant capability
+reports a named block.
+
+## Step 3 — receive and install the bridge bundle
+
+After descriptor import and bridge initialization, the bridge operator sends:
+
+```text
+signer-policy-bundle/
+├── PARTNER-COMMANDS.md
+├── protocol_context.json
+├── signer-policy.env
+├── signer-policy.json
+├── signer-policy-manifest.json
+└── advance-l2-agg-verifying-key.bin  # production only
+```
+
+The obsolete `verifier-registry.toml`, generic `source-set.toml`, proof-triple
+allowlist, and TEE signer allowlist are not part of V2. A bundle containing
+those instead of the files above targets an old dogeos-core release.
+
+Keep the received directory intact and execute its generated
+`PARTNER-COMMANDS.md`. The equivalent file placement is:
 
 ```bash
-cp "signer-<agreed-signer-id>/attestation-signer.env" docker-compose/
+export SIGNER_ID=<agreed-signer-id>
+
+cp "signer-$SIGNER_ID/attestation-signer.env" docker-compose/
+cp "signer-$SIGNER_ID/attestation-signer.toml" docker-compose/
 chmod 600 docker-compose/attestation-signer.env
 mkdir -p docker-compose/policy
+cp signer-policy-bundle/signer-policy.env docker-compose/signer-policy.env
+cp signer-policy-bundle/protocol_context.json docker-compose/policy/protocol_context.json
+
+# Production bundle only:
+cp signer-policy-bundle/advance-l2-agg-verifying-key.bin docker-compose/policy/
 
 docker compose --project-directory docker-compose config --quiet
 docker compose --project-directory docker-compose up -d
-
-curl -fsS http://127.0.0.1:4040/health
-curl -fsS https://signer.your-org.example:4040/health
 ```
 
-The generated `attestation-signer.env` is the authoritative field list for
-this signer; keep it private and do not rebuild it by hand.
+The Compose service starts the signer with
+`-c /etc/dogeos-partner/attestation-signer.toml`. Environment from the bridge
+bundle overrides only bridge-owned fields.
 
-## Step 3 — verify and hand over
+## Step 4 — preflight
+
+For disabled or mock mode:
 
 ```bash
 scrollsdk signer preflight --dir signer-<agreed-signer-id>
-# Add --endpoint https://... only when signer init did not set it.
 ```
 
-`--dir` pulls the id, network, and expected public key from step 1's
-descriptor, checks them against the running signer, and writes the verified
-endpoint back into `signer-<id>/descriptor.json`.
+For production:
 
-Send `descriptor.json` to the bridge operator. **The public key in it enters
-the bridge multisig permanently at genesis — make sure it is the key you
-intend to operate long-term.** Never send `attestation-signer.env`, a WIF, or
-AWS credentials.
-
-## Step 4 — apply the policy bundle (after bridge genesis)
-
-The bridge operator sends back a bundle directory:
-
-| file | what to do with it |
-|---|---|
-| `signer-policy.env` | replaces `docker-compose/signer-policy.env` |
-| `verifier-registry.toml`, `source-set.toml` | copy into `docker-compose/policy/` |
-| `signer-policy.json` | machine-readable summary (for your records) |
-| `PARTNER-COMMANDS.md` | authoritative mode, addresses, apply/restart commands, and reachability checks for this deployment |
-
-Keep the received directory intact, place it at `signer-policy-bundle/` next
-to `docker-compose/`, open its `PARTNER-COMMANDS.md`, and execute the
-partner-operator section exactly as generated. Those commands place the files,
-validate the resolved Compose configuration, restart the signer, and probe the
-deployment-specific addresses. Do not reconstruct those commands from examples
-in this static manual or substitute addresses from another deployment.
-
-After those generated commands succeed, the signer enforces the bridge
-identity (protocol instance, namespace, active bridge key hash) and starts
-receiving `/sign` requests from the bridge operator's TSO.
-
-Every bundle sets a positive, bounded proof-artifact cap. Mock mode selects the
-same audited `staging_scaffold` posture as dogeos-core's e2e harness and leaves
-both TEE allowlists empty by default because mock evidence has no TEE receipt.
-Production selects fail-closed `production_enforce` and requires both TEE
-allowlists to be non-empty. Your generated commands and network routes stay
-the same.
-
-Before applying a production bundle, `attestation-signer.env` must contain the
-approved image identity pins. `scrollsdk signer init` writes them when passed
-`--allowed-release-version` and `--allowed-git-commit`, and always writes the
-approved signing-policy version. Missing or mismatched pins make the production
-signer refuse to start.
-
-The current dogeos-core signer still reports cryptographic STARK proof-byte
-verification as `NotImplemented`; a production-enforce build therefore refuses
-proof-backed signing until that check exists in the selected release. The mock
-lane is the supported way to test the complete deployment/network/callback
-flow with deterministic non-cryptographic proofs.
-
-### Temporary pre-Tsuki direct-sign recovery
-
-An Issue #843 recovery bundle may contain:
-
-```dotenv
-ATTESTATION_SIGNER_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
+```bash
+scrollsdk signer preflight \
+  --dir signer-<agreed-signer-id> \
+  --require-production-ready
 ```
 
-This is a bounded, testnet-only exception for already-persisted pre-Tsuki work,
-not a normal disabled-mode default. Apply only the generated value: the bridge
-operator must use the exact same pin on Withdrawal Processor and TSO. The signer
-hard-rejects the posture on mainnet. The pin belongs in the generated
-`signer-policy.env`; do not copy it into operator-owned
-`attestation-signer.env`, where it could survive a later retirement bundle.
+The production check requires:
 
-After restart, inspect `/policy`. The
-`advance_l1_pre_tsuki_direct_sign` and
-`advance_l2_pre_tsuki_direct_sign` capabilities must be serving. They are
-excluded from `/ready`, so a healthy/ready response alone does not prove that
-the temporary capability is enabled. CubeSigner has no matching setting; the
-attestation role requires this Rust signer.
+- `/ready` HTTP 200;
+- `policy_mode=production_enforce` and contract
+  `attestation_evidence_v2`;
+- scaffold/unimplemented bypasses disabled;
+- public key and network equal `/health` and the descriptor;
+- exactly one serving row for each of `advance_l1`, `advance_l2`,
+  `rotate_key`, and `rotate_sequencer_signer`;
+- `production_v2_ready=true` on both `/ready` and `/policy`.
 
-After the bridge operator confirms the authoritative completion predicate is
-stable, apply the generated retirement bundle without the env value and restart
-the signer. Before restart, verify the resolved Compose environment contains no
-stale copy from `attestation-signer.env`. The bridge operator retires the
-deployment in reverse order: WP, Rust signer, then TSO, before enabling proofs.
-See
+Recovery capability rows are intentionally visible but do not count toward
+production readiness.
+
+Mock uses `staging_scaffold` with deterministic, non-cryptographic proof bytes.
+AdvanceL1 never bypass-signs; incomplete eligible AdvanceL2/rotation policy may
+use dogeos-core's explicit audited scaffold bypass. It is not production-safe.
+
+## Proof artifacts versus release files
+
+Proof artifacts are produced continuously as batches progress. The signer
+fetches their per-request HTTPS URLs from shared artifact storage. The
+aggregate verifying key and other proof release material are static,
+release-versioned files; the production bundle copies the signer-required
+aggregate key and binds it by SHA-256.
+
+## Current production closure boundary
+
+The Rust attestation-signer now implements the V2 AdvanceL1, AdvanceL2, and
+rotation evaluators; the old statement that its STARK verifier is globally
+`NotImplemented` is no longer correct.
+
+The separate CubeSigner/TEE production policy is still not cryptographically
+closed in the current dogeos-core release: exact deployed verifier-program and
+AggVK provenance, namespace/policy evidence, restart ambiguity, and final E2E
+evidence remain tracked implementation gaps. Generating this Rust-signer bundle
+does not waive that boundary. Keep asset-bearing production activation blocked
+until the selected dogeos-core release closes those recorded gaps.
+
+## Temporary pre-Tsuki recovery
+
+An Issue #843 testnet-only bundle may contain
+`ATTESTATION_SIGNER_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT`. Never add or
+change it by hand. WP, TSO, and every Rust signer must use the same reviewed
+height. The two direct-sign rows are visible in `/policy` but excluded from
+`production_v2_ready`.
+
+Retire the posture only after the authoritative completion predicate is stable,
+in this order: WP, Rust signer, TSO; then enable proof mode. See
 [`docs/pre-tsuki-direct-sign-recovery.md`](../../docs/pre-tsuki-direct-sign-recovery.md).
 
-## Network requirements (agree these with the bridge operator)
+## Operations
 
-1. **Inbound** — the bridge operator's TSO must reach your signer's
-   `POST /sign` (and `GET /health`).
-2. **Outbound** — your signer calls back the TSO URL from the policy bundle
-   to submit signatures.
-3. **Outbound** — your signer fetches proof artifacts over HTTPS GET from
-   the full `required_proof_artifacts[].proof_artifact_fetch.url` carried in
-   each signing request. `signer-policy.json` records the deployment's base URL
-   for audit; the runtime request contains the concrete object URL.
-
-After applying the policy, verify the deployment-specific TSO and signer
-addresses printed in `signer-policy-bundle/PARTNER-COMMANDS.md`.
-
-The bridge operator must separately repeat the signer `/health` request from
-the actual TSO network. A successful laptop probe alone does not prove the
-production route works.
-
-There is currently **no application-layer authentication** on the signer↔TSO
-HTTP path: connectivity must be private (VPN / WireGuard / IP-allowlisted TLS
-reverse proxy). Agree the mechanism with the bridge operator before exposing
-anything.
-
-## Operations notes
-
-- The SQLite volume holds the signer's audit/request database — persist it.
-- The signer is otherwise stateless with respect to the bridge: it validates
-  each request against its own policy config and signs independently.
-- **Never run two live instances with the same key.** Run one; restore from
-  the same key material if the host dies.
-- Key rotation is a coordinated ceremony with the bridge operator (RotateKey
-  transition) — do not rotate unilaterally.
+- Persist the SQLite volume; it contains the signer audit/request database.
+- Never operate two live instances with the same signing key.
+- Do not rotate the key unilaterally; RotateKey is a coordinated bridge event.
+- The bridge operator should independently probe `/health` from the actual TSO
+  network. A successful laptop check does not prove that route.
+- The CLI does not invent an artifact key for reachability checks. A real
+  withdrawal request is authoritative for signer artifact GET and TSO callback.

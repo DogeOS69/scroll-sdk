@@ -163,10 +163,14 @@ make install-proof-stack
 
 Before bridge genesis, give each external signer operator the complete
 `partner-kit/attestation-signer/` directory, collect the descriptor produced by
-their `scrollsdk signer preflight`, and import the descriptors with
+their `scrollsdk signer init`, and import the descriptors with
 `scrollsdk setup attestation-signer`. After genesis, send every partner the
 complete `signer-policy-bundle/` produced by
-`scrollsdk setup export-signer-policy`.
+`scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
+protocol context in every signer mode, so partners start the service and run
+`signer preflight` only after installing that bundle. Production partners use
+`--require-production-ready` and keep their own RPC source sets and rotation
+allowlists in the generated `attestation-signer.toml`.
 
 For a deployment that will later use mock or production, provision the shared
 resources and complete both dormant profile blocks during initial preparation.
