@@ -3,8 +3,12 @@
 # releases. Run `scrollsdk setup prep-charts` before the install targets.
 
 NAMESPACE ?= default
+ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
+ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.3
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.1
+PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
+PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.21
 CURL_IMAGE ?= curlimages/curl:8.20.0
@@ -32,7 +36,10 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/cubesigner-signer-production.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
+	values/proof-coordinator-production.yaml \
+	values/prover-worker-production.yaml \
 	withdrawal-processor/WithdrawalProcessor.toml \
+	proof-coordinator/ProofCoordinator.toml \
 	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
@@ -41,15 +48,15 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
 .PHONY: prepare install-dogecoin install-celestia install-scroll-core \
-	install-contracts install-eth-da-submitter \
+	install-contracts install-eth-da-submitter install-proof-submitter-projection \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
-	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-proof-stack \
+	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker install-proof-stack \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
-	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
+	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
@@ -151,10 +158,21 @@ install-contracts:
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
 install-eth-da-submitter:
-	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.3 \
+	helm upgrade -i eth-da-submitter $(ETH_DA_SUBMITTER_CHART) -n $(NAMESPACE) \
+		--version=$(ETH_DA_SUBMITTER_CHART_VERSION) \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
+
+# Schema-v4 proof contracts protect the compiler-owned digest-scoped
+# submitter namespace. Legacy contracts skip this adapter and retain the
+# ordinary install-eth-da-submitter target above.
+install-proof-submitter-projection:
+	scrollsdk helper proof-helm \
+		--component eth-da-submitter \
+		--release eth-da-submitter \
+		--chart $(ETH_DA_SUBMITTER_CHART) \
+		--version $(ETH_DA_SUBMITTER_CHART_VERSION) \
+		--namespace $(NAMESPACE)
 
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
@@ -188,12 +206,23 @@ install-proof-coordinator:
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
 		--namespace $(NAMESPACE)
 
-# The generated deployment contract decides whether proof-coordinator is
-# enabled and supplies all values/set-file bindings for both proof components.
+install-prover-worker:
+	scrollsdk helper proof-helm \
+		--component prover-worker \
+		--release prover-worker \
+		--chart $(PROVER_WORKER_CHART) \
+		--version $(PROVER_WORKER_CHART_VERSION) \
+		--namespace $(NAMESPACE)
+
+# The generated deployment contract decides whether proof-coordinator and the
+# local prover-worker are enabled. Production/external keeps the local Worker
+# release absent and emits a separately verified launch bundle for the GPU host.
 install-proof-stack:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-submitter-projection
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-tso
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
@@ -264,6 +293,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) proof-coordinator || true
+	helm delete -n $(NAMESPACE) prover-worker || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-cubesigner-signer || true
 	helm delete -n $(NAMESPACE) eth-da-submitter || true
@@ -297,6 +327,9 @@ delete-withdrawal-processor:
 
 delete-proof-coordinator:
 	helm delete -n $(NAMESPACE) proof-coordinator
+
+delete-prover-worker:
+	helm delete -n $(NAMESPACE) prover-worker
 
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service

@@ -1,0 +1,15 @@
+{{- range $name, $configMap := .Values.configMaps }}
+{{- if $configMap.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%s" (include "prover-worker.fullname" $) $name | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "prover-worker.labels" $ | nindent 4 }}
+data:
+  {{- range $key, $value := $configMap.data }}
+  {{ $key | quote }}: {{ tpl (toString $value) $ | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

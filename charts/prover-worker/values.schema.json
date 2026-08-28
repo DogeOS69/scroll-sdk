@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["controller", "image", "termination"],
+  "properties": {
+    "controller": {
+      "type": "object",
+      "required": ["replicas", "strategy"],
+      "properties": {
+        "replicas": {"type": "integer", "minimum": 0, "maximum": 1},
+        "strategy": {"const": "Recreate"}
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["repository", "pullPolicy"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "digest": {"type": "string", "pattern": "^$|^sha256:[0-9a-f]{64}$"},
+        "tag": {"type": "string"},
+        "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+      }
+    },
+    "termination": {
+      "type": "object",
+      "required": ["gracePeriodSeconds"],
+      "properties": {
+        "gracePeriodSeconds": {"type": "integer", "minimum": 30}
+      }
+    }
+  }
+}

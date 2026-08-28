@@ -63,17 +63,21 @@ For more information on Scroll SDK, refer to the main README in the root directo
 
 `scrollsdk setup prep-charts` prepares and validates proof configuration. The
 example Makefile only installs or removes the generated Kubernetes releases;
-it does not provide a second proof setup interface. Resource coordinates and
-infrastructure may be prepared while proof mode remains disabled, and the CLI
-retains any previously prepared inactive Worker bundle. Later mode cutovers are
-a native service configuration and operator start/stop/drain operation, not a
-reason to regenerate deployment configuration with the CLI.
+it does not provide a second proof setup interface. A DeploymentSpec
+`proofTopology` document stages both mock and production resources while its
+single `mode` field selects the active topology. `prep-charts` passes that
+source to the digest-pinned dogeos-core compiler and installs its strict
+mode-specific output into the deployment tree. Changing `mode` therefore
+regenerates low-level configuration; it does not require operators to edit WP,
+PC, Worker, or submitter fields by hand.
 
 The generated deployment uses the following conventional paths:
 
 ```text
 .data/
-└── proof-deployment.json                      (single K8s install contract)
+├── generated/proof-topology/                 (versioned compiler bundle)
+├── proof-deployment.json                     (single K8s install contract)
+└── protocol_context.json                     (external Worker input)
 
 proof-artifacts/
 ├── release.json
@@ -83,21 +87,19 @@ proof-artifacts/
     └── bridge-transition.json
 
 proof-coordinator/
-└── ProofCoordinator.toml                     (generated for the selected mode)
+└── ProofCoordinator.toml                     (base replaced by compiler output)
 
 withdrawal-processor/
 └── WithdrawalProcessor.toml                  (native app config; TOML-owned)
 
 values/
 ├── proof-coordinator-production.yaml
+├── prover-worker-production.yaml
 ├── tso-service-production.yaml
 └── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
 
-prover-worker-mock/
-└── docker-compose/                            (prepared bundle; retained while inactive)
-
-prover-worker-production/
-└── docker-compose/                            (prepared bundle; retained while inactive)
+prover-worker-<selected-mode>/
+└── docker-compose/                            (only for compiler-selected external Worker)
 ```
 
 Copy `Makefile.example` into the deployment root as `Makefile`. From that root,
@@ -120,10 +122,10 @@ complete `signer-policy-bundle/` produced by
 `scrollsdk setup export-signer-policy`.
 
 For a deployment that will later use mock or production, provision the shared
-AWS resources during initial preparation. The command writes
-stable resource facts to `.data/proof-aws.json`; `prep-charts` then projects
-that configuration into final values and the deployment contract without
-requiring proof execution to be active:
+resources and complete both dormant profile blocks during initial preparation.
+The compiler validates only the selected block, so a disabled deployment can
+stage resources without starting proof execution. Use production preflight to
+open and validate the dormant production block before scheduling a GPU:
 
 ```bash
 scrollsdk setup proof-aws-init \
@@ -132,17 +134,23 @@ scrollsdk setup proof-aws-init \
   --network-alias <network> \
   --namespace <namespace>
 scrollsdk setup prep-charts -N
-scrollsdk setup proof-worker --deployment-dir .
+scrollsdk setup proof-topology-compile --preflight production
 scrollsdk setup proof-config-check --deployment-dir .
 make install-proof-stack
 ```
 
-`install-withdrawal-processor` and `install-proof-coordinator` call the
+After selecting `production` with `workerLaunch: external` and rerunning
+`prep-charts`, run `scrollsdk setup proof-worker --deployment-dir .` to hydrate
+the generated external bundle before `proof-config-check` and deployment on the
+GPU host. Preflight itself never creates or hydrates an installable bundle.
+
+`install-proof-submitter-projection`, `install-withdrawal-processor`,
+`install-proof-coordinator`, and `install-prover-worker` call the
 mode-agnostic `scrollsdk helper proof-helm` adapter. It reads values and
 `--set-file` bindings only from `.data/proof-deployment.json`; the Makefile
 does not choose mock/production manifests or repeat proof paths. Disabled mode
-skips proof-coordinator automatically; the prepared resource facts and any
-inactive Worker bundles remain in place.
+skips PC and Worker automatically. Production/external skips the local Worker
+and uses the compiler-derived Compose bundle on the GPU host.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
@@ -151,7 +159,9 @@ CI artifacts.
 
 The remaining proof-related Makefile variables are only Kubernetes deployment
 overrides: `NAMESPACE`, `PROOF_COORDINATOR_CHART`,
-`PROOF_COORDINATOR_CHART_VERSION`, `WITHDRAWAL_PROCESSOR_CHART`, and
+`PROOF_COORDINATOR_CHART_VERSION`, `ETH_DA_SUBMITTER_CHART`,
+`ETH_DA_SUBMITTER_CHART_VERSION`, `PROVER_WORKER_CHART`,
+`PROVER_WORKER_CHART_VERSION`, `WITHDRAWAL_PROCESSOR_CHART`, and
 `WITHDRAWAL_PROCESSOR_CHART_VERSION`.
 
 For the authoritative end-to-end order, partner descriptor/policy handoff,
