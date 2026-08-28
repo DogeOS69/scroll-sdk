@@ -1,0 +1,88 @@
+{
+  "schema": "dogeos/proof-release/v1",
+  "releaseId": "REPLACE_WITH_DOGEOS_CORE_RELEASE_ID",
+  "compilerImage": {
+    "repository": "dogeos69/dogeos-proof-topology",
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "workerImages": {
+    "mock": {
+      "repository": "dogeos69/prover-worker-mock",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "production": {
+      "repository": "dogeos69/prover-worker",
+      "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "profiles": {
+    "mock": "withdrawal_mock_prover_real_materialize",
+    "production": "real_scroll_withdrawal_full_topology"
+  },
+  "realScroll": {
+    "files": {
+      "aggVerifyingKey": {
+        "path": "keys/agg-verifying-key.bin",
+        "sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "batchAppConfig": {
+        "path": "batch/openvm.toml",
+        "sha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "batchAppExe": {
+        "path": "batch/app.vmexe",
+        "sha256": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "batchMaterializerBinary": {
+        "path": "bin/scroll-runtime-materializer",
+        "sha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "bridgeAppConfig": {
+        "path": "bridge/openvm.toml",
+        "sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "bridgeAppExe": {
+        "path": "bridge/bridge-state.vmexe",
+        "sha256": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "chunkAppConfig": {
+        "path": "chunk/openvm.toml",
+        "sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "chunkAppExe": {
+        "path": "chunk/app.vmexe",
+        "sha256": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "chunkMaterializerBinary": {
+        "path": "bin/scroll-runtime-materializer",
+        "sha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "l2RangeAggregationAppConfig": {
+        "path": "bridge/batch-aggregation-openvm.toml",
+        "sha256": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "l2RangeAggregationAppExe": {
+        "path": "bridge/batch-aggregation.vmexe",
+        "sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "identities": {
+      "batchProgramCommitmentHashHex": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "batchProgramCommitmentHex": "0x66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666",
+      "batchVerificationKeyHashHex": "0x4444444444444444444444444444444444444444444444444444444444444444",
+      "bridgeAppCommitRawHex": "0x99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+      "bridgeProgramCommitmentHashHex": "0x8888888888888888888888888888888888888888888888888888888888888888",
+      "bridgeVerificationKeyHashHex": "0x7777777777777777777777777777777777777777777777777777777777777777",
+      "chunkProgramCommitmentHashHex": "0x2222222222222222222222222222222222222222222222222222222222222222",
+      "chunkProgramCommitmentHex": "0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333",
+      "chunkVerificationKeyHashHex": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "l2RangeAggregationAppCommitRawHex": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "l2RangeAggregationProgramCommitmentHashHex": "0x16da1e97ac6e07f5b2c20e0d0eb3dcda692f32344528f698aab2c07373ab538e",
+      "l2RangeAggregationVerificationKeyHashHex": "0x7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "defaults": {
+      "batchBackendProfile": "scroll-batch-real-topology-prover-v1",
+      "chunkBackendProfile": "scroll-chunk-real-topology-prover-v1"
+    }
+  }
+}

@@ -63,12 +63,20 @@ For more information on Scroll SDK, refer to the main README in the root directo
 
 `scrollsdk setup prep-charts` prepares and validates proof configuration. The
 example Makefile only installs or removes the generated Kubernetes releases;
-it does not provide a second proof setup interface. A DeploymentSpec
-Proof topology can be declared directly as `[proof_topology]` in
-`.data/doge-config.toml`; a complete example is available at
-`.data/doge-config.toml.example`. This is the normal path when a deployment
-does not use DeploymentSpec. DeploymentSpec `proofTopology` remains an
-alternative source, but both sources must never be present at the same time.
+it does not provide a second proof setup interface. The normal non-DeploymentSpec
+path is generated interactively into `.data/doge-config.toml`:
+
+```bash
+scrollsdk setup doge-config --proof-topology
+```
+
+Do not copy image digests, VK hashes, commitments, or release-relative paths
+into that file by hand. The command reads a release-producer
+`dogeos/proof-release/v1` manifest, verifies every referenced release file,
+combines it with `.data/proof-aws.json` and deployment facts, writes complete
+dormant mock and production blocks, and preflights both before committing the
+configuration. DeploymentSpec `proofTopology` remains an alternative source,
+but both sources must never be present at the same time.
 
 Both forms stage mock and production resources while one `mode` field selects
 the active topology. `prep-charts` passes the selected source to the
@@ -82,15 +90,26 @@ The generated deployment uses the following conventional paths:
 ```text
 .data/
 ├── generated/proof-topology/                 (versioned compiler bundle)
+├── proof-aws.json                            (prepared non-secret AWS facts)
 ├── proof-deployment.json                     (single K8s install contract)
+├── proof-release-v1.json                     (release-producer input)
 └── protocol_context.json                     (external Worker input)
 
 proof-artifacts/
-├── release.json
-└── manifests/
-    ├── scroll-chunk.json
-    ├── scroll-batch.json
-    └── bridge-transition.json
+├── batch/
+│   ├── app.vmexe
+│   └── openvm.toml
+├── bin/scroll-runtime-materializer
+├── bridge/
+│   ├── batch-aggregation-openvm.toml
+│   ├── batch-aggregation.vmexe
+│   ├── bridge-state.vmexe
+│   └── openvm.toml
+├── chunk/
+│   ├── app.vmexe
+│   └── openvm.toml
+├── keys/agg-verifying-key.bin
+└── witnesses/
 
 proof-coordinator/
 └── ProofCoordinator.toml                     (base replaced by compiler output)
@@ -108,9 +127,31 @@ prover-worker-<selected-mode>/
 └── docker-compose/                            (only for compiler-selected external Worker)
 ```
 
-Copy `Makefile.example` into the deployment root as `Makefile`. From that root,
-alongside `values/` and the native config directories, prepare and validate
-disabled-mode configuration with the CLI, then install through Make:
+Copy `Makefile.example` into the deployment root as `Makefile`. No
+DeploymentSpec is required for this flow. Obtain the release-producer
+manifest corresponding exactly to the dogeos-core service release and place it
+at `.data/proof-release-v1.json`. The file
+`.data/proof-release-v1.json.example` documents its strict shape but contains
+placeholders and is not deployable. Prepare proof AWS resources and release
+materials, then initialize the topology:
+
+```bash
+scrollsdk setup proof-aws-init \
+  --aws-region us-west-2 \
+  --eks-cluster dogeos-testnet \
+  --network-alias testnet
+scrollsdk setup doge-config --proof-topology
+```
+
+The initializer asks only for the initial mode, artifact resource source,
+production Worker placement, release material/PVC location, witness source,
+and any external endpoint it cannot derive. It derives and writes service
+addresses, mount paths, secret references, image digests, proof identities,
+and both dormant profiles. When doge-config already exists, the command enters
+a proof-only flow and does not ask the ordinary Dogecoin/DA questions again.
+New deployments default to `mode = "disabled"`.
+After initialization, prepare and validate the disabled-mode configuration,
+then install it through Make:
 
 ```bash
 cp Makefile.example Makefile
@@ -118,16 +159,6 @@ cp Makefile.example Makefile
 scrollsdk setup prep-charts -N
 scrollsdk setup proof-config-check --deployment-dir .
 make install-proof-stack
-```
-
-No DeploymentSpec is required for this flow. After `setup doge-config`, merge
-the `[proof_topology]` section from the example into the generated
-`.data/doge-config.toml`, replace the release placeholders, and preflight both
-dormant profiles:
-
-```bash
-scrollsdk setup proof-topology-compile --preflight mock
-scrollsdk setup proof-topology-compile --preflight production
 ```
 
 Before bridge genesis, give each external signer operator the complete
@@ -140,8 +171,9 @@ complete `signer-policy-bundle/` produced by
 For a deployment that will later use mock or production, provision the shared
 resources and complete both dormant profile blocks during initial preparation.
 The compiler validates only the selected block, so a disabled deployment can
-stage resources without starting proof execution. Use production preflight to
-open and validate the dormant production block before scheduling a GPU:
+stage resources without starting proof execution. The proof topology
+initializer preflights both dormant profiles before it writes the source. An
+explicit production preflight can be rerun before scheduling a GPU:
 
 ```bash
 scrollsdk setup proof-aws-init \

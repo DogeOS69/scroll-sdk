@@ -1,96 +1,18 @@
-# Minimal shape only. Keep the ordinary doge-config sections produced by
-# `scrollsdk setup doge-config` and add this compiler-backed proof section.
+# Minimal non-secret doge-config shape. The normal setup command fills the
+# ordinary Dogecoin and Ethereum DA sections.
 network = "testnet"
 
 [wallet]
 path = ".data/doge-wallet-testnet.json"
 
-[proof_topology]
-# This is the only proof-topology selection field operators change.
-mode = "disabled" # disabled | mock | production
-
-[proof_topology.compiler.image]
-# Must come from the same dogeos-core release as WP, PC, and Worker.
-repository = "dogeos69/dogeos-proof-topology"
-digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-
-[proof_topology.deployment]
-protocolContextSource = ".data/protocol_context.json"
-protocolContextPath = "/app/protocol_context.json"
-generatedMaterialsRoot = "/app/data/proof-topology"
-artifactLocalRoot = "/app/data/proof-artifacts"
-proofWorkBind = "0.0.0.0:9300"
-proofWorkPublicUrl = "http://withdrawal-processor:9300"
-proverBind = "0.0.0.0:7788"
-proverPublicUrl = "https://proof-coordinator.example.com"
-proofWorkTokenFile = "/app/secrets/proof-work-token"
-workerTokenFile = "/app/secrets/prover-worker-token"
-readinessEvidencePath = "/run/dogeos/prover-worker-ready-v1.json"
-resourcesMountPath = "/app/data/proof-release"
-resourcesPersistentVolumeClaim = "dogeos-proof-release"
-
-[proof_topology.mock]
-profile = "cheap_scroll_chunk"
-
-[proof_topology.mock.artifactStore]
-kind = "s3_compatible"
-bucket = "dogeos-testnet-proof-artifacts"
-region = "us-west-2"
-keyPrefix = "proof-topology"
-endpointUrl = "https://s3.us-west-2.amazonaws.com"
-
-[proof_topology.mock.workerImage]
-# This image must be built with dev-mock-prover.
-repository = "dogeos69/prover-worker-mock"
-digest = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-
-[proof_topology.production]
-profile = "real_scroll_withdrawal_full_topology"
-workerLaunch = "external"
-
-[proof_topology.production.artifactStore]
-kind = "s3_compatible"
-bucket = "dogeos-testnet-proof-artifacts"
-region = "us-west-2"
-keyPrefix = "proof-topology"
-endpointUrl = "https://s3.us-west-2.amazonaws.com"
-maxReadBodyBytes = 536870912
-
-[proof_topology.production.workerImage]
-# Production image must not contain dev-mock-prover.
-repository = "dogeos69/prover-worker"
-digest = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-
-[proof_topology.production.realScroll]
-# Replace every release identity below with release-producer output before
-# `proof-topology-compile --preflight production`.
-resourcesRoot = "proof-artifacts"
-chunkAppExe = "chunk/app.vmexe"
-chunkAppConfig = "chunk/openvm.toml"
-batchAppExe = "batch/app.vmexe"
-batchAppConfig = "batch/openvm.toml"
-aggVerifyingKeyPath = "keys/agg-verifying-key.bin"
-chunkMaterializerBinaryPath = "bin/scroll-runtime-materializer"
-batchMaterializerBinaryPath = "bin/scroll-runtime-materializer"
-chunkWitnessSource = "block_witness_dir"
-chunkBlockWitnessDir = "witnesses"
-chunkVerificationKeyHashHex = "0x1111111111111111111111111111111111111111111111111111111111111111"
-chunkProgramCommitmentHashHex = "0x2222222222222222222222222222222222222222222222222222222222222222"
-chunkProgramCommitmentHex = "0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
-batchVerificationKeyHashHex = "0x4444444444444444444444444444444444444444444444444444444444444444"
-batchProgramCommitmentHashHex = "0x5555555555555555555555555555555555555555555555555555555555555555"
-batchProgramCommitmentHex = "0x66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666"
-bridgeVerificationKeyHashHex = "0x7777777777777777777777777777777777777777777777777777777777777777"
-bridgeProgramCommitmentHashHex = "0x8888888888888888888888888888888888888888888888888888888888888888"
-bridgeAppCommitRawHex = "0x99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
-l2RangeAggregationVerificationKeyHashHex = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-l2RangeAggregationProgramCommitmentHashHex = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-l2RangeAggregationAppCommitRawHex = "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-workerId = "gpu-worker-0"
-s3PublicEndpointUrl = "https://proof-artifacts.example.com"
-
-# Temporary pre-Tsuki recovery is intentionally omitted from normal modes.
-# When the reviewed testnet-only recovery is required, keep mode="disabled"
-# and add:
-# [proof_topology.recovery]
-# preTsukiDirectSignMaxEndBatchHeight = 6863
+# Do not copy proof image digests, VK hashes, commitments, or release paths by
+# hand. Put the release-producer proof-release-v1.json at
+# `.data/proof-release-v1.json`, prepare `.data/proof-aws.json` and the release
+# material directory, then run:
+#
+#   scrollsdk setup doge-config --proof-topology
+#
+# The command writes [proof_release] plus complete dormant
+# [proof_topology.mock] and [proof_topology.production] blocks, preflights both,
+# and leaves proof_topology.mode = "disabled" by default. An ordinary later
+# transition changes only that mode value before rerunning setup prep-charts.
