@@ -14,23 +14,14 @@ same reviewed operator pin reaches scroll-sdk-managed deployment artifacts.
 Declare the reviewed Tsuki-boundary L2 batch height in DeploymentSpec:
 
 ```yaml
-proofSystem:
+proofTopology:
   mode: disabled
-  preTsukiDirectSign:
-    maxEndBatchHeight: 6863 # example only; use the reviewed deployment boundary
+  recovery:
+    preTsukiDirectSignMaxEndBatchHeight: 6863 # example only
 ```
 
-For a deployment without DeploymentSpec, use the equivalent doge-config TOML:
-
-```toml
-[proofSystem]
-mode = "disabled"
-
-[proofSystem.preTsukiDirectSign]
-maxEndBatchHeight = 6863 # example only
-```
-
-Do not maintain both sources independently. The CLI rejects disagreement.
+DeploymentSpec is the only authority. The recovery declaration is not copied
+into doge-config.
 
 ## Generated projections
 
@@ -40,7 +31,7 @@ Do not maintain both sources independently. The CLI rejects disagreement.
 |---|---|
 | Withdrawal Processor | `[proof_system.pre_tsuki_direct_sign] max_end_batch_height = <pin>` in native `WithdrawalProcessor.toml` |
 | TSO | `TSO_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<pin>` in Helm values |
-| Deployment contract | `preTsukiDirectSign.maxEndBatchHeight` in schema-v3 `.data/proof-deployment.json` |
+| Deployment contract | `preTsukiDirectSign.maxEndBatchHeight` in schema-v4 `.data/proof-deployment.json` |
 
 `scrollsdk setup export-signer-policy` projects the same intent to the
 partner-operated Rust signer bundle as:
@@ -57,7 +48,7 @@ CubeSigner is correctness/TEE-only and receives no direct-sign attestation
 configuration.
 
 The CLI rejects a missing/non-positive/u32-overflow pin, any proof mode other
-than `disabled`, and Dogecoin mainnet. `setup proof-config-check --strict`
+than `disabled`, and Dogecoin mainnet. `setup proof-config-check`
 rejects WP/TSO projection mismatch and disagreement between current intent and
 the deployment contract.
 

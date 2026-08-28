@@ -154,7 +154,7 @@ and uses the compiler-derived Compose bundle on the GPU host.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-Use `scrollsdk setup proof-config-check --strict` for byte-for-byte immutable
+Use `scrollsdk setup proof-config-check` for byte-for-byte immutable
 CI artifacts.
 
 The remaining proof-related Makefile variables are only Kubernetes deployment

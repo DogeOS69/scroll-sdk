@@ -130,19 +130,17 @@ target_active_utxos = 100
 target_size_ratio = 1.0
 # END scrollsdk managed deployment configuration
 
-# BEGIN scrollsdk managed proof configuration
 [proof_system]
 correctness_policy_transport = "plain"
 mode = "disabled"
 require_bridge_state = false
 require_scroll_execution = false
 # Temporary Issue #843 testnet recovery only. `scrollsdk setup prep-charts`
-# materializes this table from proofSystem.preTsukiDirectSign; it is deliberately
+# materializes this table from proofTopology.recovery; it is deliberately
 # absent by default and must be retired before proof mode is enabled.
 #
 # [proof_system.pre_tsuki_direct_sign]
 # max_end_batch_height = <TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
-# END scrollsdk managed proof configuration
 
 # One-shot operator recovery tools. Keep both declarations absent during
 # normal operation. Use Unix milliseconds and remove the selected declaration
