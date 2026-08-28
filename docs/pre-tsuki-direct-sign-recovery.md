@@ -11,7 +11,18 @@ same reviewed operator pin reaches scroll-sdk-managed deployment artifacts.
 
 ## Canonical intent
 
-Declare the reviewed Tsuki-boundary L2 batch height in DeploymentSpec:
+Declare the reviewed Tsuki-boundary L2 batch height in the same proof source
+used by the deployment. For the normal doge-config flow:
+
+```toml
+[proof_topology]
+mode = "disabled"
+
+[proof_topology.recovery]
+preTsukiDirectSignMaxEndBatchHeight = 6863 # example only
+```
+
+For a DeploymentSpec-managed deployment, use the equivalent field:
 
 ```yaml
 proofTopology:
@@ -20,8 +31,9 @@ proofTopology:
     preTsukiDirectSignMaxEndBatchHeight: 6863 # example only
 ```
 
-DeploymentSpec is the only authority. The recovery declaration is not copied
-into doge-config.
+`.data/doge-config.toml [proof_topology]` and DeploymentSpec `proofTopology`
+are alternative authorities. Defining both is an error; the recovery pin must
+exist only in the selected proof source.
 
 ## Generated projections
 
@@ -31,7 +43,7 @@ into doge-config.
 |---|---|
 | Withdrawal Processor | `[proof_system.pre_tsuki_direct_sign] max_end_batch_height = <pin>` in native `WithdrawalProcessor.toml` |
 | TSO | `TSO_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<pin>` in Helm values |
-| Deployment contract | `preTsukiDirectSign.maxEndBatchHeight` in schema-v4 `.data/proof-deployment.json` |
+| Deployment contract | `preTsukiDirectSign.maxEndBatchHeight` in schema-v5 `.data/proof-deployment.json` |
 
 `scrollsdk setup export-signer-policy` projects the same intent to the
 partner-operated Rust signer bundle as:

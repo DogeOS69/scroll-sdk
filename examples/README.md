@@ -64,12 +64,18 @@ For more information on Scroll SDK, refer to the main README in the root directo
 `scrollsdk setup prep-charts` prepares and validates proof configuration. The
 example Makefile only installs or removes the generated Kubernetes releases;
 it does not provide a second proof setup interface. A DeploymentSpec
-`proofTopology` document stages both mock and production resources while its
-single `mode` field selects the active topology. `prep-charts` passes that
-source to the digest-pinned dogeos-core compiler and installs its strict
-mode-specific output into the deployment tree. Changing `mode` therefore
-regenerates low-level configuration; it does not require operators to edit WP,
-PC, Worker, or submitter fields by hand.
+Proof topology can be declared directly as `[proof_topology]` in
+`.data/doge-config.toml`; a complete example is available at
+`.data/doge-config.toml.example`. This is the normal path when a deployment
+does not use DeploymentSpec. DeploymentSpec `proofTopology` remains an
+alternative source, but both sources must never be present at the same time.
+
+Both forms stage mock and production resources while one `mode` field selects
+the active topology. `prep-charts` passes the selected source to the
+digest-pinned dogeos-core compiler and installs its strict mode-specific output
+into the deployment tree. Changing `mode` therefore regenerates low-level
+configuration; it does not require operators to edit WP, PC, Worker, or
+submitter fields by hand.
 
 The generated deployment uses the following conventional paths:
 
@@ -112,6 +118,16 @@ cp Makefile.example Makefile
 scrollsdk setup prep-charts -N
 scrollsdk setup proof-config-check --deployment-dir .
 make install-proof-stack
+```
+
+No DeploymentSpec is required for this flow. After `setup doge-config`, merge
+the `[proof_topology]` section from the example into the generated
+`.data/doge-config.toml`, replace the release placeholders, and preflight both
+dormant profiles:
+
+```bash
+scrollsdk setup proof-topology-compile --preflight mock
+scrollsdk setup proof-topology-compile --preflight production
 ```
 
 Before bridge genesis, give each external signer operator the complete
