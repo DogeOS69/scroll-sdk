@@ -6,13 +6,15 @@ network = "testnet"
 path = ".data/doge-wallet-testnet.json"
 
 # Do not copy proof image digests, VK hashes, commitments, or release paths by
-# hand. Put the release-producer proof-release-v1.json at
-# `.data/proof-release-v1.json`, prepare `.data/proof-aws.json` and the release
-# material directory, then run:
+# hand. After protocol_context.json and proof AWS resources are ready, import
+# the immutable OCI release printed by the dogeos-core release workflow:
 #
+#   scrollsdk setup proof-release-init \
+#     --release-image dogeos69/proof-release@sha256:<digest>
 #   scrollsdk setup doge-config --proof-topology
 #
-# The command writes [proof_release] plus complete dormant
+# These commands bake deployment-bound Bridge material on CPU and write
+# [proof_release] plus complete dormant
 # [proof_topology.mock] and [proof_topology.production] blocks, preflights both,
 # and leaves proof_topology.mode = "disabled" by default. An ordinary later
 # transition changes only that mode value before rerunning setup prep-charts.
