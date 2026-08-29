@@ -151,7 +151,7 @@ allowlist, and TEE signer allowlist are not part of V2. A bundle containing
 those instead of the files above targets an old dogeos-core release.
 
 Keep the received directory intact and execute its generated
-`PARTNER-COMMANDS.md`. The equivalent file placement is:
+`signer-policy-bundle/PARTNER-COMMANDS.md`. The equivalent file placement is:
 
 ```bash
 export SIGNER_ID=<agreed-signer-id>
