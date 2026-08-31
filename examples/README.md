@@ -112,6 +112,12 @@ prover-worker-active/
 └── docker-compose/                            (only for compiler-selected external Worker)
 ```
 
+`bridge-init` records the complete genesis sequencer transaction in its
+generated bridge output. `prep-charts` verifies that the decoded transaction
+matches `protocol_context.json` and projects it into
+`withdrawal-processor/WithdrawalProcessor.toml`; operators do not enter or
+copy `genesis_sequencer_tx_hex` manually.
+
 Copy `Makefile.example` into the deployment root as `Makefile`. No
 DeploymentSpec is required for this flow. Prepare the artifact store,
 import producer outputs and immutable image references, then initialize the

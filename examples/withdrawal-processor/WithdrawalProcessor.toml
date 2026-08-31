@@ -6,7 +6,8 @@
 # Ownership:
 # - The managed deployment block below is merged by `scrollsdk setup
 #   prep-charts`: keys derived from config.toml / doge-config (RPC URLs,
-#   contract addresses, chain ids, start heights, redeem script) are
+#   contract addresses, chain ids, start heights, redeem script, and the
+#   validated genesis sequencer transaction emitted by bridge-init) are
 #   overwritten on every run; any OTHER key you tune inside the block (fee
 #   rate, timeouts, indexer cadence) is preserved. Comments
 #   inside the block are not preserved — keep commentary outside.
