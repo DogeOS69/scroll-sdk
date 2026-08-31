@@ -70,7 +70,7 @@ local-development posture; production values require an explicit source.
 | defaultProbes.enabled | bool | `true` |  |
 | defaultProbes.spec.failureThreshold | int | `3` |  |
 | defaultProbes.spec.httpGet.path | string | `"/healthz"` |  |
-| defaultProbes.spec.httpGet.port | string | `"http"` |  |
+| defaultProbes.spec.httpGet.port | string | `"prover"` |  |
 | defaultProbes.spec.periodSeconds | int | `10` |  |
 | defaultProbes.spec.timeoutSeconds | int | `2` |  |
 | env | list | `[]` |  |
@@ -116,26 +116,26 @@ local-development posture; production values require an explicit source.
 | probes.liveness.<<.enabled | bool | `true` |  |
 | probes.liveness.<<.spec.failureThreshold | int | `3` |  |
 | probes.liveness.<<.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.liveness.<<.spec.httpGet.port | string | `"http"` |  |
+| probes.liveness.<<.spec.httpGet.port | string | `"prover"` |  |
 | probes.liveness.<<.spec.periodSeconds | int | `10` |  |
 | probes.liveness.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.readiness.custom | bool | `true` |  |
 | probes.readiness.enabled | bool | `true` |  |
 | probes.readiness.spec.failureThreshold | int | `3` |  |
 | probes.readiness.spec.httpGet.path | string | `"/readyz"` |  |
-| probes.readiness.spec.httpGet.port | string | `"http"` |  |
+| probes.readiness.spec.httpGet.port | string | `"prover"` |  |
 | probes.readiness.spec.periodSeconds | int | `10` |  |
 | probes.readiness.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.<<.custom | bool | `true` |  |
 | probes.startup.<<.enabled | bool | `true` |  |
 | probes.startup.<<.spec.failureThreshold | int | `3` |  |
 | probes.startup.<<.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.startup.<<.spec.httpGet.port | string | `"http"` |  |
+| probes.startup.<<.spec.httpGet.port | string | `"prover"` |  |
 | probes.startup.<<.spec.periodSeconds | int | `10` |  |
 | probes.startup.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.spec.failureThreshold | int | `24` |  |
 | probes.startup.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.startup.spec.httpGet.port | string | `"http"` |  |
+| probes.startup.spec.httpGet.port | string | `"prover"` |  |
 | probes.startup.spec.periodSeconds | int | `5` |  |
 | probes.startup.spec.timeoutSeconds | int | `2` |  |
 | proofCoordinator.config.content | string | `""` | Opaque TOML content; normally supplied with `--set-file`. |
@@ -150,9 +150,11 @@ local-development posture; production values require an explicit source.
 | securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | service.main.enabled | bool | `false` |  |
-| service.main.ports.http.enabled | bool | `true` |  |
-| service.main.ports.http.port | int | `9400` |  |
-| service.main.ports.http.protocol | string | `"TCP"` |  |
+| service.main.ports.prover.enabled | bool | `true` |  |
+| service.main.ports.prover.port | int | `7788` |  |
+| service.main.ports.prover.primary | bool | `true` |  |
+| service.main.ports.prover.protocol | string | `"TCP"` |  |
+| service.main.ports.prover.targetPort | int | `7788` |  |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` | Empty derives the release fullname; set explicitly for an IRSA-pinned workload identity. |

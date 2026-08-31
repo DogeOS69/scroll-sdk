@@ -57,9 +57,11 @@ service:
   main:
     enabled: false
     ports:
-      http:
+      prover:
         enabled: true
-        port: 9400
+        primary: true
+        port: 7788
+        targetPort: 7788
         protocol: TCP
 
 defaultProbes: &default_probes
@@ -68,7 +70,8 @@ defaultProbes: &default_probes
   spec:
     httpGet:
       path: /healthz
-      port: http
+      # dogeos-core serves the health endpoints on the prover_api listener.
+      port: prover
     periodSeconds: 10
     timeoutSeconds: 2
     failureThreshold: 3
@@ -82,7 +85,7 @@ probes:
     spec:
       httpGet:
         path: /readyz
-        port: http
+        port: prover
       periodSeconds: 10
       timeoutSeconds: 2
       failureThreshold: 3
@@ -91,7 +94,7 @@ probes:
     spec:
       httpGet:
         path: /healthz
-        port: http
+        port: prover
       periodSeconds: 5
       timeoutSeconds: 2
       failureThreshold: 24

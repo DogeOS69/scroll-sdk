@@ -34,10 +34,11 @@ service:
   main:
     enabled: true
     ports:
-      http:
+      prover:
         enabled: true
-        port: 9400
-        targetPort: 9400
+        primary: true
+        port: 7788
+        targetPort: 7788
         protocol: TCP
 
 probes:
@@ -45,7 +46,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /healthz, port: http}
+      httpGet: {path: /healthz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 10
       timeoutSeconds: 2
@@ -54,7 +55,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /readyz, port: http}
+      httpGet: {path: /readyz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 10
       timeoutSeconds: 2
@@ -63,7 +64,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /healthz, port: http}
+      httpGet: {path: /healthz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 5
       timeoutSeconds: 2
