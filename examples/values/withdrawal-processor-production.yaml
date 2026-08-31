@@ -69,11 +69,12 @@ args:
   - --config
   - /app/config/WithdrawalProcessor.toml
 
-# Content is supplied at install time via --set-file; keep the ConfigMap
-# enabled so the chart renders and mounts it.
+# prep-charts embeds the compiler-rendered native TOML here so this values file
+# is a complete Helm input. The template only keeps the ConfigMap enabled.
 configMaps:
   config:
     enabled: true
+    data: {}
 
 # The common chart already checksums generic configMaps (including the main
 # TOML). tsoSigners uses a chart-specific ConfigMap, so checksum it explicitly.

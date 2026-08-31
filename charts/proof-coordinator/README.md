@@ -1,6 +1,6 @@
 # proof-coordinator
 
-![Version: 0.3.1](https://img.shields.io/badge/Version-0.3.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.3.2](https://img.shields.io/badge/Version-0.3.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS proof-coordinator service
 
@@ -60,7 +60,7 @@ local-development posture; production values require an explicit source.
 |-----|------|---------|-------------|
 | command[0] | string | `"sh"` |  |
 | command[1] | string | `"-ec"` |  |
-| command[2] | string | `"mkdir -p /app/data/proof-artifacts && exec proof-coordinator --config /app/conf/ProofCoordinator.toml"` |  |
+| command[2] | string | `"exec proof-coordinator --config /app/conf/ProofCoordinator.toml"` |  |
 | configMaps.config.data | object | `{}` |  |
 | configMaps.config.enabled | bool | `false` | Internal common-chart ConfigMap rendering is disabled so opaque TOML is never evaluated with `tpl`. |
 | controller.replicas | int | `1` |  |
@@ -82,6 +82,12 @@ local-development posture; production values require an explicit source.
 | image.repository | string | `"dogeos69/proof-coordinator"` |  |
 | image.tag | string | `"latest"` |  |
 | ingress.main.enabled | bool | `false` |  |
+| initContainers.prepare-proof-data-directories.args[0] | string | `"mkdir -p '/app/data/proof-artifacts' '/app/data/proof-artifacts/runtime/coordinator-staging' '/app/data/proof-artifacts/runtime/bridge-prepared-bundles' '/app/data/proof-artifacts/runtime/scroll-batch-materializer-output' '/app/data/proof-artifacts/runtime/scroll-chunk-sidecar-scratch' '/app/data/proof-artifacts/runtime/scroll-batch-subprocess-scratch' '/app/data/proof-artifacts/runtime/scroll-batch-da-cache/blobs' '/app/data/proof-artifacts/runtime/bridge-da/blobs'"` |  |
+| initContainers.prepare-proof-data-directories.command[0] | string | `"/bin/sh"` |  |
+| initContainers.prepare-proof-data-directories.command[1] | string | `"-ec"` |  |
+| initContainers.prepare-proof-data-directories.image | string | `"busybox:1.36.1"` |  |
+| initContainers.prepare-proof-data-directories.volumeMounts[0].mountPath | string | `"/app/data"` |  |
+| initContainers.prepare-proof-data-directories.volumeMounts[0].name | string | `"data"` |  |
 | persistence.config.enabled | bool | `true` |  |
 | persistence.config.mountPath | string | `"/app/conf/"` |  |
 | persistence.config.type | string | `"configMap"` |  |

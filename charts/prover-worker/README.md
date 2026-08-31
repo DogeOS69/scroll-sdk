@@ -10,13 +10,13 @@ The default has zero replicas. A compiler-selected local Worker changes it to
 one; an external Worker keeps it at zero and is launched from the separately
 generated Compose bundle.
 
-Install through the deployment contract so every compiler material uses
-`--set-file` with integrity verification:
+`scrollsdk setup prep-charts` embeds every compiler-generated text manifest in
+the final values file. Validate that self-contained input once, then deploy it
+with ordinary Helm:
 
 ```bash
-scrollsdk helper proof-helm \
-  --component prover-worker \
-  --release prover-worker \
-  --chart ./charts/prover-worker \
+scrollsdk setup proof-config-check
+helm upgrade --install prover-worker ./charts/prover-worker \
+  --values values/prover-worker-production.yaml \
   --namespace default
 ```

@@ -1,12 +1,12 @@
 # Configuration generation and validation belong to `scrollsdk setup ...`.
-# This example Makefile only installs or removes the generated Kubernetes
-# releases. Run `scrollsdk setup prep-charts` before the install targets.
+# prep-charts emits self-contained proof values; this Makefile only runs
+# ordinary Helm installs/removals. Run prep-charts and proof-config-check first.
 
 NAMESPACE ?= default
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.3
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.1
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.2
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
@@ -48,12 +48,12 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 
 .PHONY: prepare install-dogecoin install-celestia install-scroll-core \
-	install-contracts install-eth-da-submitter install-proof-submitter-projection \
+	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
-	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker install-proof-stack \
+	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
@@ -163,17 +163,6 @@ install-eth-da-submitter:
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
-# Schema-v4 proof contracts protect the compiler-owned digest-scoped
-# submitter namespace. Legacy contracts skip this adapter and retain the
-# ordinary install-eth-da-submitter target above.
-install-proof-submitter-projection:
-	scrollsdk helper proof-helm \
-		--component eth-da-submitter \
-		--release eth-da-submitter \
-		--chart $(ETH_DA_SUBMITTER_CHART) \
-		--version $(ETH_DA_SUBMITTER_CHART_VERSION) \
-		--namespace $(NAMESPACE)
-
 install-fee-oracle:
 	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
 		--version=0.0.10 \
@@ -191,34 +180,25 @@ install-tso:
 		--wait
 
 install-withdrawal-processor:
-	scrollsdk helper proof-helm \
-		--component withdrawal-processor \
-		--release withdrawal-processor \
-		--chart $(WITHDRAWAL_PROCESSOR_CHART) \
+	helm upgrade -i withdrawal-processor $(WITHDRAWAL_PROCESSOR_CHART) -n $(NAMESPACE) \
 		--version $(WITHDRAWAL_PROCESSOR_CHART_VERSION) \
-		--namespace $(NAMESPACE)
+		--values values/withdrawal-processor-production.yaml
 
 install-proof-coordinator:
-	scrollsdk helper proof-helm \
-		--component proof-coordinator \
-		--release proof-coordinator \
-		--chart $(PROOF_COORDINATOR_CHART) \
+	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
-		--namespace $(NAMESPACE)
+		--values values/proof-coordinator-production.yaml
 
 install-prover-worker:
-	scrollsdk helper proof-helm \
-		--component prover-worker \
-		--release prover-worker \
-		--chart $(PROVER_WORKER_CHART) \
+	helm upgrade -i prover-worker $(PROVER_WORKER_CHART) -n $(NAMESPACE) \
 		--version $(PROVER_WORKER_CHART_VERSION) \
-		--namespace $(NAMESPACE)
+		--values values/prover-worker-production.yaml
 
-# The generated deployment contract decides whether proof-coordinator and the
-# local prover-worker are enabled. Production/external keeps the local Worker
-# release absent and emits a separately verified launch bundle for the GPU host.
-install-proof-stack:
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-submitter-projection
+# Proof Coordinator remains deployed while the generated contract selects its
+# idle or active config. The contract decides whether the local prover-worker
+# runs; production/external keeps it absent and emits a verified GPU-host bundle.
+reconcile-proof-services:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-tso
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
@@ -275,7 +255,7 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-stack
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-blockscout
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
