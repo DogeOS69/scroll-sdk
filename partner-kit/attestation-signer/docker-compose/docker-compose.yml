@@ -11,7 +11,7 @@
 #   policy/                 — canonical context and optional production AggVK
 services:
   attestation-signer:
-    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-dev-20260712-2b27af6b}
+    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.2}
     command: ["-c", "/etc/dogeos-partner/attestation-signer.toml"]
     restart: unless-stopped
     env_file:
@@ -19,9 +19,12 @@ services:
       - signer-policy.env
     environment:
       PORT: "4040"
+      # Metrics-only listener. It deliberately does not expose POST /sign.
+      ATTESTATION_SIGNER_METRICS_PORT: "9100"
       ATTESTATION_SIGNER_DB_PATH: /app/data/attestation-signer.sqlite
     ports:
       - "4040:4040"
+      - "9100:9100"
     volumes:
       - signer-data:/app/data
       - ./attestation-signer.toml:/etc/dogeos-partner/attestation-signer.toml:ro
