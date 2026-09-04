@@ -2,7 +2,7 @@
 apiVersion: v2
 description: Helm chart to deploy Grafana, Prometheus, Loki, and Alloy for Scroll SDK
 name: scroll-monitor
-version: 0.1.24-dogeos
+version: 0.1.25-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
