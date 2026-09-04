@@ -10,7 +10,7 @@ controller:
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: 091025-01
+  tag: v0.3.0-beta.2
 
 service:
   main:
@@ -92,4 +92,11 @@ resources:
 # Monitoring configuration
 serviceMonitor:
   main:
-    enabled: false
+    enabled: true
+    labels:
+      release: scroll-sdk
+    serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
+    endpoints:
+      - port: http
+        interval: 10s
+        scrapeTimeout: 5s

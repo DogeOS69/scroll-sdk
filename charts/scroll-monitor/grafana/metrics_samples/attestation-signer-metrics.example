@@ -1,0 +1,147 @@
+# Synthetic Prometheus exposition for dashboard development. Prometheus adds
+# job and instance labels at scrape time. No production identities are present.
+# HELP attestation_signer_ready Whether the signer is ready for the configured policy mode
+# TYPE attestation_signer_ready gauge
+attestation_signer_ready{mode="observe"} 1
+# HELP attestation_signer_queue_rows Current durable queue rows by lifecycle status
+# TYPE attestation_signer_queue_rows gauge
+attestation_signer_queue_rows{status="received"} 2
+attestation_signer_queue_rows{status="signed"} 1
+attestation_signer_queue_rows{status="rejected_policy"} 0
+# HELP attestation_signer_queue_oldest_age_seconds Age of the oldest durable queue row
+# TYPE attestation_signer_queue_oldest_age_seconds gauge
+attestation_signer_queue_oldest_age_seconds{status="received"} 12.5
+attestation_signer_queue_oldest_age_seconds{status="signed"} 4.2
+attestation_signer_queue_oldest_age_seconds{status="rejected_policy"} 0
+# HELP attestation_signer_worker_last_success_timestamp_seconds Last successful worker tick timestamp
+# TYPE attestation_signer_worker_last_success_timestamp_seconds gauge
+attestation_signer_worker_last_success_timestamp_seconds 1788500000
+# HELP attestation_signer_intake_requests_total Sign-request intake outcomes
+# TYPE attestation_signer_intake_requests_total counter
+attestation_signer_intake_requests_total{result="accepted",kind="none"} 120
+# HELP attestation_signer_worker_ticks_total Worker tick outcomes
+# TYPE attestation_signer_worker_ticks_total counter
+attestation_signer_worker_ticks_total{result="success",kind="none"} 4500
+# HELP attestation_signer_worker_rows_total Worker row-processing outcomes
+# TYPE attestation_signer_worker_rows_total counter
+attestation_signer_worker_rows_total{starting_status="received",result="success",kind="none"} 120
+# HELP attestation_signer_worker_failures_total Worker failures by bounded kind and terminality
+# TYPE attestation_signer_worker_failures_total counter
+attestation_signer_worker_failures_total{kind="artifact_source",terminal="false"} 3
+# HELP attestation_signer_policy_decisions_total Policy decisions by mode classification and reason code
+# TYPE attestation_signer_policy_decisions_total counter
+attestation_signer_policy_decisions_total{mode="observe",classification="observed",reason_code="advance_l2_nested_proof_invalid"} 4
+# HELP attestation_signer_signing_attempts_total Signing attempts by result
+# TYPE attestation_signer_signing_attempts_total counter
+attestation_signer_signing_attempts_total{result="success"} 116
+# HELP attestation_signer_tso_callbacks_total TSO callbacks by path and result
+# TYPE attestation_signer_tso_callbacks_total counter
+attestation_signer_tso_callbacks_total{path="signed",result="success"} 114
+# HELP attestation_signer_release_outcomes_total Recovered signed-row release outcomes
+# TYPE attestation_signer_release_outcomes_total counter
+attestation_signer_release_outcomes_total{result="hold_temporary"} 2
+# HELP attestation_signer_worker_tick_duration_seconds Worker tick duration
+# TYPE attestation_signer_worker_tick_duration_seconds histogram
+attestation_signer_worker_tick_duration_seconds_bucket{result="success",le="0.01"} 2000
+attestation_signer_worker_tick_duration_seconds_bucket{result="success",le="0.025"} 4300
+attestation_signer_worker_tick_duration_seconds_bucket{result="success",le="+Inf"} 4500
+attestation_signer_worker_tick_duration_seconds_sum{result="success"} 54
+attestation_signer_worker_tick_duration_seconds_count{result="success"} 4500
+# HELP attestation_signer_queue_wait_seconds Queue wait duration
+# TYPE attestation_signer_queue_wait_seconds histogram
+attestation_signer_queue_wait_seconds_bucket{capability="advance_l2",le="1"} 15
+attestation_signer_queue_wait_seconds_bucket{capability="advance_l2",le="2.5"} 35
+attestation_signer_queue_wait_seconds_bucket{capability="advance_l2",le="+Inf"} 40
+attestation_signer_queue_wait_seconds_sum{capability="advance_l2"} 60
+attestation_signer_queue_wait_seconds_count{capability="advance_l2"} 40
+# HELP attestation_signer_row_evaluation_seconds Row evaluation duration
+# TYPE attestation_signer_row_evaluation_seconds histogram
+attestation_signer_row_evaluation_seconds_bucket{capability="advance_l2",decision="observed",le="0.1"} 10
+attestation_signer_row_evaluation_seconds_bucket{capability="advance_l2",decision="observed",le="0.5"} 38
+attestation_signer_row_evaluation_seconds_bucket{capability="advance_l2",decision="observed",le="+Inf"} 40
+attestation_signer_row_evaluation_seconds_sum{capability="advance_l2",decision="observed"} 10
+attestation_signer_row_evaluation_seconds_count{capability="advance_l2",decision="observed"} 40
+# HELP attestation_signer_tso_submit_seconds TSO submission duration
+# TYPE attestation_signer_tso_submit_seconds histogram
+attestation_signer_tso_submit_seconds_bucket{capability="advance_l2",result="success",le="0.025"} 10
+attestation_signer_tso_submit_seconds_bucket{capability="advance_l2",result="success",le="0.05"} 36
+attestation_signer_tso_submit_seconds_bucket{capability="advance_l2",result="success",le="+Inf"} 40
+attestation_signer_tso_submit_seconds_sum{capability="advance_l2",result="success"} 1.6
+attestation_signer_tso_submit_seconds_count{capability="advance_l2",result="success"} 40
+# HELP attestation_signer_artifact_fetch_total Artifact fetch outcomes
+# TYPE attestation_signer_artifact_fetch_total counter
+attestation_signer_artifact_fetch_total{transition="advance_l2",result="ok",cache="hit"} 80
+# HELP attestation_signer_artifact_bytes Artifact payload-size distribution
+# TYPE attestation_signer_artifact_bytes histogram
+attestation_signer_artifact_bytes_bucket{transition="advance_l2",le="4096"} 10
+attestation_signer_artifact_bytes_bucket{transition="advance_l2",le="16384"} 50
+attestation_signer_artifact_bytes_bucket{transition="advance_l2",le="65536"} 78
+attestation_signer_artifact_bytes_bucket{transition="advance_l2",le="+Inf"} 80
+attestation_signer_artifact_bytes_sum{transition="advance_l2"} 1310720
+attestation_signer_artifact_bytes_count{transition="advance_l2"} 80
+# HELP attestation_signer_artifact_fetch_latency_ms Artifact-fetch latency distribution in milliseconds
+# TYPE attestation_signer_artifact_fetch_latency_ms histogram
+attestation_signer_artifact_fetch_latency_ms_bucket{transition="advance_l2",result="ok",le="5"} 30
+attestation_signer_artifact_fetch_latency_ms_bucket{transition="advance_l2",result="ok",le="10"} 70
+attestation_signer_artifact_fetch_latency_ms_bucket{transition="advance_l2",result="ok",le="25"} 78
+attestation_signer_artifact_fetch_latency_ms_bucket{transition="advance_l2",result="ok",le="+Inf"} 80
+attestation_signer_artifact_fetch_latency_ms_sum{transition="advance_l2",result="ok"} 640
+attestation_signer_artifact_fetch_latency_ms_count{transition="advance_l2",result="ok"} 80
+# HELP attestation_signer_witness_decode_total Witness-decode outcomes
+# TYPE attestation_signer_witness_decode_total counter
+attestation_signer_witness_decode_total{transition="advance_l2",result="ok"} 80
+# HELP attestation_signer_rotation_replay_total Rotation replay outcomes
+# TYPE attestation_signer_rotation_replay_total counter
+attestation_signer_rotation_replay_total{transition="rotate_key",result="ok"} 5
+# HELP attestation_signer_rotation_replay_latency_ms Rotation replay latency distribution in milliseconds
+# TYPE attestation_signer_rotation_replay_latency_ms histogram
+attestation_signer_rotation_replay_latency_ms_bucket{transition="rotate_key",le="2.5"} 2
+attestation_signer_rotation_replay_latency_ms_bucket{transition="rotate_key",le="5"} 5
+attestation_signer_rotation_replay_latency_ms_bucket{transition="rotate_key",le="+Inf"} 5
+attestation_signer_rotation_replay_latency_ms_sum{transition="rotate_key"} 15
+attestation_signer_rotation_replay_latency_ms_count{transition="rotate_key"} 5
+# HELP attestation_signer_rotation_result_total Rotation policy outcomes
+# TYPE attestation_signer_rotation_result_total counter
+attestation_signer_rotation_result_total{transition="rotate_key",result="accepted"} 5
+# HELP attestation_signer_advance_l1_replay_total Advance L1 replay outcomes
+# TYPE attestation_signer_advance_l1_replay_total counter
+attestation_signer_advance_l1_replay_total{result="ok"} 80
+# HELP attestation_signer_advance_l1_replay_latency_ms Advance L1 replay latency distribution in milliseconds
+# TYPE attestation_signer_advance_l1_replay_latency_ms histogram
+attestation_signer_advance_l1_replay_latency_ms_bucket{le="1"} 40
+attestation_signer_advance_l1_replay_latency_ms_bucket{le="2.5"} 75
+attestation_signer_advance_l1_replay_latency_ms_bucket{le="5"} 80
+attestation_signer_advance_l1_replay_latency_ms_bucket{le="+Inf"} 80
+attestation_signer_advance_l1_replay_latency_ms_sum 160
+attestation_signer_advance_l1_replay_latency_ms_count 80
+# HELP attestation_signer_advance_l1_result_total Advance L1 policy outcomes
+# TYPE attestation_signer_advance_l1_result_total counter
+attestation_signer_advance_l1_result_total{result="accepted"} 80
+# HELP attestation_signer_advance_l2_replay_total Advance L2 replay outcomes
+# TYPE attestation_signer_advance_l2_replay_total counter
+attestation_signer_advance_l2_replay_total{result="ok"} 40
+# HELP attestation_signer_advance_l2_replay_latency_ms Advance L2 replay latency distribution in milliseconds
+# TYPE attestation_signer_advance_l2_replay_latency_ms histogram
+attestation_signer_advance_l2_replay_latency_ms_bucket{le="10"} 15
+attestation_signer_advance_l2_replay_latency_ms_bucket{le="25"} 35
+attestation_signer_advance_l2_replay_latency_ms_bucket{le="50"} 40
+attestation_signer_advance_l2_replay_latency_ms_bucket{le="+Inf"} 40
+attestation_signer_advance_l2_replay_latency_ms_sum 800
+attestation_signer_advance_l2_replay_latency_ms_count 40
+# HELP attestation_signer_advance_l2_result_total Advance L2 policy outcomes
+# TYPE attestation_signer_advance_l2_result_total counter
+attestation_signer_advance_l2_result_total{result="accepted"} 36
+# HELP attestation_signer_source_set_evaluations_total Source-set evaluation outcomes
+# TYPE attestation_signer_source_set_evaluations_total counter
+attestation_signer_source_set_evaluations_total{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement"} 40
+# HELP attestation_signer_source_verdicts_total Source verdict outcomes
+# TYPE attestation_signer_source_verdicts_total counter
+attestation_signer_source_verdicts_total{fact="advance_l2_l2_state",verdict="confirmed"} 40
+# HELP attestation_signer_source_set_evaluation_latency_ms Source-set evaluation latency distribution in milliseconds
+# TYPE attestation_signer_source_set_evaluation_latency_ms histogram
+attestation_signer_source_set_evaluation_latency_ms_bucket{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement",le="5"} 10
+attestation_signer_source_set_evaluation_latency_ms_bucket{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement",le="10"} 35
+attestation_signer_source_set_evaluation_latency_ms_bucket{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement",le="25"} 40
+attestation_signer_source_set_evaluation_latency_ms_bucket{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement",le="+Inf"} 40
+attestation_signer_source_set_evaluation_latency_ms_sum{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement"} 320
+attestation_signer_source_set_evaluation_latency_ms_count{fact="advance_l2_l2_state",posture="explicit_single_source",outcome="agreement"} 40

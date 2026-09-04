@@ -1,0 +1,206 @@
+# HELP cubesigner_signer_build_info Signer gateway build identity; value is always 1. version is the release, git_sha the deployed commit (or "unknown").
+# TYPE cubesigner_signer_build_info gauge
+cubesigner_signer_build_info{version="0.3.0",git_sha="e2e0000"} 1
+
+# HELP cubesigner_signer_ready Whether /ready currently returns 200 (1) or 503 (0). Read at scrape time from the same readiness predicate /ready uses.
+# TYPE cubesigner_signer_ready gauge
+cubesigner_signer_ready 0
+
+# HELP cubesigner_signer_production_policy_ready Whether the production verifier-key policy posture is ready (1) or blocked (0).
+# TYPE cubesigner_signer_production_policy_ready gauge
+cubesigner_signer_production_policy_ready 0
+
+# HELP cubesigner_signer_sign_intake_total Total /sign dispositions by reason: every intake-shape rejection, accepted, and the queue-state 409 duplicate_transaction_id. A PSBT-authorization rejection is additionally broken down by reason_code in cubesigner_signer_psbt_policy_rejections_total.
+# TYPE cubesigner_signer_sign_intake_total counter
+cubesigner_signer_sign_intake_total{reason="accepted"} 0
+cubesigner_signer_sign_intake_total{reason="unknown_field"} 0
+cubesigner_signer_sign_intake_total{reason="missing_required_field"} 0
+cubesigner_signer_sign_intake_total{reason="invalid_input_indexes"} 0
+cubesigner_signer_sign_intake_total{reason="invalid_callback_token"} 0
+cubesigner_signer_sign_intake_total{reason="request_too_large"} 0
+cubesigner_signer_sign_intake_total{reason="invalid_json"} 0
+cubesigner_signer_sign_intake_total{reason="duplicate_field"} 0
+cubesigner_signer_sign_intake_total{reason="invalid_proof_reference"} 0
+cubesigner_signer_sign_intake_total{reason="psbt_too_large"} 0
+cubesigner_signer_sign_intake_total{reason="invalid_psbt"} 0
+cubesigner_signer_sign_intake_total{reason="noncanonical_psbt"} 0
+cubesigner_signer_sign_intake_total{reason="transaction_id_not_derived_from_psbt"} 0
+cubesigner_signer_sign_intake_total{reason="duplicate_transaction_id"} 0
+
+# HELP cubesigner_signer_psbt_policy_rejections_total Shared-PSBT-policy authorization rejections by reason_code, at intake or in the worker. The detailed breakdown behind sign_intake_total{...} and sign_outcome_total{reason="psbt_policy_rejected"}.
+# TYPE cubesigner_signer_psbt_policy_rejections_total counter
+cubesigner_signer_psbt_policy_rejections_total{reason_code="empty_applicable_set"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="missing_non_witness_utxo"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="prevout_txid_mismatch"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="prevout_vout_missing"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="missing_redeem_script"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="p2sh_hash_mismatch"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="not_bridge_script"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="wrong_namespace"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="key_wrong_role"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="sighash_not_all"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="witness_path_forbidden"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="additional_key_applicable_input"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="hint_out_of_range"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="hint_duplicate"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="hint_set_mismatch"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="unsigned_tx_mutated"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="non_signature_field_mutated"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="pre_existing_signature_mutated"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="pre_existing_signer_signature"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="missing_expected_signature"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="unexpected_signature"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="signature_wrong_sighash"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="malformed_signature"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="signature_verify_failed"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="malformed_returned_psbt"} 0
+cubesigner_signer_psbt_policy_rejections_total{reason_code="internal_psbt_policy_error"} 0
+
+# HELP cubesigner_signer_sign_outcome_total Total worker signing attempts by outcome reason; sum equals sum(cubesigner_signer_sign_duration_seconds_count). psbt_policy_rejected is additionally broken down by reason_code in cubesigner_signer_psbt_policy_rejections_total; production_policy_blocked corresponds to cubesigner_signer_production_policy_ready == 0.
+# TYPE cubesigner_signer_sign_outcome_total counter
+cubesigner_signer_sign_outcome_total{reason="success"} 0
+cubesigner_signer_sign_outcome_total{reason="malformed_request"} 0
+cubesigner_signer_sign_outcome_total{reason="oversized_request"} 0
+cubesigner_signer_sign_outcome_total{reason="oversized_response"} 0
+cubesigner_signer_sign_outcome_total{reason="malformed_response"} 0
+cubesigner_signer_sign_outcome_total{reason="policy_denied"} 0
+cubesigner_signer_sign_outcome_total{reason="mfa_required"} 0
+cubesigner_signer_sign_outcome_total{reason="signature_mode_violation"} 0
+cubesigner_signer_sign_outcome_total{reason="policy_failed"} 0
+cubesigner_signer_sign_outcome_total{reason="timeout"} 0
+cubesigner_signer_sign_outcome_total{reason="remote_error"} 0
+cubesigner_signer_sign_outcome_total{reason="unknown"} 0
+cubesigner_signer_sign_outcome_total{reason="psbt_policy_rejected"} 0
+cubesigner_signer_sign_outcome_total{reason="production_policy_blocked"} 0
+
+# HELP cubesigner_signer_sign_duration_seconds Wall-clock of one worker signing attempt (a fresh dispatch that has to call CubeSigner). A cached-PSBT submission retry is not a second attempt and is not observed here.
+# TYPE cubesigner_signer_sign_duration_seconds histogram
+cubesigner_signer_sign_duration_seconds_bucket{le="0.25",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="0.5",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="1",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="2",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="5",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="10",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="30",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="+Inf",outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_sum{outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_count{outcome="success"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="0.25",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="0.5",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="1",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="2",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="5",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="10",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="30",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="+Inf",outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_sum{outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_count{outcome="permanent"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="0.25",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="0.5",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="1",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="2",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="5",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="10",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="30",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_bucket{le="+Inf",outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_sum{outcome="retryable"} 0
+cubesigner_signer_sign_duration_seconds_count{outcome="retryable"} 0
+
+# HELP cubesigner_signer_pending_signatures Current size of the in-memory pending-signature queue, read at scrape time.
+# TYPE cubesigner_signer_pending_signatures gauge
+cubesigner_signer_pending_signatures 0
+
+# HELP cubesigner_signer_worker_cycles_total Completed background polling cycles by outcome. A cycle skipped because the previous one was still in flight is not counted.
+# TYPE cubesigner_signer_worker_cycles_total counter
+cubesigner_signer_worker_cycles_total{outcome="ok"} 0
+cubesigner_signer_worker_cycles_total{outcome="error"} 0
+
+# HELP cubesigner_signer_last_worker_cycle_timestamp_seconds Unix time (seconds) at which the most recent background polling cycle completed.
+# TYPE cubesigner_signer_last_worker_cycle_timestamp_seconds gauge
+cubesigner_signer_last_worker_cycle_timestamp_seconds 0
+
+# HELP cubesigner_signer_policy_fallback_signs_total Signs that succeeded DESPITE a bad or unusable bridge proof: the attached Wasm policy emitted dogecoin_testnet_proof_failed and still returned Allow, so the sign succeeded on testnet anyway. Captured from the policy_eval_tree returned because the sign request sets explain:true. Distinct failure_code per sign: a policy attached at both role and key level yields two leaves with the same event and is counted once. CAVEAT: each policy stream is hard-capped at 1024 bytes, cut mid-line, with no marker and no length field, so a truncated stream is indistinguishable from a complete one; if any policy output ever writes ahead of the event line, the event can be pushed past the cap and the count silently under-reports.
+# TYPE cubesigner_signer_policy_fallback_signs_total counter
+cubesigner_signer_policy_fallback_signs_total{failure_code="policy_pins_invalid"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="pi_mismatch"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_unavailable"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_deadline"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_stream_reset"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_server_error"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_status_invalid"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="resolver_headers_invalid"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="proof_invalid"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="proof_verification_failed"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="proof_reference_invalid"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="proof_reference_size_mismatch"} 0
+cubesigner_signer_policy_fallback_signs_total{failure_code="proof_reference_hash_mismatch"} 0
+
+# HELP cubesigner_signer_policy_denials_total Policy denials of a sign request (the 412 WasmPolicyDenied breakdown behind sign_outcome_total{reason="policy_denied"}) by the failure_code the Wasm policy reported on the denial. Parsed from the ErrResponse message; the message prose is vendor-owned, so an unrecognized or missing code lands in the unknown bucket and a nonzero unknown rate means the vendor contract moved. Sum matches the policy_denied reason count.
+# TYPE cubesigner_signer_policy_denials_total counter
+cubesigner_signer_policy_denials_total{failure_code="key_material_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="request_body_missing"} 0
+cubesigner_signer_policy_denials_total{failure_code="request_too_large"} 0
+cubesigner_signer_policy_denials_total{failure_code="request_json_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="request_contract_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="psbt_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="psbt_forbidden_field"} 0
+cubesigner_signer_policy_denials_total{failure_code="psbt_duplicate_key"} 0
+cubesigner_signer_policy_denials_total{failure_code="psbt_noncanonical_encoding"} 0
+cubesigner_signer_policy_denials_total{failure_code="psbt_version_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="missing_witness_utxo"} 0
+cubesigner_signer_policy_denials_total{failure_code="policy_pins_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="unsigned_txid_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="pi_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_unavailable"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_deadline"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_stream_reset"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_server_error"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_status_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="resolver_headers_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="proof_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="proof_verification_failed"} 0
+cubesigner_signer_policy_denials_total{failure_code="empty_applicable_set"} 0
+cubesigner_signer_policy_denials_total{failure_code="missing_non_witness_utxo"} 0
+cubesigner_signer_policy_denials_total{failure_code="prevout_txid_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="prevout_vout_missing"} 0
+cubesigner_signer_policy_denials_total{failure_code="missing_redeem_script"} 0
+cubesigner_signer_policy_denials_total{failure_code="p2sh_hash_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="not_bridge_script"} 0
+cubesigner_signer_policy_denials_total{failure_code="wrong_namespace"} 0
+cubesigner_signer_policy_denials_total{failure_code="key_wrong_role"} 0
+cubesigner_signer_policy_denials_total{failure_code="sighash_not_all"} 0
+cubesigner_signer_policy_denials_total{failure_code="witness_path_forbidden"} 0
+cubesigner_signer_policy_denials_total{failure_code="additional_key_applicable_input"} 0
+cubesigner_signer_policy_denials_total{failure_code="hint_out_of_range"} 0
+cubesigner_signer_policy_denials_total{failure_code="hint_duplicate"} 0
+cubesigner_signer_policy_denials_total{failure_code="hint_set_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="unsigned_tx_mutated"} 0
+cubesigner_signer_policy_denials_total{failure_code="non_signature_field_mutated"} 0
+cubesigner_signer_policy_denials_total{failure_code="pre_existing_signature_mutated"} 0
+cubesigner_signer_policy_denials_total{failure_code="pre_existing_signer_signature"} 0
+cubesigner_signer_policy_denials_total{failure_code="missing_expected_signature"} 0
+cubesigner_signer_policy_denials_total{failure_code="unexpected_signature"} 0
+cubesigner_signer_policy_denials_total{failure_code="signature_wrong_sighash"} 0
+cubesigner_signer_policy_denials_total{failure_code="malformed_signature"} 0
+cubesigner_signer_policy_denials_total{failure_code="signature_verify_failed"} 0
+cubesigner_signer_policy_denials_total{failure_code="internal_psbt_policy_error"} 0
+cubesigner_signer_policy_denials_total{failure_code="proof_reference_invalid"} 0
+cubesigner_signer_policy_denials_total{failure_code="proof_reference_size_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="proof_reference_hash_mismatch"} 0
+cubesigner_signer_policy_denials_total{failure_code="unknown"} 0
+
+# HELP cubesigner_signer_policy_evaluations_total Signed requests whose explain policy_eval_tree proved a live policy evaluation, by leaf outcome. Distinct outcome per sign: a policy attached at both role and key level is one observation. Liveness: sum should track successful signs; a gap means the tree stopped arriving. Denied is seeded but effectively unobservable today: the SDK discards the 412 body that carries a deny-path tree (denials are counted in cubesigner_signer_policy_denials_total instead).
+# TYPE cubesigner_signer_policy_evaluations_total counter
+cubesigner_signer_policy_evaluations_total{outcome="Permitted"} 0
+cubesigner_signer_policy_evaluations_total{outcome="Denied"} 0
+
+# HELP cubesigner_signer_policy_fallback_txid_mismatch_total Fallback events whose policy-reported unsigned_txid does not match the gateway-derived unsigned-transaction txid of the PSBT we signed. Should stay at exactly 0 forever; any nonzero value means the policy and the gateway are not signing the same transaction view and everything downstream of that comparison is suspect.
+# TYPE cubesigner_signer_policy_fallback_txid_mismatch_total counter
+cubesigner_signer_policy_fallback_txid_mismatch_total 0
+
+# HELP cubesigner_signer_policy_rule_info The rule identity (policy_id and rule hash) that the live policy evaluation reported, as observed on the most recent signed request. Deliberate exception to the no-identifier rule, same class as build_info: the value IS the pinned-version attestation. Absent until the first signed request; children accumulate per distinct observed pair since process start. Alert when hash/policy_id differ from the reviewed pin.
+# TYPE cubesigner_signer_policy_rule_info gauge
+
+# HELP cubesigner_signer_policy_eval_tree_unparseable_total Signs whose explain policy_eval_tree was present but could not be parsed for the fallback event: the tree root was not a traversable structure, or a parsed fallback event carried a failure_code outside the closed 13-value domain. Any nonzero value means the Cubist tree shape or the policy event contract changed and fallback observability is degraded; investigate immediately.
+# TYPE cubesigner_signer_policy_eval_tree_unparseable_total counter
+cubesigner_signer_policy_eval_tree_unparseable_total 0
