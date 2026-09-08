@@ -1,0 +1,520 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: fee-oracle-below
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="fee-oracle",address="0xabc",chain_id="1234"}
+    values: '2.5'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeOracleAccountBalanceLow
+    exp_alerts:
+    - exp_labels:
+        account: fee-oracle
+        address: '0xabc'
+        chain_id: '1234'
+        service: fee-oracle
+        severity: critical
+      exp_annotations:
+        description: Address 0xabc on chain 1234 has 2.5 ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.
+        summary: Fee oracle account balance is below 5 ETH.
+- name: fee-oracle-equal
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="fee-oracle",address="0xabc",chain_id="1234"}
+    values: '5'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeOracleAccountBalanceLow
+    exp_alerts: []
+- name: fee-oracle-above
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="fee-oracle",address="0xabc",chain_id="1234"}
+    values: '10'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeOracleAccountBalanceLow
+    exp_alerts: []
+- name: fee-oracle-zero
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="fee-oracle",address="0xabc",chain_id="1234"}
+    values: '0'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeOracleAccountBalanceLow
+    exp_alerts:
+    - exp_labels:
+        account: fee-oracle
+        address: '0xabc'
+        chain_id: '1234'
+        service: fee-oracle
+        severity: critical
+      exp_annotations:
+        description: Address 0xabc on chain 1234 has 0 ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.
+        summary: Fee oracle account balance is below 5 ETH.
+- name: fee-oracle-rpc-failure-not-low-balance
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_scrape_success{account="fee-oracle"}
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: FeeOracleAccountBalanceLow
+    exp_alerts: []
+- name: eth-da-submitter-below
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="eth-da-submitter",address="0xabc",chain_id="1234"}
+    values: '0.05'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: EthDASubmitterAccountBalanceLow
+    exp_alerts:
+    - exp_labels:
+        account: eth-da-submitter
+        address: '0xabc'
+        chain_id: '1234'
+        service: eth-da-submitter
+        severity: critical
+      exp_annotations:
+        description: Address 0xabc on chain 1234 has 0.05 ETH. Replenish funds for blob publication and transaction replacement.
+        summary: Ethereum DA submitter account balance is below 0.1 ETH.
+- name: eth-da-submitter-equal
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="eth-da-submitter",address="0xabc",chain_id="1234"}
+    values: '0.1'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: EthDASubmitterAccountBalanceLow
+    exp_alerts: []
+- name: eth-da-submitter-above
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="eth-da-submitter",address="0xabc",chain_id="1234"}
+    values: '0.2'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: EthDASubmitterAccountBalanceLow
+    exp_alerts: []
+- name: eth-da-submitter-zero
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_eth{account="eth-da-submitter",address="0xabc",chain_id="1234"}
+    values: '0'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: EthDASubmitterAccountBalanceLow
+    exp_alerts:
+    - exp_labels:
+        account: eth-da-submitter
+        address: '0xabc'
+        chain_id: '1234'
+        service: eth-da-submitter
+        severity: critical
+      exp_annotations:
+        description: Address 0xabc on chain 1234 has 0 ETH. Replenish funds for blob publication and transaction replacement.
+        summary: Ethereum DA submitter account balance is below 0.1 ETH.
+- name: eth-da-submitter-rpc-failure-not-low-balance
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_scrape_success{account="eth-da-submitter"}
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: EthDASubmitterAccountBalanceLow
+    exp_alerts: []
+- name: fee-oracle-collection-failed
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_scrape_success{account="fee-oracle"}
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: AccountBalanceCollectionFailed
+    exp_alerts:
+    - exp_labels:
+        account: fee-oracle
+        severity: warning
+      exp_annotations:
+        description: Balance monitoring for fee-oracle is unavailable. Check the configured public address, RPC URL, expected chain ID, and exporter. An RPC failure is not a zero balance.
+        summary: Account balance collection is failing or stale.
+- name: fee-oracle-collection-stale
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_last_success_timestamp_seconds{account="fee-oracle"}
+    values: 0+0x15
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: AccountBalanceCollectionFailed
+    exp_alerts:
+    - exp_labels:
+        account: fee-oracle
+        severity: warning
+      exp_annotations:
+        description: Balance monitoring for fee-oracle is unavailable. Check the configured public address, RPC URL, expected chain ID, and exporter. An RPC failure is not a zero balance.
+        summary: Account balance collection is failing or stale.
+- name: fee-oracle-missing-monitor
+  interval: 1m
+  input_series: []
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: FeeOracleBalanceMonitorMissing
+    exp_alerts:
+    - exp_labels:
+        account: fee-oracle
+        service: fee-oracle
+        severity: warning
+      exp_annotations:
+        description: Check the balance exporter and its ServiceMonitor. Configure the fee-oracle public address and RPC endpoint.
+        summary: Fee oracle balance monitoring is missing.
+- name: eth-da-submitter-collection-failed
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_scrape_success{account="eth-da-submitter"}
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: AccountBalanceCollectionFailed
+    exp_alerts:
+    - exp_labels:
+        account: eth-da-submitter
+        severity: warning
+      exp_annotations:
+        description: Balance monitoring for eth-da-submitter is unavailable. Check the configured public address, RPC URL, expected chain ID, and exporter. An RPC failure is not a zero balance.
+        summary: Account balance collection is failing or stale.
+- name: eth-da-submitter-collection-stale
+  interval: 1m
+  input_series:
+  - series: scroll_account_balance_last_success_timestamp_seconds{account="eth-da-submitter"}
+    values: 0+0x15
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: AccountBalanceCollectionFailed
+    exp_alerts:
+    - exp_labels:
+        account: eth-da-submitter
+        severity: warning
+      exp_annotations:
+        description: Balance monitoring for eth-da-submitter is unavailable. Check the configured public address, RPC URL, expected chain ID, and exporter. An RPC failure is not a zero balance.
+        summary: Account balance collection is failing or stale.
+- name: eth-da-submitter-missing-monitor
+  interval: 1m
+  input_series: []
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: EthDASubmitterBalanceMonitorMissing
+    exp_alerts:
+    - exp_labels:
+        account: eth-da-submitter
+        service: eth-da-submitter
+        severity: warning
+      exp_annotations:
+        description: Check the balance exporter and its ServiceMonitor. Configure the eth-da-submitter public address and RPC endpoint.
+        summary: Ethereum DA submitter balance monitoring is missing.
+- name: fee-wallet-below
+  interval: 1m
+  input_series:
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="withdrawal-processor"}
+    values: '9900000000'
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="l1-interface"}
+    values: '100000000000'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeWalletBalanceLow
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: withdrawal-processor
+        service: withdrawal-processor
+        severity: critical
+      exp_annotations:
+        description: Job withdrawal-processor has 99 DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct WP reservations. Replenish the fee wallet and check pending WF funding.
+        summary: Fee wallet UTXO balance is below 100 DOGE.
+- name: fee-wallet-equal
+  interval: 1m
+  input_series:
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="withdrawal-processor"}
+    values: '10000000000'
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="l1-interface"}
+    values: '100000000000'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeWalletBalanceLow
+    exp_alerts: []
+- name: fee-wallet-above
+  interval: 1m
+  input_series:
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="withdrawal-processor"}
+    values: '10100000000'
+  - series: fee_wallet_total_unredeemed_utxo_amount{namespace="monitoring",job="l1-interface"}
+    values: '100000000000'
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: FeeWalletBalanceLow
+    exp_alerts: []
+- name: fee-wallet-missing
+  interval: 1m
+  input_series: []
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: FeeWalletBalanceMetricMissing
+    exp_alerts:
+    - exp_labels:
+        service: withdrawal-processor
+        severity: warning
+      exp_annotations:
+        description: Check the withdrawal-processor scrape target and embedded Dogecoin indexer. The balance gauge is refreshed after successful block processing.
+        summary: Fee wallet UTXO balance is not being observed.
+- name: quorum-count-1
+  interval: 1m
+  input_series:
+  - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
+    values: 1+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: TSOCorrectnessQuorumUnavailable
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: tso-service
+        role: Correctness
+        service: tso-service
+        severity: critical
+      exp_annotations:
+        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and policy thresholds.
+        summary: TSO Correctness signer quorum is unavailable.
+- name: quorum-count-2
+  interval: 1m
+  input_series:
+  - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
+    values: 2+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: TSOCorrectnessQuorumUnavailable
+    exp_alerts: []
+- name: quorum-count-3
+  interval: 1m
+  input_series:
+  - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
+    values: 3+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: TSOCorrectnessQuorumUnavailable
+    exp_alerts: []
+- name: quorum-required-role-missing
+  interval: 1m
+  input_series:
+  - series: tso_core_registered_signers_count{namespace="monitoring",job="tso-service"}
+    values: 3+0x10
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: TSOCorrectnessQuorumUnavailable
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: tso-service
+        role: Correctness
+        service: tso-service
+        severity: critical
+      exp_annotations:
+        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and policy thresholds.
+        summary: TSO Correctness signer quorum is unavailable.
+- name: tso-no-completion
+  interval: 1m
+  input_series:
+  - series: tso_core_transactions_by_status{namespace="monitoring",job="tso-service",status="collecting_signatures"}
+    values: 1+0x25
+  alert_rule_test:
+  - eval_time: 20m
+    alertname: TSOSigningProgressStalled
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: tso-service
+        service: tso-service
+        severity: critical
+      exp_annotations:
+        description: Signing work has remained pending without a completed cycle. Check whether every bridge input can reach its required quorum.
+        summary: TSO has pending transactions but no completed signing cycle.
+- name: tso-completing
+  interval: 1m
+  input_series:
+  - series: tso_core_transactions_by_status{namespace="monitoring",job="tso-service",status="collecting_signatures"}
+    values: 1+0x25
+  - series: tso_core_signing_cycle_latency_seconds_count{namespace="monitoring",job="tso-service"}
+    values: 0+1x25
+  alert_rule_test:
+  - eval_time: 20m
+    alertname: TSOSigningProgressStalled
+    exp_alerts: []
+- name: cube-integrity-0
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_fallback_txid_mismatch_total{namespace="monitoring",job="app",instance="host:3000"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: CubeSignerTransactionViewMismatch
+    exp_alerts: []
+- name: cube-integrity-1
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_fallback_txid_mismatch_total{namespace="monitoring",job="app",instance="host:3000"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 0m
+    alertname: CubeSignerTransactionViewMismatch
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        instance: host:3000
+        service: cubesigner-signer
+        severity: critical
+      exp_annotations:
+        description: Instance host:3000 reported a transaction-view mismatch. This integrity counter must remain zero. Investigate the policy and gateway before further signing.
+        summary: CubeSigner policy and signed PSBT transaction IDs disagree.
+- name: proof-stuck-0
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",family="scroll_batch"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: ProofWorkRetryBudgetExhausted
+    exp_alerts: []
+- name: proof-stuck-1
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",family="scroll_batch"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: ProofWorkRetryBudgetExhausted
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        family: scroll_batch
+        service: withdrawal-processor
+        severity: critical
+      exp_annotations:
+        description: 1 stuck items in proof family scroll_batch. Check workers, proof inputs, and durable work status.
+        summary: Proof work exceeded the retry-attempt ceiling.
+- name: proof-terminal-0
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_terminal_ranges{namespace="monitoring",job="app"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: L2ProofRangeTerminal
+    exp_alerts: []
+- name: proof-terminal-1
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_terminal_ranges{namespace="monitoring",job="app"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: L2ProofRangeTerminal
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        service: withdrawal-processor
+        severity: critical
+      exp_annotations:
+        description: 1 attached terminal ranges were observed in the latest pass. Inspect current work rather than historical terminal rows.
+        summary: The active L2 proof pipeline has terminal ranges.
+- name: replay-stopped-0
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_stopped{namespace="monitoring",job="app",instance="host:3000"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 3m
+    alertname: ProtocolReplayStopped
+    exp_alerts: []
+- name: replay-stopped-1
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_stopped{namespace="monitoring",job="app",instance="host:3000"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 3m
+    alertname: ProtocolReplayStopped
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        instance: host:3000
+        service: l1-interface
+        severity: critical
+      exp_annotations:
+        description: Inspect l1_interface_protocol_replay_stop_reason_active and replay evidence for instance host:3000.
+        summary: L1 Interface protocol replay has stopped.
+- name: recovery-stuck-0
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_reorg_recovery_active{namespace="monitoring",job="app"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 16m
+    alertname: ProtocolReorgRecoveryStalled
+    exp_alerts: []
+- name: recovery-stuck-1
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_reorg_recovery_active{namespace="monitoring",job="app"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 16m
+    alertname: ProtocolReorgRecoveryStalled
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        severity: critical
+      exp_annotations:
+        description: Job app has remained in recovery beyond the allowed window. Inspect reorg depth, source availability, and recovery errors.
+        summary: Protocol reorg recovery has not completed.
+- name: fee-cap-age-100
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_ready_backlog{namespace="monitoring",job="eth-da-submitter"}
+    values: 2+0x15
+  - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="eth-da-submitter"}
+    values: 100+1x15
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter"}
+    values: 0+1x15
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: EthDAPublicationFeeBlocked
+    exp_alerts: []
+- name: fee-cap-age-4000
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_ready_backlog{namespace="monitoring",job="eth-da-submitter"}
+    values: 2+0x15
+  - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="eth-da-submitter"}
+    values: 4000+1x15
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter"}
+    values: 0+1x15
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: EthDAPublicationFeeBlocked
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: eth-da-submitter
+        service: eth-da-submitter
+        severity: warning
+      exp_annotations:
+        description: Publication has pending work older than the configured deadline and recurring liveness or replacement fee-cap blocks. Review the fee policy and account balance.
+        summary: Fee constraints are blocking Ethereum DA publication past its deadline.

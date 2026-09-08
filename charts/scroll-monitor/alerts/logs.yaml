@@ -1,0 +1,16 @@
+groups:
+  - name: dogeos.logs
+    interval: 1m
+    rules:
+      - alert: ServiceErrorOrPanickedLogs
+        datasourceType: loki
+        expr: >-
+          sum by (namespace, service, pod, container) (
+            count_over_time({namespace=~"__NAMESPACES__"}
+              |~ `(?i)\b(error|panicked)\b` [5m])
+          ) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: 'ERROR or panicked logs detected in {{ $labels.service }}.'
+          description: '{{ $value }} matching log lines in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate.'

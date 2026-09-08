@@ -1,0 +1,99 @@
+{{- if and .Values.grafana.enabled .Values.grafanaAlerting.enabled }}
+{{- $grafana := .Subcharts.grafana }}
+{{- $name := printf "%s-grafana-alerts" .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- $groups := (include "scroll-monitor.metricGroups" . | fromYaml).groups }}
+{{- if and .Values.grafanaAlerting.logs.enabled .Values.monitoring.datasources.loki.enabled }}
+{{- $namespaces := .Values.alloy.logs.namespaces | default (list .Release.Namespace) }}
+{{- $logGroups := (.Files.Get "alerts/logs.yaml" | replace "__NAMESPACES__" (join "|" $namespaces) | fromYaml).groups }}
+{{- $groups = concat $groups $logGroups }}
+{{- end }}
+{{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  rules.json: {{ $config | toJson | quote }}
+  seed.py: |
+{{ .Files.Get "scripts/seed-grafana-alerts.py" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "10"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: scroll-monitor-alerts
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      {{- with .Values.grafanaAlerting.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: seed
+          image: {{ .Values.grafanaAlerting.image | quote }}
+          imagePullPolicy: {{ .Values.grafanaAlerting.imagePullPolicy }}
+          command: [python3, /config/seed.py, /config/rules.json]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: GRAFANA_URL
+              value: {{ .Values.grafanaAlerting.url | default (printf "http://%s.%s.svc:%v" (include "grafana.fullname" $grafana) (include "grafana.namespace" $grafana) $grafana.Values.service.port) | quote }}
+            {{- if .Values.grafanaAlerting.authSecret }}
+            - name: GRAFANA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafanaAlerting.authSecret | quote }}
+                  key: token
+            {{- else }}
+            - name: GRAFANA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl $grafana.Values.admin.existingSecret $grafana | default (include "grafana.fullname" $grafana) | quote }}
+                  key: {{ $grafana.Values.admin.userKey | default "admin-user" | quote }}
+            - name: GRAFANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl $grafana.Values.admin.existingSecret $grafana | default (include "grafana.fullname" $grafana) | quote }}
+                  key: {{ $grafana.Values.admin.passwordKey | default "admin-password" | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.grafanaAlerting.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $name }}
+{{- end }}

@@ -1,6 +1,29 @@
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
   {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
 {{- end }}
+{{- if .Values.balanceMonitoring.enabled }}
+{{- range $account := .Values.balanceMonitoring.ethereum }}
+{{- if lt (float64 $account.minimumEth) 0.0 }}
+{{- fail "balanceMonitoring Ethereum thresholds must be nonnegative" }}
+{{- end }}
+{{- end }}
+{{- if lt (float64 .Values.balanceMonitoring.feeWallet.minimumDoge) 0.0 }}
+{{- fail "balanceMonitoring.feeWallet.minimumDoge must be nonnegative" }}
+{{- end }}
+{{- if .Values.balanceMonitoring.exporter.enabled }}
+{{- if or (lt (int .Values.balanceMonitoring.exporter.intervalSeconds) 1) (gt (int .Values.balanceMonitoring.exporter.intervalSeconds) 120) }}
+{{- fail "balance exporter intervalSeconds must be 1..120 to meet freshness checks" }}
+{{- end }}
+{{- if or (lt (int .Values.balanceMonitoring.exporter.rpcTimeoutSeconds) 1) (gt (int .Values.balanceMonitoring.exporter.rpcTimeoutSeconds) 15) }}
+{{- fail "balance exporter rpcTimeoutSeconds must be 1..15" }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- range $role, $threshold := .Values.businessAlerts.requiredSignersByRole }}
+{{- if or (not (regexMatch "^[A-Za-z][A-Za-z0-9_]*$" $role)) (not (regexMatch "^[1-9][0-9]*$" (toString $threshold))) }}
+{{- fail "businessAlerts.requiredSignersByRole requires role names and positive integer thresholds" }}
+{{- end }}
+{{- end }}
 {{- if and .Values.alloy.enabled .Values.alloy.logs.enabled (empty .Values.alloy.logs.loki.url) }}
   {{- fail "alloy.logs.enabled=true requires alloy.logs.loki.url" }}
 {{- end }}

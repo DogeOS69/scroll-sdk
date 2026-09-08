@@ -1,0 +1,52 @@
+rule_files:
+- ../alerts/dogeos.yaml
+evaluation_interval: 1m
+tests:
+- name: EthDASubmitterFailures-only-one-counter-exists
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_submission_failures_total
+    values: 0+1x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: EthDASubmitterFailures
+    exp_alerts:
+    - exp_labels:
+        severity: critical
+        service: eth-da-submitter
+      exp_annotations:
+        summary: Eth DA submitter failure counters increased in the last 10 minutes.
+        description: Combined failure increase is 10.
+- name: EthDASubmitterFailures-no-error
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_submission_failures_total
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: EthDASubmitterFailures
+    exp_alerts: []
+- name: FeeOracleErrors-only-one-counter-exists
+  interval: 1m
+  input_series:
+  - series: fee_oracle_chain_rpc_errors_total
+    values: 0+1x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: FeeOracleErrors
+    exp_alerts:
+    - exp_labels:
+        severity: warning
+        service: fee-oracle
+      exp_annotations:
+        summary: Fee oracle error counters increased in the last 10 minutes.
+        description: Combined failure increase is 10.
+- name: FeeOracleErrors-no-error
+  interval: 1m
+  input_series:
+  - series: fee_oracle_chain_rpc_errors_total
+    values: 0+0x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: FeeOracleErrors
+    exp_alerts: []

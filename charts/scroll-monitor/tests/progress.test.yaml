@@ -1,0 +1,550 @@
+rule_files:
+- ../alerts/dogeos.yaml
+evaluation_interval: 1m
+tests:
+- name: ProtocolStateWFTxNumberStalled-flat-zero
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x120
+  alert_rule_test:
+  - eval_time: 59m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ProtocolStateWFTxNumberStalled-growing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+- name: ProtocolStateWFTxNumberStalled-resume
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x60 11+0x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 61m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+- name: ProtocolStateWFTxNumberStalled-decreasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 200-1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ProtocolStateWFTxNumberStalled-recent-growth
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x29 1+0x100
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 89m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 91m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ProtocolStateWFTxNumberStalled-absent
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: _x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+- name: ProtocolStateWFTxNumberStalled-disappeared
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x59 stale _x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts: []
+- name: ProtocolStateWFTxNumberStalled-isolation
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x90
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="other"}
+    values: 100+1x90
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="other-job",namespace="monitoring"}
+    values: 100+1x90
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Protocol State WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ProtocolStateWFTxNumberStalled-l1-interface
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_state_wf_tx_number{job="l1-interface",namespace="monitoring"}
+    values: 10+0x90
+  - series: withdrawal_processor_protocol_state_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 100+1x90
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ProtocolStateWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: l1-interface
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol State WF Tx Number has not increased for 60 minutes.
+        description: Job l1-interface in namespace monitoring has made no Protocol
+          State WF Tx Number progress for 60 minutes. Check the service and its upstream
+          dependencies.
+- name: ReplayHeadWFTxNumberStalled-flat-zero
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x120
+  alert_rule_test:
+  - eval_time: 59m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ReplayHeadWFTxNumberStalled-growing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+- name: ReplayHeadWFTxNumberStalled-resume
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x60 11+0x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 61m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+- name: ReplayHeadWFTxNumberStalled-decreasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 200-1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ReplayHeadWFTxNumberStalled-recent-growth
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x29 1+0x100
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 89m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 91m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: ReplayHeadWFTxNumberStalled-absent
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: _x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+- name: ReplayHeadWFTxNumberStalled-disappeared
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x59 stale _x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts: []
+- name: ReplayHeadWFTxNumberStalled-isolation
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x90
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="withdrawal-processor",namespace="other"}
+    values: 100+1x90
+  - series: withdrawal_processor_protocol_replay_wf_tx_number{job="other-job",namespace="monitoring"}
+    values: 100+1x90
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: ReplayHeadWFTxNumberStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Replay Head WF Tx Number has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          Replay Head WF Tx Number progress for 60 minutes. Check the service and
+          its upstream dependencies.
+- name: L2BatchHeightStalled-flat-zero
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x120
+  alert_rule_test:
+  - eval_time: 59m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+- name: L2BatchHeightStalled-growing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+- name: L2BatchHeightStalled-resume
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x60 11+0x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+  - eval_time: 61m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+- name: L2BatchHeightStalled-decreasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 200-1x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+- name: L2BatchHeightStalled-recent-growth
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 0+0x29 1+0x100
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 89m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 91m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+- name: L2BatchHeightStalled-absent
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: _x120
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+- name: L2BatchHeightStalled-disappeared
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x59 stale _x60
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 90m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+- name: L2BatchHeightStalled-isolation
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 10+0x90
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="other"}
+    values: 100+1x90
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="other-job",namespace="monitoring"}
+    values: 100+1x90
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has made no
+          L2 Batch Height progress for 60 minutes. Check the service and its upstream
+          dependencies.
+- name: L2BatchHeightStalled-l1-interface
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_state_l2_batch_height{job="l1-interface",namespace="monitoring"}
+    values: 10+0x90
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
+    values: 100+1x90
+  alert_rule_test:
+  - eval_time: 60m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: l1-interface
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: L2 Batch Height has not increased for 60 minutes.
+        description: Job l1-interface in namespace monitoring has made no L2 Batch
+          Height progress for 60 minutes. Check the service and its upstream dependencies.

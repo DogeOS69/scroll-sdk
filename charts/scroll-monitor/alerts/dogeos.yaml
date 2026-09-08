@@ -1,0 +1,157 @@
+groups:
+  - name: dogeos.metrics
+    interval: 1m
+    rules:
+      - alert: EthDASubmitterNotReady
+        expr: max(eth_da_submitter_ready) < 1 or absent(eth_da_submitter_ready)
+        for: 2m
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        annotations:
+          summary: Eth DA submitter readiness is below 1.
+          description: Eth DA submitter is not reporting a ready state.
+
+      - alert: EthDAPublishBacklogStalled
+        expr: max(eth_da_publish_ready_backlog > 0 and eth_da_publish_oldest_ready_age_seconds > 3600) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        annotations:
+          summary: Eth DA has pending publish rows older than one hour.
+          description: Check eth_da_publish_ready_backlog and eth_da_publish_oldest_ready_age_seconds.
+
+      - alert: EthDASubmitterFailures
+        # Error counters are created lazily. Summing one selector avoids an
+        # absent counter erasing the other counters through vector addition.
+        expr: sum(increase({__name__=~"eth_da_submitter_(submission|cycle|lifecycle|l2_reorg)_failures_total"}[10m])) > 0
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        annotations:
+          summary: Eth DA submitter failure counters increased in the last 10 minutes.
+          description: Combined failure increase is {{ $value }}.
+
+      - alert: WithdrawalInboxWorkerFailures
+        expr: max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: withdrawal-processor
+        annotations:
+          summary: Withdrawal processor Ethereum DA inbox worker has consecutive failures.
+          description: Maximum consecutive failure count is {{ $value }}.
+
+      - alert: WithdrawalInboxWorkerStale
+        expr: (time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds) > 900) or absent(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds)
+        for: 5m
+        labels:
+          severity: warning
+          service: withdrawal-processor
+        annotations:
+          summary: Withdrawal processor has not observed an Ethereum DA inbox update recently.
+          description: The last observation is stale or the metric is absent.
+
+      - alert: L1InterfaceNotReady
+        expr: max(l1_interface_service_ready) < 1 or absent(l1_interface_service_ready)
+        for: 2m
+        labels:
+          severity: critical
+          service: l1-interface
+        annotations:
+          summary: Dogecoin L1 interface readiness is below 1.
+          description: The L1 interface is not ready or is not exporting its readiness metric.
+
+      - alert: FeeOracleStale
+        expr: (time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900) or absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
+        for: 5m
+        labels:
+          severity: critical
+          service: fee-oracle
+        annotations:
+          summary: Fee oracle Ethereum DA oracle value has not updated recently.
+          description: The latest computed value is stale or the metric is absent.
+
+      - alert: FeeOracleErrors
+        expr: sum(increase({__name__=~"fee_oracle_(updates_failed|errors|chain_rpc_errors)_total"}[10m])) > 0
+        labels:
+          severity: warning
+          service: fee-oracle
+        annotations:
+          summary: Fee oracle error counters increased in the last 10 minutes.
+          description: Combined failure increase is {{ $value }}.
+
+      - alert: TSONoRegisteredSigners
+        expr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+        for: 5m
+        labels:
+          severity: critical
+          service: tso-service
+        annotations:
+          summary: TSO has no registered signers.
+          description: TSO reports fewer than one registered signer or the metric is absent.
+
+      - alert: DogecoinIndexerLag
+        expr: clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
+        for: 10m
+        labels:
+          severity: warning
+          service: embedded-dogecoin-indexer
+        annotations:
+          summary: Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
+          description: Job {{ $labels.job }} currently lags by {{ $value }} blocks.
+
+      # Compare gauges at one-minute intervals. A decrease is not progress.
+      # Require an hour of history and a currently present series; do not add
+      # another pending hour on top of this rolling 60-minute window.
+      - alert: ProtocolStateWFTxNumberStalled
+        expr: >-
+          max_over_time((
+            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_wf_tx_number"})
+            > bool
+            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_wf_tx_number"} offset 1m)
+          )[60m:1m]) == 0
+          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_wf_tx_number"} offset 60m)
+          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_wf_tx_number"})
+        labels:
+          severity: critical
+        annotations:
+          summary: Protocol State WF Tx Number has not increased for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no Protocol State WF Tx Number progress for 60 minutes. Check the service and its upstream dependencies.'
+
+      # Compare gauges at one-minute intervals. A decrease is not progress.
+      # Require an hour of history and a currently present series; do not add
+      # another pending hour on top of this rolling 60-minute window.
+      - alert: ReplayHeadWFTxNumberStalled
+        expr: >-
+          max_over_time((
+            max by (namespace, job) (withdrawal_processor_protocol_replay_wf_tx_number)
+            > bool
+            max by (namespace, job) (withdrawal_processor_protocol_replay_wf_tx_number offset 1m)
+          )[60m:1m]) == 0
+          and max by (namespace, job) (withdrawal_processor_protocol_replay_wf_tx_number offset 60m)
+          and max by (namespace, job) (withdrawal_processor_protocol_replay_wf_tx_number)
+        labels:
+          severity: critical
+        annotations:
+          summary: Replay Head WF Tx Number has not increased for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no Replay Head WF Tx Number progress for 60 minutes. Check the service and its upstream dependencies.'
+
+      # Compare gauges at one-minute intervals. A decrease is not progress.
+      # Require an hour of history and a currently present series; do not add
+      # another pending hour on top of this rolling 60-minute window.
+      - alert: L2BatchHeightStalled
+        expr: >-
+          max_over_time((
+            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"})
+            > bool
+            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"} offset 1m)
+          )[60m:1m]) == 0
+          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"} offset 60m)
+          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"})
+        labels:
+          severity: critical
+        annotations:
+          summary: L2 Batch Height has not increased for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no L2 Batch Height progress for 60 minutes. Check the service and its upstream dependencies.'
