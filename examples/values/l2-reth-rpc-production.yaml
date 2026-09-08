@@ -7,9 +7,9 @@ controller:
   type: statefulset
 
 image:
-  repository: scrolltech/rollup-node
+  repository: dogeos69/rollup-node
   pullPolicy: IfNotPresent
-  tag: v1.0.7-rc6
+  tag: TODO_TAG_TO_REPLACE
 
 waitForL1:
   image: scrolltech/scroll-alpine:v0.0.1
@@ -43,13 +43,15 @@ reth:
   blobS3Url: ""
   trustedPeers: "<TODO>"
   builderGasLimit: ""
-  engineSyncAtStartup: "false"
+  engineSyncAtStartup: "true"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
   ipcPermissions: "0600"
   logFormat: log-fmt
   verbosity: 3
-  extraArgs: []
+  extraArgs:
+    - "--network.legacy-geth-header-transform"
+    - "true"
 
   ports:
     http: 8545

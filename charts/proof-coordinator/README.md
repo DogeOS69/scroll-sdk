@@ -1,6 +1,6 @@
 # proof-coordinator
 
-![Version: 0.3.1](https://img.shields.io/badge/Version-0.3.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.3.2](https://img.shields.io/badge/Version-0.3.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DogeOS proof-coordinator service
 
@@ -60,7 +60,7 @@ local-development posture; production values require an explicit source.
 |-----|------|---------|-------------|
 | command[0] | string | `"sh"` |  |
 | command[1] | string | `"-ec"` |  |
-| command[2] | string | `"mkdir -p /app/data/proof-artifacts && exec proof-coordinator --config /app/conf/ProofCoordinator.toml"` |  |
+| command[2] | string | `"exec proof-coordinator --config /app/conf/ProofCoordinator.toml"` |  |
 | configMaps.config.data | object | `{}` |  |
 | configMaps.config.enabled | bool | `false` | Internal common-chart ConfigMap rendering is disabled so opaque TOML is never evaluated with `tpl`. |
 | controller.replicas | int | `1` |  |
@@ -70,7 +70,7 @@ local-development posture; production values require an explicit source.
 | defaultProbes.enabled | bool | `true` |  |
 | defaultProbes.spec.failureThreshold | int | `3` |  |
 | defaultProbes.spec.httpGet.path | string | `"/healthz"` |  |
-| defaultProbes.spec.httpGet.port | string | `"http"` |  |
+| defaultProbes.spec.httpGet.port | string | `"prover"` |  |
 | defaultProbes.spec.periodSeconds | int | `10` |  |
 | defaultProbes.spec.timeoutSeconds | int | `2` |  |
 | env | list | `[]` |  |
@@ -82,6 +82,12 @@ local-development posture; production values require an explicit source.
 | image.repository | string | `"dogeos69/proof-coordinator"` |  |
 | image.tag | string | `"latest"` |  |
 | ingress.main.enabled | bool | `false` |  |
+| initContainers.prepare-proof-data-directories.args[0] | string | `"mkdir -p '/app/data/proof-artifacts' '/app/data/proof-artifacts/runtime/coordinator-staging' '/app/data/proof-artifacts/runtime/bridge-prepared-bundles' '/app/data/proof-artifacts/runtime/scroll-batch-materializer-output' '/app/data/proof-artifacts/runtime/scroll-chunk-sidecar-scratch' '/app/data/proof-artifacts/runtime/scroll-batch-subprocess-scratch' '/app/data/proof-artifacts/runtime/scroll-batch-da-cache/blobs' '/app/data/proof-artifacts/runtime/bridge-da/blobs'"` |  |
+| initContainers.prepare-proof-data-directories.command[0] | string | `"/bin/sh"` |  |
+| initContainers.prepare-proof-data-directories.command[1] | string | `"-ec"` |  |
+| initContainers.prepare-proof-data-directories.image | string | `"busybox:1.36.1"` |  |
+| initContainers.prepare-proof-data-directories.volumeMounts[0].mountPath | string | `"/app/data"` |  |
+| initContainers.prepare-proof-data-directories.volumeMounts[0].name | string | `"data"` |  |
 | persistence.config.enabled | bool | `true` |  |
 | persistence.config.mountPath | string | `"/app/conf/"` |  |
 | persistence.config.type | string | `"configMap"` |  |
@@ -110,26 +116,26 @@ local-development posture; production values require an explicit source.
 | probes.liveness.<<.enabled | bool | `true` |  |
 | probes.liveness.<<.spec.failureThreshold | int | `3` |  |
 | probes.liveness.<<.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.liveness.<<.spec.httpGet.port | string | `"http"` |  |
+| probes.liveness.<<.spec.httpGet.port | string | `"prover"` |  |
 | probes.liveness.<<.spec.periodSeconds | int | `10` |  |
 | probes.liveness.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.readiness.custom | bool | `true` |  |
 | probes.readiness.enabled | bool | `true` |  |
 | probes.readiness.spec.failureThreshold | int | `3` |  |
 | probes.readiness.spec.httpGet.path | string | `"/readyz"` |  |
-| probes.readiness.spec.httpGet.port | string | `"http"` |  |
+| probes.readiness.spec.httpGet.port | string | `"prover"` |  |
 | probes.readiness.spec.periodSeconds | int | `10` |  |
 | probes.readiness.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.<<.custom | bool | `true` |  |
 | probes.startup.<<.enabled | bool | `true` |  |
 | probes.startup.<<.spec.failureThreshold | int | `3` |  |
 | probes.startup.<<.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.startup.<<.spec.httpGet.port | string | `"http"` |  |
+| probes.startup.<<.spec.httpGet.port | string | `"prover"` |  |
 | probes.startup.<<.spec.periodSeconds | int | `10` |  |
 | probes.startup.<<.spec.timeoutSeconds | int | `2` |  |
 | probes.startup.spec.failureThreshold | int | `24` |  |
 | probes.startup.spec.httpGet.path | string | `"/healthz"` |  |
-| probes.startup.spec.httpGet.port | string | `"http"` |  |
+| probes.startup.spec.httpGet.port | string | `"prover"` |  |
 | probes.startup.spec.periodSeconds | int | `5` |  |
 | probes.startup.spec.timeoutSeconds | int | `2` |  |
 | proofCoordinator.config.content | string | `""` | Opaque TOML content; normally supplied with `--set-file`. |
@@ -144,9 +150,11 @@ local-development posture; production values require an explicit source.
 | securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | service.main.enabled | bool | `false` |  |
-| service.main.ports.http.enabled | bool | `true` |  |
-| service.main.ports.http.port | int | `9400` |  |
-| service.main.ports.http.protocol | string | `"TCP"` |  |
+| service.main.ports.prover.enabled | bool | `true` |  |
+| service.main.ports.prover.port | int | `7788` |  |
+| service.main.ports.prover.primary | bool | `true` |  |
+| service.main.ports.prover.protocol | string | `"TCP"` |  |
+| service.main.ports.prover.targetPort | int | `7788` |  |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` | Empty derives the release fullname; set explicitly for an IRSA-pinned workload identity. |

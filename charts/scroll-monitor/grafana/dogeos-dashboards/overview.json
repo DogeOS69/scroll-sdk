@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "Operations-first dashboard for the DogeOS services and Scroll L2 Reth fleet, combining Kubernetes health, resource saturation, native application metrics, business frontiers, and logs without fabricating telemetry for uninstrumented binaries.",
+  "description": "Operations-first dashboard for the DogeOS services and Scroll L2 Reth fleet, combining Kubernetes health, resource saturation, native application metrics, business frontiers, and logs. Dedicated dashboards cover Attestation Signer, Proof Coordinator, and CubeSigner Signer application telemetry.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -78,7 +78,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Runtime scope\n\nThis dashboard tracks the DogeOS application services plus all Scroll L2 Reth workloads:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n- `l2-reth-sequencer-0/1`\n- `l2-reth-bootnode-0/1`\n- `l2-reth-rpc` and `l2-reth-rpc-public`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, ETH DA submitter, fee oracle, and Scroll L2 Reth.\n\n**Exporter-backed:** Dogecoin.\n\n**Kubernetes + Loki only:** proof coordinator and CubeSigner signer. Their current binaries expose no Prometheus endpoint, so this dashboard does not invent application metrics for them. Use the dedicated `reth` folder for rollup-node application metrics and node-to-node comparison.",
+        "content": "### Runtime scope\n\nThis dashboard tracks the DogeOS application services plus all Scroll L2 Reth workloads:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n- `l2-reth-sequencer-0/1`\n- `l2-reth-bootnode-0/1`\n- `l2-reth-rpc` and `l2-reth-rpc-public`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, proof coordinator, ETH DA submitter, CubeSigner signer, fee oracle, external Attestation Signers, and Scroll L2 Reth.\n\n**Exporter-backed:** Dogecoin.\n\nDedicated DogeOS dashboards provide application-level drill-down for Attestation Signer, Proof Coordinator, and CubeSigner Signer. Proof queue metrics remain owned by Withdrawal Processor. Use the dedicated `reth` folder for rollup-node application metrics and node-to-node comparison.",
         "mode": "markdown"
       },
       "title": "Coverage and metric ownership",
@@ -366,7 +366,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Pod readiness over time. This is the primary health view for proof-coordinator and cubesigner-signer because those binaries do not expose Prometheus application metrics.",
+      "description": "Kubernetes pod readiness over time. Use the dedicated service dashboards for native Proof Coordinator and CubeSigner Signer application readiness; external Attestation Signers are not Kubernetes pods.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -456,7 +456,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Prometheus target health for instrumented services only. No row is expected for proof-coordinator or cubesigner-signer until those binaries expose a metrics endpoint.",
+      "description": "Namespace/service-scoped Prometheus target health. Proof Coordinator and CubeSigner Signer should appear once their /metrics endpoints are selected by a ServiceMonitor. External Attestation Signer target health is selected by job/instance in its dedicated dashboard.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2450,7 +2450,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Proof work queue observed at the withdrawal processor boundary. proof-coordinator currently has no native Prometheus endpoint.",
+      "description": "Durable proof work queue observed at the Withdrawal Processor authority boundary. Proof Coordinator now has native operational metrics in its dedicated dashboard, but does not duplicate queue ownership.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3592,6 +3592,6 @@
   "timezone": "browser",
   "title": "DogeOS Service Operations",
   "uid": "dogeos-overview",
-  "version": 6,
+  "version": 7,
   "weekStart": ""
 }

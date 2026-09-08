@@ -61,88 +61,148 @@ For more information on Scroll SDK, refer to the main README in the root directo
 
 ## Proof helper interface
 
-`scrollsdk setup prep-charts` owns proof mode selection, configuration
-generation, and validation. The example Makefile only installs or removes the
-generated Kubernetes releases; it does not provide a second proof setup
-interface.
+`scrollsdk setup prep-charts` prepares and validates proof configuration. The
+example Makefile only installs or removes the generated Kubernetes releases;
+it does not provide a second proof setup interface. The normal non-DeploymentSpec
+path is generated interactively into `.data/doge-config.toml`:
+
+```bash
+scrollsdk setup doge-config --proof-topology
+```
+
+Do not copy VK hashes or commitments into that file by hand. First,
+`setup proof-materials` imports producer-generated artifact metadata and the
+allow-listed identity environment, validates and copies the files, and records
+the digest-pinned compiler and Worker images. `doge-config --proof-topology`
+then combines that receipt with `.data/proof-aws.json` and deployment facts.
+DeploymentSpec `proofTopology` is an advanced alternative source; both sources
+must never be present at the same time.
+
+DogeOS proof operation has three explicit fields: `mode = disabled|active`,
+`generation = mock|real`, and `enforcement = observe|enforce`. The normal
+rollout is `disabled/mock/observe`, then `active/mock/observe`, then
+`active/real/observe`, and only after real proof health is confirmed,
+`active/real/enforce`. `prep-charts` passes this source to the digest-pinned
+dogeos-core compiler and installs its strict service-specific output.
 
 The generated deployment uses the following conventional paths:
 
 ```text
 .data/
-└── proof-deployment.json                      (single K8s install contract)
-
-proof-artifacts/
-├── release.json
-└── manifests/
-    ├── scroll-chunk.json
-    ├── scroll-batch.json
-    └── bridge-transition.json
+├── generated/proof-topology/                 (versioned compiler bundle)
+├── proof-aws.json                            (prepared non-secret AWS facts)
+├── proof-deployment.json                     (single K8s install contract)
+├── proof-materials-v1.json                   (validated import receipt)
+├── proof-materials/                          (immutable imported files)
+└── protocol_context.json                     (external Worker input)
 
 proof-coordinator/
-└── ProofCoordinator.toml                     (generated for the selected mode)
+└── ProofCoordinator.toml                     (base replaced by compiler output)
 
 withdrawal-processor/
 └── WithdrawalProcessor.toml                  (native app config; TOML-owned)
 
 values/
 ├── proof-coordinator-production.yaml
+├── prover-worker-production.yaml
 ├── tso-service-production.yaml
 └── withdrawal-processor-production.yaml      (K8s shape + secrets + switch only)
 
-prover-worker-mock/
-└── docker-compose/                            (generated only in mock mode)
+prover-worker-active/
+└── docker-compose/                            (only for compiler-selected external Worker)
 ```
 
-Copy `Makefile.example` into the deployment root as `Makefile`. From that root,
-alongside `values/` and the native config directories, prepare and validate
-disabled-mode configuration with the CLI, then install through Make:
+`bridge-init` records the complete genesis sequencer transaction in its
+generated bridge output. `prep-charts` verifies that the decoded transaction
+matches `protocol_context.json` and projects it into
+`withdrawal-processor/WithdrawalProcessor.toml`; operators do not enter or
+copy `genesis_sequencer_tx_hex` manually.
+
+Copy `Makefile.example` into the deployment root as `Makefile`. No
+DeploymentSpec is required for this flow. Prepare the artifact store,
+import producer outputs and immutable image references, then initialize the
+topology:
+
+```bash
+scrollsdk setup proof-aws-init
+scrollsdk setup proof-materials
+scrollsdk setup doge-config --proof-topology
+```
+
+`proof-materials` prompts for the producer manifest, identity environment,
+materializer binaries, and digest-pinned image references when flags are not
+provided. It validates hashes and canonical identity encodings; it does not
+reimplement the Rust/OpenVM calculations. `doge-config` prompts for the three
+switches and deployment-owned endpoints. New deployments default to
+`disabled/mock/observe`.
+After initialization, prepare and validate the disabled-mode configuration,
+then install it through Make:
 
 ```bash
 cp Makefile.example Makefile
 # Complete the normal bridge-init and local/KMS service-signer setup first.
 scrollsdk setup prep-charts -N
 scrollsdk setup proof-config-check --deployment-dir .
-make install-proof-stack
+make reconcile-proof-services
 ```
 
 Before bridge genesis, give each external signer operator the complete
 `partner-kit/attestation-signer/` directory, collect the descriptor produced by
-their `scrollsdk signer preflight`, and import the descriptors with
+their `scrollsdk signer init`, and import the descriptors with
 `scrollsdk setup attestation-signer`. After genesis, send every partner the
 complete `signer-policy-bundle/` produced by
-`scrollsdk setup export-signer-policy`.
+`scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
+protocol context in every signer mode, so partners start the service and run
+`signer preflight` only after installing that bundle. Production partners use
+`--require-production-ready` and keep their own RPC source sets and rotation
+allowlists in the generated `attestation-signer.toml`.
 
-For mock and production AWS deployments, provision first. The command writes
-stable resource facts to `.data/proof-aws.json`; `prep-charts` then projects
-that configuration into final values and the deployment contract in one pass:
+For a deployment that will later use real proving, import the software
+identities and Bridge-bound material before selecting `generation = real`.
+Disabled mode still stores the active profile. PC remains deployed with its
+minimal idle `dev_dummy`/local-filesystem chart configuration, while Worker is
+not started and WP does not publish proof work.
+An explicit real-generation preflight can be run before scheduling a GPU:
 
 ```bash
 scrollsdk setup proof-aws-init \
   --aws-region <region> \
   --eks-cluster <cluster> \
-  --network-alias <network> \
+  --deployment-alias <unique-deployment-instance> \
   --namespace <namespace>
+scrollsdk setup proof-materials
+scrollsdk setup doge-config --proof-topology
 scrollsdk setup prep-charts -N
-scrollsdk setup proof-worker --deployment-dir .
+scrollsdk setup proof-topology-compile --preflight real
 scrollsdk setup proof-config-check --deployment-dir .
-make install-proof-stack
+make reconcile-proof-services
 ```
 
-`install-withdrawal-processor` and `install-proof-coordinator` call the
-mode-agnostic `scrollsdk helper proof-helm` adapter. It reads values and
-`--set-file` bindings only from `.data/proof-deployment.json`; the Makefile
-does not choose mock/production manifests or repeat proof paths. Disabled mode
-skips proof-coordinator automatically.
+After selecting `mode = active`, `generation = real`, and
+`workerLaunch = external`, rerun `prep-charts`, then run `scrollsdk setup
+proof-worker --deployment-dir .` to hydrate the generated external bundle for
+the GPU host. Preflight never creates or hydrates an installable bundle.
+
+`prep-charts` embeds the compiler-rendered WP/PC native TOML and generated
+program manifests into the final Helm values. `proof-config-check` validates
+those self-contained values and the schema-v7 deployment contract once before
+deployment. The Makefile then invokes ordinary, visible `helm upgrade -i`
+commands; it does not call back into scrollsdk or reconstruct compiler paths.
+Disabled mode keeps PC at one idle replica and projects Worker to zero replicas.
+Real/external also keeps the local Worker at zero and uses the compiler-derived
+Compose bundle on the GPU host. Active compilation replaces PC's idle config
+with the complete compiler-rendered topology without scaling PC.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-Use `scrollsdk setup proof-config-check --strict` for byte-for-byte immutable
+Use `scrollsdk setup proof-config-check` for byte-for-byte immutable
 CI artifacts.
 
 The remaining proof-related Makefile variables are only Kubernetes deployment
 overrides: `NAMESPACE`, `PROOF_COORDINATOR_CHART`,
-`PROOF_COORDINATOR_CHART_VERSION`, `WITHDRAWAL_PROCESSOR_CHART`, and
+`PROOF_COORDINATOR_CHART_VERSION`, `ETH_DA_SUBMITTER_CHART`,
+`ETH_DA_SUBMITTER_CHART_VERSION`, `PROVER_WORKER_CHART`,
+`PROVER_WORKER_CHART_VERSION`, `WITHDRAWAL_PROCESSOR_CHART`, and
 `WITHDRAWAL_PROCESSOR_CHART_VERSION`.
 
 For the authoritative end-to-end order, partner descriptor/policy handoff,

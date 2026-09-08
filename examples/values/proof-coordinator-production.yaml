@@ -1,6 +1,7 @@
-# Production proof-coordinator values. `scrollsdk setup prep-charts` validates
-# released proof artifacts and updates only the marked verifier block in
-# proof-coordinator/ProofCoordinator.toml.
+# Production proof-coordinator values. `scrollsdk setup prep-charts` reconciles
+# the marked deployment-derived runtime and verifier blocks in
+# proof-coordinator/ProofCoordinator.toml while preserving operator-owned
+# configuration outside those blocks.
 global:
   nameOverride: proof-coordinator
   fullnameOverride: proof-coordinator
@@ -12,7 +13,7 @@ proofCoordinator:
     key: ProofCoordinator.toml
     required: true
 
-# The generated deployment contract supplies the native config at deploy time.
+# prep-charts embeds the compiler-rendered native config in content above.
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
@@ -29,10 +30,11 @@ service:
   main:
     enabled: true
     ports:
-      http:
+      prover:
         enabled: true
-        port: 9400
-        targetPort: 9400
+        primary: true
+        port: 7788
+        targetPort: 7788
         protocol: TCP
 
 probes:
@@ -40,7 +42,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /healthz, port: http}
+      httpGet: {path: /healthz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 10
       timeoutSeconds: 2
@@ -49,7 +51,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /readyz, port: http}
+      httpGet: {path: /readyz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 10
       timeoutSeconds: 2
@@ -58,7 +60,7 @@ probes:
     enabled: true
     custom: true
     spec:
-      httpGet: {path: /healthz, port: http}
+      httpGet: {path: /healthz, port: prover}
       initialDelaySeconds: 0
       periodSeconds: 5
       timeoutSeconds: 2
@@ -84,6 +86,13 @@ persistence:
     name: proof-coordinator-secrets
     mountPath: /app/secrets
     readOnly: true
+  genesis:
+    enabled: true
+    type: configMap
+    name: genesis-config
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    readOnly: true
   protocol-context:
     enabled: true
     type: configMap
@@ -100,9 +109,8 @@ persistence:
     mountPath: /tmp
     sizeLimit: 1Gi
 
-# Deployment policy, not chart behavior. `scrollsdk setup prep-charts`
-# replaces this entry with every coordinator-owned writable directory derived
-# from ProofCoordinator.toml and validates that all paths stay under /app/data.
+# dogeos-core owns this fixed layout below the Kubernetes proof data root.
+# These paths are deployment conventions, not operator-configurable fields.
 initContainers:
   prepare-proof-data-directories:
     image: busybox:1.36.1
@@ -110,7 +118,16 @@ initContainers:
       - /bin/sh
       - -ec
     args:
-      - mkdir -p '/app/data/proof-artifacts'
+      - >-
+        mkdir -p
+        '/app/data/proof-artifacts'
+        '/app/data/proof-artifacts/runtime/coordinator-staging'
+        '/app/data/proof-artifacts/runtime/bridge-prepared-bundles'
+        '/app/data/proof-artifacts/runtime/scroll-batch-materializer-output'
+        '/app/data/proof-artifacts/runtime/scroll-chunk-sidecar-scratch'
+        '/app/data/proof-artifacts/runtime/scroll-batch-subprocess-scratch'
+        '/app/data/proof-artifacts/runtime/scroll-batch-da-cache/blobs'
+        '/app/data/proof-artifacts/runtime/bridge-da/blobs'
     volumeMounts:
       - name: data
         mountPath: /app/data

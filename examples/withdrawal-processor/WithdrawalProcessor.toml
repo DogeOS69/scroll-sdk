@@ -1,14 +1,15 @@
 # WithdrawalProcessor.toml — native application configuration for
-# withdrawal-processor. `setup prep-charts` records this file in
-# .data/proof-deployment.json; the mode-agnostic Helm adapter supplies the
-# corresponding --set-file binding during installation.
+# withdrawal-processor. `setup prep-charts` embeds the rendered file into the
+# final withdrawal-processor Helm values. Installation therefore uses an
+# ordinary values file without a dynamic --set-file argument.
 #
 # Ownership:
 # - The managed deployment block below is merged by `scrollsdk setup
 #   prep-charts`: keys derived from config.toml / doge-config (RPC URLs,
-#   contract addresses, chain ids, start heights, redeem script) are
+#   contract addresses, chain ids, start heights, redeem script, and the
+#   validated genesis sequencer transaction emitted by bridge-init) are
 #   overwritten on every run; any OTHER key you tune inside the block (fee
-#   rate, timeouts, indexer cadence, UTXO strategy) is preserved. Comments
+#   rate, timeouts, indexer cadence) is preserved. Comments
 #   inside the block are not preserved — keep commentary outside.
 # - The managed proof block at the bottom is also owned by `scrollsdk setup
 #   prep-charts`. Mode-specific activation fields are projected atomically by
@@ -24,6 +25,8 @@
 
 # BEGIN scrollsdk managed deployment configuration
 advance_l1_builder_v2 = false
+advance_l1_deposit_stale_after_eligible_blocks = 5
+advance_l1_frontier_stale_after_eligible_blocks = 30
 advance_l2_builder_v2 = true
 api_port = 3000
 cleanup_timeout_secs = 3600
@@ -41,10 +44,9 @@ protocol_context_json = "/app/protocol_context.json"
 replay_sqlite_path = "/app/data/replay.sqlite"
 require_change_tracking = false
 rotate_key_v2 = false
-rotate_sequencer_signer_v2 = false
+rotate_sequencer_signer_v2 = true
 strict_l1_validation = false
 strict_l2_validation = false
-tso_timeout_minutes = 30
 tso_url = "http://tso-service:3000"
 wf_withdrawal_parity_v1 = true
 
@@ -55,11 +57,14 @@ start_height = 0
 
 [dogeos_indexer]
 confirmations = 12
+allow_sparse_block_hash_probe = false
 log_query_batch_size = 10000
 message_queue_address = "<TODO>"
 messenger_address = "<TODO>"
 poll_interval_ms = 1000
+reorg_lookback_blocks = 256
 rpc_url = "<TODO>"
+skip_block_hash_probe = false
 start_block = 0
 
 [ethereum_da]
@@ -89,29 +94,43 @@ timeout_ms = 10000
 [ethereum_da.blob_source.beacon_node]
 url = "<TODO>"
 
-[utxo_manager_intermediate]
-allow_inflight_bridge_outputs = true
-bridge_min_confirmations = 10
-high_thresh_sats = 10000000000
-prefer_inflight_bridge_outputs = false
+# Optional production fallbacks. Uncomment only the providers this deployment
+# operates; the resolver tries Beacon, BlobScan, BlockNative, then S3.
+# [ethereum_da.blob_source.blob_scan]
+# url = "<TODO>"
+# timeout_ms = 10000
+#
+# [ethereum_da.blob_source.block_native]
+# url = "<TODO>"
+# timeout_ms = 10000
+#
+# [ethereum_da.blob_source.aws_s3]
+# url = "<TODO>"
+# key_prefix = ""
+# timeout_ms = 10000
+# treat_forbidden_as_missing = false
 
-[utxo_manager_intermediate.bridge_strategy]
-dust_floor_sats = 1000000
-max_inputs = 60
-strategy = "band"
-
-[utxo_manager_intermediate.bridge_strategy.band]
-balance_band_ratio = 0.1
-floor_absolute_sats = 1000000
-max_balance_additions = 3
-sweep_floor_ratio = 0.5
-target_active_utxos = 100
-target_size_ratio = 1.0
 # END scrollsdk managed deployment configuration
 
-# BEGIN scrollsdk managed proof configuration
 [proof_system]
+correctness_policy_transport = "plain"
 mode = "disabled"
 require_bridge_state = false
 require_scroll_execution = false
-# END scrollsdk managed proof configuration
+# Temporary Issue #843 testnet recovery only. `scrollsdk setup prep-charts`
+# materializes this table from proofTopology.recovery; it is deliberately
+# absent by default and must be retired before proof mode is enabled.
+#
+# [proof_system.pre_tsuki_direct_sign]
+# max_end_batch_height = <TSUKI_BOUNDARY_L2_BATCH_HEIGHT>
+
+# One-shot operator recovery tools. Keep both declarations absent during
+# normal operation. Use Unix milliseconds and remove the selected declaration
+# after startup confirms the recovery action.
+#
+# [proof_execution.reset]
+# statement_hash = "<0x-prefixed-32-byte-hex>"
+# created_before_ms = 1577836800000
+#
+# [proof_execution.regenerate]
+# created_before_ms = 1577836800000

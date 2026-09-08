@@ -1,0 +1,199 @@
+{
+  "annotations": {"list": []},
+  "description": "CubeSigner Signer readiness, pending work, signing throughput and latency, bounded rejection reasons, and live policy evidence. Queries match the metric contract merged in dogeos-core #1009.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "The same readiness predicate served by /ready, refreshed when /metrics is scraped.",
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "Not ready"}, "1": {"color": "green", "text": "Ready"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "min by (instance) (cubesigner_signer_ready{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Signer Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Fail-closed production-policy posture. A zero blocks signing dispatch.",
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "Blocked"}, "1": {"color": "green", "text": "Ready"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "min by (instance) (cubesigner_signer_production_policy_ready{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Production Policy Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Seconds since the most recent completed background polling cycle.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 60}, {"color": "red", "value": 300}]}, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "clamp_min(time() - max by (instance) (cubesigner_signer_last_worker_cycle_timestamp_seconds{job=~\"$job\",instance=~\"$instance\"}), 0)", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Worker-cycle Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Current size of the in-memory pending-signature queue.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 100}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "targets": [{"expr": "max by (instance) (cubesigner_signer_pending_signatures{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Pending Signatures",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Release version and deployed git SHA reported by each target.",
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+      "targets": [{"expr": "max by (instance, version, git_sha) (cubesigner_signer_build_info{job=~\"$job\",instance=~\"$instance\"})", "format": "table", "instant": true, "legendFormat": "{{instance}} {{version}} {{git_sha}}", "refId": "A"}],
+      "title": "Build Identity",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Prometheus scrape health for every selected CubeSigner Signer target.",
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "min by (instance) (up{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Prometheus Target Up",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Every /sign disposition, including accepted requests, validation failures, and duplicate transaction IDs.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 9},
+      "id": 7,
+      "targets": [{"expr": "sum by (instance, reason) (rate(cubesigner_signer_sign_intake_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{reason}}", "refId": "A"}],
+      "title": "Sign Intake Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Total worker signing attempts by the bounded final reason taxonomy.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 9},
+      "id": 8,
+      "targets": [{"expr": "sum by (instance, reason) (rate(cubesigner_signer_sign_outcome_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{reason}}", "refId": "A"}],
+      "title": "Signing Outcome Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Aggregatable signing-attempt latency distribution. Cached-PSBT submission retries are not counted as new attempts.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 9},
+      "id": 9,
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le, instance, outcome) (rate(cubesigner_signer_sign_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{outcome}}", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le, instance, outcome) (rate(cubesigner_signer_sign_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{outcome}}", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le, instance, outcome) (rate(cubesigner_signer_sign_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{outcome}}", "refId": "C"}
+      ],
+      "title": "Signing Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Shared-PSBT authorization rejections, broken down by the closed policy reason-code domain.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 17},
+      "id": 10,
+      "targets": [{"expr": "sum by (instance, reason_code) (rate(cubesigner_signer_psbt_policy_rejections_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{reason_code}}", "refId": "A"}],
+      "title": "PSBT Policy Rejection Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Completed background polling cycles. Error rate and worker-cycle age together expose a stalled or unhealthy worker.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 17},
+      "id": 11,
+      "targets": [{"expr": "sum by (instance, outcome) (rate(cubesigner_signer_worker_cycles_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{outcome}}", "refId": "A"}],
+      "title": "Worker-cycle Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Testnet signs that succeeded despite a bad or unusable bridge proof, parsed from the policy explain tree.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 17},
+      "id": 12,
+      "targets": [{"expr": "sum by (instance, failure_code) (rate(cubesigner_signer_policy_fallback_signs_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{failure_code}}", "refId": "A"}],
+      "title": "Proof-fallback Sign Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "CubeSigner Wasm-policy denials by the failure code extracted from the 412 response.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 25},
+      "id": 13,
+      "targets": [{"expr": "sum by (instance, failure_code) (rate(cubesigner_signer_policy_denials_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{failure_code}}", "refId": "A"}],
+      "title": "Policy Denial Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Live leaf evaluations observed in the policy explain tree. Successful signs without a matching observation indicate degraded policy liveness telemetry.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 25},
+      "id": 14,
+      "targets": [{"expr": "sum by (instance, outcome) (rate(cubesigner_signer_policy_evaluations_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{outcome}}", "refId": "A"}],
+      "title": "Policy Evaluation Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Policy IDs and rule hashes observed from live evaluations since process start. Absence before the first signed request is expected; multiple pairs can remain after an in-process policy rotation, and any pair differing from the reviewed pin must be investigated.",
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 25},
+      "id": 15,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+      "targets": [{"expr": "max by (instance, policy_id, hash) (cubesigner_signer_policy_rule_info{job=~\"$job\",instance=~\"$instance\"})", "format": "table", "instant": true, "legendFormat": "{{instance}} {{policy_id}} {{hash}}", "refId": "A"}],
+      "title": "Observed Policy Rule",
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Both signals must remain zero. An unparseable tree means fallback observability degraded; a txid mismatch means the policy and gateway did not observe the same transaction view.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 33},
+      "id": 16,
+      "targets": [
+        {"expr": "sum by (instance) (increase(cubesigner_signer_policy_eval_tree_unparseable_total{job=~\"$job\",instance=~\"$instance\"}[$__range]))", "instant": true, "legendFormat": "{{instance}} unparseable trees", "refId": "A"},
+        {"expr": "sum by (instance) (increase(cubesigner_signer_policy_fallback_txid_mismatch_total{job=~\"$job\",instance=~\"$instance\"}[$__range]))", "instant": true, "legendFormat": "{{instance}} txid mismatches", "refId": "B"}
+      ],
+      "title": "Policy Telemetry Integrity Events in Selected Range",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["dogeos", "service", "cubesigner-signer"],
+  "templating": {
+    "list": [
+      {"current": {"selected": true, "text": "Prometheus", "value": "scroll-prometheus"}, "hide": 0, "includeAll": false, "multi": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "regex": "", "skipUrlSync": false, "type": "datasource"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\".*cubesigner[-_]signer.*\"}, job)", "hide": 0, "includeAll": true, "multi": true, "name": "job", "options": [], "query": {"query": "label_values(up{job=~\".*cubesigner[-_]signer.*\"}, job)", "refId": "PrometheusVariableQueryEditor-job"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\"$job\"}, instance)", "hide": 0, "includeAll": true, "multi": true, "name": "instance", "options": [], "query": {"query": "label_values(up{job=~\"$job\"}, instance)", "refId": "PrometheusVariableQueryEditor-instance"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {"refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h"]},
+  "timezone": "",
+  "title": "DogeOS CubeSigner Signer",
+  "uid": "dogeos-cubesigner-signer",
+  "version": 1,
+  "weekStart": ""
+}

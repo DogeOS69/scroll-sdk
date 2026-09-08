@@ -1,0 +1,13 @@
+# Native Proof Coordinator base configuration.
+#
+# For compiler-backed deployments this file supplies only stable process
+# defaults. dogeos-proof-topology replaces the complete proof-specific
+# verifier, materializer, artifact, auth, and topology projection for the
+# selected mode. Do not add parallel mock/production profiles here.
+
+proof_work_base_url = "http://withdrawal-processor:9300"
+protocol_context_json = "/app/protocol_context.json"
+coordinator_id = "proof-coordinator"
+poll_interval_ms = 500
+lease_ttl_ms = 60000
+allow_insecure_http = true

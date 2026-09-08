@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prover-worker.fullname" . }}
+  labels:
+    {{- include "prover-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  strategy:
+    type: {{ .Values.controller.strategy }}
+  selector:
+    matchLabels:
+      {{- include "prover-worker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prover-worker.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      serviceAccountName: {{ include "prover-worker.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.termination.gracePeriodSeconds }}
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: prover-worker
+          image: {{ include "prover-worker.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- range $name, $probe := .Values.probes }}
+          {{- if $probe.enabled }}
+          {{ $name }}Probe:
+            {{- toYaml $probe.spec | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.persistence }}
+          volumeMounts:
+            {{- range $name, $entry := .Values.persistence }}
+            {{- if $entry.enabled }}
+            - name: {{ $name }}
+              mountPath: {{ required (printf "persistence.%s.mountPath is required" $name) $entry.mountPath | quote }}
+              {{- with $entry.subPath }}
+              subPath: {{ . | quote }}
+              {{- end }}
+              {{- if hasKey $entry "readOnly" }}
+              readOnly: {{ $entry.readOnly }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- if .Values.persistence }}
+      volumes:
+        {{- range $name, $entry := .Values.persistence }}
+        {{- if $entry.enabled }}
+        - name: {{ $name }}
+          {{- if eq $entry.type "configMap" }}
+          configMap:
+            name: {{ include "prover-worker.persistenceObjectName" (list $entry $ $name) }}
+            {{- with $entry.items }}
+            items:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- else if eq $entry.type "secret" }}
+          secret:
+            secretName: {{ include "prover-worker.persistenceObjectName" (list $entry $ $name) }}
+            {{- with $entry.items }}
+            items:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+          {{- else if eq $entry.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ required (printf "persistence.%s.existingClaim is required" $name) $entry.existingClaim }}
+          {{- else if eq $entry.type "emptyDir" }}
+          emptyDir:
+            {{- omit $entry "enabled" "mountPath" "readOnly" "subPath" "type" | toYaml | nindent 12 }}
+          {{- else }}
+          {{- fail (printf "unsupported persistence.%s.type %s" $name $entry.type) }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+      {{- end }}

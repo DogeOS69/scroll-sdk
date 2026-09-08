@@ -2,8 +2,8 @@ apiVersion: v2
 name: cubesigner-signer
 description: A Helm chart for the DOGEOS CubeSigner Attestation Signer
 type: application
-version: 0.1.8
-appVersion: "0.1.0"
+version: 0.1.9
+appVersion: "0.3.0-beta.2"
 kubeVersion: ">=1.22.0-0"
 maintainers:
   - name: DogeOS69

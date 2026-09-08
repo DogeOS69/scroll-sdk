@@ -1,0 +1,19 @@
+# Minimal non-secret doge-config shape. The normal setup command fills the
+# ordinary Dogecoin and Ethereum DA sections.
+network = "testnet"
+
+[wallet]
+path = ".data/doge-wallet-testnet.json"
+
+# Do not copy VK hashes or commitments by hand. Import producer evidence and
+# digest-pinned images, then let doge-config write the strict topology:
+#
+#   scrollsdk setup proof-aws-init
+#   scrollsdk setup proof-materials
+#   scrollsdk setup doge-config --proof-topology
+#
+# The command defaults to [proof_topology] mode="disabled",
+# generation="mock", enforcement="observe" and preflights mock generation.
+# Start proof services by changing only mode to "active" and rerunning
+# prep-charts. Later change generation to "real" while enforcement remains
+# "observe"; use "enforce" only after real proving is verified healthy.

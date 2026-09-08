@@ -69,11 +69,12 @@ args:
   - --config
   - /app/config/WithdrawalProcessor.toml
 
-# Content is supplied at install time via --set-file; keep the ConfigMap
-# enabled so the chart renders and mounts it.
+# prep-charts embeds the compiler-rendered native TOML here so this values file
+# is a complete Helm input. The template only keeps the ConfigMap enabled.
 configMaps:
   config:
     enabled: true
+    data: {}
 
 # The common chart already checksums generic configMaps (including the main
 # TOML). tsoSigners uses a chart-specific ConfigMap, so checksum it explicitly.
@@ -102,16 +103,15 @@ serviceAccount:
 
 env:
   # CLI-owned atomic proof activation projection. Default posture is disabled;
-  # setup prep-charts replaces all five managed entries together.
+  # setup prep-charts replaces the proof-system entries together.
+  # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
+  # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
     value: "disabled"
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
     value: "false"
   - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
     value: "false"
-  - name: DOGEOS_WITHDRAWAL_PROOF_WORK_API__ENABLED
-    value: "false"
-
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
@@ -155,7 +155,10 @@ externalSecrets:
 tsoSigners:
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
-    role: "Tee"
+    role: "Correctness"
+    # prep-charts derives the canonical compressed key from doge-config. It is
+    # required by the production bridge-proof-reference transport.
+    publicKeyOverride: "<TODO>"
     signatureMode: "ecdsa"
 
 # Persistence Configuration

@@ -1,0 +1,264 @@
+{
+  "annotations": {"list": []},
+  "description": "Attestation Signer readiness, durable queue, worker freshness, policy, signing, callback, and latency telemetry. Works for Kubernetes and manually configured external Prometheus targets; no host addresses are embedded.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "One value per scraped signer and policy mode. Zero means /ready would not return HTTP 200.",
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "Not ready"}, "1": {"color": "green", "text": "Ready"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "min by (instance, mode) (attestation_signer_ready{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}} {{mode}}", "refId": "A"}],
+      "title": "Signer Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Seconds since the last successful complete worker tick. Alert on sustained growth rather than a single missed poll.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 60}, {"color": "red", "value": 300}]}, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "clamp_min(time() - max by (instance) (attestation_signer_worker_last_success_timestamp_seconds{job=~\"$job\",instance=~\"$instance\"}), 0)", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Worker Last-success Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Authoritative durable active rows. This is not capped by the worker's 256-row per-tick load limit.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 100}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "sum by (instance) (attestation_signer_queue_rows{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Active Durable Backlog",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Maximum age among received, signed-waiting-callback, and rejected-policy-waiting-callback rows.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 60}, {"color": "red", "value": 600}]}, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "targets": [{"expr": "max by (instance) (attestation_signer_queue_oldest_age_seconds{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Oldest Active Row",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "targets": [{"expr": "max by (instance, status) (attestation_signer_queue_rows{job=~\"$job\",instance=~\"$instance\"})", "legendFormat": "{{instance}} {{status}}", "refId": "A"}],
+      "title": "Durable Queue Rows by State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "targets": [{"expr": "max by (instance, status) (attestation_signer_queue_oldest_age_seconds{job=~\"$job\",instance=~\"$instance\"})", "legendFormat": "{{instance}} {{status}}", "refId": "A"}],
+      "title": "Oldest Queue-row Age by State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "id": 7,
+      "targets": [{"expr": "sum by (instance, result, kind) (rate(attestation_signer_intake_requests_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{result}} {{kind}}", "refId": "A"}],
+      "title": "Sign-request Intake Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Tick and row rates. Failure kinds are bounded taxonomies, never raw error strings.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "id": 8,
+      "targets": [
+        {"expr": "sum by (instance, result, kind) (rate(attestation_signer_worker_ticks_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "tick {{instance}} {{result}} {{kind}}", "refId": "A"},
+        {"expr": "sum by (instance, kind, terminal) (rate(attestation_signer_worker_failures_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "failure {{instance}} {{kind}} terminal={{terminal}}", "refId": "B"},
+        {"expr": "sum by (instance, starting_status, result, kind) (rate(attestation_signer_worker_rows_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "row {{instance}} {{starting_status}} {{result}} {{kind}}", "refId": "C"}
+      ],
+      "title": "Worker Outcomes and Failures",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Observe mode may sign while emitting observed policy issues. Use classification and reason_code together.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "id": 9,
+      "targets": [{"expr": "sum by (instance, mode, classification, reason_code) (rate(attestation_signer_policy_decisions_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{mode}} {{classification}} {{reason_code}}", "refId": "A"}],
+      "title": "Policy Decision Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "id": 10,
+      "targets": [
+        {"expr": "sum by (instance, result) (rate(attestation_signer_signing_attempts_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "sign {{instance}} {{result}}", "refId": "A"},
+        {"expr": "sum by (instance, path, result) (rate(attestation_signer_tso_callbacks_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "TSO {{instance}} {{path}} {{result}}", "refId": "B"},
+        {"expr": "sum by (instance, result) (rate(attestation_signer_release_outcomes_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "release {{instance}} {{result}}", "refId": "C"}
+      ],
+      "title": "Signing, TSO Callback, and Release Rates",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Worker-tick quantiles exported by each signer's Prometheus summary. Values remain per instance because summaries cannot be aggregated across signers.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "id": 11,
+      "targets": [
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{result}}", "refId": "A"},
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{result}}", "refId": "B"},
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{result}}", "refId": "C"}
+      ],
+      "title": "Worker-tick Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Per-instance p95 values exported by the queue-wait, policy-evaluation, and TSO-submission Prometheus summaries.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 16, "x": 0, "y": 28},
+      "id": 12,
+      "targets": [
+        {"expr": "max by (instance, capability) (attestation_signer_queue_wait_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "queue p95 {{instance}} {{capability}}", "refId": "A"},
+        {"expr": "max by (instance, capability, decision) (attestation_signer_row_evaluation_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "evaluate p95 {{instance}} {{capability}} {{decision}}", "refId": "B"},
+        {"expr": "max by (instance, capability, result) (attestation_signer_tso_submit_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "TSO p95 {{instance}} {{capability}} {{result}}", "refId": "C"}
+      ],
+      "title": "Queue, Evaluation, and TSO p95 Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 28},
+      "id": 13,
+      "targets": [
+        {"expr": "sum by (instance, transition, result, cache) (rate(attestation_signer_artifact_fetch_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "artifact {{instance}} {{transition}} {{result}} {{cache}}", "refId": "A"},
+        {"expr": "sum by (instance, transition, result) (rate(attestation_signer_witness_decode_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "decode {{instance}} {{transition}} {{result}}", "refId": "B"},
+        {"expr": "sum by (instance, transition, result) (rate(attestation_signer_rotation_replay_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "rotation replay {{instance}} {{transition}} {{result}}", "refId": "C"},
+        {"expr": "sum by (instance, result) (rate(attestation_signer_advance_l1_replay_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "AdvanceL1 replay {{instance}} {{result}}", "refId": "D"},
+        {"expr": "sum by (instance, result) (rate(attestation_signer_advance_l2_replay_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "AdvanceL2 replay {{instance}} {{result}}", "refId": "E"}
+      ],
+      "title": "Artifact, Decode, and Replay Throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Per-instance artifact-fetch latency quantiles exported by the signer summary, in milliseconds.",
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "id": 14,
+      "targets": [
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{transition}} {{result}}", "refId": "A"},
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{transition}} {{result}}", "refId": "B"},
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{transition}} {{result}}", "refId": "C"}
+      ],
+      "title": "Artifact Fetch Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Per-instance fetched-artifact payload-size quantiles exported by the signer summary. Summary quantiles are not aggregated across signers.",
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "id": 15,
+      "targets": [
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{transition}}", "refId": "A"},
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{transition}}", "refId": "B"},
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{transition}}", "refId": "C"}
+      ],
+      "title": "Artifact Size Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Per-instance p95 checked-replay latency exported by the rotation, AdvanceL1, and AdvanceL2 summaries.",
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 44},
+      "id": 16,
+      "targets": [
+        {"expr": "max by (instance, transition) (attestation_signer_rotation_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "rotation p95 {{instance}} {{transition}}", "refId": "A"},
+        {"expr": "max by (instance) (attestation_signer_advance_l1_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "AdvanceL1 p95 {{instance}}", "refId": "B"},
+        {"expr": "max by (instance) (attestation_signer_advance_l2_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "AdvanceL2 p95 {{instance}}", "refId": "C"}
+      ],
+      "title": "Replay Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Per-instance source-set policy-evaluation quantiles exported by the signer summary.",
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 44},
+      "id": 17,
+      "targets": [
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "A"},
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "B"},
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "C"}
+      ],
+      "title": "Source-set Evaluation Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Bounded transition and source-set outcomes. These counters expose result distributions without request or artifact identifiers.",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 52},
+      "id": 18,
+      "targets": [
+        {"expr": "sum by (instance, transition, result) (rate(attestation_signer_rotation_result_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "rotation {{instance}} {{transition}} {{result}}", "refId": "A"},
+        {"expr": "sum by (instance, result) (rate(attestation_signer_advance_l1_result_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "AdvanceL1 {{instance}} {{result}}", "refId": "B"},
+        {"expr": "sum by (instance, result) (rate(attestation_signer_advance_l2_result_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "AdvanceL2 {{instance}} {{result}}", "refId": "C"},
+        {"expr": "sum by (instance, fact, posture, outcome) (rate(attestation_signer_source_set_evaluations_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "source-set {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "D"},
+        {"expr": "sum by (instance, fact, verdict) (rate(attestation_signer_source_verdicts_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "source {{instance}} {{fact}} {{verdict}}", "refId": "E"}
+      ],
+      "title": "Transition and Source Outcome Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Prometheus scrape health for every selected external signer target. A value of 0 means Prometheus cannot currently scrape that instance.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 60},
+      "id": 19,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "min by (instance) (up{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Prometheus Target Up",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["dogeos", "service", "attestation-signer", "external-target-ready"],
+  "templating": {
+    "list": [
+      {"current": {"selected": true, "text": "Prometheus", "value": "scroll-prometheus"}, "hide": 0, "includeAll": false, "multi": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "regex": "", "skipUrlSync": false, "type": "datasource"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\".*attestation[-_]signer.*\"}, job)", "hide": 0, "includeAll": true, "multi": true, "name": "job", "options": [], "query": {"query": "label_values(up{job=~\".*attestation[-_]signer.*\"}, job)", "refId": "PrometheusVariableQueryEditor-job"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\"$job\"}, instance)", "hide": 0, "includeAll": true, "multi": true, "name": "instance", "options": [], "query": {"query": "label_values(up{job=~\"$job\"}, instance)", "refId": "PrometheusVariableQueryEditor-instance"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {"refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h"]},
+  "timezone": "",
+  "title": "DogeOS Attestation Signer",
+  "uid": "dogeos-attestation-signer",
+  "version": 1,
+  "weekStart": ""
+}

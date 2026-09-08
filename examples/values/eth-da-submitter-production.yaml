@@ -58,6 +58,11 @@ configMaps:
   env:
     enabled: true
     data:
+      # Source of truth:
+      #   dogeos-core/crates/eth_da_submitter/src/service_config.rs
+      # Optional/conditional fields stay commented so the rendered ConfigMap
+      # preserves the application's `None` default. Replace <TODO> and uncomment
+      # only when enabling the corresponding mode.
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__LISTEN_ADDRESS: "0.0.0.0"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__LISTEN_PORT: "3004"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__STATUS_POLL_INTERVAL_MS: "5000"
@@ -66,7 +71,11 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
 
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__BLOB_SIDECAR_WRAPPER: "eip7594"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SIGNER_BACKEND: "aws_kms" # local or aws_kms
+      # Local signer mode only. Never commit a real private key; this field must
+      # remain absent when SIGNER_BACKEND=aws_kms.
+      # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SUBMITTER_PRIVATE_KEY: "<TODO>"
       # Fee cap defaults are provided by eth_da_submitter. If overriding via env,
       # use plain integer strings; do not include inner TOML quotes.
       # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__MAX_BLOB_BASE_FEE_WEI: "<TODO>" # Optional hard blob-fee cap; unset by default.
@@ -83,16 +92,24 @@ configMaps:
 
       DOGEOS_ETH_DA_SUBMITTER_L2__RPC_URL: "http://l2-rpc:8545"
       DOGEOS_ETH_DA_SUBMITTER_L2__CONFIRMATIONS: "0"
-      DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_LIMIT: "128"
+      DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_LIMIT: "1024"
+      DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_CONCURRENCY: "32"
       # Cutover mode only; requires the matching BATCH__CUTOVER__* fields below.
       # DOGEOS_ETH_DA_SUBMITTER_L2__START_BLOCK_NUMBER: "<TODO>"
 
       DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_JSON_PATH: /app/genesis/genesis.json
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__MIN_CODEC_VERSION: "10"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "auto"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "15000000"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_BLOCKS_PER_CHUNK: "128"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_CHUNK_BYTES_SIZE: "122880"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_PAYLOAD_BYTES_SIZE: "4194304"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_BYTES_SIZE: "131072"
+      # Optional encoded/effective batch sealing target. When omitted, the
+      # application derives 95% of MAX_UNCOMPRESSED_BATCH_BYTES_SIZE.
+      # DOGEOS_ETH_DA_SUBMITTER_BATCH__TARGET_UNCOMPRESSED_BATCH_BYTES_SIZE: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_OPEN_L2_TIME: "60s"
+      # Optional live chunk timeout. When omitted, it inherits MAX_OPEN_L2_TIME.
+      # DOGEOS_ETH_DA_SUBMITTER_BATCH__CHUNK_MAX_OPEN_L2_TIME: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_CHUNKS_PER_BATCH: "1"
       # Cutover mode only; START_BLOCK_NUMBER above must also be set.
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CUTOVER__LAST_BATCH_INDEX: "<TODO>"
@@ -115,7 +132,30 @@ configMaps:
 
       DOGEOS_ETH_DA_SUBMITTER_STORE__SUBMITTER_DB_PATH: "/app/data/submitter.sqlite"
       DOGEOS_ETH_DA_SUBMITTER_STORE__LIFECYCLE_DB_PATH: "/app/data/submitter.sqlite"
+
       DOGEOS_ETH_DA_SUBMITTER_S3__ENABLED: "false"
+      # BUCKET and REGION default to empty and are required when S3 is enabled.
+      DOGEOS_ETH_DA_SUBMITTER_S3__BUCKET: ""
+      DOGEOS_ETH_DA_SUBMITTER_S3__REGION: ""
+      DOGEOS_ETH_DA_SUBMITTER_S3__KEY_PREFIX: ""
+      # Optional S3-compatible endpoint; normal AWS S3 deployments leave it unset.
+      # DOGEOS_ETH_DA_SUBMITTER_S3__ENDPOINT_URL: "<TODO>"
+      DOGEOS_ETH_DA_SUBMITTER_S3__FORCE_PATH_STYLE: "false"
+      DOGEOS_ETH_DA_SUBMITTER_S3__POLL_INTERVAL_MS: "5000"
+      DOGEOS_ETH_DA_SUBMITTER_S3__INITIAL_BACKOFF_MS: "5000"
+      DOGEOS_ETH_DA_SUBMITTER_S3__MAX_BACKOFF_MS: "300000"
+      DOGEOS_ETH_DA_SUBMITTER_S3__MAX_RETRIES: "12"
+      DOGEOS_ETH_DA_SUBMITTER_S3__UPLOADING_TIMEOUT_MS: "600000"
+
+      # Optional proof chunk-segmentation sidecar publisher. It is disabled by
+      # default. When enabled, select exactly one target: LOCAL_ROOT or S3=true.
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__ENABLED: "false"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__LOCAL_ROOT: ""
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__S3: "false"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__POLL_INTERVAL_MS: "30000"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__MAX_PER_TICK: "64"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__RESTART_BACKOFF_MS: "5000"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__MAX_READ_BODY_BYTES: "4194304"
 
 envFrom:
   - configMapRef:

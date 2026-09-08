@@ -1,10 +1,14 @@
 # Configuration generation and validation belong to `scrollsdk setup ...`.
-# This example Makefile only installs or removes the generated Kubernetes
-# releases. Run `scrollsdk setup prep-charts` before the install targets.
+# prep-charts emits self-contained proof values; this Makefile only runs
+# ordinary Helm installs/removals. Run prep-charts and proof-config-check first.
 
 NAMESPACE ?= default
+ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
+ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.3
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.1
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.2
+PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
+PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.21
 CURL_IMAGE ?= curlimages/curl:8.20.0
@@ -32,7 +36,10 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/cubesigner-signer-production.yaml \
 	values/tso-service-production.yaml \
 	values/withdrawal-processor-production.yaml \
+	values/proof-coordinator-production.yaml \
+	values/prover-worker-production.yaml \
 	withdrawal-processor/WithdrawalProcessor.toml \
+	proof-coordinator/ProofCoordinator.toml \
 	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
@@ -46,10 +53,10 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
-	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-proof-stack \
+	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
 	delete-all delete-dogecoin  delete-celestia delete-frontends \
-	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-tso \
+	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
 	delete-l2-reth delete-l2-reth-rpc delete-l2-reth-sequencer delete-l2-reth-bootnode
@@ -86,7 +93,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.24-dogeos \
+		--version=0.1.25-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:
@@ -151,8 +158,8 @@ install-contracts:
 	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
 
 install-eth-da-submitter:
-	helm upgrade -i eth-da-submitter oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter -n $(NAMESPACE) \
-		--version=0.1.3 \
+	helm upgrade -i eth-da-submitter $(ETH_DA_SUBMITTER_CHART) -n $(NAMESPACE) \
+		--version=$(ETH_DA_SUBMITTER_CHART_VERSION) \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
@@ -163,7 +170,7 @@ install-fee-oracle:
 
 install-cubesigner-signer:
 	helm upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
-		--version=0.1.8 \
+		--version=0.1.9 \
 		--values values/cubesigner-signer-production.yaml
 
 install-tso:
@@ -173,27 +180,29 @@ install-tso:
 		--wait
 
 install-withdrawal-processor:
-	scrollsdk helper proof-helm \
-		--component withdrawal-processor \
-		--release withdrawal-processor \
-		--chart $(WITHDRAWAL_PROCESSOR_CHART) \
+	helm upgrade -i withdrawal-processor $(WITHDRAWAL_PROCESSOR_CHART) -n $(NAMESPACE) \
 		--version $(WITHDRAWAL_PROCESSOR_CHART_VERSION) \
-		--namespace $(NAMESPACE)
+		--values values/withdrawal-processor-production.yaml
 
 install-proof-coordinator:
-	scrollsdk helper proof-helm \
-		--component proof-coordinator \
-		--release proof-coordinator \
-		--chart $(PROOF_COORDINATOR_CHART) \
+	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
-		--namespace $(NAMESPACE)
+		--values values/proof-coordinator-production.yaml
 
-# The generated deployment contract decides whether proof-coordinator is
-# enabled and supplies all values/set-file bindings for both proof components.
-install-proof-stack:
+install-prover-worker:
+	helm upgrade -i prover-worker $(PROVER_WORKER_CHART) -n $(NAMESPACE) \
+		--version $(PROVER_WORKER_CHART_VERSION) \
+		--values values/prover-worker-production.yaml
+
+# Proof Coordinator remains deployed while the generated contract selects its
+# idle or active config. The contract decides whether the local prover-worker
+# runs; production/external keeps it absent and emits a verified GPU-host bundle.
+reconcile-proof-services:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-tso
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
 install-blockscout:
 	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
@@ -246,7 +255,7 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-stack
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-blockscout
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
@@ -264,6 +273,7 @@ delete-all:
 	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
 	helm delete -n $(NAMESPACE) withdrawal-processor || true
 	helm delete -n $(NAMESPACE) proof-coordinator || true
+	helm delete -n $(NAMESPACE) prover-worker || true
 	helm delete -n $(NAMESPACE) tso-service || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-cubesigner-signer || true
 	helm delete -n $(NAMESPACE) eth-da-submitter || true
@@ -297,6 +307,9 @@ delete-withdrawal-processor:
 
 delete-proof-coordinator:
 	helm delete -n $(NAMESPACE) proof-coordinator
+
+delete-prover-worker:
+	helm delete -n $(NAMESPACE) prover-worker
 
 delete-tso:
 	helm delete -n $(NAMESPACE) tso-service
