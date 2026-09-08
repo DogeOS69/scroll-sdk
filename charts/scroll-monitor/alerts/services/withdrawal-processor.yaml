@@ -1,0 +1,169 @@
+# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+groups:
+- name: dogeos.services.withdrawal-processor
+  interval: 1m
+  rules:
+  - alert: WithdrawalProcessorMetricsTargetDown
+    expr: up{job=~".*withdrawal-processor.*"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A withdrawal-processor metrics target cannot be scraped.
+      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
+        and network policy. A removed target requires the Kubernetes workload alerts.
+  - alert: WithdrawalProcessorPodNotReady
+    expr: kube_pod_status_ready{condition="true",pod=~".*withdrawal-processor.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A withdrawal-processor pod is not ready.
+      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
+        Job pods are excluded.
+  - alert: WFFundingDataCorrupt
+    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_corrupt_funding_row_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Persisted WF funding data is corrupt.
+      description: Inspect funding amounts, outpoints, and the affected {{ $labels.lane }} lane. Repair the durable
+        data before retrying.
+  - alert: WFBridgeFundingDeferred
+    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding"}[5m]))
+      > 0
+    for: 15m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: WF work remains blocked by bridge funding.
+      description: Lane {{ $labels.lane }} is repeatedly withheld from scheduling. Check bridge UTXO availability
+        and reservations; this differs from the fee-wallet inventory balance.
+  - alert: WFOperatorIntentHeadDrift
+    expr: sum by (namespace, job, instance, action_kind) (increase(withdrawal_processor_operator_intent_head_drift_terminal_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A rotation request was terminalized after replay-head drift.
+      description: Review {{ $labels.action_kind }} and submit a fresh operator request with a new idempotency key
+        after reconciling the canonical head.
+  - alert: WFProofGateInvariantViolation
+    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_(bridge_gate_checks|bridge_envelope_enrichment|bridge_local_runtime|scroll_batch_gate_checks|bridge_witness_runtime)_total",outcome="invariant_error"}[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A WF proof gate or witness invariant failed.
+      description: Inspect bridge witness, attestation evidence, and proof-gate diagnostics. Do not bypass the gate.
+  - alert: WFWitnessInvariantViolation
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_invariant_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Bridge witness materialization hit a terminal invariant.
+      description: Inspect persisted witness inputs and the proof control plane before resubmission.
+  - alert: WFProofRuntimeUnavailable
+    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_(bridge_gate_checks|bridge_envelope_enrichment|bridge_local_runtime|scroll_batch_gate_checks|bridge_witness_runtime)_total",outcome=~"retryable_error|backend_unavailable"}[5m]))
+      > 0
+    for: 10m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: WF proof dependencies keep failing.
+      description: Check prover backends, artifact access, and control-plane RPCs. Ordinary not_ready and skipped
+        outcomes are excluded.
+  - alert: WFWitnessArtifactMissing
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_artifact_bytes_missing_total[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Bridge witness artifact bytes remain unavailable.
+      description: Check materialization receipts and artifact storage before retrying the WF build.
+  - alert: WFTSOHandoffRecoveryFailures
+    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_tso_handoff_recovery_(failures|age_probe_failures)_total"}[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: TSO handoff recovery cannot complete or observe its backlog.
+      description: Check TSO job lookup, callback correlation, and durable job storage.
+  - alert: WFTSOHandoffRecoveryBlocked
+    expr: withdrawal_processor_tso_handoff_recovery_blocked_age_seconds > 900
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A stale TSO handoff blocks dispatch.
+      description: The oldest blocking handoff is {{ $value }} seconds old. Check recovery enablement, TSO state,
+        and callback delivery.
+  - alert: WFL2ProofPipelineFailing
+    expr: withdrawal_processor_l2_proof_pipeline_consecutive_failures > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: The L2 proof pipeline keeps failing.
+      description: Inspect the pipeline error class and data-source availability.
+  - alert: WFL2ProofPipelineStale
+    expr: (time() - withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds > 900) and on (namespace,
+      job, instance) (withdrawal_processor_l2_proof_pipeline_enabled == 1)
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: The enabled L2 proof pipeline has no recent successful pass.
+      description: Check its worker loop and proof-control storage. Disabled pipelines are excluded.
+  - alert: WFBuildQueueStalled
+    expr: withdrawal_processor_protocol_job_oldest_age_seconds{status=~"queued|building|built|failed_retryable|bug"}
+      > 1800
+    for: 10m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A WF job is stuck before successful TSO handoff.
+      description: Oldest {{ $labels.action_kind }} job in {{ $labels.status }} is {{ $value }} seconds old. Inspect
+        funding, proof gates, and scheduler errors.
+  - alert: WFProtocolMetricsReadFailure
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_protocol_metrics_scrape_errors_total[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: WP protocol metrics cannot read their source state.
+      description: Other gauges may be stale. Check database access and metrics refresh errors.
+  - alert: WFDatabasePoolSlow
+    expr: sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_sum[10m]))
+      / sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_count[10m]))
+      > 1 and sum by (namespace, job, instance) (increase(withdrawal_processor_db_pool_checkout_wait_seconds_count[10m]))
+      >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: withdrawal-processor mean operation latency exceeds 1 seconds.
+      description: Database checkout averages more than one second with at least five observations in ten minutes.
+        Check pool saturation and long transactions.

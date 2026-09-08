@@ -60,6 +60,10 @@ balanceMonitoring:
     enabled: true
     envFromSecret: "" # Optional Secret with SCROLL_BALANCE_* keys for RPC credentials.
 
+serviceAlerts:
+  enabled: true
+  paused: true
+
 businessAlerts:
   enabled: true
   # Populate from the active bridge policy for exact per-role quorum checks.

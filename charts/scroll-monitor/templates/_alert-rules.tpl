@@ -21,5 +21,20 @@
 {{- $groups = concat $groups $wallet.groups -}}
 {{- end -}}
 {{- end -}}
+{{/* Prometheus has no pause state. Omit paused diagnostics from its fallback. */}}
+{{- $grafanaManaged := and .Values.grafana.enabled .Values.grafanaAlerting.enabled -}}
+{{- if and .Values.serviceAlerts.enabled (or $grafanaManaged (not .Values.serviceAlerts.paused)) -}}
+{{- range $path, $_ := .Files.Glob "alerts/services/*.yaml" -}}
+{{- $serviceGroups := ($.Files.Get $path | fromYaml).groups -}}
+{{- if $grafanaManaged -}}
+{{- range $group := $serviceGroups -}}
+{{- range $rule := $group.rules -}}
+{{- $_ := set $rule "isPaused" $.Values.serviceAlerts.paused -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $groups = concat $groups $serviceGroups -}}
+{{- end -}}
+{{- end -}}
 {{- dict "groups" $groups | toYaml -}}
 {{- end -}}

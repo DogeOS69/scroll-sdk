@@ -42,7 +42,9 @@ Dashboard ConfigMaps are controlled by `dashboards.bundled.enabled` and are
 rendered independently of `grafana.enabled`, allowing an external Grafana
 sidecar to discover them.
 
-Application alerts are **Grafana-managed and enabled by default**. A Helm
+Application alerts are **Grafana-managed**. The original business, funding,
+progress, and log rules are enabled by default. The extended service diagnostic
+catalog starts **paused**. A Helm
 post-install/post-upgrade Job seeds the rules into **Scroll Monitor Alerts**
 using the HTTP API with `X-Disable-Provenance: true`. You can edit and
 pause/resume them directly in **Alerting > Alert rules**, without making copies.
@@ -52,6 +54,27 @@ notification settings, evaluation intervals, and pause state on upgrades. UI
 changes and contact points are stored on the Grafana PVC. Deleting a bundled
 rule causes it to be recreated on the next upgrade; pause it to keep it disabled.
 Changes to bundled defaults apply to new rules; existing rules remain UI-owned.
+
+### Extended service diagnostics (paused by default)
+
+`serviceAlerts.enabled: true` imports 107 additional rules for
+withdrawal-processor, tso-service, proof-coordinator, l2-reth nodes, l1-interface,
+eth-da-submitter, cubesigner-signer, and fee-oracle. `serviceAlerts.paused: true`
+makes every new rule in this catalog start paused. Review and resume individual
+rules directly in Grafana; upgrades preserve your choices. Existing business,
+balance, progress, and log rules retain their prior defaults.
+
+See [the service alert review](SERVICE_ALERT_REVIEW.md) for the complete catalog,
+source commits, thresholds, and implementation prerequisites. In particular,
+the complete proof-coordinator metrics endpoint is on an observability branch
+that is not yet merged into the reviewed dogeos-core mainline. Rules depending
+on that endpoint need an image containing its implementation before activation.
+Service metric definitions and exposition examples belong in the service source
+repositories; this chart maintains alert queries and their behavior tests.
+
+Prometheus has no rule pause state. The native fallback omits this catalog while
+`serviceAlerts.paused` is true. Set it to false explicitly to activate the catalog
+in that backend. Changing the value does not overwrite saved Grafana pause states.
 
 The Job uses the Grafana admin Secret (including `grafana.admin.existingSecret`).
 Its credentials must match the running Grafana database; changing the Helm

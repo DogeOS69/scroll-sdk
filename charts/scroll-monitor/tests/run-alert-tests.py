@@ -12,6 +12,7 @@ CHART = Path(__file__).resolve().parents[1]
 rendered = subprocess.check_output([
     "helm", "template", "scroll-monitor", str(CHART), "--namespace", "monitoring",
     "--set", "grafanaAlerting.enabled=false",
+    "--set", "serviceAlerts.paused=false",
     "--set", "businessAlerts.requiredSignersByRole.Correctness=2",
 ], text=True)
 rules = next(doc["spec"] for doc in yaml.safe_load_all(rendered)

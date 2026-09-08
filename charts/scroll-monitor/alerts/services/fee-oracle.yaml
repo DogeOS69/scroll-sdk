@@ -1,0 +1,129 @@
+# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+groups:
+- name: dogeos.services.fee-oracle
+  interval: 1m
+  rules:
+  - alert: FeeOracleMetricsTargetDown
+    expr: up{job=~".*fee-oracle.*"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: A fee-oracle metrics target cannot be scraped.
+      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
+        and network policy. A removed target requires the Kubernetes workload alerts.
+  - alert: FeeOraclePodNotReady
+    expr: kube_pod_status_ready{condition="true",pod=~".*fee-oracle.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: A fee-oracle pod is not ready.
+      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
+        Job pods are excluded.
+  - alert: FeeOracleCalculationInvalid
+    expr: fee_oracle_ethereum_da_oracle_value_latest_status{status=~"overflow|invalid_config"} == 1
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Fee oracle computation has an invalid configuration or arithmetic overflow.
+      description: Inspect the active {{ $labels.status }} / {{ $labels.reason }} state. Updating the liveness timestamp
+        does not prove a usable fee value.
+  - alert: FeeOracleCalculationNotReady
+    expr: max by (namespace, job, instance) (fee_oracle_ethereum_da_oracle_value_latest_status{status="not_ready"})
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Fee oracle computation remains not ready.
+      description: Inspect Ethereum DA sampling and DOGE/ETH price feeds. Normal held and deferred decisions are
+        excluded.
+  - alert: FeeOracleRawSampleStale
+    expr: fee_oracle_ethereum_da_sample_age_seconds > 300 or fee_oracle_ethereum_da_sample_available == 0
+    for: 10m
+    labels:
+      severity: warning
+      service: fee-oracle
+    annotations:
+      summary: The raw Ethereum DA fee sample is stale or unavailable.
+      description: Check the Ethereum sampling RPC. The account balance and update transaction RPC are separately
+        on L2.
+  - alert: FeeOraclePriceFeedFailures
+    expr: sum by (namespace, job, instance, source) (increase(fee_oracle_price_fetch_failure_total[5m])) > 0
+    for: 10m
+    labels:
+      severity: warning
+      service: fee-oracle
+    annotations:
+      summary: Oracle price fetching keeps failing.
+      description: Inspect price source {{ $labels.source }} and quote freshness.
+  - alert: FeeOracleBlobFeeCapped
+    expr: fee_oracle_ethereum_da_blob_fee_spike_cap_exceeded == 1
+    for: 15m
+    labels:
+      severity: warning
+      service: fee-oracle
+    annotations:
+      summary: The configured blob fee spike cap limits the oracle fee.
+      description: Review cap shortfall and Ethereum DA costs; sustained capping can under-recover publication costs.
+  - alert: FeeOracleNonceDrift
+    expr: fee_oracle_live_pending_nonce_drift > 0
+    for: 10m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Oracle update requests remain blocked by nonce drift.
+      description: Check external use of the L2 signer account and reconcile durable attempts.
+  - alert: FeeOracleUnsentRequests
+    expr: sum by (namespace, job, instance) ({__name__=~"fee_oracle_live_pending_(unsent|orphans)"}) > 0
+    for: 15m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Oracle update requests remain unsigned or unsent.
+      description: Check the live recovery loop, signing backend, and L2 broadcast RPC.
+  - alert: FeeOracleTransactionsStuck
+    expr: fee_oracle_live_pending_rbf_eligible > 0
+    for: 15m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Oracle transactions remain eligible for stuck-transaction replacement.
+      description: Inspect L2 receipts, replacement policy, gas prices, and signer funding.
+  - alert: FeeOracleExecutionReverted
+    expr: sum by (namespace, job, instance) (increase(fee_oracle_live_confirmer_total{class=~"failed_execution_reverted|failed_via_sibling"}[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: An oracle update transaction reverted on L2.
+      description: Inspect the oracle contract, permissions, and receipt for the failed attempt.
+  - alert: FeeOracleLiveRecoveryFailures
+    expr: sum by (namespace, job, instance, phase) (increase(fee_oracle_live_recovery_total{result=~"failed|abandoned"}[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Oracle live-update recovery keeps failing or abandoning requests.
+      description: Inspect {{ $labels.phase }} recovery state, durable nonce ownership, and L2 provider responses.
+  - alert: FeeOracleLiveSubmissionFailure
+    expr: sum by (namespace, job, instance) (increase(fee_oracle_live_submit_errors_total[5m])) > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: fee-oracle
+    annotations:
+      summary: Oracle live submission fails before broadcast.
+      description: Inspect signing, durable request creation, and L2 transaction preparation.

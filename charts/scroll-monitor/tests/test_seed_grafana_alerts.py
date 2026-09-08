@@ -71,6 +71,32 @@ class SeedTests(unittest.TestCase):
         SEED.seed(self.client, self.config)
         self.assertEqual(self.client.writes, [])
 
+    def test_paused_rule_can_be_resumed_and_is_not_repaused_on_upgrade(self):
+        self.config["groups"][0]["rules"][0]["isPaused"] = True
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+        self.client.group["rules"][0]["isPaused"] = False
+        original = copy.deepcopy(self.client.group["rules"][0])
+        self.client.writes.clear()
+        self.config["groups"][0]["rules"].append({
+            "alert": "NewPausedRule", "expr": "up == 0", "isPaused": True,
+        })
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.group["rules"][0], original)
+        self.assertTrue(self.client.group["rules"][1]["isPaused"])
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_new_default_does_not_unpause_an_operator_paused_rule(self):
+        self.config["groups"][0]["rules"][0]["isPaused"] = True
+        SEED.seed(self.client, self.config)
+        self.config["groups"][0]["rules"][0]["isPaused"] = False
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+        self.assertEqual(self.client.writes, [])
+
     def test_log_alert_uses_loki_instant_query_and_no_pending_period(self):
         self.config["lokiDatasourceUID"] = "custom-loki"
         rule = SEED.alert_rule({

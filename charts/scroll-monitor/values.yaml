@@ -133,6 +133,13 @@ grafanaAlerting:
       cpu: 100m
       memory: 64Mi
 
+# Extended per-service diagnostics are created in Grafana but start paused.
+# Existing Grafana rules retain their UI pause state on every upgrade.
+# Prometheus fallback omits these rules while paused=true.
+serviceAlerts:
+  enabled: true
+  paused: true
+
 businessAlerts:
   enabled: true
   jobMaxAgeSeconds: 900

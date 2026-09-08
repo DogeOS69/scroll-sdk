@@ -75,7 +75,7 @@ def alert_rule(source, config, group):
         "for": source.get("for", "0s"),
         "noDataState": "OK",
         "execErrState": "Error",
-        "isPaused": False,
+        "isPaused": source.get("isPaused", False),
         "labels": {**source.get("labels", {}), "managed_by": "scroll-monitor"},
         "annotations": annotations,
         "data": [

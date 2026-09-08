@@ -1,0 +1,84 @@
+# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+groups:
+- name: dogeos.services.tso-service
+  interval: 1m
+  rules:
+  - alert: TsoServiceMetricsTargetDown
+    expr: up{job=~".*tso-service.*"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      service: tso-service
+    annotations:
+      summary: A tso-service metrics target cannot be scraped.
+      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
+        and network policy. A removed target requires the Kubernetes workload alerts.
+  - alert: TsoServicePodNotReady
+    expr: kube_pod_status_ready{condition="true",pod=~".*tso-service.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: tso-service
+    annotations:
+      summary: A tso-service pod is not ready.
+      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
+        Job pods are excluded.
+  - alert: TSOSigningCycleSlow
+    expr: sum by (namespace, job, instance) (rate(tso_core_signing_cycle_latency_seconds_sum[10m])) / sum by (namespace,
+      job, instance) (rate(tso_core_signing_cycle_latency_seconds_count[10m])) > 120 and sum by (namespace, job,
+      instance) (increase(tso_core_signing_cycle_latency_seconds_count[10m])) >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: tso-service mean operation latency exceeds 120 seconds.
+      description: Completed signing cycles average more than two minutes. Check signer response paths and quorum
+        latency.
+  - alert: TSOSignerResponseSlow
+    expr: sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum[10m]))
+      / sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count[10m]))
+      > 60 and sum by (namespace, job, instance, signer_pubkey) (increase(tso_core_signer_response_latency_seconds_count[10m]))
+      >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: tso-service mean operation latency exceeds 60 seconds.
+      description: Signer {{ $labels.signer_pubkey }} responses average more than one minute. Check network and
+        signer backend latency.
+  - alert: TSORoleQuorumSlow
+    expr: sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_sum[10m])) /
+      sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_count[10m])) > 120
+      and sum by (namespace, job, instance, role) (increase(tso_core_signing_role_path_latency_seconds_count[10m]))
+      >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: tso-service mean operation latency exceeds 120 seconds.
+      description: Role {{ $labels.role }} takes more than two minutes on average to complete its required input
+        thresholds.
+  - alert: TSOSigningQueueLarge
+    expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"})
+      > 100
+    for: 15m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: TSO pending signing work exceeds 100 transactions.
+      description: Calibrate this capacity threshold against throughput. Check admission pressure, quorum availability,
+        and completion rate.
+  - alert: TSOShadowforkSentinelAccepted
+    expr: sum by (namespace, job, instance) (increase(tso_core_sentinel_signatures_accepted_total[5m])) > 0
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: TSO accepted a shadowfork sentinel signature.
+      description: Expected only in an intentionally configured shadowfork. Enable this rule on production signing
+        lanes to detect unexpected sentinel use.

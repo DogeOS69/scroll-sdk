@@ -1,0 +1,2514 @@
+# Behavioral PromQL fixtures; service exposition belongs in the service source repository.
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: WithdrawalProcessorMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="withdrawal-processor",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WithdrawalProcessorMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WithdrawalProcessorMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="withdrawal-processor",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WithdrawalProcessorMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WithdrawalProcessor unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="withdrawal-processor-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="withdrawal-processor-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WithdrawalProcessorPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WithdrawalProcessor completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="withdrawal-processor-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="withdrawal-processor-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WithdrawalProcessorPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TsoServiceMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="tso-service",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TsoServiceMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TsoServiceMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="tso-service",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TsoServiceMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TsoService unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="tso-service-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="tso-service-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TsoServicePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TsoService completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="tso-service-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="tso-service-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TsoServicePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="proof-coordinator",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="proof-coordinator",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinator unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="proof-coordinator-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="proof-coordinator-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinator completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="proof-coordinator-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="proof-coordinator-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="l2-reth",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="l2-reth",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2Reth unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="l2-reth-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="l2-reth-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2Reth completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="l2-reth-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="l2-reth-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="l1-interface",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="l1-interface",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1Interface unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1Interface completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDaSubmitterMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="eth-da-submitter",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDaSubmitterMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDaSubmitterMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="eth-da-submitter",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDaSubmitterMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDaSubmitter unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="eth-da-submitter-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="eth-da-submitter-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDaSubmitterPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDaSubmitter completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="eth-da-submitter-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="eth-da-submitter-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDaSubmitterPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubesignerSignerMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="cubesigner-signer",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubesignerSignerMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubesignerSignerMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="cubesigner-signer",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubesignerSignerMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubesignerSigner unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="cubesigner-signer-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="cubesigner-signer-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubesignerSignerPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubesignerSigner completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="cubesigner-signer-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="cubesigner-signer-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubesignerSignerPodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleMetricsTargetDown fires
+  interval: 1m
+  input_series:
+  - series: up{job="fee-oracle",instance="bad"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleMetricsTargetDown stays healthy
+  interval: 1m
+  input_series:
+  - series: up{job="fee-oracle",instance="bad"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleMetricsTargetDown",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracle unready running pod
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="fee-oracle-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="fee-oracle-abc",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOraclePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracle completed pod excluded
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="fee-oracle-abc",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="fee-oracle-abc",phase="Succeeded"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOraclePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFFundingDataCorrupt sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_corrupt_funding_row_total{lane="bridge_funded_admission"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFFundingDataCorrupt",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFFundingDataCorrupt ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_corrupt_funding_row_total{lane="bridge_funded_admission"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFFundingDataCorrupt",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFBridgeFundingDeferred sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding",lane="advance_l2"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFBridgeFundingDeferred",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFBridgeFundingDeferred ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding",lane="advance_l2"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFBridgeFundingDeferred",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFOperatorIntentHeadDrift sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_operator_intent_head_drift_terminal_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFOperatorIntentHeadDrift",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFOperatorIntentHeadDrift ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_operator_intent_head_drift_terminal_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFOperatorIntentHeadDrift",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFProofGateInvariantViolation sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{outcome="invariant_error"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProofGateInvariantViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFProofGateInvariantViolation ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{outcome="invariant_error"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProofGateInvariantViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFWitnessInvariantViolation sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_witness_runtime_invariant_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFWitnessInvariantViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFWitnessInvariantViolation ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_witness_runtime_invariant_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFWitnessInvariantViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFProofRuntimeUnavailable sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_local_runtime_total{outcome="backend_unavailable"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProofRuntimeUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFProofRuntimeUnavailable ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_local_runtime_total{outcome="backend_unavailable"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProofRuntimeUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFWitnessArtifactMissing sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_witness_runtime_artifact_bytes_missing_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFWitnessArtifactMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFWitnessArtifactMissing ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_witness_runtime_artifact_bytes_missing_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFWitnessArtifactMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFTSOHandoffRecoveryFailures sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_age_probe_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFTSOHandoffRecoveryFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFTSOHandoffRecoveryFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_age_probe_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFTSOHandoffRecoveryFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFProtocolMetricsReadFailure sees events
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_metrics_scrape_errors_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProtocolMetricsReadFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFProtocolMetricsReadFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_metrics_scrape_errors_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFProtocolMetricsReadFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOShadowforkSentinelAccepted sees events
+  interval: 1m
+  input_series:
+  - series: tso_core_sentinel_signatures_accepted_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOShadowforkSentinelAccepted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TSOShadowforkSentinelAccepted ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: tso_core_sentinel_signatures_accepted_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOShadowforkSentinelAccepted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorUploadIssuanceFailing sees events
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_local_upload_issuance_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorUploadIssuanceFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorUploadIssuanceFailing ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_local_upload_issuance_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorUploadIssuanceFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorWorkerFencesRecurring sees events
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_fence_rejections_total{handler="heartbeat"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerFencesRecurring",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorWorkerFencesRecurring ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_fence_rejections_total{handler="heartbeat"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerFencesRecurring",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorWorkerAuthorizationFailures sees events
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_requests_total{status="401"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAuthorizationFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorWorkerAuthorizationFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_requests_total{status="401"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAuthorizationFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorObserveDegraded sees events
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_terminal_proofs_degraded_under_observe_total{family="bridge_state"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorObserveDegraded",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorObserveDegraded ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_terminal_proofs_degraded_under_observe_total{family="bridge_state"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorObserveDegraded",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorEagerLocatorInvalid sees events
+  interval: 1m
+  input_series:
+  - series: eager_locator_invalid_total{check="digest"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorEagerLocatorInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorEagerLocatorInvalid ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eager_locator_invalid_total{check="digest"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorEagerLocatorInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorEagerLocatorConflict sees events
+  interval: 1m
+  input_series:
+  - series: eager_locator_conflicts_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorEagerLocatorConflict",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorEagerLocatorConflict ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eager_locator_conflicts_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorEagerLocatorConflict",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethPayloadValidationFailed sees events
+  interval: 1m
+  input_series:
+  - series: reth_consensus_engine_beacon_new_payload_invalid{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethPayloadValidationFailed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethPayloadValidationFailed ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: reth_consensus_engine_beacon_new_payload_invalid{job="l2-reth-rpc"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethPayloadValidationFailed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethDownloaderErrors sees events
+  interval: 1m
+  input_series:
+  - series: reth_downloaders_headers_timeout_errors{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethDownloaderErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethDownloaderErrors ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: reth_downloaders_headers_timeout_errors{job="l2-reth-rpc"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethDownloaderErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethBlobStoreFailure sees events
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_blobstore_failed_inserts{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethBlobStoreFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethBlobStoreFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_blobstore_failed_inserts{job="l2-reth-rpc"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethBlobStoreFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethL1ReorgObserved sees events
+  interval: 1m
+  input_series:
+  - series: reth_l1_watcher_reorgs{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethL1ReorgObserved",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethL1ReorgObserved ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: reth_l1_watcher_reorgs{job="l2-reth-rpc"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethL1ReorgObserved",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceReplayTerminalFault sees events
+  interval: 1m
+  input_series:
+  - series: l1_interface_replay_committed_terminal_faults_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayTerminalFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceReplayTerminalFault ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: l1_interface_replay_committed_terminal_faults_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayTerminalFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceSyntheticIndexIntegrityViolation sees events
+  interval: 1m
+  input_series:
+  - series: l1_interface_synthetic_tx_index_integrity_violations_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceSyntheticIndexIntegrityViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceSyntheticIndexIntegrityViolation ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: l1_interface_synthetic_tx_index_integrity_violations_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceSyntheticIndexIntegrityViolation",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceIndexerFailures sees events
+  interval: 1m
+  input_series:
+  - series: l1_interface_indexer_sync_results_total{status="error"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceIndexerFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceIndexerFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: l1_interface_indexer_sync_results_total{status="error"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceIndexerFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceDatabaseFailures sees events
+  interval: 1m
+  input_series:
+  - series: l1_interface_db_query_responses_total{status="error"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceDatabaseFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceDatabaseFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: l1_interface_db_query_responses_total{status="error"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceDatabaseFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceProtocolMetricsReadFailure sees events
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_metrics_scrape_errors_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceProtocolMetricsReadFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceProtocolMetricsReadFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_metrics_scrape_errors_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceProtocolMetricsReadFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAReplaySafetyBudgetExhausted sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_replay_rejection_escalations_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAReplaySafetyBudgetExhausted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAReplaySafetyBudgetExhausted ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_replay_rejection_escalations_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAReplaySafetyBudgetExhausted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDASigningFailure sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_signer_startup_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDASigningFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDASigningFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_signer_startup_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDASigningFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAReplacementFailure sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_replacement_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAReplacementFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAReplacementFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_replacement_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAReplacementFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAWindowBudgetBlocked sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_window_budget_deferrals_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAWindowBudgetBlocked",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAWindowBudgetBlocked ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_window_budget_deferrals_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAWindowBudgetBlocked",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDABatchDataInvalid sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_first_block_exceeds_limit_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABatchDataInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABatchDataInvalid ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_first_block_exceeds_limit_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABatchDataInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDALifecycleCorrelationFailure sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_lifecycle_correlation_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDALifecycleCorrelationFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDALifecycleCorrelationFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_lifecycle_correlation_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDALifecycleCorrelationFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDABlobArchiveMalformedState sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_recovery_missing_attempts_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobArchiveMalformedState",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABlobArchiveMalformedState ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_recovery_missing_attempts_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobArchiveMalformedState",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDABlobUploadFailures sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_failures_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobUploadFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABlobUploadFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_failures_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobUploadFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAArchiveAnonymousWriteAllowed sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="allowed_success"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveAnonymousWriteAllowed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAArchiveAnonymousWriteAllowed ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="allowed_success"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveAnonymousWriteAllowed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAArchiveWriteProbeInconclusive sees events
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="transport_exhausted"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveWriteProbeInconclusive",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAArchiveWriteProbeInconclusive ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="transport_exhausted"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveWriteProbeInconclusive",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerSigningAttemptsFail sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="timeout"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerSigningAttemptsFail",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerSigningAttemptsFail ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="timeout"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerSigningAttemptsFail",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerPSBTAuthorizationRejected sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_psbt_policy_rejections_total{reason_code="unsigned_tx_mutated"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPSBTAuthorizationRejected",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerPSBTAuthorizationRejected ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_psbt_policy_rejections_total{reason_code="unsigned_tx_mutated"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPSBTAuthorizationRejected",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerWorkerFailures sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_worker_cycles_total{outcome="error"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerWorkerFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerWorkerFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_worker_cycles_total{outcome="error"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerWorkerFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerProofFallbackUsed sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_fallback_signs_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerProofFallbackUsed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerProofFallbackUsed ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_fallback_signs_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerProofFallbackUsed",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerPolicyTelemetryBroken sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_eval_tree_unparseable_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyTelemetryBroken",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerPolicyTelemetryBroken ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_policy_eval_tree_unparseable_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyTelemetryBroken",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerMetricsFault sees events
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_metrics_faults_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerMetricsFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerMetricsFault ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_metrics_faults_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerMetricsFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOraclePriceFeedFailures sees events
+  interval: 1m
+  input_series:
+  - series: fee_oracle_price_fetch_failure_total{source="example"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOraclePriceFeedFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOraclePriceFeedFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: fee_oracle_price_fetch_failure_total{source="example"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOraclePriceFeedFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleExecutionReverted sees events
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_confirmer_total{class="failed_execution_reverted"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleExecutionReverted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleExecutionReverted ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_confirmer_total{class="failed_execution_reverted"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleExecutionReverted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleLiveRecoveryFailures sees events
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_recovery_total{phase="nonce_drift",result="failed"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleLiveRecoveryFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleLiveRecoveryFailures ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_recovery_total{phase="nonce_drift",result="failed"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleLiveRecoveryFailures",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleLiveSubmissionFailure sees events
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_submit_errors_total
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleLiveSubmissionFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleLiveSubmissionFailure ignores a flat historic count
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_submit_errors_total
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleLiveSubmissionFailure",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFTSOHandoffRecoveryBlocked fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_blocked_age_seconds
+    values: 901x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFTSOHandoffRecoveryBlocked",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFTSOHandoffRecoveryBlocked stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_blocked_age_seconds
+    values: 900x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFTSOHandoffRecoveryBlocked",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFL2ProofPipelineFailing fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_consecutive_failures
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFL2ProofPipelineFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFL2ProofPipelineFailing stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_consecutive_failures
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFL2ProofPipelineFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFBuildQueueStalled fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_job_oldest_age_seconds{status="building"}
+    values: 1801x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFBuildQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFBuildQueueStalled stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_job_oldest_age_seconds{status="building"}
+    values: 1800x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFBuildQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOSigningQueueLarge fires
+  interval: 1m
+  input_series:
+  - series: tso_core_transactions_by_status{status="collecting_p2pkh"}
+    values: 101x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSigningQueueLarge",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TSOSigningQueueLarge stays healthy
+  interval: 1m
+  input_series:
+  - series: tso_core_transactions_by_status{status="collecting_p2pkh"}
+    values: 100x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSigningQueueLarge",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorNotReady fires
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_ready
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorNotReady stays healthy
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_ready
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorTerminalClaimFault fires
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_claim_gate_state{state="terminal_wp_fault"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorTerminalClaimFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorTerminalClaimFault stays healthy
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_claim_gate_state{state="terminal_wp_fault"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorTerminalClaimFault",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorRunLoopFailing fires
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_run_loop_consecutive_failures
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorRunLoopFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorRunLoopFailing stays healthy
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_run_loop_consecutive_failures
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorRunLoopFailing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorRunLoopStale fires
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_run_loop_last_success_timestamp_seconds
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorRunLoopStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorRunLoopStale stays healthy
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_run_loop_last_success_timestamp_seconds
+    values: 2700x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorRunLoopStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofMaterializationQueueStalled fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status="pending"}
+    values: 1801x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofMaterializationQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofMaterializationQueueStalled stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status="pending"}
+    values: 1800x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofMaterializationQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofVerificationQueueStalled fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status="remote_result_submitted"}
+    values: 1801x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofVerificationQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofVerificationQueueStalled stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status="remote_result_submitted"}
+    values: 1800x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofVerificationQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofWorkerQueueStalled fires
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_retryable"}
+    values: 3601x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofWorkerQueueStalled stays healthy
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_retryable"}
+    values: 3600x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethNoPeers fires
+  interval: 1m
+  input_series:
+  - series: reth_network_connected_peers{job="l2-reth-rpc"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethNoPeers",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethNoPeers stays healthy
+  interval: 1m
+  input_series:
+  - series: reth_network_connected_peers{job="l2-reth-rpc"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethNoPeers",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethTransactionQueueLarge fires
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_queued_pool_transactions{job="l2-reth-rpc"}
+    values: 1001x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethTransactionQueueLarge",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethTransactionQueueLarge stays healthy
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_queued_pool_transactions{job="l2-reth-rpc"}
+    values: 1000x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethTransactionQueueLarge",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAQueueValidationIncomplete fires
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_queue_state_validation_complete
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAQueueValidationIncomplete",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAQueueValidationIncomplete stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_queue_state_validation_complete
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAQueueValidationIncomplete",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAParkedReplays fires
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_parked_replays
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAParkedReplays",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAParkedReplays stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_parked_replays
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAParkedReplays",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDABlobUploadRetryExhausted fires
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_retry_exhausted_rows
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobUploadRetryExhausted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABlobUploadRetryExhausted stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_retry_exhausted_rows
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobUploadRetryExhausted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDABlobArchiveConflict fires
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_conflict_rows
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobArchiveConflict",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABlobArchiveConflict stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_conflict_rows
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDABlobArchiveConflict",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDAArchiveTaskFatal fires
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_task_fatal
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveTaskFatal",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAArchiveTaskFatal stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_task_fatal
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveTaskFatal",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: EthDASegmentationSidecarFatal fires
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_segmentation_sidecar_task_fatal
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDASegmentationSidecarFatal",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDASegmentationSidecarFatal stays healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_segmentation_sidecar_task_fatal
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDASegmentationSidecarFatal",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerWorkerStale fires
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_last_worker_cycle_timestamp_seconds
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerWorkerStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerWorkerStale stays healthy
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_last_worker_cycle_timestamp_seconds
+    values: 2700x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerWorkerStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleCalculationInvalid fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_status{status="invalid_config"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleCalculationInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleCalculationInvalid stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_status{status="invalid_config"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleCalculationInvalid",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleCalculationNotReady fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_status{status="not_ready"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleCalculationNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleCalculationNotReady stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_status{status="not_ready"}
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleCalculationNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleRawSampleStale fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_sample_age_seconds
+    values: 301x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleRawSampleStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleRawSampleStale stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_sample_age_seconds
+    values: 300x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleRawSampleStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleBlobFeeCapped fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_blob_fee_spike_cap_exceeded
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleBlobFeeCapped",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleBlobFeeCapped stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_blob_fee_spike_cap_exceeded
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleBlobFeeCapped",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleNonceDrift fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_nonce_drift
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleNonceDrift",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleNonceDrift stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_nonce_drift
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleNonceDrift",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleUnsentRequests fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_orphans
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleUnsentRequests",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleUnsentRequests stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_orphans
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleUnsentRequests",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: FeeOracleTransactionsStuck fires
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_rbf_eligible
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleTransactionsStuck",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleTransactionsStuck stays healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_pending_rbf_eligible
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleTransactionsStuck",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFDatabasePoolSlow slow
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_sum
+    values: 0+2x60
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFDatabasePoolSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFDatabasePoolSlow fast
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_sum
+    values: 0+0.5x60
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFDatabasePoolSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WFDatabasePoolSlow idle
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_sum
+    values: 0+0x60
+  - series: withdrawal_processor_db_pool_checkout_wait_seconds_count
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFDatabasePoolSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOSigningCycleSlow slow
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_cycle_latency_seconds_sum
+    values: 0+240x60
+  - series: tso_core_signing_cycle_latency_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSigningCycleSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TSOSigningCycleSlow fast
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_cycle_latency_seconds_sum
+    values: 0+60.0x60
+  - series: tso_core_signing_cycle_latency_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSigningCycleSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOSigningCycleSlow idle
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_cycle_latency_seconds_sum
+    values: 0+0x60
+  - series: tso_core_signing_cycle_latency_seconds_count
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSigningCycleSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOSignerResponseSlow slow
+  interval: 1m
+  input_series:
+  - series: tso_core_signer_response_latency_seconds_sum{signer_pubkey="pubkey"}
+    values: 0+120x60
+  - series: tso_core_signer_response_latency_seconds_count{signer_pubkey="pubkey"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSignerResponseSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TSOSignerResponseSlow fast
+  interval: 1m
+  input_series:
+  - series: tso_core_signer_response_latency_seconds_sum{signer_pubkey="pubkey"}
+    values: 0+30.0x60
+  - series: tso_core_signer_response_latency_seconds_count{signer_pubkey="pubkey"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSignerResponseSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSOSignerResponseSlow idle
+  interval: 1m
+  input_series:
+  - series: tso_core_signer_response_latency_seconds_sum{signer_pubkey="pubkey"}
+    values: 0+0x60
+  - series: tso_core_signer_response_latency_seconds_count{signer_pubkey="pubkey"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSOSignerResponseSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSORoleQuorumSlow slow
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_role_path_latency_seconds_sum{role="correctness"}
+    values: 0+240x60
+  - series: tso_core_signing_role_path_latency_seconds_count{role="correctness"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSORoleQuorumSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: TSORoleQuorumSlow fast
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_role_path_latency_seconds_sum{role="correctness"}
+    values: 0+60.0x60
+  - series: tso_core_signing_role_path_latency_seconds_count{role="correctness"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSORoleQuorumSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: TSORoleQuorumSlow idle
+  interval: 1m
+  input_series:
+  - series: tso_core_signing_role_path_latency_seconds_sum{role="correctness"}
+    values: 0+0x60
+  - series: tso_core_signing_role_path_latency_seconds_count{role="correctness"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="TSORoleQuorumSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorWorkerAPISlow slow
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_request_duration_seconds_sum{handler="claim"}
+    values: 0+10x60
+  - series: proof_coordinator_worker_request_duration_seconds_count{handler="claim"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPISlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorWorkerAPISlow fast
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_request_duration_seconds_sum{handler="claim"}
+    values: 0+2.5x60
+  - series: proof_coordinator_worker_request_duration_seconds_count{handler="claim"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPISlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorWorkerAPISlow idle
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_request_duration_seconds_sum{handler="claim"}
+    values: 0+0x60
+  - series: proof_coordinator_worker_request_duration_seconds_count{handler="claim"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPISlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethRPCSlow slow
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_time_seconds_sum{job="l2-reth-rpc"}
+    values: 0+4x60
+  - series: reth_rpc_server_calls_time_seconds_count{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethRPCSlow fast
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_time_seconds_sum{job="l2-reth-rpc"}
+    values: 0+1.0x60
+  - series: reth_rpc_server_calls_time_seconds_count{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L2RethRPCSlow idle
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_time_seconds_sum{job="l2-reth-rpc"}
+    values: 0+0x60
+  - series: reth_rpc_server_calls_time_seconds_count{job="l2-reth-rpc"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceRPCSlow slow
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_request_duration_seconds_sum{method="eth_getLogs"}
+    values: 0+4x60
+  - series: l1_interface_rpc_request_duration_seconds_count{method="eth_getLogs"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceRPCSlow fast
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_request_duration_seconds_sum{method="eth_getLogs"}
+    values: 0+1.0x60
+  - series: l1_interface_rpc_request_duration_seconds_count{method="eth_getLogs"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceRPCSlow idle
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_request_duration_seconds_sum{method="eth_getLogs"}
+    values: 0+0x60
+  - series: l1_interface_rpc_request_duration_seconds_count{method="eth_getLogs"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerSigningSlow slow
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_duration_seconds_sum
+    values: 0+60x60
+  - series: cubesigner_signer_sign_duration_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerSigningSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSignerSigningSlow fast
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_duration_seconds_sum
+    values: 0+15.0x60
+  - series: cubesigner_signer_sign_duration_seconds_count
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerSigningSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSignerSigningSlow idle
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_duration_seconds_sum
+    values: 0+0x60
+  - series: cubesigner_signer_sign_duration_seconds_count
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerSigningSlow",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WP pipeline enabled guard 0
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds
+    values: 1x60
+  - series: withdrawal_processor_l2_proof_pipeline_enabled
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFL2ProofPipelineStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: WP pipeline enabled guard 1
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds
+    values: 1x60
+  - series: withdrawal_processor_l2_proof_pipeline_enabled
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFL2ProofPipelineStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1 replay readiness 0
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_ready
+    values: '0x60'
+  - series: l1_interface_protocol_replay_configured
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayValidationUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1 replay readiness 1
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_ready
+    values: 1x60
+  - series: l1_interface_protocol_replay_configured
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayValidationUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1 replay lag 10
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_lag
+    values: 10x60
+  - series: l1_interface_protocol_replay_configured
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayLagging",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1 replay lag 11
+  interval: 1m
+  input_series:
+  - series: l1_interface_protocol_replay_lag
+    values: 11x60
+  - series: l1_interface_protocol_replay_configured
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceReplayLagging",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: DA fee sample only with ready backlog 0
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_ready_backlog
+    values: '0x60'
+  - series: eth_da_publish_fee_sample_available
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAFeeSampleUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: DA fee sample only with ready backlog 1
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_ready_backlog
+    values: 1x60
+  - series: eth_da_publish_fee_sample_available
+    values: '0x60'
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAFeeSampleUnavailable",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorWorkerAPIErrors high
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="503"}
+    values: 0+2x60
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="200"}
+    values: 0+8x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPIErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofCoordinatorWorkerAPIErrors healthy
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="503"}
+    values: 0+0x60
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="200"}
+    values: 0+10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPIErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: ProofCoordinatorWorkerAPIErrors quiet
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="503"}
+    values: 0+0.01x60
+  - series: proof_coordinator_worker_requests_total{handler="claim",status="200"}
+    values: 0+0.09x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofCoordinatorWorkerAPIErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceRPCErrors high
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="error"}
+    values: 0+2x60
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="success"}
+    values: 0+8x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L1InterfaceRPCErrors healthy
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="error"}
+    values: 0+0x60
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="success"}
+    values: 0+10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: L1InterfaceRPCErrors quiet
+  interval: 1m
+  input_series:
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="error"}
+    values: 0+0.01x60
+  - series: l1_interface_rpc_responses_total{method="eth_getLogs",status="success"}
+    values: 0+0.09x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfaceRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Reth RPC volume and ratio guard 2
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_failed_total{job="l2-reth-rpc"}
+    values: 0+2x60
+  - series: reth_rpc_server_calls_started_total{job="l2-reth-rpc"}
+    values: 0+10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Reth RPC volume and ratio guard 0
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_failed_total{job="l2-reth-rpc"}
+    values: 0+0x60
+  - series: reth_rpc_server_calls_started_total{job="l2-reth-rpc"}
+    values: 0+10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Reth RPC volume and ratio guard 0.02
+  interval: 1m
+  input_series:
+  - series: reth_rpc_server_calls_failed_total{job="l2-reth-rpc"}
+    values: 0+0.02x60
+  - series: reth_rpc_server_calls_started_total{job="l2-reth-rpc"}
+    values: 0+0.1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethRPCErrors",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Reth head flat
+  interval: 1m
+  input_series:
+  - series: reth_blockchain_tree_canonical_chain_height{job="l2-reth-rpc"}
+    values: 10x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethHeadStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Reth head growing
+  interval: 1m
+  input_series:
+  - series: reth_blockchain_tree_canonical_chain_height{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethHeadStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Reth head decreasing
+  interval: 1m
+  input_series:
+  - series: reth_blockchain_tree_canonical_chain_height{job="l2-reth-rpc"}
+    values: 100-1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethHeadStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Reth insufficient head history
+  interval: 1m
+  input_series:
+  - series: reth_blockchain_tree_canonical_chain_height{job="l2-reth-rpc"}
+    values: 10x10
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethHeadStalled",alertstate="firing"})
+    eval_time: 10m
+    exp_samples: []
+- name: Reth derivation pending and progress (1, 0)
+  interval: 1m
+  input_series:
+  - series: reth_derivation_pipeline_batch_queue_size{job="l2-reth-rpc"}
+    values: 1x60
+  - series: reth_derivation_pipeline_derived_blocks{job="l2-reth-rpc"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethDerivationStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Reth derivation pending and progress (0, 0)
+  interval: 1m
+  input_series:
+  - series: reth_derivation_pipeline_batch_queue_size{job="l2-reth-rpc"}
+    values: '0x60'
+  - series: reth_derivation_pipeline_derived_blocks{job="l2-reth-rpc"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethDerivationStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Reth derivation pending and progress (1, 1)
+  interval: 1m
+  input_series:
+  - series: reth_derivation_pipeline_batch_queue_size{job="l2-reth-rpc"}
+    values: 1x60
+  - series: reth_derivation_pipeline_derived_blocks{job="l2-reth-rpc"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L2RethDerivationStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSigner queue and successful attempts (1, 0)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_pending_signatures
+    values: 1x60
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPendingQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSigner queue and successful attempts (0, 0)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_pending_signatures
+    values: '0x60'
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPendingQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSigner queue and successful attempts (1, 1)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_pending_signatures
+    values: 1x60
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPendingQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSigner permitted policy telemetry (1, 0)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+1x60
+  - series: cubesigner_signer_policy_evaluations_total{outcome="Permitted"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyEvaluationMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CubeSigner permitted policy telemetry (1, 1)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+1x60
+  - series: cubesigner_signer_policy_evaluations_total{outcome="Permitted"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyEvaluationMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSigner permitted policy telemetry (0, 0)
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+0x60
+  - series: cubesigner_signer_policy_evaluations_total{outcome="Permitted"}
+    values: 0+0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyEvaluationMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: CubeSigner missing policy series
+  interval: 1m
+  input_series:
+  - series: cubesigner_signer_sign_outcome_total{reason="success"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="CubeSignerPolicyEvaluationMissing",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Healthy L1 replica cannot hide a failed replica
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-good",condition="true"}
+    values: 1x60
+  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-bad",condition="true"}
+    values: '0x60'
+  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-bad",phase="Running"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Unrelated namespaces do not satisfy enabled pipeline guard
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds{namespace="a",job="wp",instance="x"}
+    values: 1x60
+  - series: withdrawal_processor_l2_proof_pipeline_enabled{namespace="b",job="wp",instance="x"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFL2ProofPipelineStale",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Normal oracle held decision is healthy
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_status{status="held",reason="below_threshold"}
+    values: 1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleCalculationNotReady",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Historical terminal proof rows do not mean queue starvation
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_terminal"}
+    values: 99999x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Confirmation wait is not an execution revert
+  interval: 1m
+  input_series:
+  - series: fee_oracle_live_confirmer_total{class="still_unconfirmed"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="FeeOracleExecutionReverted",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Conclusive S3 denial is healthy
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="denied"}
+    values: 0+1x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="EthDAArchiveWriteProbeInconclusive",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
+- name: Counter reset alone is not an error event
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_corrupt_funding_row_total
+    values: 10x3 0x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFFundingDataCorrupt",alertstate="firing"})
+    eval_time: 5m
+    exp_samples: []
+- name: Funding recovers and the alert resolves
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding"}
+    values: 0+1x25 25x35
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="WFBridgeFundingDeferred",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []

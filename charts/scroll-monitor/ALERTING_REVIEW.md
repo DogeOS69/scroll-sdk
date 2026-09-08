@@ -5,6 +5,12 @@ this repository's production deployment configuration. This review examines code
 semantics; it does not include production Prometheus observations or changes to
 production notification policies.
 
+The subsequent per-service expansion was reviewed against newer source and is
+documented separately in [Service alert review](SERVICE_ALERT_REVIEW.md). Its
+107 additions start paused, while the rules described below keep their existing
+enabled defaults. Service exposition examples have been removed from this SDK;
+the owning service repositories are authoritative for metric contracts.
+
 ## Retired rules
 
 The complete `balance-cheker` group was removed from
