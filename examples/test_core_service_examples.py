@@ -32,14 +32,25 @@ class CoreServiceExamples(unittest.TestCase):
         # Extend coverage locally without changing the chart CI script.
         for service in ("fee-oracle", "tso-service"):
             contract["REQUIRED_TOP_LEVEL"][service] = {
-                "global", "image", "command", "args", "service", "probes",
+                "global", "image", "service", "probes",
                 "env", "persistence", "resources", "serviceMonitor", "ingress",
             }
             contract["SHARED_CONFIG_FILES"][service] = {}
         for service in SERVICES:
             with self.subTest(service=service):
                 defaults = load(ROOT / "charts" / service / "values.yaml")
+                if service in ("fee-oracle", "tso-service"):
+                    # Normal startup belongs to the image/chart, not the
+                    # environment overlay. Keep the other contract checks.
+                    defaults = {key: value for key, value in defaults.items() if key not in ("command", "args")}
                 self.assertEqual(contract["validate_file"](service, example(service), defaults), [])
+
+    def test_normal_startup_is_not_duplicated_in_environment_values(self):
+        for service in ("fee-oracle", "tso-service"):
+            with self.subTest(service=service):
+                values = load(example(service))
+                self.assertNotIn("command", values)
+                self.assertNotIn("args", values)
 
     def test_proof_token_has_independent_ownership(self):
         wp = load(example("withdrawal-processor"))
@@ -94,6 +105,11 @@ class CoreServiceExamples(unittest.TestCase):
                     self.assertEqual(monitor["spec"]["endpoints"][0]["path"], "/metrics")
                 if service == "fee-oracle":
                     self.assertEqual(pod["serviceAccountName"], "default")
+                    self.assertEqual(container["command"], ["/usr/local/bin/fee_oracle"])
+                    self.assertFalse(container.get("args"))
+                if service == "tso-service":
+                    self.assertFalse(container.get("command"))
+                    self.assertFalse(container.get("args"))
                 if service == "withdrawal-processor":
                     secrets = {doc["metadata"]["name"]: doc for doc in docs if doc["kind"] == "ExternalSecret"}
                     self.assertEqual(len(secrets["withdrawal-processor-secret-env"]["spec"]["data"]), 4)

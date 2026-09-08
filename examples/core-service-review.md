@@ -18,9 +18,9 @@ Do not replace missing security identities with dummy values to pass readiness.
 | l1-interface | Made the Secrets Manager region explicit instead of inheriting `us-west-2`. Existing replay/DA fields and shared-file mounts match the current config. Port 9091 is valid: the control listener uses the health port plus one. | `crates/l1_interface/src/config.rs`, `src/startup.rs` |
 | withdrawal-processor | Split the proof-work bearer token from the ordinary RPC/signer-key ExternalSecret. They have different ownership and can use different AWS regions. Removed the obsolete PostgreSQL instructions: the binary constructs a SQLite connection pool. Exposed the existing 5-second/5-minute broadcast backoff defaults in native TOML. | `crates/withdrawal_processor/src/config.rs`, `src/startup.rs::setup_db` |
 | eth-da-submitter | No confirmed missing required field found in this review. Preserve the KMS-only profile, genesis/context mounts, optional DA archive and segmentation settings. The configured finalization depth is an explicit deployment policy, not changed to the source default by this review. | `crates/eth_da_submitter/src/service_config.rs` |
-| fee-oracle | Added explicit command/arguments, service ports, health/readiness/startup probes, SQLite PVC, monitoring and service-account selection. Made the local-key secret region explicit. KMS remains selected through managed signer setup, not by copying deployment-specific key ARNs into the generic example. | `crates/fee_oracle/src/config.rs` and HTTP health/metrics handlers |
+| fee-oracle | Made inherited service ports, health/readiness/startup probes, SQLite PVC and monitoring explicit, and added service-account selection. Normal startup remains chart-owned. Made the local-key secret region explicit. KMS remains selected through managed signer setup, not by copying deployment-specific key ARNs into the generic example. | `crates/fee_oracle/src/config.rs` and HTTP health/metrics handlers |
 | proof-coordinator | Removed duplicate `DOGEOS_PROOF_COORDINATOR_*` environment entries: Figment gives them precedence over generated TOML, including a different coordinator ID and stale S3 settings. Made the proof secret region explicit. Keep native configuration compiler-owned. | `crates/proof_coordinator/src/main.rs::ServiceConfig` and config loader |
-| tso-service | Added explicit command/arguments, service port, `/health` probes and `/metrics` endpoint; made the existing external ingress decision explicit. Made the signing-journal PVC type and retention explicit. Preserve the accepted-signature journal on uninstall. | `crates/tso_service/src/main.rs::Args`, `create_routes`, `crates/tso_core/src/tso/` |
+| tso-service | Made the service port, `/health` probes and `/metrics` endpoint explicit; made the existing external ingress decision explicit. Normal startup remains image-owned. Made the signing-journal PVC type and retention explicit. Preserve the accepted-signature journal on uninstall. | `crates/tso_service/src/main.rs::Args`, `create_routes`, `crates/tso_core/src/tso/` |
 | cubesigner-signer | Made both secret regions explicit. Required protocol context, session, transport limits and production-policy identity inputs already exist. Empty production-policy identities intentionally prevent readiness until real policy material is provided. | `ts-packages/cubesigner-signer/src/server.ts`, `productionPolicy.ts` |
 
 `http://l2-rpc:8545` is **not** evidence of an obsolete l2geth dependency:
@@ -28,6 +28,26 @@ Do not replace missing security identities with dummy values to pass readiness.
 l2-rpc`. The fee-oracle and eth-da-submitter URLs therefore stay unchanged.
 
 ## Operator steps and configuration ownership
+
+### Startup command decision
+
+Normal startup belongs to the image or service chart. Environment values only
+override `command`/`args` when that deployment requires different behavior;
+they do not repeat these fields just to document startup. This is a deliberate
+exception to the older blanket command/args duplication rule in
+`docs/production-values.md`, not a Kubernetes prohibition on overrides.
+
+This follow-up removes only the redundant command/args added to fee-oracle and
+TSO in the initial review. Fee-oracle inherits `/usr/local/bin/fee_oracle` from
+its chart; TSO leaves both container fields unset and uses image defaults.
+Other services' existing launch settings are unchanged. No chart defaults or
+chart-local production files are modified by this example-only follow-up.
+
+References: [Kubernetes command/args semantics](https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/),
+[Helm default and user-supplied values](https://helm.sh/docs/topics/charts/#templates-and-values),
+and [Bitnami Redis optional command/args overrides](https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml).
+
+### Deployment steps
 
 1. Use the CLI deployment procedure linked from [README.md](README.md), including
    bridge initialization, protocol context and managed signer setup. Fill image

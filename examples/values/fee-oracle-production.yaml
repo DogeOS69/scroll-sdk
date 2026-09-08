@@ -9,9 +9,6 @@ image:
   pullPolicy: IfNotPresent
   tag: TODO_TAG_TO_REPLACE
 
-command: ["/usr/local/bin/fee_oracle"]
-args: []
-
 service:
   main:
     enabled: true

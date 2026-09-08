@@ -7,10 +7,6 @@ image:
   pullPolicy: IfNotPresent
   tag: TODO_TAG_TO_REPLACE
 
-# Retain the image ENTRYPOINT/CMD.
-command: []
-args: []
-
 service:
   main:
     enabled: true
