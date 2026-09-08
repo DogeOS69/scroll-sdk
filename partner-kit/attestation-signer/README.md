@@ -74,22 +74,22 @@ The exposition provides these metric families:
 - `attestation_signer_tso_callbacks_total{path,result}`
 - `attestation_signer_release_outcomes_total{result}`
 - `attestation_signer_artifact_fetch_total{transition,result,cache}`
-- `attestation_signer_artifact_fetch_latency_seconds{transition,result}`
+- `attestation_signer_artifact_fetch_latency_ms{transition,result}`
 - `attestation_signer_artifact_bytes{transition}`
 - `attestation_signer_witness_decode_total{transition,result}`
 - `attestation_signer_rotation_replay_total{transition,result}`
-- `attestation_signer_rotation_replay_latency_seconds{transition}`
+- `attestation_signer_rotation_replay_latency_ms{transition}`
 - `attestation_signer_rotation_result_total{transition,result}`
 - `attestation_signer_rotation_ready{transition}`
 - `attestation_signer_advance_l1_replay_total{result}`
-- `attestation_signer_advance_l1_replay_latency_seconds`
+- `attestation_signer_advance_l1_replay_latency_ms`
 - `attestation_signer_advance_l1_result_total{result}`
 - `attestation_signer_advance_l2_replay_total{result}`
-- `attestation_signer_advance_l2_replay_latency_seconds`
+- `attestation_signer_advance_l2_replay_latency_ms`
 - `attestation_signer_advance_l2_result_total{result}`
 - `attestation_signer_source_set_evaluations_total{fact,posture,outcome}`
 - `attestation_signer_source_verdicts_total{fact,verdict}`
-- `attestation_signer_source_set_evaluation_latency_seconds{fact,posture,outcome}`
+- `attestation_signer_source_set_evaluation_latency_ms{fact,posture,outcome}`
 
 All labels use bounded domains. Request IDs, public keys, trust-domain IDs,
 RPC and TSO URLs, hashes and roots, PSBT data, and raw error strings are

@@ -47,7 +47,6 @@ rotate_key_v2 = false
 rotate_sequencer_signer_v2 = true
 strict_l1_validation = false
 strict_l2_validation = false
-tso_timeout_minutes = 30
 tso_url = "http://tso-service:3000"
 wf_withdrawal_parity_v1 = true
 

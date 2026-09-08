@@ -56,17 +56,59 @@ production stack:
 
 | Dashboard coverage | Services | Source |
 | --- | --- | --- |
-| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `eth-da-submitter`, `fee-oracle-0` | Prometheus ServiceMonitor |
+| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `proof-coordinator`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
+| External native application metrics | `attestation-signer` | Operator-managed Prometheus scrape target |
 | Exporter-backed application metrics | `dogecoin` | Prometheus metrics exporter |
-| Runtime health and logs | `proof-coordinator`, `cubesigner-signer` | kube-state-metrics, cAdvisor, and Loki |
+| Runtime health and logs | All Kubernetes workloads | kube-state-metrics, cAdvisor, and Loki |
 
-`proof-coordinator` and `cubesigner-signer` do not currently expose a
-Prometheus endpoint. The operations overview deliberately uses Kubernetes
-readiness, restarts, resource saturation, and logs for them instead of showing
-nonexistent application metrics. Proof queue depth and age remain visible from
-the `withdrawal-processor`, which owns and exports those work-item gauges.
+Dedicated dashboards cover `attestation-signer`, `proof-coordinator`, and
+`cubesigner-signer`. Proof queue depth and age remain sourced from
+`withdrawal-processor`, which owns and exports the durable work-item gauges;
+the coordinator dashboard does not manufacture a second queue authority.
 
-All service dashboards provide Prometheus datasource and namespace variables.
+The three dashboards select application metrics through Prometheus `job` and
+`instance` labels instead of Kubernetes-only labels. This lets the same panels
+work for in-cluster ServiceMonitors and for Attestation Signers on external EC2
+hosts. External scrape targets are deliberately not configured by this chart:
+add them to the Prometheus instance through an operator-managed scrape config,
+using a stable job name such as `attestation-signer`. Prometheus supplies the
+`instance` label from each target automatically, so no host address needs to be
+committed to Helm values or dashboard JSON.
+
+For example, keep the three external targets in Prometheus' operator-managed
+`additionalScrapeConfigs` (or the equivalent configuration managed by your
+cluster), outside this chart:
+
+```yaml
+- job_name: attestation-signer
+  metrics_path: /metrics
+  static_configs:
+    - targets:
+        - <signer-1-host>:<metrics-port>
+        - <signer-2-host>:<metrics-port>
+        - <signer-3-host>:<metrics-port>
+```
+
+Replace the placeholders only in the cluster-managed configuration. Do not add
+those host addresses to this chart. After Prometheus reloads successfully, the
+Attestation Signer dashboard discovers the job and all three `instance` values
+and shows their individual `up` status.
+
+All three services export performance observations with explicit Prometheus
+histogram buckets. Their latency and payload-size panels use
+`histogram_quantile()` for aggregatable p50/p95/p99 distributions; `_sum /
+_count` remains available for average calculations. The dashboards also expose
+bounded request, worker, signing, callback, replay, and policy outcome counters
+as rates so throughput and failure-volume changes remain visible.
+The CubeSigner dashboard follows the metric contract merged in dogeos-core
+#1009: it shows proof-fallback signs, policy denials, live policy evaluations,
+the observed policy rule identity, and the two integrity counters that must
+remain zero. CubeSigner deliberately does not register default Node.js process
+metrics, so the dashboard does not query them.
+
+All service dashboards provide a Prometheus datasource selector. Kubernetes
+service dashboards use namespace variables; the signer/coordinator dashboards
+use `job` and `instance` so they also work for external scrape targets.
 Embedded indexer queries are additionally constrained to their owning service
 job so identically named metrics from `l1-interface` and
 `withdrawal-processor` are not merged accidentally.

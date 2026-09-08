@@ -1,0 +1,172 @@
+{
+  "annotations": {"list": []},
+  "description": "Proof Coordinator claim-gate, worker API, lease, and proof-work run-loop telemetry. Durable proof queue depth and age remain owned by Withdrawal Processor.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Whether the worker claim plane is ready to admit a claim.",
+      "fieldConfig": {"defaults": {"mappings": [{"options": {"0": {"color": "red", "text": "Not ready"}, "1": {"color": "green", "text": "Ready"}}, "type": "value"}], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "min by (instance) (proof_coordinator_ready{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Claim Plane Ready",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Seconds since the last processed or idle proof-work loop tick.",
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 60}, {"color": "red", "value": 300}]}, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "clamp_min(time() - max by (instance) (proof_coordinator_run_loop_last_success_timestamp_seconds{job=~\"$job\",instance=~\"$instance\"}), 0)", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Run-loop Last-success Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "max by (instance) (proof_coordinator_run_loop_consecutive_failures{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Run-loop Consecutive Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "targets": [{"expr": "sum by (instance) (proof_coordinator_active_worker_leases{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Active Worker Leases",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "One-hot claim state: ready, terminal WP fault, upload-issuance cooldown, or probe-ready.",
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "targets": [{"expr": "max by (instance, state) (proof_coordinator_claim_gate_state{job=~\"$job\",instance=~\"$instance\"})", "legendFormat": "{{instance}} {{state}}", "refId": "A"}],
+      "title": "Claim-gate State",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "targets": [{"expr": "max by (instance, kind) (proof_coordinator_active_worker_leases{job=~\"$job\",instance=~\"$instance\"})", "legendFormat": "{{instance}} {{kind}}", "refId": "A"}],
+      "title": "Active Leases by Proof Kind",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "id": 7,
+      "targets": [{"expr": "sum by (instance, handler, status) (rate(proof_coordinator_worker_requests_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{handler}} HTTP {{status}}", "refId": "A"}],
+      "title": "Worker API Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Worker API latency distribution from explicit Prometheus buckets.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "id": 8,
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{handler}}", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{handler}}", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{handler}}", "refId": "C"}
+      ],
+      "title": "Worker API Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "id": 9,
+      "targets": [
+        {"expr": "sum by (instance, handler) (rate(proof_coordinator_worker_fence_rejections_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "fence {{instance}} {{handler}}", "refId": "A"},
+        {"expr": "sum by (instance) (rate(proof_coordinator_terminal_wp_claim_failures_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "terminal WP {{instance}}", "refId": "B"},
+        {"expr": "sum by (instance) (rate(proof_coordinator_local_upload_issuance_failures_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "upload issuance {{instance}}", "refId": "C"}
+      ],
+      "title": "Claim and Worker Failure Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "id": 10,
+      "targets": [{"expr": "sum by (instance, outcome, error_kind) (rate(proof_coordinator_run_loop_ticks_total{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval]))", "legendFormat": "{{instance}} {{outcome}} {{error_kind}}", "refId": "A"}],
+      "title": "Proof-work Run-loop Outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Proof-work run-loop latency distribution from explicit Prometheus buckets.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "id": 11,
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le, instance, outcome) (rate(proof_coordinator_run_loop_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{outcome}}", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le, instance, outcome) (rate(proof_coordinator_run_loop_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{outcome}}", "refId": "B"},
+        {"expr": "histogram_quantile(0.99, sum by (le, instance, outcome) (rate(proof_coordinator_run_loop_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{outcome}}", "refId": "C"}
+      ],
+      "title": "Proof-work Tick Latency Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "The durable proof queue is owned by Withdrawal Processor, not Proof Coordinator.",
+      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "id": 12,
+      "targets": [{"expr": "max by (namespace, proof_family, phase, status) (withdrawal_processor_proof_work_item_count{namespace=~\"$wp_namespace\"})", "legendFormat": "{{namespace}} {{proof_family}} {{phase}} {{status}}", "refId": "A"}],
+      "title": "Durable Proof Queue (WP-owned)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Prometheus scrape health for every selected Proof Coordinator target.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 36},
+      "id": 13,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"expr": "min by (instance) (up{job=~\"$job\",instance=~\"$instance\"})", "instant": true, "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Prometheus Target Up",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["dogeos", "service", "proof-coordinator"],
+  "templating": {
+    "list": [
+      {"current": {"selected": true, "text": "Prometheus", "value": "scroll-prometheus"}, "hide": 0, "includeAll": false, "multi": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "regex": "", "skipUrlSync": false, "type": "datasource"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\".*proof[-_]coordinator.*\"}, job)", "hide": 0, "includeAll": true, "multi": true, "name": "job", "options": [], "query": {"query": "label_values(up{job=~\".*proof[-_]coordinator.*\"}, job)", "refId": "PrometheusVariableQueryEditor-job"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(up{job=~\"$job\"}, instance)", "hide": 0, "includeAll": true, "multi": true, "name": "instance", "options": [], "query": {"query": "label_values(up{job=~\"$job\"}, instance)", "refId": "PrometheusVariableQueryEditor-instance"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"},
+      {"allValue": ".*", "current": {"selected": true, "text": "All", "value": "$__all"}, "datasource": {"type": "prometheus", "uid": "${datasource}"}, "definition": "label_values(withdrawal_processor_proof_work_item_count, namespace)", "hide": 0, "includeAll": true, "label": "WP namespace", "multi": true, "name": "wp_namespace", "options": [], "query": {"query": "label_values(withdrawal_processor_proof_work_item_count, namespace)", "refId": "PrometheusVariableQueryEditor-wp_namespace"}, "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {"refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h"]},
+  "timezone": "",
+  "title": "DogeOS Proof Coordinator",
+  "uid": "dogeos-proof-coordinator",
+  "version": 1,
+  "weekStart": ""
+}
