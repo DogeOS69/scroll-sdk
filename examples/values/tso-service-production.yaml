@@ -16,6 +16,10 @@ env:
     value: "130048"
   - name: TSO_CUBESIGNER_MAX_PSBT_BASE64_LEN
     value: "130048"
+  # dogeos-core requires the transaction journal path explicitly. This path
+  # must survive Pod restarts; do not place it on the container filesystem.
+  - name: TSO_JOURNAL_DB_PATH
+    value: "/app/data/tso-journal/tso_journal.sqlite3"
   # Temporary Issue #843 testnet recovery only. Do not enable by default.
   # scrollsdk prep-charts adds/removes this from deployment proof intent and
   # binds the same reviewed height in WP and the Rust signer policy bundle.
@@ -44,6 +48,13 @@ resources:
 serviceMonitor:
   main:
     enabled: true
+
+persistence:
+  journal:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    mountPath: /app/data/tso-journal
 
 defaultProbes:
   enabled: false
