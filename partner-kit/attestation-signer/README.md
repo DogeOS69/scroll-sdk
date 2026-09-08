@@ -91,6 +91,11 @@ The exposition provides these metric families:
 - `attestation_signer_source_verdicts_total{fact,verdict}`
 - `attestation_signer_source_set_evaluation_latency_ms{fact,posture,outcome}`
 
+Latency and artifact-size observations are Prometheus summaries. Consume their
+exported `quantile` series per signer instance; quantiles from multiple signer
+instances cannot be averaged or aggregated into a valid fleet-wide quantile.
+Use `_sum / _count` when a per-instance average is required.
+
 All labels use bounded domains. Request IDs, public keys, trust-domain IDs,
 RPC and TSO URLs, hashes and roots, PSBT data, and raw error strings are
 deliberately excluded from labels. The interface is pull-only: the signer does

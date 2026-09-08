@@ -94,12 +94,14 @@ those host addresses to this chart. After Prometheus reloads successfully, the
 Attestation Signer dashboard discovers the job and all three `instance` values
 and shows their individual `up` status.
 
-All three services export performance observations with explicit Prometheus
-histogram buckets. Their latency and payload-size panels use
-`histogram_quantile()` for aggregatable p50/p95/p99 distributions; `_sum /
-_count` remains available for average calculations. The dashboards also expose
-bounded request, worker, signing, callback, replay, and policy outcome counters
-as rates so throughput and failure-volume changes remain visible.
+The Attestation Signer exports latency and payload-size observations as
+Prometheus summaries. Its dashboard reads the exported `quantile` series
+directly and preserves the `instance` label because summary quantiles cannot be
+aggregated across signers. The `_sum / _count` series remain available for
+average calculations. The CubeSigner and coordinator dashboards use their own
+native metric types. The dashboards also expose bounded request, worker,
+signing, callback, replay, and policy outcome counters as rates so throughput
+and failure-volume changes remain visible.
 The CubeSigner dashboard follows the metric contract merged in dogeos-core
 #1009: it shows proof-fallback signs, policy denials, live policy evaluations,
 the observed policy rule identity, and the two integrity counters that must

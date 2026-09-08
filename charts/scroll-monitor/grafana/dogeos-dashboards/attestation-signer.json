@@ -112,28 +112,28 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "Worker-tick distribution from explicit Prometheus buckets. Each selected signer is shown independently.",
+      "description": "Worker-tick quantiles exported by each signer's Prometheus summary. Values remain per instance because summaries cannot be aggregated across signers.",
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "id": 11,
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le, instance, result) (rate(attestation_signer_worker_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{result}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, result) (rate(attestation_signer_worker_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{result}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le, instance, result) (rate(attestation_signer_worker_tick_duration_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{result}}", "refId": "C"}
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{result}}", "refId": "A"},
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{result}}", "refId": "B"},
+        {"expr": "max by (instance, result) (attestation_signer_worker_tick_duration_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{result}}", "refId": "C"}
       ],
       "title": "Worker-tick Latency Distribution",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "p95 latency from explicit buckets for queue wait, policy evaluation, and TSO submission.",
+      "description": "Per-instance p95 values exported by the queue-wait, policy-evaluation, and TSO-submission Prometheus summaries.",
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
       "gridPos": {"h": 8, "w": 16, "x": 0, "y": 28},
       "id": 12,
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, capability) (rate(attestation_signer_queue_wait_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "queue p95 {{instance}} {{capability}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, capability, decision) (rate(attestation_signer_row_evaluation_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "evaluate p95 {{instance}} {{capability}} {{decision}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, capability, result) (rate(attestation_signer_tso_submit_seconds_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "TSO p95 {{instance}} {{capability}} {{result}}", "refId": "C"}
+        {"expr": "max by (instance, capability) (attestation_signer_queue_wait_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "queue p95 {{instance}} {{capability}}", "refId": "A"},
+        {"expr": "max by (instance, capability, decision) (attestation_signer_row_evaluation_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "evaluate p95 {{instance}} {{capability}} {{decision}}", "refId": "B"},
+        {"expr": "max by (instance, capability, result) (attestation_signer_tso_submit_seconds{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "TSO p95 {{instance}} {{capability}} {{result}}", "refId": "C"}
       ],
       "title": "Queue, Evaluation, and TSO p95 Latency",
       "type": "timeseries"
@@ -155,56 +155,56 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "Artifact fetch latency distribution in milliseconds by transition and result.",
+      "description": "Per-instance artifact-fetch latency quantiles exported by the signer summary, in milliseconds.",
       "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
       "id": 14,
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le, instance, transition, result) (rate(attestation_signer_artifact_fetch_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{transition}} {{result}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, transition, result) (rate(attestation_signer_artifact_fetch_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{transition}} {{result}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le, instance, transition, result) (rate(attestation_signer_artifact_fetch_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{transition}} {{result}}", "refId": "C"}
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{transition}} {{result}}", "refId": "A"},
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{transition}} {{result}}", "refId": "B"},
+        {"expr": "max by (instance, transition, result) (attestation_signer_artifact_fetch_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{transition}} {{result}}", "refId": "C"}
       ],
       "title": "Artifact Fetch Latency Distribution",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "Fetched artifact payload-size distribution. Bucket aggregation remains safe across selected signers.",
+      "description": "Per-instance fetched-artifact payload-size quantiles exported by the signer summary. Summary quantiles are not aggregated across signers.",
       "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
       "id": 15,
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le, instance, transition) (rate(attestation_signer_artifact_bytes_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{transition}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, transition) (rate(attestation_signer_artifact_bytes_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{transition}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le, instance, transition) (rate(attestation_signer_artifact_bytes_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{transition}}", "refId": "C"}
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{transition}}", "refId": "A"},
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{transition}}", "refId": "B"},
+        {"expr": "max by (instance, transition) (attestation_signer_artifact_bytes{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{transition}}", "refId": "C"}
       ],
       "title": "Artifact Size Distribution",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "p95 checked-replay latency for rotation, AdvanceL1, and AdvanceL2.",
+      "description": "Per-instance p95 checked-replay latency exported by the rotation, AdvanceL1, and AdvanceL2 summaries.",
       "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 44},
       "id": 16,
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, transition) (rate(attestation_signer_rotation_replay_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "rotation p95 {{instance}} {{transition}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance) (rate(attestation_signer_advance_l1_replay_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "AdvanceL1 p95 {{instance}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance) (rate(attestation_signer_advance_l2_replay_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "AdvanceL2 p95 {{instance}}", "refId": "C"}
+        {"expr": "max by (instance, transition) (attestation_signer_rotation_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "rotation p95 {{instance}} {{transition}}", "refId": "A"},
+        {"expr": "max by (instance) (attestation_signer_advance_l1_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "AdvanceL1 p95 {{instance}}", "refId": "B"},
+        {"expr": "max by (instance) (attestation_signer_advance_l2_replay_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "AdvanceL2 p95 {{instance}}", "refId": "C"}
       ],
       "title": "Replay Latency Distribution",
       "type": "timeseries"
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "Source-set policy evaluation distribution by fact, posture, and outcome.",
+      "description": "Per-instance source-set policy-evaluation quantiles exported by the signer summary.",
       "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 44},
       "id": 17,
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum by (le, instance, fact, posture, outcome) (rate(attestation_signer_source_set_evaluation_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p50 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum by (le, instance, fact, posture, outcome) (rate(attestation_signer_source_set_evaluation_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p95 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum by (le, instance, fact, posture, outcome) (rate(attestation_signer_source_set_evaluation_latency_ms_bucket{job=~\"$job\",instance=~\"$instance\"}[$__rate_interval])))", "legendFormat": "p99 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "C"}
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.5\"})", "legendFormat": "p50 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "A"},
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.95\"})", "legendFormat": "p95 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "B"},
+        {"expr": "max by (instance, fact, posture, outcome) (attestation_signer_source_set_evaluation_latency_ms{job=~\"$job\",instance=~\"$instance\",quantile=\"0.99\"})", "legendFormat": "p99 {{instance}} {{fact}} {{posture}} {{outcome}}", "refId": "C"}
       ],
       "title": "Source-set Evaluation Latency Distribution",
       "type": "timeseries"
