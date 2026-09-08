@@ -159,7 +159,7 @@ externalSecrets:
         secretKey: "DOGEOS_CUBESIGNER_SIGNER_CS_KEY_ID"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
-    secretRegion: "us-west-2"
+    secretRegion: "<TODO>" # Region holding the CubeSigner key identifier secret.
   cubesigner-signer-session:
     provider: "aws"
     data:
@@ -169,7 +169,7 @@ externalSecrets:
         secretKey: "session.json"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
-    secretRegion: "us-west-2"
+    secretRegion: "<TODO>" # Region holding the CubeSigner session secret.
 resources:
   requests:
     memory: "128Mi"

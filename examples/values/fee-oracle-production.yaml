@@ -1,9 +1,56 @@
 ---
 # Example production values for the Ethereum-DA fee oracle.
+global:
+  nameOverride: fee-oracle
+  fullnameOverride: fee-oracle
+
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: IfNotPresent
   tag: TODO_TAG_TO_REPLACE
+
+command: ["/usr/local/bin/fee_oracle"]
+args: []
+
+service:
+  main:
+    enabled: true
+    ports:
+      http: {enabled: true, port: 8080, targetPort: 8080, protocol: TCP}
+      metrics: {enabled: true, port: 9090, targetPort: 9090, protocol: TCP}
+
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /ready, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 30
+
+ingress:
+  main:
+    enabled: false
 
 env:
   - name: RUST_LOG
@@ -75,6 +122,14 @@ configMaps:
       # DOGEOS_FEE_ORACLE_WALLET__KMS_EXPECTED_ADDRESS: "<TODO>"
       # DOGEOS_FEE_ORACLE_WALLET__KMS_ENDPOINT_URL: "<TODO>"
 
+# Local signer profile. For aws_kms, prep-charts creates this service account
+# with the managed signer's IRSA role and removes the private-key Secret and
+# envFrom reference below. The KMS key region may differ from the EKS region.
+serviceAccount:
+  create: false
+  name: "" # Use the namespace default in local mode; prep-charts selects KMS SA.
+  annotations: {}
+
 envFrom:
   - configMapRef:
       name: fee-oracle-env
@@ -84,6 +139,7 @@ envFrom:
 externalSecrets:
   fee-oracle-secret-env:
     provider: aws
+    secretRegion: "<TODO>" # Secrets Manager region, not necessarily KMS_REGION.
     data:
       - remoteRef:
           key: dogeos/fee-oracle-secret-env
@@ -91,6 +147,21 @@ externalSecrets:
         secretKey: DOGEOS_FEE_ORACLE_PRIVATE_KEY
     refreshInterval: 2m
     serviceAccount: external-secrets
+
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    retain: true
+
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - {port: metrics, scheme: http, path: /metrics, interval: 30s, scrapeTimeout: 10s}
 
 resources:
   requests:

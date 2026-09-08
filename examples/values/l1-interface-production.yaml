@@ -21,6 +21,7 @@ service:
       beacon: {enabled: true, port: 5052, targetPort: 5052, protocol: TCP}
       http: {enabled: true, port: 9090, targetPort: 9090, protocol: TCP}
       admin: {enabled: true, port: 9091, targetPort: 9091, protocol: TCP}
+      # The binary derives the admin listener from HEALTH_LISTEN_ADDRESS port + 1.
 
 probes:
   liveness:
@@ -119,6 +120,7 @@ envFrom:
 externalSecrets:
   l1-interface-secret-env:
     provider: aws
+    secretRegion: "<TODO>" # Set the AWS Secrets Manager region before installation.
     data:
       - remoteRef:
           key: dogeos/l1-interface-secret-env

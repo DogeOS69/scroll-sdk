@@ -1,7 +1,51 @@
+global:
+  nameOverride: tso-service
+  fullnameOverride: tso-service
+
 image:
   repository: dogeos69/tso-service
   pullPolicy: IfNotPresent
   tag: TODO_TAG_TO_REPLACE
+
+# Retain the image ENTRYPOINT/CMD.
+command: []
+args: []
+
+service:
+  main:
+    enabled: true
+    ports:
+      http: {enabled: true, port: 3000, targetPort: 3000, protocol: TCP}
+
+# The current TSO binary exposes /health, not a separate /ready endpoint.
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 1
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 1
+      failureThreshold: 12
 
 env:
   - name: PORT
@@ -30,6 +74,12 @@ env:
 
 ingress:
   main:
+    # External signers need a reachable endpoint. prep-charts fills the host;
+    # review ingress access controls/TLS before exposing this endpoint.
+    enabled: true
+    primary: true
+    annotations: {}
+    labels: {}
     ingressClassName: "nginx"
     hosts:
       - host: ""
@@ -48,13 +98,18 @@ resources:
 serviceMonitor:
   main:
     enabled: true
+    endpoints:
+      - {port: http, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
 
 persistence:
   journal:
     enabled: true
+    type: pvc
     accessMode: ReadWriteOnce
     size: 5Gi
     mountPath: /app/data/tso-journal
+    # Preserve accepted signing work across an accidental Helm uninstall.
+    retain: true
 
 defaultProbes:
   enabled: false

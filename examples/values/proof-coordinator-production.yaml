@@ -168,35 +168,19 @@ configMaps:
     enabled: false
     data: {}
 
-env:
-  - name: DOGEOS_PROOF_COORDINATOR_PROTOCOL_CONTEXT_JSON
-    value: /app/protocol_context.json
-  - name: DOGEOS_PROOF_COORDINATOR_PROOF_WORK_BASE_URL
-    value: http://withdrawal-processor:9300
-  - name: DOGEOS_PROOF_COORDINATOR_ALLOW_INSECURE_HTTP
-    value: "true"
-  - name: DOGEOS_PROOF_COORDINATOR_COORDINATOR_ID
-    value: proof-coordinator-main
-  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__BUCKET
-    value: "<TODO>"
-  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__REGION
-    value: us-west-2
-  - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__KEY_PREFIX
-    value: proof-topology
-  # Omit the internal endpoint for AWS regional S3. Uncomment for MinIO or
-  # another S3-compatible store.
-  # - name: DOGEOS_PROOF_COORDINATOR_ARTIFACT_STORE__ENDPOINT_URL
-  #   value: https://s3-internal.example
-  # Public worker/signer endpoint. Uncomment and set for remote workers.
-  # - name: DOGEOS_PROOF_COORDINATOR_PROVER_API__PUBLIC_S3_ENDPOINT_URL
-  #   value: https://s3-public.example
+# The compiler-generated ProofCoordinator.toml owns ALL runtime configuration,
+# including coordinator identity, endpoints, S3 and token-file paths. Figment
+# environment overrides take precedence and can replace strict nested tables;
+# do not duplicate DOGEOS_PROOF_COORDINATOR_* settings here. Configure proof
+# intent/proof-aws inputs and rerun prep-charts instead.
+env: []
 
 envFrom: []
 
 externalSecrets:
   secrets:
     provider: aws
-    secretRegion: "us-west-2"
+    secretRegion: "<TODO>" # prep-charts projects .data/proof-aws.json.
     refreshInterval: 2m
     serviceAccount: external-secrets
     data:

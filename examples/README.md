@@ -13,6 +13,10 @@ runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
 files under `examples/values/`.
 
+For the seven DogeOS core services, see the
+[source-aligned example review and operator steps](core-service-review.md),
+including secret ownership, native-config generation and local validation.
+
 ## Scripts
 
 1. `l2-generate-txs.sh`: Generates transactions on the L2 network to produce more blocks.

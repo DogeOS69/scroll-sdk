@@ -119,11 +119,13 @@ env:
 envFrom:
   - secretRef:
       name: withdrawal-processor-secret-env
+  - secretRef:
+      name: withdrawal-proof-token
 
 externalSecrets:
   withdrawal-processor-secret-env:
     provider: aws
-    secretRegion: "us-west-2"
+    secretRegion: "<TODO>" # Region of the service credentials, not the KMS key.
     data:
       - remoteRef:
           key: dogeos/withdrawal-processor
@@ -141,8 +143,16 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-      # This must be the same token mounted by proof-coordinator. WP requires
-      # authentication whenever proof-work binds beyond loopback.
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+  # Keep compiler/proof-owned tokens separate from ordinary service secrets:
+  # push-secrets must not manage them, and their AWS regions may differ.
+  withdrawal-proof-token:
+    provider: aws
+    secretRegion: "<TODO>" # prep-charts projects .data/proof-aws.json.
+    data:
+      # Same remote secret/property as proof-coordinator; prep-charts replaces
+      # the conventional path below with the provisioned proof secret name.
       - remoteRef:
           key: scroll/proof-coordinator-secrets
           property: proof-work-token
@@ -228,7 +238,6 @@ defaultProbes:
 
 # `tsoSigners` is rendered by the chart as /app/config/signers.toml. The Rust
 # loader merges that file after the main WithdrawalProcessor.toml.
-# Note on Database: WithdrawalProcessor.toml uses SQLite on the /app/data PVC
-# by default (database_url). For PostgreSQL, point database_url at it — or
-# inject a secret-backed DOGEOS_WITHDRAWAL_DATABASE_URL env, which figment
-# gives precedence over the TOML value.
+# Database: the current binary uses SqliteConnection, not PostgreSQL.
+# Keep database_url (or DOGEOS_WITHDRAWAL_DATABASE_URL) on the /app/data PVC;
+# changing the URL cannot switch the binary to a PostgreSQL backend.
