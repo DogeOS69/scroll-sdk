@@ -88,15 +88,16 @@ chart-local production overlays are synchronized with these examples.
 From the scroll-sdk root, run:
 
 ```bash
-python3 examples/test_core_service_examples.py
 python3 .github/scripts/validate_production_values.py
 git diff --check
 ```
 
-The first check covers all seven examples and renders their Helm manifests
-locally. It uses a dummy **ConfigMap reference**, not dummy proof identities,
-solely to exercise proof-coordinator's Kubernetes template contract. These
-checks do not connect to the cluster, resolve Secrets Manager/KMS, launch
-binaries, or prove runtime readiness. Normal generated-artifact validation
+The existing production-values check covers l1-interface,
+withdrawal-processor, eth-da-submitter, proof-coordinator and cubesigner-signer;
+it does not cover fee-oracle or TSO and does not render Helm manifests. Local
+Helm rendering for all seven services was also checked during this review,
+but no additional test script is retained in examples. These checks do not
+resolve Secrets Manager/KMS, launch binaries, or prove runtime readiness.
+Normal generated-artifact validation
 (`scrollsdk setup proof-config-check --deployment-dir .`) and deployment
 health checks are still required.
