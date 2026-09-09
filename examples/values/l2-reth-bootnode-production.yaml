@@ -38,7 +38,7 @@ reth:
   l1LivenessCheckInterval: "3600"
   blobS3Url: ""
   trustedPeers: ""
-  builderGasLimit: ""
+  builderGasLimit: "10000000"
   engineSyncAtStartup: "true"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
