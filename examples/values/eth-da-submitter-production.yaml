@@ -107,7 +107,7 @@ configMaps:
       # Optional encoded/effective batch sealing target. When omitted, the
       # application derives 95% of MAX_UNCOMPRESSED_BATCH_BYTES_SIZE.
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__TARGET_UNCOMPRESSED_BATCH_BYTES_SIZE: "<TODO>"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_OPEN_L2_TIME: "60s"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_OPEN_L2_TIME: "3000s"
       # Optional live chunk timeout. When omitted, it inherits MAX_OPEN_L2_TIME.
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CHUNK_MAX_OPEN_L2_TIME: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_CHUNKS_PER_BATCH: "1"
