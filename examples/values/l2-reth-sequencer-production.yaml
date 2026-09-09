@@ -84,7 +84,9 @@ reth:
     allowEmptyBlocks: true
     blockTimeMs: "3000"
     payloadBuildingDurationMs: "800"
-    l1InclusionMode: finalized:2
+    # DogeOS L1 Interface finalizes WF-backed synthetic blocks. Do not require
+    # two additional WF transitions before including already-finalized deposits.
+    l1InclusionMode: finalized:0
     feeRecipient: "<TODO>"
 
   rpc:
