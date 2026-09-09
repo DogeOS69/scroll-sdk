@@ -2,6 +2,9 @@
 {{- include "scroll.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
+# Restart the process on config changes so retired polling jobs stop on upgrade.
+podAnnotations:
+  checksum/metrics-exporter-config: {{ include (print .Template.BasePath "/config.yaml") . | sha256sum }}
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:

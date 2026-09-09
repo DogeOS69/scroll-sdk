@@ -281,8 +281,9 @@ are removed before counting, so plain-text logs do not fail metric evaluation.
 The retired `rollup-last-batch-indexes` exporter module is excluded by its exact
 module field. Other exporter errors remain monitored. This chart
 has no rollup-explorer-specific metric alerts or dashboard panels. Its HTTP
-polling module belongs to the separate `metrics-exporter` chart; excluding its
-alerts here does not stop that poller.
+polling module belonged to the separate `metrics-exporter` chart and is no longer
+generated as of its version 0.1.9. This exclusion also covers installations still
+running older exporter charts; changing the alert alone does not stop a poller.
 
 Instances are grouped by `namespace`, `service`, `pod`, and `container` so the
 notification identifies the affected workload. The same `managed_by =

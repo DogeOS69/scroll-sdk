@@ -1,8 +1,22 @@
 # metrics-exporter
 
-![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3](https://img.shields.io/badge/AppVersion-0.1.3-informational?style=flat-square)
+![Version: 0.1.9](https://img.shields.io/badge/Version-0.1.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3](https://img.shields.io/badge/AppVersion-0.1.3-informational?style=flat-square)
 
 A Helm chart for the Metrics Exporter
+
+The container runs the compiled Go executable
+`./metrics-exporter -config=/config/config.yml` as a long-lived service.
+This chart supplies its polling modules in a ConfigMap and exposes
+Prometheus metrics at port 8801. The application image remains v0.1.3.
+
+As of chart 0.1.9, the retired rollup explorer's last-batch-index polling module
+is no longer generated, even when retained Helm values still contain a nonempty
+`metricsConfig.rollup.url`. L1, DogeOS balances, Dogecoin and explicitly configured
+custom modules are retained. A configuration checksum on the Pod template
+triggers a rollout when the generated configuration changes.
+
+Validate with `helm lint charts/metrics-exporter` and
+`python3 -m unittest discover -s charts/metrics-exporter/tests -p 'test_*.py'`.
 
 ## Maintainers
 
@@ -46,7 +60,6 @@ Kubernetes: `>=1.22.0-0`
 | metricsConfig.l1Network.name | string | `"l1"` |  |
 | metricsConfig.l1Network.prefix | string | `"l1"` |  |
 | metricsConfig.l1Network.url | string | `nil` |  |
-| metricsConfig.rollup.url | string | `nil` |  |
 | persistence.metrics-exporter.enabled | bool | `true` |  |
 | persistence.metrics-exporter.mountPath | string | `"/config/"` |  |
 | persistence.metrics-exporter.name | string | `"metrics-exporter-config"` |  |
