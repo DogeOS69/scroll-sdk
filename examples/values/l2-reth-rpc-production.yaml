@@ -52,6 +52,10 @@ reth:
   extraArgs:
     - "--network.legacy-geth-header-transform"
     - "true"
+    # Internal witness RPC: keep this above head minus the oldest unprepared
+    # block. Historical proof queries can be expensive; do not expose publicly.
+    - "--rpc.eth-proof-window"
+    - "100000"
 
   ports:
     http: 8545
