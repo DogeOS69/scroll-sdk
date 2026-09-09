@@ -24,7 +24,8 @@
 # precedence over TOML for emergency overrides.
 
 # BEGIN scrollsdk managed deployment configuration
-advance_l1_builder_v2 = false
+# Required for ordinary deposit admission and L1 frontier advancement.
+advance_l1_builder_v2 = true
 advance_l1_deposit_stale_after_eligible_blocks = 5
 advance_l1_frontier_stale_after_eligible_blocks = 30
 advance_l2_builder_v2 = true
