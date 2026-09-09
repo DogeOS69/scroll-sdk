@@ -18,10 +18,11 @@
 #   absent while proof is disabled.
 # - Additional hand-maintained [tables] may be added between the two blocks.
 #
-# Secrets never live in this file: Dogecoin RPC credentials, signer keys, and
-# the proof-work bearer token stay ENV-injected from the external secret store
-# (see values/withdrawal-processor-production.yaml), and figment gives ENV
-# precedence over TOML for emergency overrides.
+# Secrets never live in this file: Dogecoin RPC credentials and signer keys
+# stay ENV-injected from the external secret store. The proof-work bearer token
+# is mounted as a Secret file (see values/withdrawal-processor-production.yaml);
+# never also inject its bearer_token environment override when using the file.
+# Figment gives ENV precedence over TOML for emergency overrides.
 
 # BEGIN scrollsdk managed deployment configuration
 # Required for ordinary deposit admission and L1 frontier advancement.

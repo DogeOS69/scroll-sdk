@@ -80,6 +80,9 @@ persistence:
     accessMode: ReadWriteOnce
     size: 10Gi
     retain: true
+    # For a fresh-database cutover, provision a new claim and select it here.
+    # Never point the new release at an incompatible previous-generation DB.
+    # existingClaim: "<TODO_NEW_PROOF_COORDINATOR_PVC>"
   secrets:
     enabled: true
     type: secret
@@ -138,8 +141,10 @@ serviceAccount:
   annotations: {}
 
 resources:
-  requests: {memory: 256Mi, cpu: 100m}
-  limits: {memory: 1Gi, cpu: 500m}
+  # Starting allocation for active real witness materialization, including its
+  # child processes. Review against workload/backlog rather than idle Pod usage.
+  requests: {memory: 1Gi, cpu: 500m}
+  limits: {memory: 4Gi, cpu: 2000m}
 
 podSecurityContext:
   runAsNonRoot: true
@@ -173,7 +178,10 @@ configMaps:
 # environment overrides take precedence and can replace strict nested tables;
 # do not duplicate DOGEOS_PROOF_COORDINATOR_* settings here. Configure proof
 # intent/proof-aws inputs and rerun prep-charts instead.
-env: []
+env:
+  # Keep startup, proof verification and eager locate-hit telemetry available.
+  - name: RUST_LOG
+    value: info
 
 envFrom: []
 

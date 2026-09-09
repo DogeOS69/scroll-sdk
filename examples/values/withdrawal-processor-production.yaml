@@ -6,6 +6,10 @@
 # `scrollsdk setup prep-charts`, and is passed to Helm through the generated
 # deployment contract. This values file carries only Kubernetes shape, secrets
 # wiring, and the proof activation switch.
+# The native base must enable advance_l1_builder_v2 for ordinary deposit
+# admission. examples/withdrawal-processor/WithdrawalProcessor.toml sets true;
+# retain it when prep-charts embeds that file below. Do not mask a stale base
+# with a second environment override.
 global:
   nameOverride: withdrawal-processor
   fullnameOverride: withdrawal-processor
@@ -188,6 +192,9 @@ persistence:
     annotations: {}
     size: 1000Gi
     retain: true
+    # A beta.3 -> beta.4 cutover requires a fresh WP database/claim, not an
+    # in-place migration. Set this only after provisioning that new claim.
+    # existingClaim: "<TODO_NEW_WITHDRAWAL_PROCESSOR_PVC>"
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
   protocol-context:
     enabled: true

@@ -138,8 +138,11 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_S3__BUCKET: ""
       DOGEOS_ETH_DA_SUBMITTER_S3__REGION: ""
       DOGEOS_ETH_DA_SUBMITTER_S3__KEY_PREFIX: ""
-      # Optional S3-compatible endpoint; normal AWS S3 deployments leave it unset.
-      # DOGEOS_ETH_DA_SUBMITTER_S3__ENDPOINT_URL: "<TODO>"
+      # Optional S3-compatible endpoint. If specifying AWS explicitly, use the
+      # regional endpoint even in us-east-1, e.g. https://s3.us-east-1.amazonaws.com.
+      # The global https://s3.amazonaws.com prevents the anonymous-PUT safety
+      # check from deriving its probe URL. prep-charts projects the topology store.
+      # DOGEOS_ETH_DA_SUBMITTER_S3__ENDPOINT_URL: "https://s3.<TODO_REGION>.amazonaws.com"
       DOGEOS_ETH_DA_SUBMITTER_S3__FORCE_PATH_STYLE: "false"
       DOGEOS_ETH_DA_SUBMITTER_S3__POLL_INTERVAL_MS: "5000"
       DOGEOS_ETH_DA_SUBMITTER_S3__INITIAL_BACKOFF_MS: "5000"
@@ -147,6 +150,8 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_S3__MAX_RETRIES: "12"
       DOGEOS_ETH_DA_SUBMITTER_S3__UPLOADING_TIMEOUT_MS: "600000"
 
+      # Active eager topology: prep-charts enables sidecars and S3 together from
+      # the topology's store; do not introduce a second bucket/prefix authority.
       # Optional proof chunk-segmentation sidecar publisher. It is disabled by
       # default. When enabled, select exactly one target: LOCAL_ROOT or S3=true.
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__ENABLED: "false"
