@@ -1,0 +1,18 @@
+# prep-charts supplies eagerMaterializer.config and identity/genesis mounts.
+image:
+  repository: dogeos69/eager-materializer
+  tag: v0.3.0-beta.4e
+persistence:
+  data:
+    size: 5Gi
+    storageClass: gp3
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 4Gi
+# Supply this deployment's prefix-scoped IRSA role (never a shared broad role).
+serviceAccount:
+  create: true
+  annotations: {}

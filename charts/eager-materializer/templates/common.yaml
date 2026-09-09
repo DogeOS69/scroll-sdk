@@ -1,0 +1,14 @@
+{{- include "scroll.common.loader.init" . }}
+{{- if not .Values.global.nameOverride -}}
+{{- $_ := set .Values.global "nameOverride" .Release.Name -}}
+{{- end -}}
+{{- $config := required "Provide compiler output with --set-file eagerMaterializer.config=<bundle>/eager-materializer.toml" .Values.eagerMaterializer.config -}}
+{{- $_ := set .Values.podAnnotations "checksum/eager-materializer-config" ($config | sha256sum) -}}
+{{ include "scroll.common.loader.generate" . }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "scroll.common.lib.chart.names.fullname" . }}-config
+data:
+  eager-materializer.toml: {{ $config | quote }}
