@@ -119,8 +119,6 @@ env:
 envFrom:
   - secretRef:
       name: withdrawal-processor-secret-env
-  - secretRef:
-      name: withdrawal-proof-token
 
 externalSecrets:
   withdrawal-processor-secret-env:
@@ -156,7 +154,7 @@ externalSecrets:
       - remoteRef:
           key: scroll/proof-coordinator-secrets
           property: proof-work-token
-        secretKey: DOGEOS_WITHDRAWAL_PROOF_WORK_API__AUTH__BEARER_TOKEN
+        secretKey: proof-work-token
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
@@ -173,6 +171,14 @@ tsoSigners:
 
 # Persistence Configuration
 persistence:
+  # The compiler uses bearer_token_file. Do not also inject bearer_token via env.
+  proof-work-token:
+    enabled: true
+    type: secret
+    name: withdrawal-proof-token
+    mountPath: /app/secrets/proof-work-token
+    subPath: proof-work-token
+    readOnly: true
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy

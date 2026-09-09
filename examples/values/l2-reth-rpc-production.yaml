@@ -114,7 +114,9 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: eth,net,web3,rpc
+    # Internal witness node: real materialization requires debug_executionWitness.
+    # Keep this endpoint private; rpc-public deliberately does not expose debug.
+    api: eth,net,web3,rpc,debug
 
   ws:
     enabled: true
