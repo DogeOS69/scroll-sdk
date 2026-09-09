@@ -77,10 +77,9 @@ env:
     value: "5000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SESSION_KEEP_ALIVE_INTERVAL"
     value: "3600000"
-  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_PSBT_BASE64_LEN"
-    value: "130048"
-  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_SIGN_REQUEST_JSON_BYTES"
-    value: "262144"
+  # Use image transport defaults; stale explicit caps override release fixes.
+  # beta.3g / beta.4f: 2 MiB PSBT base64, 4 MiB sign-request JSON.
+  # The separate compact CubeSigner SDK limits remain 384 KiB.
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_REQUEST_JSON_BYTES"
     value: "393216"
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_RESPONSE_JSON_BYTES"
