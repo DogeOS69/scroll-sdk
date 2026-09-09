@@ -166,6 +166,7 @@ serviceMonitor:
 
 ingress:
   main:
+    # Public Worker access is opt-in; mock generation needs no external Worker.
     enabled: false
 
 configMaps:
