@@ -263,10 +263,26 @@ stalled progress; existing readiness/up alerts cover service availability.
 
 `ServiceErrorOrPanickedLogs` checks **every service** whose logs reach Loki in
 the Alloy namespace allowlist (`alloy.logs.namespaces`, defaulting to the release
-namespace). Every minute it counts log lines containing the whole word `ERROR`
-or `panicked`, ignoring case, over the last 5 minutes. One matching line fires
+namespace), except the retired `rollup-explorer-backend`. Every minute it counts
+JSON `level`/`severity` and logfmt level fields set to `error`, `fatal`, or `panic`,
+plus plain error/fatal prefixes and Go/Rust panic headers, ignoring case, over
+the last 5 minutes. ANSI colors are removed before matching; timestamp-prefixed
+Rust tracing and geth-style `ERROR[...]` lines are supported. One matching line fires
 the critical alert with no pending period. Notification delivery also follows
 the notification policy's group wait and repeat interval.
+
+Words inside INFO/WARN messages, query expressions, URLs and recovery messages
+do not establish an error level. In particular, Grafana and Loki's successful
+query logs must not trigger this rule simply because they contain its query.
+Unstructured application messages without a recognized error/panic prefix are
+not classified by this rule. JSON and logfmt parsing errors on other formats
+are removed before counting, so plain-text logs do not fail metric evaluation.
+
+The retired `rollup-last-batch-indexes` exporter module is excluded by its exact
+module field. Other exporter errors remain monitored. This chart
+has no rollup-explorer-specific metric alerts or dashboard panels. Its HTTP
+polling module belongs to the separate `metrics-exporter` chart; excluding its
+alerts here does not stop that poller.
 
 Instances are grouped by `namespace`, `service`, `pod`, and `container` so the
 notification identifies the affected workload. The same `managed_by =
@@ -275,6 +291,13 @@ once the matching logs leave the window. Set `grafanaAlerting.logs.enabled:
 false` to skip installing it; disabling the Loki datasource also skips it. For
 rules already stored in Grafana, pause them in the UI. External services need
 their logs shipped to Loki with these labels before this rule can cover them.
+
+On upgrade, the seeding Job replaces the previous broad whole-word query only
+when its stable rule UID, `managed_by=scroll-monitor`, datasource UID and exact
+previous expression match. It changes only query A's expression, preserving
+pause state, notification settings, labels, annotations and group interval.
+Operator-customized queries are left intact and need manual review. A paused
+rule remains paused after migration. Repeated upgrades do not rewrite it.
 
 Upgrades from native Prometheus application rules remove that chart resource
 and seed Grafana rules. If an older installation still mounts alert provisioning
@@ -289,6 +312,7 @@ Validate changes locally with:
 helm lint charts/scroll-monitor
 # The test runner uses PyYAML, Helm, and Docker with the pinned Prometheus image.
 python3 -m unittest discover -s charts/scroll-monitor/tests -p 'test_*.py'
+SCROLL_MONITOR_LOKI_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests -p 'test_log_alerts.py'
 python3 charts/scroll-monitor/tests/run-alert-tests.py
 ```
 

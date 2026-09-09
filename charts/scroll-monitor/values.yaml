@@ -114,7 +114,8 @@ grafanaAlerting:
   folderUID: scroll-monitor-alerts
   folderTitle: Scroll Monitor Alerts
   logs:
-    # Any ERROR/panicked line in the last 5 minutes; follows Alloy namespaces.
+    # Error/fatal/panic levels or plain error/panic prefixes in the last 5m.
+    # Excludes the retired rollup explorer and its exporter module.
     # Only installed when the Grafana Loki datasource is enabled.
     enabled: true
   # Empty uses the bundled Grafana service. Include a subpath if configured.

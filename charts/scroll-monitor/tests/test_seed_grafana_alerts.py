@@ -4,6 +4,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/seed-grafana-alerts.py"
 SPEC = importlib.util.spec_from_file_location("seed_grafana_alerts", SCRIPT)
@@ -32,6 +34,12 @@ class MemoryGrafana:
                 self.group = {"interval": 60, "rules": []}
             assert body["uid"] not in {rule["uid"] for rule in self.group["rules"]}
             self.group["rules"].append(copy.deepcopy(body))
+        elif path.startswith("/api/v1/provisioning/alert-rules/"):
+            assert method == "PUT"
+            assert path.endswith("/" + body["uid"])
+            index = next(i for i, rule in enumerate(self.group["rules"])
+                         if rule["uid"] == body["uid"])
+            self.group["rules"][index] = copy.deepcopy(body)
         else:
             assert method == "PUT"
             assert {r["uid"] for r in body["rules"]} <= {
@@ -171,6 +179,64 @@ class SeedTests(unittest.TestCase):
                     client = SEED.Grafana()
                 self.assertEqual(client.headers["X-Disable-Provenance"], "true")
                 self.assertIn("Authorization", client.headers)
+
+    def install_legacy_log_rule(self):
+        group = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]
+        self.config["groups"] = [group]
+        self.config["lokiDatasourceUID"] = "custom-loki"
+        SEED.seed(self.client, self.config)
+        rule = self.client.group["rules"][0]
+        rule["data"][0]["model"]["expr"] = group["rules"][0]["previousExpr"]
+        self.client.writes.clear()
+        return rule
+
+    def test_legacy_log_query_migrates_without_resetting_operator_settings(self):
+        rule = self.install_legacy_log_rule()
+        rule.update(isPaused=True, title="Operator title", **{"for": "2m"})
+        rule["notification_settings"] = {"receiver": "slack"}
+        rule["labels"]["team"] = "ops"
+        rule["annotations"]["runbook_url"] = "https://example.com/runbook"
+        self.client.group["interval"] = 120
+        expected = copy.deepcopy(rule)
+        expected["data"][0]["model"]["expr"] = self.config["groups"][0]["rules"][0]["expr"]
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.group["rules"], [expected])
+        self.assertEqual(self.client.group["interval"], 120)
+        self.assertEqual(len(self.client.writes), 1)
+        self.assertEqual(self.client.writes[0][0], "PUT")
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_log_query_migration_preserves_custom_queries_and_ownership(self):
+        for change in ("query", "datasource", "owner", "uid"):
+            with self.subTest(change=change):
+                self.client = MemoryGrafana()
+                rule = self.install_legacy_log_rule()
+                if change == "query":
+                    rule["data"][0]["model"]["expr"] += ' # operator filter'
+                elif change == "datasource":
+                    rule["data"][0]["datasourceUid"] = "operator-loki"
+                elif change == "owner":
+                    rule["labels"].pop("managed_by")
+                else:
+                    rule["uid"] = "operator-rule"
+                expected = copy.deepcopy(rule)
+                SEED.seed(self.client, self.config)
+                self.assertEqual(self.client.group["rules"][0], expected)
+                self.assertFalse(any(method == "PUT" for method, _, _ in self.client.writes))
+
+    def test_api_provenance_unlock_and_log_migration_preserve_pause(self):
+        rule = self.install_legacy_log_rule()
+        rule.update(provenance="api", id=51, updated="yesterday", isPaused=True)
+        SEED.seed(self.client, self.config)
+        result = self.client.group["rules"][0]
+        self.assertTrue(result["isPaused"])
+        self.assertNotIn("provenance", result)
+        self.assertNotIn("id", result)
+        self.assertNotIn("updated", result)
+        self.assertEqual(result["data"][0]["model"]["expr"],
+                         self.config["groups"][0]["rules"][0]["expr"])
 
 
 if __name__ == "__main__":
