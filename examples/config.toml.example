@@ -1,7 +1,13 @@
+# Shared contracts / scroll-sdk-cli template.
+# Fill account and database placeholders for the components you use.
+# Contract scripts also accept DEPLOYER_PRIVATE_KEY through the environment.
+# The deploy image also requires L2_RPC_ENDPOINT in its environment.
+# Reth/service signer configuration belongs in .data/doge-config.toml.
+# See docs/config-template-audit.md for retained fields and verification scope.
+
 [general]
 
 L1_RPC_ENDPOINT = "http://l1-interface:8545"
-L1_RPC_ENDPOINT_WEBSOCKET = "ws://l1-devnet:8546"
 L2_RPC_ENDPOINT = "http://l2-rpc:8545"
 
 CHAIN_NAME_L1 = "DOGE"
@@ -10,102 +16,39 @@ CHAIN_ID_L1 = 111111
 CHAIN_ID_L2 = 221122
 
 L1_CONTRACT_DEPLOYMENT_BLOCK = 0
-VERIFIER_DIGEST_1 = "0x0000000000000000000000000000000000000000000000000000000000000001"
-VERIFIER_DIGEST_2 = "0x0000000000000000000000000000000000000000000000000000000000000002"
-
-[ethereumDa]
-
-chain = "sepolia"
-chainId = 11155111
-submitterRpcUrl = "https://ethereum-sepolia-rpc.publicnode.com"
-beaconRpcUrl = "https://ethereum-sepolia-beacon-api.publicnode.com"
-minFinality = "safe"
 
 [accounts]
 
 DEPLOYER_PRIVATE_KEY = ""
 
-L1_COMMIT_SENDER_PRIVATE_KEY = ""
-L1_FINALIZE_SENDER_PRIVATE_KEY = ""
-L1_GAS_ORACLE_SENDER_PRIVATE_KEY = ""
-L2_GAS_ORACLE_SENDER_PRIVATE_KEY = ""
-
 DEPLOYER_ADDR = ""
 OWNER_ADDR = ""
 
-L1_COMMIT_SENDER_ADDR = ""
-L1_FINALIZE_SENDER_ADDR = ""
-L1_GAS_ORACLE_SENDER_ADDR = ""
+# Required: nonzero EVM address of the L2 gas oracle service signer (including KMS/HSM).
+# Deployment whitelists this address; the service private key is not needed here.
 L2_GAS_ORACLE_SENDER_ADDR = ""
 
 [db]
 
-ADMIN_SYSTEM_DB_CONNECTION_STRING = ""
 BLOCKSCOUT_DB_CONNECTION_STRING = ""
-BRIDGE_HISTORY_DB_CONNECTION_STRING = ""
-CHAIN_MONITOR_DB_CONNECTION_STRING = ""
-GAS_ORACLE_DB_CONNECTION_STRING = ""
-COORDINATOR_DB_CONNECTION_STRING = ""
-L1_EXPLORER_DB_CONNECTION_STRING = ""
-ROLLUP_NODE_DB_CONNECTION_STRING = ""
-ROLLUP_EXPLORER_DB_CONNECTION_STRING = ""
-
-[gas-token]
-
-ALTERNATIVE_GAS_TOKEN_ENABLED = false
-# EXAMPLE_GAS_TOKEN_DECIMAL = 6
-# L1_GAS_TOKEN = "0x68a041e7c20Afa4784b5d9C63246c89545Ac0E66"
-GAS_ORACLE_INCORPORATE_TOKEN_EXCHANGE_RATE_ENANBLED = false
-EXCHANGE_RATE_UPDATE_MODE = "Fixed"
-FIXED_EXCHANGE_RATE = "0.01"
-TOKEN_SYMBOL_PAIR = "UNIETH"
-
-[sequencer]
-L2GETH_SIGNER_ADDRESS = ""
-L2GETH_KEYSTORE = ''
-L2GETH_PASSWORD = ""
-L2GETH_NODEKEY = ""
-
-[bootnode.bootnode-0]
-L2GETH_NODEKEY=""
-
-L2_GETH_STATIC_PEERS = ''
-
-[rollup]
-
-MAX_TX_IN_CHUNK = 100
-MAX_BLOCK_IN_CHUNK = 100
-MAX_BATCH_IN_BUNDLE = 20
-MAX_L1_MESSAGE_GAS_LIMIT = 10_000_000
-TEST_ENV_MOCK_FINALIZE_ENABLED = false
-TEST_ENV_MOCK_FINALIZE_TIMEOUT_SEC = 7200
-FINALIZE_BATCH_DEADLINE_SEC = 43_200
-RELAY_MESSAGE_DEADLINE_SEC = 21_600
 
 [frontend]
 
 EXTERNAL_RPC_URI_L1 = "https://sochain.com/DOGETEST"
 EXTERNAL_RPC_URI_L2 = "http://rpc.scrollsdk"
-BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
-ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
 EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
 EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
-ADMIN_SYSTEM_DASHBOARD_URI = "http://admin-system-dashboard.scrollsdk"
 GRAFANA_URI = "http://grafana.scrollsdk"
- 
-ETH_SYMBOL = "DOGE"
-BASE_CHAIN = "DOGE"
-CONNECT_WALLET_PROJECT_ID = "14efbaafcf5232a47d93a68229b71028"
 
+ETH_SYMBOL = "DOGE"
+CONNECT_WALLET_PROJECT_ID = "14efbaafcf5232a47d93a68229b71028"
 
 [genesis]
 
-L2_MAX_ETH_SUPPLY = "226156424291633194186662080095093570025917938800079226639565593765455331328"
-# Bumped from 1 ETH to 5 ETH so the preinstalls deployer can complete the full
-# 11-contract CREATE2 chain. The default 1 ETH runs out partway through the
-# Foundry CREATE2 phase (Permit2 + Safe v1.3.0 + EntryPoint v0.6/v0.7).
-L2_DEPLOYER_INITIAL_BALANCE = 5000000000000000000
+L2_MAX_NATIVE_DOGE_SUPPLY = "226156424291633194186662080095093570025917938800079226639565593765455331328"
+L2_DEPLOYER_INITIAL_BALANCE = 1000000000000000000
 BASE_FEE_PER_GAS = 100000000
+
 [contracts]
 
 DEPLOYMENT_SALT = "salt-000"
@@ -113,60 +56,49 @@ DEPLOYMENT_SALT = "salt-000"
 # contracts deployed outside this script
 L1_FEE_VAULT_ADDR = "0x0000000000000000000000000000000000000001"
 L2_BRIDGE_FEE_RECIPIENT_ADDR = "0x0000000000000000000000000000000000000000"
+# Dogecoin P2PKH hash160 (20 bytes, encoded as an address) receiving fee vault
+# withdrawals via the FeeVaultMoatAdapter. Required: deployment fails if unset.
+FEE_VAULT_DOGE_RECIPIENT_ADDR = "0x0000000000000000000000000000000000000000"
 DEPOSIT_FEE = "1000000000000000000"   # 1.0 DOGE default deposit fee
 WITHDRAWAL_FEE = "100000000000000000" # 0.1 DOGE default withdrawal fee
 MIN_WITHDRAWAL_AMOUNT = "1000000000000000000" # 1.0 DOGE minimum withdrawal amount
 
-#L1GasPriceOracle
-BLOB_SCALAR = 18
+# L1GasPriceOracle.
+# Galileo uses COMMIT_SCALAR, BLOB_SCALAR, and PENALTY_FACTOR.
+# SCALAR is the deprecated pre-Curie/pre-Galileo scalar and is kept only for
+# compatibility with legacy formula branches.
+COMMIT_SCALAR = 38_720_000_000
+BLOB_SCALAR = 8_000_000_000
 SCALAR = 938846
-PENALTY_THRESHOLD = 1_515_986_167
-PENALTY_FACTOR = 2_273_979_251
+PENALTY_FACTOR = 10_000
 
 [contracts.overrides]
-
-# L1_WETH = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
-# L1_PLONK_VERIFIER = "0x4e59b44847b379578588920cA78FbF26c0B4956C"
 
 L2_MESSAGE_QUEUE = "0x5300000000000000000000000000000000000000"
 L1_GAS_PRICE_ORACLE = "0x5300000000000000000000000000000000000002"
 L2_WHITELIST = "0x5300000000000000000000000000000000000003"
 L2_WDOGE = "0x5300000000000000000000000000000000000004"
 L2_TX_FEE_VAULT = "0x5300000000000000000000000000000000000005"
-# Native DOGE predeploy; fixed by DogeOSPredeploy, distinct from wrapped DOGE.
 L2_NATIVE_DOGE_TOKEN = "0x530000000000000000000000000000000000d09e"
 
 [contracts.verification]
 
-VERIFIER_TYPE_L1 = "blockscout"
 VERIFIER_TYPE_L2 = "blockscout"
-EXPLORER_URI_L1 = "http://l1-explorer.scrollsdk"
 EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
-RPC_URI_L1 = "http://l1-devnet.scrollsdk"
 RPC_URI_L2 = "http://rpc.scrollsdk"
-EXPLORER_API_KEY_L1 = ""
 EXPLORER_API_KEY_L2 = ""
-
-[coordinator]
-
-CHUNK_COLLECTION_TIME_SEC = 3600
-BATCH_COLLECTION_TIME_SEC = 1800
-BUNDLE_COLLECTION_TIME_SEC = 600
-COORDINATOR_JWT_SECRET_KEY = ""
 
 [ingress]
 
 FRONTEND_HOST = "portal.scrollsdk"
-BRIDGE_HISTORY_API_HOST = "bridge-history-api.scrollsdk"
-ROLLUP_EXPLORER_API_HOST = "rollup-explorer-backend.scrollsdk"
-COORDINATOR_API_HOST = "coordinator-api.scrollsdk"
 RPC_GATEWAY_HOST = "rpc.scrollsdk"
+# Browser UI at / and API at /api share this host.
 BLOCKSCOUT_HOST = "blockscout.scrollsdk"
-BLOCKSCOUT_BACKEND_HOST = "blockscout.scrollsdk"
-ADMIN_SYSTEM_DASHBOARD_HOST = "admin-system-dashboard.scrollsdk"
 L1_DEVNET_HOST = "l1-devnet.scrollsdk"
-L1_EXPLORER_HOST = "l1-explorer.scrollsdk"
 GRAFANA_HOST = "grafana.scrollsdk"
-# Stable proof-coordinator endpoint. It may be reserved before proof services
-# are started and does not activate proof execution by itself.
+
+# Public TSO endpoint used by signer callbacks; setup domains configures this host.
+TSO_HOST = "tso.scrollsdk"
+
+# Public prover API; prep-charts enables this ingress when proof mode is active.
 PROOF_COORDINATOR_HOST = "proof-coordinator.scrollsdk"
