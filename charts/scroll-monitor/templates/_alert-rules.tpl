@@ -1,6 +1,10 @@
 {{/* Keep Grafana and Prometheus fallback definitions identical. */}}
 {{- define "scroll-monitor.metricGroups" -}}
-{{- $groups := (.Files.Get "alerts/dogeos.yaml" | fromYaml).groups -}}
+{{- $indexerQueries := list -}}
+{{- range $job, $confirmations := .Values.dogecoinIndexerAlerts.confirmationsByJob -}}
+{{- $indexerQueries = append $indexerQueries (printf "clamp_min((max by (namespace) (dogecoin_chain_block_height) - on (namespace) group_right max by (namespace, job) (indexer_dogecoin_last_synced_block{job=%s})) - %v, 0) > %v" ($job | quote) $confirmations $.Values.dogecoinIndexerAlerts.maxExcessLagBlocks) -}}
+{{- end -}}
+{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__DOGECOIN_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString .Values.dogecoinIndexerAlerts.maxExcessLagBlocks) | fromYaml).groups -}}
 {{- if .Values.businessAlerts.enabled -}}
 {{- $business := .Files.Get "alerts/business.yaml" | replace "__JOB_MAX_AGE__" (toString .Values.businessAlerts.jobMaxAgeSeconds) | replace "__PROOF_STUCK_FOR__" .Values.businessAlerts.proofStuckFor | replace "__RECOVERY_FOR__" .Values.businessAlerts.recoveryFor | replace "__SIGNER_FAILURE_FOR__" .Values.businessAlerts.signerFailureFor | replace "__PUBLICATION_DEADLINE__" (toString .Values.businessAlerts.publicationDeadlineSeconds) | fromYaml -}}
 {{- $groups = concat $groups $business.groups -}}
@@ -34,6 +38,15 @@
 {{- end -}}
 {{- end -}}
 {{- $groups = concat $groups $serviceGroups -}}
+{{- end -}}
+{{- end -}}
+{{/* Migration metadata belongs to the Grafana seeder, not Prometheus rules. */}}
+{{- if not $grafanaManaged -}}
+{{- range $group := $groups -}}
+{{- range $rule := $group.rules -}}
+{{- $_ := unset $rule "previousExpr" -}}
+{{- $_ := unset $rule "previousAnnotations" -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- dict "groups" $groups | toYaml -}}

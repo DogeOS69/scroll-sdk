@@ -20,6 +20,11 @@ The follow-up [startup command decision](core-service-review.md#startup-command-
 keeps fee-oracle and TSO's normal startup in the chart/image instead of
 duplicating command/args in their environment overlays.
 
+For monitoring inputs, see the [scroll-monitor generation contract](scroll-monitor-configuration.md)
+and [production values example](values/scroll-monitor-production.yaml). They
+identify the public signer addresses, RPC URLs, expected chain IDs, optional
+Secret keys and ServiceMonitor ownership that must follow the deployment.
+
 ### Keep deployment fixes and examples synchronized
 
 When a deployment exposes a missing or incorrect service setting, update both

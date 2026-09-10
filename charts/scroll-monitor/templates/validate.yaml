@@ -1,6 +1,17 @@
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
   {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
 {{- end }}
+{{- if empty .Values.dogecoinIndexerAlerts.confirmationsByJob }}
+{{- fail "dogecoinIndexerAlerts.confirmationsByJob requires at least one job and its confirmation depth" }}
+{{- end }}
+{{- range $job, $confirmations := .Values.dogecoinIndexerAlerts.confirmationsByJob }}
+{{- if or (empty $job) (not (regexMatch "^[1-9][0-9]*$" (toString $confirmations))) }}
+{{- fail "dogecoinIndexerAlerts.confirmationsByJob requires nonempty job names and positive integer depths" }}
+{{- end }}
+{{- end }}
+{{- if not (regexMatch "^(0|[1-9][0-9]*)$" (toString .Values.dogecoinIndexerAlerts.maxExcessLagBlocks)) }}
+{{- fail "dogecoinIndexerAlerts.maxExcessLagBlocks must be a nonnegative integer" }}
+{{- end }}
 {{- if .Values.balanceMonitoring.enabled }}
 {{- range $account := .Values.balanceMonitoring.ethereum }}
 {{- if lt (float64 $account.minimumEth) 0.0 }}

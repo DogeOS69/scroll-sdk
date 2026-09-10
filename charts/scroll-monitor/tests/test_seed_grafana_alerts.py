@@ -180,6 +180,69 @@ class SeedTests(unittest.TestCase):
                 self.assertEqual(client.headers["X-Disable-Provenance"], "true")
                 self.assertIn("Authorization", client.headers)
 
+    def test_missing_metric_migrations_preserve_operator_settings_and_are_idempotent(self):
+        from test_monitoring_templates import grafana_rules, render
+        sources = [rule for rule in grafana_rules(render()).values()
+                   if "previousExpr" in rule and rule.get("datasourceType") != "loki"]
+        self.assertEqual({r["alert"] for r in sources}, {
+            "FeeOracleStale", "TSONoRegisteredSigners", "DogecoinIndexerLag",
+        })
+        for source in sources:
+            with self.subTest(alert=source["alert"]):
+                client = MemoryGrafana()
+                config = copy.deepcopy(self.config)
+                old = {**source, "expr": source["previousExpr"],
+                       "annotations": {**source["annotations"], **source["previousAnnotations"]}}
+                config["groups"][0]["rules"] = [old]
+                SEED.seed(client, config)
+                saved = client.group["rules"][0]
+                saved.update(isPaused=True, **{"for": "20m"})
+                saved["notification_settings"] = {"receiver": "operator-contact"}
+                saved["annotations"]["summary"] = "Operator summary"
+                saved["labels"]["team"] = "ops"
+                original = copy.deepcopy(saved)
+                client.group["interval"] = 120
+                config["groups"][0]["rules"] = [source]
+                client.writes.clear()
+                SEED.seed(client, config)
+                expected = copy.deepcopy(original)
+                expected["data"][0]["model"]["expr"] = source["expr"]
+                expected["annotations"]["description"] = source["annotations"]["description"].replace("$value", "$values.A.Value")
+                self.assertEqual(client.group["rules"][0], expected)
+                self.assertEqual(client.group["interval"], 120)
+                self.assertEqual(len(client.writes), 1)
+                client.writes.clear()
+                SEED.seed(client, config)
+                self.assertEqual(client.writes, [])
+
+    def test_expression_migration_does_not_overwrite_custom_query_datasource_or_owner(self):
+        source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready < 1 or absent(ready)"}
+        desired = SEED.alert_rule(source, self.config, "dogeos.metrics")
+        for change in ("query", "datasource", "owner", "duplicate"):
+            with self.subTest(change=change):
+                existing = copy.deepcopy(desired)
+                existing["data"][0]["model"]["expr"] = source["previousExpr"]
+                if change == "query":
+                    existing["data"][0]["model"]["expr"] += " "
+                elif change == "datasource":
+                    existing["data"][0]["datasourceUid"] = "operator-prometheus"
+                elif change == "owner":
+                    existing["labels"].pop("managed_by")
+                else:
+                    existing["data"].append(copy.deepcopy(existing["data"][0]))
+                self.assertIsNone(SEED.migrate_expression(existing, source, desired))
+
+    def test_annotation_migration_preserves_custom_description(self):
+        source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready == 0",
+                  "previousAnnotations": {"description": "Old explanation"},
+                  "annotations": {"description": "New explanation"}}
+        desired = SEED.alert_rule(source, self.config, "dogeos.metrics")
+        existing = copy.deepcopy(desired)
+        existing["data"][0]["model"]["expr"] = source["previousExpr"]
+        existing["annotations"]["description"] = "Operator explanation"
+        updated = SEED.migrate_expression(existing, source, desired)
+        self.assertEqual(updated["annotations"]["description"], "Operator explanation")
+
     def install_legacy_log_rule(self):
         group = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]
         self.config["groups"] = [group]

@@ -145,6 +145,11 @@ def migrate_expression(existing, source, desired):
     for query in updated["data"]:
         if query["refId"] == "A":
             query["model"]["expr"] = source["expr"]
+    # Correct shipped explanations only when the operator has not edited them.
+    for key, previous in source.get("previousAnnotations", {}).items():
+        previous = previous.replace("$value", "$values.A.Value")
+        if updated.get("annotations", {}).get(key) == previous:
+            updated["annotations"][key] = desired["annotations"][key]
     for field in ("id", "updated", "provenance"):
         updated.pop(field, None)
     return updated

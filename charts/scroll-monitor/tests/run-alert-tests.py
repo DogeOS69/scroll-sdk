@@ -14,6 +14,8 @@ rendered = subprocess.check_output([
     "--set", "grafanaAlerting.enabled=false",
     "--set", "serviceAlerts.paused=false",
     "--set", "businessAlerts.requiredSignersByRole.Correctness=2",
+    "--set", "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=60",
+    "--set", "dogecoinIndexerAlerts.confirmationsByJob.withdrawal-processor=120",
 ], text=True)
 rules = next(doc["spec"] for doc in yaml.safe_load_all(rendered)
              if doc and doc["kind"] == "PrometheusRule"

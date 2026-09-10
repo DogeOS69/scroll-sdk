@@ -1,0 +1,19 @@
+{{- range $key, $monitor := .Values.additionalServiceMonitors }}
+{{- if $monitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ printf "%s-extra-%s" $.Release.Name $key | trunc 63 | trimSuffix "-" }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    release: {{ $.Release.Name }}
+spec:
+  selector:
+    {{- required (printf "additionalServiceMonitors.%s.selector is required" $key) $monitor.selector | toYaml | nindent 4 }}
+  endpoints:
+    {{- required (printf "additionalServiceMonitors.%s.endpoints is required" $key) $monitor.endpoints | toYaml | nindent 4 }}
+{{- end }}
+{{- end }}

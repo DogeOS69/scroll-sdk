@@ -31,13 +31,28 @@ def rpc(url, method, params, timeout):
     try:
         request = Request(url, data=json.dumps({
             "jsonrpc": "2.0", "id": 1, "method": method, "params": params,
-        }).encode(), headers={"Content-Type": "application/json"}, method="POST")
+        }).encode(), headers={
+            "Content-Type": "application/json",
+            # Identify the actual client. Public RPC gateways can reject the
+            # generic Python-urllib signature before JSON-RPC evaluation.
+            "User-Agent": "scroll-monitor-account-balances/0.1",
+        }, method="POST")
         with urlopen(request, timeout=timeout) as response:
             raw = response.read(65537)
         if len(raw) > 65536:
             raise CollectionError("invalid_response")
         payload = json.loads(raw)
-    except (HTTPError, URLError, TimeoutError, OSError, HTTPException):
+    except HTTPError as error:
+        # Keep diagnostics bounded and credential-free; never expose the URL
+        # or provider response body in metrics or logs.
+        if error.code in (401, 403):
+            reason = "rpc_access_denied"
+        elif error.code == 429:
+            reason = "rpc_rate_limited"
+        else:
+            reason = "rpc_http_error"
+        raise CollectionError(reason) from None
+    except (URLError, TimeoutError, OSError, HTTPException):
         raise CollectionError("rpc_unavailable") from None
     except (ValueError, UnicodeError):
         raise CollectionError("invalid_response") from None

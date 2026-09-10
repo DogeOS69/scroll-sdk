@@ -1,0 +1,190 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: 59 and 119 block gaps are expected confirmation waiting
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 941+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 881+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: 60 and 120 block confirmation windows are healthy
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 940+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 880+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: exactly 12 extra blocks does not alert
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 928+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 868+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: 13 extra blocks on both jobs alerts
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 927+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 867+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+      exp_annotations:
+        description: Job l1-interface has 13 blocks of excess lag after subtracting
+          its configured Dogecoin confirmation depth from the node block height.
+        summary: Embedded Dogecoin indexer l1-interface is more than 12 blocks behind
+          its confirmed target.
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: withdrawal-processor
+        namespace: monitoring
+      exp_annotations:
+        description: Job withdrawal-processor has 13 blocks of excess lag after subtracting
+          its configured Dogecoin confirmation depth from the node block height.
+        summary: Embedded Dogecoin indexer withdrawal-processor is more than 12 blocks
+          behind its confirmed target.
+- name: different confirmation policies are applied independently
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 940+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 867+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: withdrawal-processor
+        namespace: monitoring
+      exp_annotations:
+        description: Job withdrawal-processor has 13 blocks of excess lag after subtracting
+          its configured Dogecoin confirmation depth from the node block height.
+        summary: Embedded Dogecoin indexer withdrawal-processor is more than 12 blocks
+          behind its confirmed target.
+- name: excess lag must persist for ten minutes
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 927+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 867+0x25
+  alert_rule_test:
+  - eval_time: 9m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: missing node height does not fabricate lag
+  interval: 1m
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 940+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 880+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: missing indexer metrics do not fabricate lag
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: indexer ahead of a slower exporter is clamped
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 1001+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 1001+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: header sync ahead of blocks does not imply indexer lag
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 940+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 880+0x25
+  - series: dogecoin_synced_headers_total{namespace="monitoring"}
+    values: 9000+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: node heights do not leak across namespaces
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 940+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 880+0x25
+  - series: dogecoin_chain_block_height{namespace="other"}
+    values: 2000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="other",job="l1-interface"}
+    values: 1940+0x25
+  alert_rule_test:
+  - eval_time: 11m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: recovery clears excess lag
+  interval: 1m
+  input_series:
+  - series: dogecoin_chain_block_height{namespace="monitoring"}
+    values: 1000+0x25
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface"}
+    values: 927+0x11 940+0x15
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor"}
+    values: 880+0x25
+  alert_rule_test:
+  - eval_time: 20m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []

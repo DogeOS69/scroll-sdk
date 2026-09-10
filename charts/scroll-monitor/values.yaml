@@ -134,12 +134,38 @@ grafanaAlerting:
       cpu: 100m
       memory: 64Mi
 
+# Supplemental monitors for services whose own chart does not create one.
+# Enable only one monitor per endpoint to avoid duplicate scraping. These
+# discover Services in the scroll-monitor release namespace, using named ports.
+additionalServiceMonitors:
+  tso:
+    enabled: false
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: tso-service
+        app.kubernetes.io/instance: tso-service
+    endpoints:
+      - port: http
+        path: /metrics
+        interval: 30s
+        scrapeTimeout: 10s
+
 # Extended per-service diagnostics are created in Grafana but start paused.
 # Existing Grafana rules retain their UI pause state on every upgrade.
 # Prometheus fallback omits these rules while paused=true.
 serviceAlerts:
   enabled: true
   paused: true
+
+dogecoinIndexerAlerts:
+  # Alert only on lag beyond the configured confirmation window, for 10m.
+  maxExcessLagBlocks: 12
+  # Exact Prometheus jobs. Generate each depth from that service's effective
+  # dogecoin_indexer.confirmations, including environment overrides.
+  # Defaults match the generic service examples, not any particular cluster.
+  confirmationsByJob:
+    l1-interface: 6
+    withdrawal-processor: 6
 
 businessAlerts:
   enabled: true
