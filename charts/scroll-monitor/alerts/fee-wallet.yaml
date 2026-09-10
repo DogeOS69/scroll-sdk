@@ -1,0 +1,21 @@
+groups:
+  - name: dogeos.fee-wallet
+    interval: 1m
+    rules:
+      - alert: FeeWalletBalanceLow
+        expr: min by (namespace, job) (fee_wallet_total_unredeemed_utxo_amount{job=~"__JOB_REGEX__"}) / 1e8 < __MIN_DOGE__
+        labels:
+          severity: critical
+          service: withdrawal-processor
+        annotations:
+          summary: Fee wallet UTXO balance is below __MIN_DOGE__ DOGE.
+          description: 'Job {{ $labels.job }} has {{ $value }} DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct WP reservations. Replenish the fee wallet and check pending WF funding.'
+      - alert: FeeWalletBalanceMetricMissing
+        expr: absent(fee_wallet_total_unredeemed_utxo_amount{job=~"__JOB_REGEX__"})
+        for: 10m
+        labels:
+          severity: warning
+          service: withdrawal-processor
+        annotations:
+          summary: Fee wallet UTXO balance is not being observed.
+          description: Check the withdrawal-processor scrape target and embedded Dogecoin indexer. The balance gauge is refreshed after successful block processing.

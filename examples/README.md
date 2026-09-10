@@ -13,6 +13,26 @@ runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
 files under `examples/values/`.
 
+For the seven DogeOS core services, see the
+[source-aligned example review and operator steps](core-service-review.md),
+including secret ownership, native-config generation and local validation.
+The follow-up [startup command decision](core-service-review.md#startup-command-decision)
+keeps fee-oracle and TSO's normal startup in the chart/image instead of
+duplicating command/args in their environment overlays.
+
+### Keep deployment fixes and examples synchronized
+
+When a deployment exposes a missing or incorrect service setting, update both
+its local `values/<service>-production.yaml` and the matching example here.
+Use placeholders for instance-specific domain names, IAM roles, buckets and
+secret references; never copy credentials or generated proof identities.
+If the CLI/compiler owns the field, repair its source/template and regenerate
+the local values, then update the example's input/wiring or instructions rather
+than keeping a second hand-maintained generated configuration. Keep intentional
+environment differences explicit (for example, DA MAX_OPEN_L2_TIME is 3000s
+in the example while this devnet uses 300s). Validate Helm rendering and the
+native config, record manual steps in the CLI handbook, and commit each fix.
+
 ## Scripts
 
 1. `l2-generate-txs.sh`: Generates transactions on the L2 network to produce more blocks.

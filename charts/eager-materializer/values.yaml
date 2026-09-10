@@ -1,0 +1,71 @@
+# Runtime wiring belongs here; production.yaml supplies deployment choices.
+image:
+  repository: dogeos69/eager-materializer
+  tag: v0.3.0-beta.4e
+  pullPolicy: IfNotPresent
+command: [eager_materializer]
+args: [--config, /app/config/eager-materializer.toml]
+controller:
+  type: statefulset
+  replicas: 1
+eagerMaterializer:
+  # Required compiler output, never a hand-maintained service config.
+  config: ""
+serviceAccount:
+  create: true
+  annotations: {}
+service:
+  main:
+    ports:
+      http:
+        port: 3007
+        targetPort: 3007
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /ready, port: http}
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /health, port: http}
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 60
+configMaps:
+  config:
+    enabled: false
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    name: '{{ include "scroll.common.lib.chart.names.fullname" . }}-config'
+    mountPath: /app/config
+    readOnly: true
+  data:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    mountPath: /app/data
+podAnnotations: {}
+serviceMonitor:
+  main:
+    enabled: false
+    endpoints:
+      - port: http
+        path: /metrics
+resources: {}

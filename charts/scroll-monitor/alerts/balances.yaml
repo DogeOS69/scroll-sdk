@@ -1,0 +1,46 @@
+groups:
+  - name: dogeos.account-balances
+    interval: 1m
+    rules:
+      - alert: FeeOracleAccountBalanceLow
+        expr: scroll_account_balance_eth{account="fee-oracle"} < __FEE_ORACLE_MIN_ETH__
+        labels:
+          severity: critical
+          service: fee-oracle
+        annotations:
+          summary: Fee oracle account balance is below __FEE_ORACLE_MIN_ETH__ ETH.
+          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value }} ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.'
+      - alert: EthDASubmitterAccountBalanceLow
+        expr: scroll_account_balance_eth{account="eth-da-submitter"} < __ETH_DA_MIN_ETH__
+        labels:
+          severity: critical
+          service: eth-da-submitter
+        annotations:
+          summary: Ethereum DA submitter account balance is below __ETH_DA_MIN_ETH__ ETH.
+          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value }} ETH. Replenish funds for blob publication and transaction replacement.'
+      - alert: AccountBalanceCollectionFailed
+        expr: scroll_account_balance_scrape_success == 0 or (time() - scroll_account_balance_last_success_timestamp_seconds > 180)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Account balance collection is failing or stale.
+          description: 'Balance monitoring for {{ $labels.account }} is unavailable. Check the configured public address, RPC URL, expected chain ID, and exporter. An RPC failure is not a zero balance.'
+      - alert: FeeOracleBalanceMonitorMissing
+        expr: absent(scroll_account_balance_scrape_success{account="fee-oracle"})
+        for: 5m
+        labels:
+          severity: warning
+          service: fee-oracle
+        annotations:
+          summary: Fee oracle balance monitoring is missing.
+          description: Check the balance exporter and its ServiceMonitor. Configure the fee-oracle public address and RPC endpoint.
+      - alert: EthDASubmitterBalanceMonitorMissing
+        expr: absent(scroll_account_balance_scrape_success{account="eth-da-submitter"})
+        for: 5m
+        labels:
+          severity: warning
+          service: eth-da-submitter
+        annotations:
+          summary: Ethereum DA submitter balance monitoring is missing.
+          description: Check the balance exporter and its ServiceMonitor. Configure the eth-da-submitter public address and RPC endpoint.

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: eager-materializer
+description: Ahead-of-time Scroll chunk materialization for DogeOS
+type: application
+version: 0.1.0
+appVersion: v0.3.0-beta.4e
+dependencies:
+  - name: common
+    repository: oci://ghcr.io/scroll-tech/scroll-sdk/helm
+    version: 1.5.1

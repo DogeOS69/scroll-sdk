@@ -6,6 +6,10 @@
 # `scrollsdk setup prep-charts`, and is passed to Helm through the generated
 # deployment contract. This values file carries only Kubernetes shape, secrets
 # wiring, and the proof activation switch.
+# The native base must enable advance_l1_builder_v2 for ordinary deposit
+# admission. examples/withdrawal-processor/WithdrawalProcessor.toml sets true;
+# retain it when prep-charts embeds that file below. Do not mask a stale base
+# with a second environment override.
 global:
   nameOverride: withdrawal-processor
   fullnameOverride: withdrawal-processor
@@ -123,7 +127,7 @@ envFrom:
 externalSecrets:
   withdrawal-processor-secret-env:
     provider: aws
-    secretRegion: "us-west-2"
+    secretRegion: "<TODO>" # Region of the service credentials, not the KMS key.
     data:
       - remoteRef:
           key: dogeos/withdrawal-processor
@@ -141,12 +145,20 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
-      # This must be the same token mounted by proof-coordinator. WP requires
-      # authentication whenever proof-work binds beyond loopback.
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+  # Keep compiler/proof-owned tokens separate from ordinary service secrets:
+  # push-secrets must not manage them, and their AWS regions may differ.
+  withdrawal-proof-token:
+    provider: aws
+    secretRegion: "<TODO>" # prep-charts projects .data/proof-aws.json.
+    data:
+      # Same remote secret/property as proof-coordinator; prep-charts replaces
+      # the conventional path below with the provisioned proof secret name.
       - remoteRef:
           key: scroll/proof-coordinator-secrets
           property: proof-work-token
-        secretKey: DOGEOS_WITHDRAWAL_PROOF_WORK_API__AUTH__BEARER_TOKEN
+        secretKey: proof-work-token
     refreshInterval: 2m
     serviceAccount: external-secrets
 # TSO Signers Configuration for local K8s testing
@@ -163,6 +175,14 @@ tsoSigners:
 
 # Persistence Configuration
 persistence:
+  # The compiler uses bearer_token_file. Do not also inject bearer_token via env.
+  proof-work-token:
+    enabled: true
+    type: secret
+    name: withdrawal-proof-token
+    mountPath: /app/secrets/proof-work-token
+    subPath: proof-work-token
+    readOnly: true
   data:
     enabled: true
     name: withdrawal-processor-data-pvc # Ensure this aligns with your PVC naming strategy
@@ -172,6 +192,9 @@ persistence:
     annotations: {}
     size: 1000Gi
     retain: true
+    # A beta.3 -> beta.4 cutover requires a fresh WP database/claim, not an
+    # in-place migration. Set this only after provisioning that new claim.
+    # existingClaim: "<TODO_NEW_WITHDRAWAL_PROCESSOR_PVC>"
     # storageClass: "your-production-storage-class" # FIXME: Uncomment and set if you use a specific storage class for production
   protocol-context:
     enabled: true
@@ -228,7 +251,6 @@ defaultProbes:
 
 # `tsoSigners` is rendered by the chart as /app/config/signers.toml. The Rust
 # loader merges that file after the main WithdrawalProcessor.toml.
-# Note on Database: WithdrawalProcessor.toml uses SQLite on the /app/data PVC
-# by default (database_url). For PostgreSQL, point database_url at it — or
-# inject a secret-backed DOGEOS_WITHDRAWAL_DATABASE_URL env, which figment
-# gives precedence over the TOML value.
+# Database: the current binary uses SqliteConnection, not PostgreSQL.
+# Keep database_url (or DOGEOS_WITHDRAWAL_DATABASE_URL) on the /app/data PVC;
+# changing the URL cannot switch the binary to a PostgreSQL backend.

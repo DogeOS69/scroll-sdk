@@ -32,14 +32,24 @@ spec:
           subPath: wait-for-l1.sh
 
     - name: 2-wait-for-l2-sequencer
-      image: atkrad/wait4x:latest
-      args:
-        - http
-        - $(L2_RPC_ENDPOINT)
-        - --expect-status-code
-        - "200"
-        - --timeout
-        - "0"
+      image: scrolltech/scroll-alpine:v0.0.1
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          chain_pattern='0x[0-9a-fA-F]+'
+          if [ -n "${CHAIN_ID_L2:-}" ]; then
+            chain_pattern=$(printf '0x%x' "$CHAIN_ID_L2")
+          fi
+          until response=$(curl --fail --silent --show-error --connect-timeout 5 --max-time 10 \
+            -H 'Content-Type: application/json' \
+            --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+            "$L2_RPC_ENDPOINT") && \
+            printf '%s' "$response" | grep -Eq '"result"[[:space:]]*:[[:space:]]*"'"$chain_pattern"'"'; do
+            echo 'Waiting for L2 eth_chainId matching CHAIN_ID_L2...'
+            sleep 2
+          done
+          echo 'L2 JSON-RPC is ready.'
       envFrom:
         - configMapRef:
             name: contracts-deployment-env

@@ -19,6 +19,15 @@ grafana:
     type: Recreate
   adminUser: admin
   adminPassword: scroll-sdk
+  grafana.ini:
+    unified_alerting:
+      enabled: true
+    # SMTP transport is configured here; recipients are edited in Contact points.
+    smtp:
+      enabled: false
+  # Set smtp.existingSecret for SMTP user/password (keys: user, password).
+  smtp:
+    existingSecret: ""
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -98,9 +107,91 @@ dashboards:
     # referenced through grafana.dashboardsConfigMaps.
     enabled: true
 
+grafanaAlerting:
+  # Seed editable, enabled Grafana-managed application rules via the HTTP API.
+  # Existing rules (including UI edits and pause state) survive Helm upgrades.
+  enabled: true
+  folderUID: scroll-monitor-alerts
+  folderTitle: Scroll Monitor Alerts
+  logs:
+    # Any ERROR/panicked line in the last 5 minutes; follows Alloy namespaces.
+    # Only installed when the Grafana Loki datasource is enabled.
+    enabled: true
+  # Empty uses the bundled Grafana service. Include a subpath if configured.
+  url: ""
+  # Optional Grafana service-account token Secret (key: token). Otherwise the
+  # job uses grafana.admin.existingSecret or the chart's Grafana admin Secret.
+  authSecret: ""
+  image: python:3.12.11-alpine3.22
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# Extended per-service diagnostics are created in Grafana but start paused.
+# Existing Grafana rules retain their UI pause state on every upgrade.
+# Prometheus fallback omits these rules while paused=true.
+serviceAlerts:
+  enabled: true
+  paused: true
+
+businessAlerts:
+  enabled: true
+  jobMaxAgeSeconds: 900
+  proofStuckFor: 5m
+  recoveryFor: 15m
+  signerFailureFor: 5m
+  publicationDeadlineSeconds: 3600
+  # Optional exact quorum checks. Copy thresholds from the active bridge policy;
+  # registration roles are case-sensitive (e.g. Correctness, Attestation).
+  # Runtime signing timeout/blocked-work alerts are always included.
+  requiredSignersByRole: {}
+
+balanceMonitoring:
+  enabled: true
+  feeWallet:
+    enabled: true
+    # Total canonical unredeemed UTXOs, not reservation-adjusted spendable funds.
+    minimumDoge: 100
+    jobRegex: ".*withdrawal-processor.*"
+  ethereum:
+    feeOracle:
+      minimumEth: 5
+      address: ""
+      # Fee oracle submits to its configured L2 RPC. Override for another chain.
+      rpcUrl: http://l2-rpc:8545
+      expectedChainId: ""
+    ethDaSubmitter:
+      minimumEth: 0.1
+      address: ""
+      rpcUrl: ""
+      expectedChainId: ""
+  exporter:
+    enabled: true
+    image: python:3.12.11-alpine3.22
+    imagePullPolicy: IfNotPresent
+    imagePullSecrets: []
+    intervalSeconds: 60
+    rpcTimeoutSeconds: 10
+    # Optional Secret of SCROLL_BALANCE_* environment variables, for RPC secrets.
+    # Explicit nonempty ethereum.* values take precedence over this Secret.
+    envFromSecret: ""
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
 prometheusRules:
-  # Metric alerts are independent of the bundled Grafana instance and can be
-  # consumed by any Prometheus Operator watching this namespace.
+  # Fallback for external Grafana / Prometheus-only deployments. Suppressed when
+  # bundled Grafana alerting is enabled, so application alerts evaluate once.
   enabled: true
   labels: {}
 

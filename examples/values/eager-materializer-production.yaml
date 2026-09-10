@@ -1,0 +1,35 @@
+# prep-charts supplies eagerMaterializer.config and identity/genesis mounts.
+# Required compiler output. Never copy an instance's generated identity JSON,
+# bucket or credentials into this reusable example; generate them with the CLI.
+eagerMaterializer:
+  config: ""
+image:
+  repository: dogeos69/eager-materializer
+  tag: v0.3.0-beta.4e
+persistence:
+  data:
+    size: 5Gi
+    storageClass: gp3
+    mountPath: /app/data
+  genesis:
+    enabled: true
+    type: configMap
+    name: genesis-config
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    readOnly: true
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 4Gi
+# Supply this deployment's prefix-scoped IRSA role (never a shared broad role).
+serviceAccount:
+  create: true
+  name: eager-materializer
+  annotations: {}
+  # annotations:
+  #   eks.amazonaws.com/role-arn: "<TODO_INSTANCE_PREFIX_SCOPED_ROLE_ARN>"
+  # Grant prefix-scoped List/Get/Put only; align the IAM trust subject with
+  # this ServiceAccount/namespace. No DeleteObject or KMS permission is needed.

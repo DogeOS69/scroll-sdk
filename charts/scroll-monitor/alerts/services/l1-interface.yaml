@@ -1,0 +1,121 @@
+# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+groups:
+- name: dogeos.services.l1-interface
+  interval: 1m
+  rules:
+  - alert: L1InterfaceMetricsTargetDown
+    expr: up{job=~".*l1-interface.*"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: A l1-interface metrics target cannot be scraped.
+      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
+        and network policy. A removed target requires the Kubernetes workload alerts.
+  - alert: L1InterfacePodNotReady
+    expr: kube_pod_status_ready{condition="true",pod=~".*l1-interface.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: A l1-interface pod is not ready.
+      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
+        Job pods are excluded.
+  - alert: L1InterfaceReplayLagging
+    expr: l1_interface_protocol_replay_lag > 10 and on (namespace, job, instance) l1_interface_protocol_replay_configured
+      == 1
+    for: 15m
+    labels:
+      severity: warning
+      service: l1-interface
+    annotations:
+      summary: L1 Interface discovered replay work is more than 10 WF transactions ahead of validation.
+      description: Inspect witnesses, validation, and canonical replay recovery. This compares frontiers in the
+        same read model.
+  - alert: L1InterfaceReplayValidationUnavailable
+    expr: l1_interface_protocol_replay_ready == 0 and on (namespace, job, instance) l1_interface_protocol_replay_configured
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: The configured L1 replay read model remains unready.
+      description: Inspect replay stop reasons, staleness, and regression episodes. Service startup readiness alone
+        does not establish replay readiness.
+  - alert: L1InterfaceReplayTerminalFault
+    expr: sum by (namespace, job, instance) (increase(l1_interface_replay_committed_terminal_faults_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: L1 replay committed a terminal validation fault.
+      description: Inspect the terminal reason and canonical witness. This differs from normal confirmation waiting.
+  - alert: L1InterfaceSyntheticIndexIntegrityViolation
+    expr: sum by (namespace, job, instance) (increase(l1_interface_synthetic_tx_index_integrity_violations_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: The synthetic transaction index violated an integrity check.
+      description: Inspect replay event-plane data and transaction index consistency.
+  - alert: L1InterfaceIndexerFailures
+    expr: sum by (namespace, job, instance) (increase(l1_interface_indexer_sync_results_total{status="error"}[5m]))
+      > 0
+    for: 10m
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: L1 Interface Dogecoin indexing keeps failing.
+      description: Check Dogecoin RPC, database access, and sync errors.
+  - alert: L1InterfaceDatabaseFailures
+    expr: sum by (namespace, job, instance) (increase(l1_interface_db_query_responses_total{status="error"}[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: l1-interface
+    annotations:
+      summary: L1 Interface database operations keep failing.
+      description: Check database connectivity, pool exhaustion, and query errors.
+  - alert: L1InterfaceProtocolMetricsReadFailure
+    expr: sum by (namespace, job, instance) (increase(l1_interface_protocol_metrics_scrape_errors_total[5m])) >
+      0
+    for: 5m
+    labels:
+      severity: warning
+      service: l1-interface
+    annotations:
+      summary: L1 Interface cannot refresh protocol metrics.
+      description: Replay and business gauges may be stale. Check read-model and database availability.
+  - alert: L1InterfaceRPCErrors
+    expr: sum by (namespace, job, instance, method) (rate(l1_interface_rpc_responses_total{status="error"}[10m]))
+      / sum by (namespace, job, instance, method) (rate(l1_interface_rpc_responses_total[10m])) > 0.05 and sum by
+      (namespace, job, instance, method) (increase(l1_interface_rpc_responses_total[10m])) >= 20
+    for: 5m
+    labels:
+      severity: warning
+      service: l1-interface
+    annotations:
+      summary: L1 Interface RPC errors exceed 5 percent.
+      description: Method {{ $labels.method }} has at least 20 observations in ten minutes. Inspect replay readiness
+        and upstream dependencies.
+  - alert: L1InterfaceRPCSlow
+    expr: sum by (namespace, job, instance, method) (rate(l1_interface_rpc_request_duration_seconds_sum[10m])) /
+      sum by (namespace, job, instance, method) (rate(l1_interface_rpc_request_duration_seconds_count[10m])) > 2
+      and sum by (namespace, job, instance, method) (increase(l1_interface_rpc_request_duration_seconds_count[10m]))
+      >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: l1-interface
+    annotations:
+      summary: l1-interface mean operation latency exceeds 2 seconds.
+      description: RPC method {{ $labels.method }} averages more than two seconds. Check database and replay read-model
+        performance.

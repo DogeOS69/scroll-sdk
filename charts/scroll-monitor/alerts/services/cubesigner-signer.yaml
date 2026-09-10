@@ -1,0 +1,127 @@
+# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+groups:
+- name: dogeos.services.cubesigner-signer
+  interval: 1m
+  rules:
+  - alert: CubesignerSignerMetricsTargetDown
+    expr: up{job=~".*cubesigner-signer.*"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: A cubesigner-signer metrics target cannot be scraped.
+      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
+        and network policy. A removed target requires the Kubernetes workload alerts.
+  - alert: CubesignerSignerPodNotReady
+    expr: kube_pod_status_ready{condition="true",pod=~".*cubesigner-signer.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
+      == 1
+    for: 10m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: A cubesigner-signer pod is not ready.
+      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
+        Job pods are excluded.
+  - alert: CubeSignerSigningAttemptsFail
+    expr: sum by (namespace, job, instance, reason) (increase(cubesigner_signer_sign_outcome_total{reason!="success"}[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner signing attempts keep failing.
+      description: Inspect reason {{ $labels.reason }}, vendor response classification, policy readiness, and authentication.
+  - alert: CubeSignerPSBTAuthorizationRejected
+    expr: sum by (namespace, job, instance, reason_code) (increase(cubesigner_signer_psbt_policy_rejections_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner rejected PSBT authorization or signed-output integrity.
+      description: Inspect reason code {{ $labels.reason_code }}. Check sighash, input ownership, immutable transaction
+        fields, and returned signatures.
+  - alert: CubeSignerWorkerStale
+    expr: time() - cubesigner_signer_last_worker_cycle_timestamp_seconds > 300
+    for: 5m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner background worker has not completed a cycle in five minutes.
+      description: Check blocked vendor calls, worker scheduling, and process health.
+  - alert: CubeSignerWorkerFailures
+    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_worker_cycles_total{outcome="error"}[5m]))
+      > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner background polling cycles keep failing.
+      description: Inspect background worker errors and TSO connectivity.
+  - alert: CubeSignerPendingQueueStalled
+    expr: cubesigner_signer_pending_signatures > 0 and on (namespace, job, instance) sum by (namespace, job, instance)
+      (increase(cubesigner_signer_sign_outcome_total{reason="success"}[15m])) == 0
+    for: 15m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner has pending signatures but no successful signing attempts.
+      description: Inspect the pending queue and TSO submission retries. Cached PSBT retries are not new signing
+        attempts, so check delivery as well.
+  - alert: CubeSignerProofFallbackUsed
+    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_policy_fallback_signs_total[5m])) > 0
+    labels:
+      severity: warning
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner signed through a testnet proof fallback.
+      description: Review the proof failure code and network policy. Fallback is intentional only in explicitly
+        configured testnet/observe workflows.
+  - alert: CubeSignerPolicyTelemetryBroken
+    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_policy_eval_tree_unparseable_total[5m]))
+      > 0
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner policy explain telemetry could not be parsed.
+      description: Check vendor response shape and the bounded policy event contract. Fallback observability is
+        degraded.
+  - alert: CubeSignerMetricsFault
+    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_metrics_faults_total[5m])) > 0
+    labels:
+      severity: warning
+      service: cubesigner-signer
+    annotations:
+      summary: CubeSigner metric recording failed.
+      description: Instrumentation swallowed a fault; some metrics may be stale or missing. Inspect gateway diagnostics.
+  - alert: CubeSignerPolicyEvaluationMissing
+    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason="success"}[10m]))
+      > 0 and (sum by (namespace, job, instance) (increase(cubesigner_signer_policy_evaluations_total{outcome="Permitted"}[10m]))
+      or sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason="success"}[10m]))
+      * 0) == 0
+    for: 10m
+    labels:
+      severity: critical
+      service: cubesigner-signer
+    annotations:
+      summary: Successful CubeSigner signs have no observed Permitted policy evaluation.
+      description: Inspect explain trees and attached policies. A missing tree is an observability or policy-attachment
+        issue requiring investigation.
+  - alert: CubeSignerSigningSlow
+    expr: sum by (namespace, job, instance) (rate(cubesigner_signer_sign_duration_seconds_sum[10m])) / sum by (namespace,
+      job, instance) (rate(cubesigner_signer_sign_duration_seconds_count[10m])) > 30 and sum by (namespace, job,
+      instance) (increase(cubesigner_signer_sign_duration_seconds_count[10m])) >= 5
+    for: 5m
+    labels:
+      severity: warning
+      service: cubesigner-signer
+    annotations:
+      summary: cubesigner-signer mean operation latency exceeds 30 seconds.
+      description: Signing attempts average more than 30 seconds. Check Cubist API latency, MFA, and policy execution.

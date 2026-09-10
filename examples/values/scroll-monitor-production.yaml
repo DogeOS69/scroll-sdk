@@ -1,5 +1,15 @@
 grafana:
+  # Email requires an SMTP transport. Create grafana-smtp with keys user and
+  # password, then uncomment smtp below and smtp settings in grafana.ini.
+  # smtp:
+  #   existingSecret: grafana-smtp
   grafana.ini:
+    # smtp:
+    #   enabled: true
+    #   host: smtp.example.com:587
+    #   from_address: alerts@example.com
+    #   from_name: Scroll Monitor
+    #   startTLS_policy: MandatoryStartTLS
     server:
       domain: grafana.scrollsdk
       root_url: "https://grafana.scrollsdk"
@@ -20,13 +30,48 @@ grafana:
     annotations:
       "helm.sh/resource-policy": keep
 
-# Keep bundled dashboards and Prometheus rules by default. Production
-# environments can manage the dashboard ConfigMaps separately.
+# Application alerts are editable in Grafana. Configure Slack and email in
+# Alerting > Contact points, using the built-in Grafana Alertmanager.
 dashboards:
   bundled:
     enabled: true
-prometheusRules:
+grafanaAlerting:
   enabled: true
+prometheusRules:
+  enabled: true # Fallback when Grafana alerting is disabled.
+
+# Balance settings consumed by the configuration generator. Public addresses
+# and RPC URLs become SCROLL_BALANCE_* environment variables in the exporter.
+# No private key is required. Replace <TODO> before deployment.
+balanceMonitoring:
+  enabled: true
+  feeWallet:
+    enabled: true
+    minimumDoge: 100
+    jobRegex: ".*withdrawal-processor.*"
+  ethereum:
+    feeOracle:
+      address: "<TODO>"
+      rpcUrl: http://l2-rpc:8545
+      expectedChainId: "" # Set to the deployed L2 chain ID.
+      minimumEth: 5
+    ethDaSubmitter:
+      address: "<TODO>"
+      rpcUrl: "<TODO>" # Same Ethereum network used for DA publication.
+      expectedChainId: "" # Set to that Ethereum network's chain ID.
+      minimumEth: 0.1
+  exporter:
+    enabled: true
+    envFromSecret: "" # Optional Secret with SCROLL_BALANCE_* keys for RPC credentials.
+
+serviceAlerts:
+  enabled: true
+  paused: true
+
+businessAlerts:
+  enabled: true
+  # Populate from the active bridge policy for exact per-role quorum checks.
+  requiredSignersByRole: {}
 
 loki:
   enabled: true
@@ -122,23 +167,6 @@ kube-prometheus-stack:
           cpu: "2"
           memory: 8Gi
   alertmanager:
-    config:
-      global:
-        resolve_timeout: 5m
-        slack_api_url: "" # replace with your Slack webhook URL
-      receivers:
-      - name: "slack-alerts"
-        slack_configs:
-        - channel: "" # replace with your channel name
-          send_resolved: true
-          text: "{{ .CommonAnnotations.description }}"
-          title: "{{ .CommonAnnotations.summary }}"
-      route:
-        group_by: ["alertname"]
-        receiver: "slack-alerts"
-        routes:
-        - matchers: []
-          receiver: "slack-alerts"
     alertmanagerSpec:
       storage:
         volumeClaimTemplate:
@@ -172,77 +200,6 @@ kube-prometheus-stack:
       limits:
         cpu: 300m
         memory: 400Mi
-  additionalPrometheusRules:
-    - groups:
-        - name: balance-cheker-group
-          rules:
-            - alert: ether_balance_of_L1_COMMIT_SENDER
-              annotations:
-                description: >-
-                  Balance of L1_COMMIT_SENDER
-                  (0x2f9d5a5646A0688db6D6BD19DA9006c344786B8d) is less than
-                  threshold 10
-                summary: Balance of L1_COMMIT_SENDER is less than threshold 10
-              expr: ether_balance_of_L1_COMMIT_SENDER < 10
-              for: 5m
-              labels:
-                severity: critical
-            - alert: ether_balance_of_L1_FINALIZE_SENDER
-              annotations:
-                description: >-
-                  Balance of L1_FINALIZE_SENDER
-                  (0xE3f6AB0b254EA2f91C7e9cC3343cE6774D6ABc30) is less than
-                  threshold 10
-                summary: Balance of L1_FINALIZE_SENDER is less than threshold 10
-              expr: ether_balance_of_L1_FINALIZE_SENDER < 10
-              for: 5m
-              labels:
-                severity: critical
-            - alert: ether_balance_of_L1_GAS_ORACLE_SENDER
-              annotations:
-                description: >-
-                  Balance of L1_GAS_ORACLE_SENDER
-                  (0x3f9cfe93D935aD97a0D95e788E6c286Cdc6D8Ac3) is less than
-                  threshold 1.1
-                summary: Balance of L1_GAS_ORACLE_SENDER is less than threshold 1.1
-              expr: ether_balance_of_L1_GAS_ORACLE_SENDER < 1.1
-              for: 5m
-              labels:
-                severity: critical
-            - alert: ether_balance_of_L1_SCROLL_FEE_VAULT
-              annotations:
-                description: >-
-                  Balance of L1_SCROLL_FEE_VAULT
-                  (0x80616B8a63A895cf7EF29c6c7421C5FfC54F2E6d) is less than
-                  threshold 0
-                summary: Balance of L1_SCROLL_FEE_VAULT is less than threshold 0
-              expr: ether_balance_of_L1_SCROLL_FEE_VAULT < 0
-              for: 5m
-              labels:
-                severity: critical
-            - alert: ether_balance_of_L2_GAS_ORACLE_SENDER
-              annotations:
-                description: >-
-                  Balance of L2_GAS_ORACLE_SENDER
-                  (0xF465d1d2266A3Feb882186FB042B0A414C7066aA) is less than
-                  threshold 1.1
-                summary: Balance of L2_GAS_ORACLE_SENDER is less than threshold 1.1
-              expr: ether_balance_of_L2_GAS_ORACLE_SENDER < 1.1
-              for: 5m
-              labels:
-                severity: critical
-            - alert: ether_balance_of_L2_TX_FEE_VAULT
-              annotations:
-                description: >-
-                  Balance of L2_TX_FEE_VAULT
-                  (0x5300000000000000000000000000000000000005) is less than
-                  threshold 0
-                summary: Balance of L2_TX_FEE_VAULT is less than threshold 0
-              expr: ether_balance_of_L2_TX_FEE_VAULT < 0
-              for: 5m
-              labels:
-                severity: critical
-      labels:
-        release: scroll-monitor
-        role: alert-rules
-      name: balance-cheker
+  # Legacy fixed-address Scroll balance-checker rules were retired. Application
+  # notifications are configured in Grafana; add only current custom rules here.
+  additionalPrometheusRules: []

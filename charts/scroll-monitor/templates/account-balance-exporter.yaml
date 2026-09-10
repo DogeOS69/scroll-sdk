@@ -1,0 +1,128 @@
+{{- if and .Values.balanceMonitoring.enabled .Values.balanceMonitoring.exporter.enabled }}
+{{- $name := printf "%s-account-balances" .Release.Name | trunc 63 | trimSuffix "-" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+data:
+  exporter.py: |
+{{ .Files.Get "scripts/account-balance-exporter.py" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-account-balances
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scroll-account-balances
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/script: {{ .Files.Get "scripts/account-balance-exporter.py" | sha256sum }}
+      labels:
+        app.kubernetes.io/name: scroll-account-balances
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.balanceMonitoring.exporter.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: exporter
+          image: {{ .Values.balanceMonitoring.exporter.image | quote }}
+          imagePullPolicy: {{ .Values.balanceMonitoring.exporter.imagePullPolicy }}
+          command: [python3, /config/exporter.py]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: metrics
+              containerPort: 9108
+          {{- with .Values.balanceMonitoring.exporter.envFromSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ . | quote }}
+          {{- end }}
+          env:
+            - name: SCROLL_BALANCE_INTERVAL_SECONDS
+              value: {{ .Values.balanceMonitoring.exporter.intervalSeconds | quote }}
+            - name: SCROLL_BALANCE_RPC_TIMEOUT_SECONDS
+              value: {{ .Values.balanceMonitoring.exporter.rpcTimeoutSeconds | quote }}
+            {{- range $prefix, $account := dict "FEE_ORACLE" .Values.balanceMonitoring.ethereum.feeOracle "ETH_DA_SUBMITTER" .Values.balanceMonitoring.ethereum.ethDaSubmitter }}
+            {{- range $suffix, $value := dict "ADDRESS" $account.address "RPC_URL" $account.rpcUrl "EXPECTED_CHAIN_ID" $account.expectedChainId }}
+            {{- if ne (toString $value) "" }}
+            - name: {{ printf "SCROLL_BALANCE_%s_%s" $prefix $suffix }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            {{- toYaml .Values.balanceMonitoring.exporter.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-account-balances
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: scroll-account-balances
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: metrics
+      port: 9108
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-account-balances
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scroll-account-balances
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}

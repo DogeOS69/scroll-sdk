@@ -1,8 +1,22 @@
 # contracts
 
-![Version: 0.1.22](https://img.shields.io/badge/Version-0.1.22-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.23](https://img.shields.io/badge/Version-0.1.23-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 contracts helm charts
+
+## L2 readiness and safe retries
+
+The L2 init container POSTs `eth_chainId`, validates the JSON-RPC response and,
+when `CHAIN_ID_L2` is configured, requires the matching chain ID. A plain HTTP GET
+is not a readiness check: Reth returns HTTP 405 at the JSON-RPC root.
+`L2_RPC_ENDPOINT` must resolve to the actual RPC Service name, including any
+`service.main.fullname` override in the Reth values.
+
+This is a standalone Pod, not a Job. Updating its init command requires recreating
+the Pod. Before doing so, inspect all container states and deployment logs: retry
+is safe without transaction reconciliation only if the main contracts container
+has never started. If it has started, reconcile broadcast receipts/nonces first;
+do not blindly delete and rerun a potentially partially completed deployment.
 
 ## Maintainers
 

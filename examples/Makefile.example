@@ -3,6 +3,9 @@
 # ordinary Helm installs/removals. Run prep-charts and proof-config-check first.
 
 NAMESPACE ?= default
+KUBE_CONTEXT ?=
+EAGER_MATERIALIZER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eager-materializer
+EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.0
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.3
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
@@ -93,7 +96,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.25-dogeos \
+		--version=0.1.27-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:
@@ -151,7 +154,7 @@ install-l2-reth-bootnode:
 
 install-contracts:
 	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
-		--version=0.1.22 \
+		--version=0.1.23 \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
@@ -193,6 +196,15 @@ install-prover-worker:
 	helm upgrade -i prover-worker $(PROVER_WORKER_CHART) -n $(NAMESPACE) \
 		--version $(PROVER_WORKER_CHART_VERSION) \
 		--values values/prover-worker-production.yaml
+
+.PHONY: install-eager-materializer
+# Invoke after prep-charts has emitted an enabled producer contract.
+install-eager-materializer:
+	test -n "$(KUBE_CONTEXT)"
+	test "$$(jq -r '.components.eagerMaterializer.enabled // false' .data/proof-deployment.json)" = true
+	helm --kube-context $(KUBE_CONTEXT) upgrade -i eager-materializer $(EAGER_MATERIALIZER_CHART) -n $(NAMESPACE) \
+		--version $(EAGER_MATERIALIZER_CHART_VERSION) \
+		--values values/eager-materializer-production.yaml
 
 # Proof Coordinator remains deployed while the generated contract selects its
 # idle or active config. The contract decides whether the local prover-worker

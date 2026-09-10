@@ -42,7 +42,7 @@ reth:
   l1LivenessCheckInterval: "3600"
   blobS3Url: ""
   trustedPeers: "<TODO>"
-  builderGasLimit: ""
+  builderGasLimit: "10000000"
   engineSyncAtStartup: "true"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
@@ -52,6 +52,10 @@ reth:
   extraArgs:
     - "--network.legacy-geth-header-transform"
     - "true"
+    # Internal witness RPC: keep this above head minus the oldest unprepared
+    # block. Historical proof queries can be expensive; do not expose publicly.
+    - "--rpc.eth-proof-window"
+    - "100000"
 
   ports:
     http: 8545
@@ -114,7 +118,9 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: eth,net,web3,rpc
+    # Internal witness node: real materialization requires debug_executionWitness.
+    # Keep this endpoint private; rpc-public deliberately does not expose debug.
+    api: eth,net,web3,rpc,debug
 
   ws:
     enabled: true
