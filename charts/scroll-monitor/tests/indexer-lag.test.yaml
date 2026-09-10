@@ -1,0 +1,303 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 30s
+tests:
+- name: both jobs fire after two minutes without any node metric
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+0x12
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor",instance="pod-a:9000"}
+    values: 40+0x12
+  alert_rule_test:
+  - eval_time: 0s
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 90s
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: withdrawal-processor
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer withdrawal-processor has been unchanged
+          for 2 minutes.
+        description: Job withdrawal-processor instance pod-a:9000 has reported an
+          unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer
+          processing and Dogecoin RPC availability.
+- name: advancing heights with arbitrary confirmation gaps stay healthy
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+1x12
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor",instance="pod-a:9000"}
+    values: 1+1x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: a step restarts the entire two minute window including left boundary
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100 101+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 150s
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: healthy job does not hide stalled job
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+1x12
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="withdrawal-processor",instance="pod-a:9000"}
+    values: 100+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: withdrawal-processor
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer withdrawal-processor has been unchanged
+          for 2 minutes.
+        description: Job withdrawal-processor instance pod-a:9000 has reported an
+          unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer
+          processing and Dogecoin RPC availability.
+- name: healthy replica does not hide stalled replica
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+0x12
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-b:9000"}
+    values: 100+1x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: namespaces evaluated separately
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+0x12
+  - series: indexer_dogecoin_last_synced_block{namespace="other",job="l1-interface",instance="pod-a:9000"}
+    values: 100+1x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: new series needs two minutes of history
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: _ _ _ _ 100+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 210s
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: stale metric cannot be reported as stalled
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100 100 100 stale _ _ _ _
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 3m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: missing metric cannot be reported as stalled
+  interval: 30s
+  input_series: []
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: a single sample cannot establish a stall
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100 _ _ _ _ _ _
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: unselected job is ignored
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="unrelated",instance="pod-a:9000"}
+    values: 100+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: zero height still fires
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 0+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: progress clears a fired alert immediately
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+0x4 101+1x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+  - eval_time: 150s
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+- name: decrease resets unchanged window
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100+0x3 99+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 210s
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.
+- name: value changing away and back is not unchanged
+  interval: 30s
+  input_series:
+  - series: indexer_dogecoin_last_synced_block{namespace="monitoring",job="l1-interface",instance="pod-a:9000"}
+    values: 100 101 100+0x12
+  alert_rule_test:
+  - eval_time: 2m
+    alertname: DogecoinIndexerLag
+    exp_alerts: []
+  - eval_time: 3m
+    alertname: DogecoinIndexerLag
+    exp_alerts:
+    - exp_labels:
+        service: embedded-dogecoin-indexer
+        severity: warning
+        job: l1-interface
+        namespace: monitoring
+        instance: pod-a:9000
+      exp_annotations:
+        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported an unchanged
+          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
+          and Dogecoin RPC availability.

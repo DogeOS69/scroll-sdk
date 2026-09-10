@@ -20,6 +20,16 @@ class BalanceTests(unittest.TestCase):
             def do_POST(self):
                 query = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 self.server.calls.append(query)
+                if self.server.require_client_identity and self.headers.get("User-Agent") != "scroll-monitor-account-balances/0.1":
+                    self.send_response(403)
+                    self.end_headers()
+                    self.wfile.write(b"error code: 1010")
+                    return
+                if self.server.http_status:
+                    self.send_response(self.server.http_status)
+                    self.end_headers()
+                    self.wfile.write(b"secret-provider-detail")
+                    return
                 if self.server.failure:
                     result = {"jsonrpc": "2.0", "id": 1, "error": {"message": "secret-provider-detail"}}
                 else:
@@ -46,6 +56,8 @@ class BalanceTests(unittest.TestCase):
     def setUp(self):
         self.server.calls = []
         self.server.failure = False
+        self.server.http_status = None
+        self.server.require_client_identity = False
         self.server.balance = 5 * 10**18
         self.account = {"address": "0x" + "ab" * 20,
                         "rpc_url": f"http://127.0.0.1:{self.server.server_port}",
@@ -65,6 +77,13 @@ class BalanceTests(unittest.TestCase):
         rendered = exporter.render()
         self.assertIn('scroll_account_balance_scrape_success{account="fee-oracle"} 1', rendered)
         self.assertIn('chain_id="1234"} 0\n', rendered)
+
+    def test_public_rpc_accepts_explicit_exporter_identity(self):
+        self.server.require_client_identity = True
+        exporter = BALANCE.Exporter({"eth-da-submitter": self.account})
+        exporter.refresh()
+        self.assertEqual(exporter.results["eth-da-submitter"]["success"], 1)
+        self.assertEqual([call["method"] for call in self.server.calls], ["eth_chainId", "eth_getBalance"])
 
     def test_eth_units_and_fractional_default(self):
         self.server.balance = 10**17
@@ -90,6 +109,23 @@ class BalanceTests(unittest.TestCase):
         with self.assertRaisesRegex(BALANCE.CollectionError, "wrong_chain"):
             BALANCE.collect(self.account, 1)
         self.assertEqual([c["method"] for c in self.server.calls], ["eth_chainId"])
+
+    def test_http_failures_expose_bounded_reasons_without_false_balances(self):
+        for status, reason in [(401, "rpc_access_denied"), (403, "rpc_access_denied"),
+                               (429, "rpc_rate_limited"), (500, "rpc_http_error")]:
+            with self.subTest(status=status):
+                self.server.http_status = None
+                exporter = BALANCE.Exporter({"eth-da-submitter": self.account})
+                exporter.refresh()
+                last_success = exporter.results["eth-da-submitter"]["last_success"]
+                self.server.http_status = status
+                exporter.refresh()
+                rendered = exporter.render()
+                self.assertIn(f'reason="{reason}"', rendered)
+                self.assertNotIn("scroll_account_balance_eth{", rendered)
+                self.assertNotIn("secret-provider-detail", rendered)
+                self.assertNotIn(self.account["rpc_url"], rendered)
+                self.assertEqual(exporter.results["eth-da-submitter"]["last_success"], last_success)
 
     def test_hex_expected_chain_id_is_supported(self):
         self.account["expected_chain_id"] = "0x4d2"

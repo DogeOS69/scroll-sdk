@@ -1,0 +1,171 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: missing telemetry is warning, not a business failure
+  interval: 1m
+  input_series: []
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 6m
+    alertname: FeeOracleMetricMissing
+    exp_alerts:
+    - exp_labels: &id001
+        severity: warning
+        service: fee-oracle
+      exp_annotations: &id002
+        summary: Fee oracle freshness cannot be evaluated because its metric is missing.
+        description: Check whether fee-oracle is deployed, its ServiceMonitor is selected,
+          and its metrics endpoint exports the computation timestamp. Missing telemetry
+          does not establish a stale oracle value. Pause this rule if fee-oracle is
+          intentionally absent.
+  - eval_time: 6m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 6m
+    alertname: TSOSignerMetricMissing
+    exp_alerts:
+    - exp_labels: &id003
+        severity: warning
+        service: tso-service
+      exp_annotations: &id004
+        summary: TSO signer count cannot be evaluated because its metric is missing.
+        description: Check the TSO ServiceMonitor, Prometheus target discovery, and
+          /metrics endpoint. Missing telemetry does not establish that there are no
+          registered signers.
+- name: missing telemetry waits five minutes
+  interval: 1m
+  input_series: []
+  alert_rule_test:
+  - eval_time: 4m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: FeeOracleMetricMissing
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 4m
+    alertname: TSOSignerMetricMissing
+    exp_alerts: []
+- name: fresh oracle and five registered signers
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms
+    values: 0+60000x30
+  - series: tso_core_registered_signers_count
+    values: 5+0x30
+  alert_rule_test:
+  - eval_time: 25m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 25m
+    alertname: FeeOracleMetricMissing
+    exp_alerts: []
+  - eval_time: 25m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 25m
+    alertname: TSOSignerMetricMissing
+    exp_alerts: []
+- name: observed zero signers remains critical
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms
+    values: 0+60000x30
+  - series: tso_core_registered_signers_count
+    values: 0+0x30
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 6m
+    alertname: FeeOracleMetricMissing
+    exp_alerts: []
+  - eval_time: 6m
+    alertname: TSONoRegisteredSigners
+    exp_alerts:
+    - exp_labels:
+        severity: critical
+        service: tso-service
+      exp_annotations:
+        summary: TSO has no registered signers.
+        description: TSO reports fewer than one registered signer. Check signer registration
+          and connectivity.
+  - eval_time: 6m
+    alertname: TSOSignerMetricMissing
+    exp_alerts: []
+- name: observed stale oracle remains critical
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms
+    values: 0+0x30
+  - series: tso_core_registered_signers_count
+    values: 5+0x30
+  alert_rule_test:
+  - eval_time: 22m
+    alertname: FeeOracleStale
+    exp_alerts:
+    - exp_labels:
+        severity: critical
+        service: fee-oracle
+      exp_annotations:
+        summary: Fee oracle Ethereum DA oracle value has not updated recently.
+        description: The latest observed computed value is older than 15 minutes.
+          Check fee-oracle computation and upstream RPCs.
+  - eval_time: 22m
+    alertname: FeeOracleMetricMissing
+    exp_alerts: []
+  - eval_time: 22m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 22m
+    alertname: TSOSignerMetricMissing
+    exp_alerts: []
+- name: scrape loss clears business failures and identifies missing metrics
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms
+    values: 0+0x22 stale _x15
+  - series: tso_core_registered_signers_count
+    values: 0+0x22 stale _x15
+  alert_rule_test:
+  - eval_time: 30m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 30m
+    alertname: FeeOracleMetricMissing
+    exp_alerts:
+    - exp_labels: *id001
+      exp_annotations: *id002
+  - eval_time: 30m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 30m
+    alertname: TSOSignerMetricMissing
+    exp_alerts:
+    - exp_labels: *id003
+      exp_annotations: *id004
+- name: telemetry recovery clears missing warnings
+  interval: 1m
+  input_series:
+  - series: fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms
+    values: _x10 660000+60000x20
+  - series: tso_core_registered_signers_count
+    values: _x10 5+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: FeeOracleStale
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: FeeOracleMetricMissing
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: TSONoRegisteredSigners
+    exp_alerts: []
+  - eval_time: 15m
+    alertname: TSOSignerMetricMissing
+    exp_alerts: []

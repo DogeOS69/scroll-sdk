@@ -54,6 +54,8 @@ notification settings, evaluation intervals, and pause state on upgrades. UI
 changes and contact points are stored on the Grafana PVC. Deleting a bundled
 rule causes it to be recreated on the next upgrade; pause it to keep it disabled.
 Changes to bundled defaults apply to new rules; existing rules remain UI-owned.
+Known shipped query defects can carry an exact-expression migration. These
+migrate only matching managed rules; customized queries remain untouched.
 
 ### Extended service diagnostics (paused by default)
 
@@ -140,6 +142,46 @@ thresholds were `< 0`. See [the business alert review](ALERTING_REVIEW.md) for
 the rules and source references for the current DogeOS workflow.
 
 ### Business and funding alerts
+
+`TSONoRegisteredSigners` and `FeeOracleStale` require an observed signer count
+or computation timestamp. Missing metrics instead trigger the warning rules
+`TSOSignerMetricMissing` and `FeeOracleMetricMissing` after five minutes. This
+distinguishes a missing scrape target or undeployed service from an observed
+business failure. Missing telemetry remains actionable and is not replaced by
+zero. If fee-oracle is intentionally absent, pause its rules in Grafana.
+
+Upgrading from the previous bundled queries removes their `or absent(...)`
+branches only when the stable UID, managed label, datasource UID and exact old
+expression match. The seeder also corrects the old description if it is still
+unchanged. Pause state, notification settings, group interval, custom
+annotations and other operator settings survive. Migration metadata is omitted
+from native Prometheus rules. See [the missing-metrics investigation](MISSING_METRICS_REVIEW.md)
+for the read-only testnet evidence and deployment prerequisites.
+
+`DogecoinIndexerLag` now alerts when `indexer_dogecoin_last_synced_block`
+remains unchanged for two minutes, separately for each namespace, job and instance.
+The default `dogecoinIndexerAlerts.jobRegex` selects `l1-interface` and
+`withdrawal-processor`; change it if the deployment uses different job names.
+No node-tip metric or confirmation configuration is needed. The rule observes
+changes to the confirmed processed height, so a confirmation-policy change or
+lack of new Dogecoin blocks can also leave it unchanged and trigger the rule.
+
+The query requires two minutes of history, multiple samples in the window, and
+a currently present series. It compares the window's left boundary as well as
+changes within the window to avoid firing early after a recent height update.
+Missing metrics do not count as a stall. Any observed height change, including
+a decrease, resets this unchanged-value condition. The rolling window already
+provides the two-minute delay, so `for` is `0s`; the one-minute evaluation
+interval determines when the condition is next checked.
+
+The name is retained to preserve the existing Grafana UID. Both the original
+raw-gap query and the shipped confirmation-adjusted query have exact migrations;
+unchanged descriptions and the old default `for: 10m` migrate with them.
+Operator-edited queries, pending periods, pause state and notification settings
+are preserved. Retain old `confirmationsByJob` / `maxExcessLagBlocks` values during
+an upgrade if they were customized: they only reconstruct the old query for
+migration and do not affect the new rule. If they are no longer available or the
+saved query was edited, update the existing Grafana rule explicitly.
 
 `businessAlerts.enabled` installs the accepted safety, proof-work, WF job,
 replay/reorg recovery, signer, TSO progress, and DA publication alerts. The
@@ -231,8 +273,22 @@ Missing or invalid addresses/RPCs are reported as collection failures. Failed
 collections omit the balance sample, retain the last-success timestamp, and
 expose a bounded error reason. They never convert an RPC failure to a zero
 balance. Separate alerts detect failed/stale collection and missing monitoring
-for either account. The production examples intentionally use `<TODO>` address
-and Ethereum RPC placeholders; the generator must replace them before deployment.
+for either account. The production examples use `<TODO>` address, L2 RPC and
+chain-ID placeholders; the generator must replace them before deployment.
+Their Sepolia RPC is the user-selected `https://ethereum-sepolia-rpc.publicnode.com`;
+the generator must still select the endpoint for the deployment's actual network.
+
+Inspect `scroll_account_balance_collection_status{reason!="none"}` when collection
+fails. HTTP 401/403 maps to `rpc_access_denied`, HTTP 429 to `rpc_rate_limited`,
+and other HTTP failures to `rpc_http_error`. Transport failures remain
+`rpc_unavailable`; JSON-RPC errors use `rpc_error`. Provider response bodies and
+credentialed URLs are never exposed in these labels. Increasing the timeout
+cannot repair an access denial; configure an RPC endpoint that allows the
+exporter's read requests from the deployment network.
+The exporter sends `User-Agent: scroll-monitor-account-balances/0.1` to identify
+itself. The read-only investigation reproduced Cloudflare 403 / 1010 for Python's
+generic User-Agent at both tested public RPCs; the explicit exporter identity
+allowed the reads. Switching RPC URLs alone did not repair the generic client.
 
 Low-balance rules have no pending period: they fire on the next one-minute rule
 evaluation after a low balance is observed. Notification delivery also follows
@@ -263,10 +319,27 @@ stalled progress; existing readiness/up alerts cover service availability.
 
 `ServiceErrorOrPanickedLogs` checks **every service** whose logs reach Loki in
 the Alloy namespace allowlist (`alloy.logs.namespaces`, defaulting to the release
-namespace). Every minute it counts log lines containing the whole word `ERROR`
-or `panicked`, ignoring case, over the last 5 minutes. One matching line fires
+namespace), except the retired `rollup-explorer-backend`. Every minute it counts
+JSON `level`/`severity` and logfmt level fields set to `error`, `fatal`, or `panic`,
+plus plain error/fatal prefixes and Go/Rust panic headers, ignoring case, over
+the last 5 minutes. ANSI colors are removed before matching; timestamp-prefixed
+Rust tracing and geth-style `ERROR[...]` lines are supported. One matching line fires
 the critical alert with no pending period. Notification delivery also follows
 the notification policy's group wait and repeat interval.
+
+Words inside INFO/WARN messages, query expressions, URLs and recovery messages
+do not establish an error level. In particular, Grafana and Loki's successful
+query logs must not trigger this rule simply because they contain its query.
+Unstructured application messages without a recognized error/panic prefix are
+not classified by this rule. JSON and logfmt parsing errors on other formats
+are removed before counting, so plain-text logs do not fail metric evaluation.
+
+The retired `rollup-last-batch-indexes` exporter module is excluded by its exact
+module field. Other exporter errors remain monitored. This chart
+has no rollup-explorer-specific metric alerts or dashboard panels. Its HTTP
+polling module belonged to the separate `metrics-exporter` chart and is no longer
+generated as of its version 0.1.9. This exclusion also covers installations still
+running older exporter charts; changing the alert alone does not stop a poller.
 
 Instances are grouped by `namespace`, `service`, `pod`, and `container` so the
 notification identifies the affected workload. The same `managed_by =
@@ -275,6 +348,13 @@ once the matching logs leave the window. Set `grafanaAlerting.logs.enabled:
 false` to skip installing it; disabling the Loki datasource also skips it. For
 rules already stored in Grafana, pause them in the UI. External services need
 their logs shipped to Loki with these labels before this rule can cover them.
+
+On upgrade, the seeding Job replaces the previous broad whole-word query only
+when its stable rule UID, `managed_by=scroll-monitor`, datasource UID and exact
+previous expression match. It changes only query A's expression, preserving
+pause state, notification settings, labels, annotations and group interval.
+Operator-customized queries are left intact and need manual review. A paused
+rule remains paused after migration. Repeated upgrades do not rewrite it.
 
 Upgrades from native Prometheus application rules remove that chart resource
 and seed Grafana rules. If an older installation still mounts alert provisioning
@@ -289,6 +369,7 @@ Validate changes locally with:
 helm lint charts/scroll-monitor
 # The test runner uses PyYAML, Helm, and Docker with the pinned Prometheus image.
 python3 -m unittest discover -s charts/scroll-monitor/tests -p 'test_*.py'
+SCROLL_MONITOR_LOKI_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests -p 'test_log_alerts.py'
 python3 charts/scroll-monitor/tests/run-alert-tests.py
 ```
 
@@ -385,6 +466,27 @@ Upstream source:
 Prometheus selects Helm-managed ServiceMonitors in its own namespace. This
 keeps discovery scoped to the Scroll deployment namespace without requiring
 monitoring-specific labels or version bumps in application charts.
+
+An absent ServiceMonitor produces no `up` series at all; changing the Prometheus
+selector cannot create a missing monitor. When an application's chart does not
+provide one, `additionalServiceMonitors` can supply a monitor owned by this chart.
+The bundled TSO entry is disabled by default to avoid duplicating a monitor
+already managed by the application. For a deployment with a `tso-service`
+Service on the named `http` port and no TSO monitor, merge this into its values:
+
+```yaml
+additionalServiceMonitors:
+  tso:
+    enabled: true
+```
+
+The monitor selects the `tso-service` application/instance labels in the Helm
+release namespace and scrapes `/metrics` every 30 seconds. Override `selector`
+and `endpoints` for different service labels or named ports, or add other map
+entries with the same structure. Ensure exactly one monitor owns each endpoint.
+For an external Prometheus, its selector must include these monitors' labels
+and namespace. Verify `up{job="tso-service"}` and
+`tso_core_registered_signers_count` after an authorized deployment.
 
 Alloy limits pod-log discovery to the release namespace by default. Set
 `alloy.logs.namespaces` for an explicit namespace allowlist and

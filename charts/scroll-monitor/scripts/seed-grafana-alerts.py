@@ -127,6 +127,41 @@ def alert_rule(source, config, group):
     }
 
 
+def alternatives(value):
+    """Allow a single legacy value or multiple exactly known shipped values."""
+    return value if isinstance(value, list) else [value]
+
+
+def migrate_expression(existing, source, desired):
+    """Migrate known shipped defaults while preserving operator edits."""
+    previous = source.get("previousExpr")
+    if not previous or existing.get("labels", {}).get("managed_by") != "scroll-monitor":
+        return None
+    queries = [query for query in existing.get("data", []) if query.get("refId") == "A"]
+    if len(queries) != 1:
+        return None
+    query = queries[0]
+    # Be conservative: even whitespace edits inside strings may be intentional.
+    if query.get("model", {}).get("expr") not in alternatives(previous):
+        return None
+    if query.get("datasourceUid") != desired["data"][0]["datasourceUid"]:
+        return None
+    updated = copy.deepcopy(existing)
+    for query in updated["data"]:
+        if query["refId"] == "A":
+            query["model"]["expr"] = source["expr"]
+    # Correct shipped explanations only when the operator has not edited them.
+    for key, previous in source.get("previousAnnotations", {}).items():
+        previous = [value.replace("$value", "$values.A.Value") for value in alternatives(previous)]
+        if updated.get("annotations", {}).get(key) in previous:
+            updated["annotations"][key] = desired["annotations"][key]
+    if "previousFor" in source and updated.get("for") == source["previousFor"]:
+        updated["for"] = desired["for"]
+    for field in ("id", "updated", "provenance"):
+        updated.pop(field, None)
+    return updated
+
+
 def seed(client, config):
     folder = quote(config["folderUID"], safe="")
     if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None:
@@ -143,10 +178,17 @@ def seed(client, config):
                 "file/sidecar configuration and reload Grafana before migrating."
             )
         existing_uids = {rule["uid"] for rule in rules}
-        additions = [alert_rule(rule, config, group["name"]) for rule in group["rules"]]
-        additions = [rule for rule in additions if rule["uid"] not in existing_uids]
+        desired = [(source, alert_rule(source, config, group["name"])) for source in group["rules"]]
+        additions = [rule for _, rule in desired if rule["uid"] not in existing_uids]
+        migrations = []
+        for source, rule in desired:
+            current = next((item for item in rules if item["uid"] == rule["uid"]), None)
+            if current is not None:
+                migrated = migrate_expression(current, source, rule)
+                if migrated is not None:
+                    migrations.append(migrated)
         unlock = any(rule.get("provenance") == "api" for rule in rules)
-        if not additions and not unlock:
+        if not additions and not unlock and not migrations:
             print(f'Preserved {group["name"]}: {len(rules)} existing rules', flush=True)
             continue
         if unlock:
@@ -164,7 +206,10 @@ def seed(client, config):
         # UIDs make retries after a partially completed import idempotent.
         for rule in additions:
             client.request("POST", "/api/v1/provisioning/alert-rules", rule)
-        print(f'Seeded {group["name"]}: {len(additions)} new, {len(rules)} preserved', flush=True)
+        for rule in migrations:
+            client.request("PUT", f'/api/v1/provisioning/alert-rules/{quote(rule["uid"], safe="")}', rule)
+        print(f'Seeded {group["name"]}: {len(additions)} new, '
+              f'{len(migrations)} queries migrated, {len(rules)} existing', flush=True)
 
 
 if __name__ == "__main__":

@@ -96,7 +96,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.27-dogeos \
+		--version=0.1.30-dogeos \
 		--values values/scroll-monitor-production.yaml
 
 install-scroll-common:
@@ -111,7 +111,7 @@ install-scroll-core:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l1-interface
 
 	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
-		--version=0.1.8 \
+		--version=0.1.9 \
 		--values values/metrics-exporter-production.yaml
 
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l2-reth-sequencer

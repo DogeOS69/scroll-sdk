@@ -66,8 +66,6 @@ metricsConfig:
     maxBodySize: 512
     metrics: /metrics
     port: *service_port
-  rollup:
-    url:
   l1Network:
     name: l1
     prefix: l1

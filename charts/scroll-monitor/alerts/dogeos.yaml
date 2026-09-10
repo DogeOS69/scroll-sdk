@@ -64,14 +64,27 @@ groups:
           description: The L1 interface is not ready or is not exporting its readiness metric.
 
       - alert: FeeOracleStale
-        expr: (time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900) or absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
+        previousExpr: (time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900) or absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
+        expr: time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900
         for: 5m
         labels:
           severity: critical
           service: fee-oracle
         annotations:
           summary: Fee oracle Ethereum DA oracle value has not updated recently.
+          description: The latest observed computed value is older than 15 minutes. Check fee-oracle computation and upstream RPCs.
+        previousAnnotations:
           description: The latest computed value is stale or the metric is absent.
+
+      - alert: FeeOracleMetricMissing
+        expr: absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
+        for: 5m
+        labels:
+          severity: warning
+          service: fee-oracle
+        annotations:
+          summary: Fee oracle freshness cannot be evaluated because its metric is missing.
+          description: Check whether fee-oracle is deployed, its ServiceMonitor is selected, and its metrics endpoint exports the computation timestamp. Missing telemetry does not establish a stale oracle value. Pause this rule if fee-oracle is intentionally absent.
 
       - alert: FeeOracleErrors
         expr: sum(increase({__name__=~"fee_oracle_(updates_failed|errors|chain_rpc_errors)_total"}[10m])) > 0
@@ -83,24 +96,55 @@ groups:
           description: Combined failure increase is {{ $value }}.
 
       - alert: TSONoRegisteredSigners
-        expr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+        previousExpr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+        expr: sum(tso_core_registered_signers_count) < 1
         for: 5m
         labels:
           severity: critical
           service: tso-service
         annotations:
           summary: TSO has no registered signers.
+          description: TSO reports fewer than one registered signer. Check signer registration and connectivity.
+        previousAnnotations:
           description: TSO reports fewer than one registered signer or the metric is absent.
 
+      - alert: TSOSignerMetricMissing
+        expr: absent(tso_core_registered_signers_count)
+        for: 5m
+        labels:
+          severity: warning
+          service: tso-service
+        annotations:
+          summary: TSO signer count cannot be evaluated because its metric is missing.
+          description: Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers.
+
+      # Keep the alert name for the existing Grafana UID. The rolling window
+      # includes a comparison with its left boundary and requires real samples.
       - alert: DogecoinIndexerLag
-        expr: clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
-        for: 10m
+        previousExpr:
+          - clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
+          - __LEGACY_INDEXER_LAG_EXPR__
+        previousFor: 10m
+        expr: >-
+          max by (namespace, job, instance) (
+            (changes(__INDEXER_METRIC__[2m]) == 0)
+            and (count_over_time(__INDEXER_METRIC__[2m]) >= 2)
+            and (__INDEXER_METRIC__ == __INDEXER_METRIC__ offset 2m)
+          )
+        for: 0s
         labels:
           severity: warning
           service: embedded-dogecoin-indexer
         annotations:
-          summary: Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
-          description: Job {{ $labels.job }} currently lags by {{ $value }} blocks.
+          summary: Embedded Dogecoin indexer {{ $labels.job }} has been unchanged for 2 minutes.
+          description: Job {{ $labels.job }} instance {{ $labels.instance }} has reported an unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing and Dogecoin RPC availability.
+        previousAnnotations:
+          summary:
+            - Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
+            - Embedded Dogecoin indexer {{ $labels.job }} is more than __INDEXER_MAX_EXCESS_LAG__ blocks behind its confirmed target.
+          description:
+            - Job {{ $labels.job }} currently lags by {{ $value }} blocks.
+            - Job {{ $labels.job }} has {{ $value }} blocks of excess lag after subtracting its configured Dogecoin confirmation depth from the node block height.
 
       # Compare gauges at one-minute intervals. A decrease is not progress.
       # Require an hour of history and a currently present series; do not add

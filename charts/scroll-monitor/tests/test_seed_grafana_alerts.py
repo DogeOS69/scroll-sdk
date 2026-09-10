@@ -4,6 +4,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/seed-grafana-alerts.py"
 SPEC = importlib.util.spec_from_file_location("seed_grafana_alerts", SCRIPT)
@@ -32,6 +34,12 @@ class MemoryGrafana:
                 self.group = {"interval": 60, "rules": []}
             assert body["uid"] not in {rule["uid"] for rule in self.group["rules"]}
             self.group["rules"].append(copy.deepcopy(body))
+        elif path.startswith("/api/v1/provisioning/alert-rules/"):
+            assert method == "PUT"
+            assert path.endswith("/" + body["uid"])
+            index = next(i for i, rule in enumerate(self.group["rules"])
+                         if rule["uid"] == body["uid"])
+            self.group["rules"][index] = copy.deepcopy(body)
         else:
             assert method == "PUT"
             assert {r["uid"] for r in body["rules"]} <= {
@@ -171,6 +179,157 @@ class SeedTests(unittest.TestCase):
                     client = SEED.Grafana()
                 self.assertEqual(client.headers["X-Disable-Provenance"], "true")
                 self.assertIn("Authorization", client.headers)
+
+    def test_missing_metric_migrations_preserve_operator_settings_and_are_idempotent(self):
+        from test_monitoring_templates import grafana_rules, render
+        sources = [rule for rule in grafana_rules(render()).values()
+                   if "previousExpr" in rule and rule.get("datasourceType") != "loki"]
+        self.assertEqual({r["alert"] for r in sources}, {
+            "FeeOracleStale", "TSONoRegisteredSigners", "DogecoinIndexerLag",
+        })
+        for source in sources:
+            with self.subTest(alert=source["alert"]):
+                client = MemoryGrafana()
+                config = copy.deepcopy(self.config)
+                old = {**source, "expr": SEED.alternatives(source["previousExpr"])[0],
+                       "annotations": {**source["annotations"], **{
+                           key: SEED.alternatives(value)[0]
+                           for key, value in source["previousAnnotations"].items()}}}
+                config["groups"][0]["rules"] = [old]
+                SEED.seed(client, config)
+                saved = client.group["rules"][0]
+                saved.update(isPaused=True, **{"for": "20m"})
+                saved["notification_settings"] = {"receiver": "operator-contact"}
+                saved["annotations"]["summary"] = "Operator summary"
+                saved["labels"]["team"] = "ops"
+                original = copy.deepcopy(saved)
+                client.group["interval"] = 120
+                config["groups"][0]["rules"] = [source]
+                client.writes.clear()
+                SEED.seed(client, config)
+                expected = copy.deepcopy(original)
+                expected["data"][0]["model"]["expr"] = source["expr"]
+                expected["annotations"]["description"] = source["annotations"]["description"].replace("$value", "$values.A.Value")
+                self.assertEqual(client.group["rules"][0], expected)
+                self.assertEqual(client.group["interval"], 120)
+                self.assertEqual(len(client.writes), 1)
+                client.writes.clear()
+                SEED.seed(client, config)
+                self.assertEqual(client.writes, [])
+
+    def test_indexer_migrates_both_shipped_queries_and_default_pending_period(self):
+        from test_monitoring_templates import grafana_rules, render
+        for settings in ((), ("--set", "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=60",
+                               "--set", "dogecoinIndexerAlerts.confirmationsByJob.withdrawal-processor=120",
+                               "--set", "dogecoinIndexerAlerts.maxExcessLagBlocks=0")):
+            source = grafana_rules(render(*settings))["DogecoinIndexerLag"]
+            for i, previous in enumerate(source["previousExpr"]):
+                with self.subTest(settings=settings, previous=previous):
+                    config = copy.deepcopy(self.config)
+                    old = {**source, "expr": previous, "for": "10m",
+                           "annotations": {key: values[i] for key, values in source["previousAnnotations"].items()}}
+                    config["groups"][0]["rules"] = [old]
+                    client = MemoryGrafana()
+                    SEED.seed(client, config)
+                    uid = client.group["rules"][0]["uid"]
+                    config["groups"][0]["rules"] = [source]
+                    client.writes.clear()
+                    SEED.seed(client, config)
+                    saved = client.group["rules"][0]
+                    self.assertEqual(saved["uid"], uid)
+                    self.assertEqual(saved["for"], "0s")
+                    self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
+                    self.assertEqual(saved["annotations"], source["annotations"])
+                    self.assertEqual(len(client.writes), 1)
+                    client.writes.clear()
+                    SEED.seed(client, config)
+                    self.assertEqual(client.writes, [])
+
+    def test_expression_migration_does_not_overwrite_custom_query_datasource_or_owner(self):
+        source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready < 1 or absent(ready)"}
+        desired = SEED.alert_rule(source, self.config, "dogeos.metrics")
+        for change in ("query", "datasource", "owner", "duplicate"):
+            with self.subTest(change=change):
+                existing = copy.deepcopy(desired)
+                existing["data"][0]["model"]["expr"] = source["previousExpr"]
+                if change == "query":
+                    existing["data"][0]["model"]["expr"] += " "
+                elif change == "datasource":
+                    existing["data"][0]["datasourceUid"] = "operator-prometheus"
+                elif change == "owner":
+                    existing["labels"].pop("managed_by")
+                else:
+                    existing["data"].append(copy.deepcopy(existing["data"][0]))
+                self.assertIsNone(SEED.migrate_expression(existing, source, desired))
+
+    def test_annotation_migration_preserves_custom_description(self):
+        source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready == 0",
+                  "previousAnnotations": {"description": "Old explanation"},
+                  "annotations": {"description": "New explanation"}}
+        desired = SEED.alert_rule(source, self.config, "dogeos.metrics")
+        existing = copy.deepcopy(desired)
+        existing["data"][0]["model"]["expr"] = source["previousExpr"]
+        existing["annotations"]["description"] = "Operator explanation"
+        updated = SEED.migrate_expression(existing, source, desired)
+        self.assertEqual(updated["annotations"]["description"], "Operator explanation")
+
+    def install_legacy_log_rule(self):
+        group = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]
+        self.config["groups"] = [group]
+        self.config["lokiDatasourceUID"] = "custom-loki"
+        SEED.seed(self.client, self.config)
+        rule = self.client.group["rules"][0]
+        rule["data"][0]["model"]["expr"] = group["rules"][0]["previousExpr"]
+        self.client.writes.clear()
+        return rule
+
+    def test_legacy_log_query_migrates_without_resetting_operator_settings(self):
+        rule = self.install_legacy_log_rule()
+        rule.update(isPaused=True, title="Operator title", **{"for": "2m"})
+        rule["notification_settings"] = {"receiver": "slack"}
+        rule["labels"]["team"] = "ops"
+        rule["annotations"]["runbook_url"] = "https://example.com/runbook"
+        self.client.group["interval"] = 120
+        expected = copy.deepcopy(rule)
+        expected["data"][0]["model"]["expr"] = self.config["groups"][0]["rules"][0]["expr"]
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.group["rules"], [expected])
+        self.assertEqual(self.client.group["interval"], 120)
+        self.assertEqual(len(self.client.writes), 1)
+        self.assertEqual(self.client.writes[0][0], "PUT")
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_log_query_migration_preserves_custom_queries_and_ownership(self):
+        for change in ("query", "datasource", "owner", "uid"):
+            with self.subTest(change=change):
+                self.client = MemoryGrafana()
+                rule = self.install_legacy_log_rule()
+                if change == "query":
+                    rule["data"][0]["model"]["expr"] += ' # operator filter'
+                elif change == "datasource":
+                    rule["data"][0]["datasourceUid"] = "operator-loki"
+                elif change == "owner":
+                    rule["labels"].pop("managed_by")
+                else:
+                    rule["uid"] = "operator-rule"
+                expected = copy.deepcopy(rule)
+                SEED.seed(self.client, self.config)
+                self.assertEqual(self.client.group["rules"][0], expected)
+                self.assertFalse(any(method == "PUT" for method, _, _ in self.client.writes))
+
+    def test_api_provenance_unlock_and_log_migration_preserve_pause(self):
+        rule = self.install_legacy_log_rule()
+        rule.update(provenance="api", id=51, updated="yesterday", isPaused=True)
+        SEED.seed(self.client, self.config)
+        result = self.client.group["rules"][0]
+        self.assertTrue(result["isPaused"])
+        self.assertNotIn("provenance", result)
+        self.assertNotIn("id", result)
+        self.assertNotIn("updated", result)
+        self.assertEqual(result["data"][0]["model"]["expr"],
+                         self.config["groups"][0]["rules"][0]["expr"])
 
 
 if __name__ == "__main__":
