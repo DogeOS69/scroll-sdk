@@ -191,8 +191,10 @@ class SeedTests(unittest.TestCase):
             with self.subTest(alert=source["alert"]):
                 client = MemoryGrafana()
                 config = copy.deepcopy(self.config)
-                old = {**source, "expr": source["previousExpr"],
-                       "annotations": {**source["annotations"], **source["previousAnnotations"]}}
+                old = {**source, "expr": SEED.alternatives(source["previousExpr"])[0],
+                       "annotations": {**source["annotations"], **{
+                           key: SEED.alternatives(value)[0]
+                           for key, value in source["previousAnnotations"].items()}}}
                 config["groups"][0]["rules"] = [old]
                 SEED.seed(client, config)
                 saved = client.group["rules"][0]
@@ -214,6 +216,34 @@ class SeedTests(unittest.TestCase):
                 client.writes.clear()
                 SEED.seed(client, config)
                 self.assertEqual(client.writes, [])
+
+    def test_indexer_migrates_both_shipped_queries_and_default_pending_period(self):
+        from test_monitoring_templates import grafana_rules, render
+        for settings in ((), ("--set", "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=60",
+                               "--set", "dogecoinIndexerAlerts.confirmationsByJob.withdrawal-processor=120",
+                               "--set", "dogecoinIndexerAlerts.maxExcessLagBlocks=0")):
+            source = grafana_rules(render(*settings))["DogecoinIndexerLag"]
+            for i, previous in enumerate(source["previousExpr"]):
+                with self.subTest(settings=settings, previous=previous):
+                    config = copy.deepcopy(self.config)
+                    old = {**source, "expr": previous, "for": "10m",
+                           "annotations": {key: values[i] for key, values in source["previousAnnotations"].items()}}
+                    config["groups"][0]["rules"] = [old]
+                    client = MemoryGrafana()
+                    SEED.seed(client, config)
+                    uid = client.group["rules"][0]["uid"]
+                    config["groups"][0]["rules"] = [source]
+                    client.writes.clear()
+                    SEED.seed(client, config)
+                    saved = client.group["rules"][0]
+                    self.assertEqual(saved["uid"], uid)
+                    self.assertEqual(saved["for"], "0s")
+                    self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
+                    self.assertEqual(saved["annotations"], source["annotations"])
+                    self.assertEqual(len(client.writes), 1)
+                    client.writes.clear()
+                    SEED.seed(client, config)
+                    self.assertEqual(client.writes, [])
 
     def test_expression_migration_does_not_overwrite_custom_query_datasource_or_owner(self):
         source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready < 1 or absent(ready)"}

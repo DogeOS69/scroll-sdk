@@ -76,7 +76,7 @@ DA account and expected chain ID. Both reads succeeded: chain ID 11155111 and
 balance 10762843241452679786 wei (about 10.7628 ETH). This did not replace or
 restart the running exporter, whose persisted configuration remains unchanged.
 
-## Confirmation-aware indexer lag
+## Indexer confirmation evidence and two-minute stall monitoring
 
 The live `l1-interface-env` ConfigMap has
 `DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS=60`. The mounted
@@ -85,24 +85,23 @@ Secret-backed environments had no confirmation overrides.
 
 The reviewed dogeos-core source at `9ae3375fe`,
 `crates/indexer_dogecoin/src/sync/rpc.rs`, computes its confirmed target from
-`getblockchaininfo.blocks - confirmations`. The corrected alert uses
-`dogecoin_chain_block_height`, not the header count, and computes:
+`getblockchaininfo.blocks - confirmations`. Both services expose the successfully
+processed confirmed height as `indexer_dogecoin_last_synced_block`; it is not an
+unconfirmed tip metric. Independent scrapes can make observed tip gaps differ
+slightly from the configured depth, explaining the 59/119 snapshot under a
+60/120 policy. The earlier confirmation-adjusted query returned zero excess lag
+for both jobs during the read-only investigation.
 
-```text
-excess_lag = max(node_block_height - configured_confirmations - indexer_height, 0)
-```
-
-It alerts when excess lag is greater than `maxExcessLagBlocks` (default 12) for
-10 minutes. Per-job depths are supplied by
-`dogecoinIndexerAlerts.confirmationsByJob`; node and indexer series are matched
-within the same namespace. Independent scrapes can make observed tip gaps differ
-slightly from the configured depth, which explains why a 59/119 snapshot must not
-be treated as proof of delay under a 60/120 policy. A future testnet configuration
-must explicitly supply 60 and 120. Generic examples carry 6 and 6,
-matching their service examples, with instructions to regenerate effective depths.
-The known old Grafana query and unchanged descriptions have an exact migration.
-A read-only evaluation of the corrected expression against live Prometheus
-returned excess lag 0 for both jobs and no firing sample.
+The selected monitoring policy now checks whether that exported height remains
+unchanged for two minutes, separately for each namespace, job and instance.
+It does not subtract confirmation depths or require a node-tip metric. A
+confirmation-policy change or no new Dogecoin blocks can also cause this
+condition; the alert establishes an unchanged processed height, not its cause.
+The query requires multiple samples, two minutes of history and a current
+series. No extra `for` delay is added. Existing raw-gap and confirmation-adjusted
+Grafana queries can migrate under their stable UID, including the unchanged
+old `for: 10m`; custom operator settings are preserved. This new rule has been
+validated locally, not deployed to the read-only cluster.
 
 ## Deployment follow-up (not executed)
 
@@ -128,4 +127,4 @@ returned excess lag 0 for both jobs and no firing sample.
 The local changes prepare a future deployment. They do not claim that live
 alerts have cleared or that the provider or absent workload was changed in
 the read-only cluster. The previously reported indexer gaps were confirmation
-waiting, and the alert now measures only the excess backlog.
+waiting; the alert now checks for an unchanged processed height over two minutes.

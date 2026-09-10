@@ -84,34 +84,25 @@ The existing balance reconciler does not infer this new ServiceMonitor ownership
 decision. The explicit example supplies the field contract for the generator
 and operator to retain/populate; no separate CLI repository was changed here.
 
-## Dogecoin indexer confirmation inputs
+## Dogecoin indexer stall monitoring
 
-Populate `dogecoinIndexerAlerts.confirmationsByJob` from each indexer's effective
-configuration. Do not interpret the raw distance from the node tip as backlog:
-an indexer intentionally stays behind that tip by its configured confirmation
-depth. The examples expose both keys explicitly:
+The example exposes `dogecoinIndexerAlerts.jobRegex`, defaulting to
+`l1-interface|withdrawal-processor`. The configuration generator must match the
+actual Prometheus job names. No confirmation depth, Dogecoin node address or
+RPC URL is required for this rule: it uses each service's exported
+`indexer_dogecoin_last_synced_block` directly.
 
-| Output field | Configuration source |
-| --- | --- |
-| `dogecoinIndexerAlerts.confirmationsByJob.l1-interface` | `DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS` in the effective L1 Interface configuration. |
-| `dogecoinIndexerAlerts.confirmationsByJob.withdrawal-processor` | `[dogecoin_indexer].confirmations` in `WithdrawalProcessor.toml`, overridden by `DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS` if present. |
-| `dogecoinIndexerAlerts.maxExcessLagBlocks` | Operator tolerance for additional backlog, default 12; preserve on regeneration. |
+The rule alerts when the value remains unchanged for two minutes, independently
+per namespace, job and instance. It requires current and historical samples;
+missing telemetry is not treated as an unchanged height. There is no additional
+pending period beyond the two-minute observation window.
 
-The generic service examples use 6 and 6, so the monitoring example matches them.
-The inspected testnet uses 60 and 120 instead. Rename the map keys when generated
-Prometheus job names differ. An absent job entry is not automatically assigned a
-confirmation depth and is not covered by this rule. Depths must be positive
-integers; the extra-lag threshold must be a nonnegative integer.
-
-The alert evaluates `max(node_block_height - confirmations - indexer_height, 0)`
-and fires after 10 minutes above the tolerance. It uses block height rather than
-header count, matching the indexer's source calculation. The existing CLI balance
-reconciler does not infer these new depths; the explicit example defines the
-required generation inputs. A future testnet configuration must supply its
-observed 60/120 depths; deployment files are outside this task's modification
-scope. Later confirmation policy changes
-must also update existing UI-owned Grafana queries; the exact migration repairs
-the known old query without making future upgrades overwrite user edits.
+Do not generate `dogecoinIndexerAlerts.confirmationsByJob` or
+`dogecoinIndexerAlerts.maxExcessLagBlocks` for new installations. When upgrading
+an installation with customized legacy values, retain those values for the
+upgrade so the seeder can exactly recognize its old saved Grafana query. They
+are used only for migration. The old default ten-minute pending period is
+removed if unchanged; operator-edited pending periods remain under UI control.
 
 An absent `up` series can mean no ServiceMonitor was selected. It is different
 from `up == 0`, which means a discovered endpoint failed its scrape. Check both

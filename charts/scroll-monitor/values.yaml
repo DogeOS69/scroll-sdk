@@ -158,14 +158,9 @@ serviceAlerts:
   paused: true
 
 dogecoinIndexerAlerts:
-  # Alert only on lag beyond the configured confirmation window, for 10m.
-  maxExcessLagBlocks: 12
-  # Exact Prometheus jobs. Generate each depth from that service's effective
-  # dogecoin_indexer.confirmations, including environment overrides.
-  # Defaults match the generic service examples, not any particular cluster.
-  confirmationsByJob:
-    l1-interface: 6
-    withdrawal-processor: 6
+  # Alert when an indexer's synced height stays unchanged for 2 minutes.
+  # Generator: match the actual Prometheus job names; no confirmation input needed.
+  jobRegex: "l1-interface|withdrawal-processor"
 
 businessAlerts:
   enabled: true

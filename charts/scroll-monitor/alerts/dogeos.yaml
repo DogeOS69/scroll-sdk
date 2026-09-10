@@ -118,19 +118,33 @@ groups:
           summary: TSO signer count cannot be evaluated because its metric is missing.
           description: Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers.
 
+      # Keep the alert name for the existing Grafana UID. The rolling window
+      # includes a comparison with its left boundary and requires real samples.
       - alert: DogecoinIndexerLag
-        previousExpr: clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
-        expr: __DOGECOIN_INDEXER_LAG_EXPR__
-        for: 10m
+        previousExpr:
+          - clamp_min(scalar(max(dogecoin_synced_headers_total)) - max by (job) (indexer_dogecoin_last_synced_block), 0) > 12
+          - __LEGACY_INDEXER_LAG_EXPR__
+        previousFor: 10m
+        expr: >-
+          max by (namespace, job, instance) (
+            (changes(__INDEXER_METRIC__[2m]) == 0)
+            and (count_over_time(__INDEXER_METRIC__[2m]) >= 2)
+            and (__INDEXER_METRIC__ == __INDEXER_METRIC__ offset 2m)
+          )
+        for: 0s
         labels:
           severity: warning
           service: embedded-dogecoin-indexer
         annotations:
-          summary: Embedded Dogecoin indexer {{ $labels.job }} is more than __INDEXER_MAX_EXCESS_LAG__ blocks behind its confirmed target.
-          description: Job {{ $labels.job }} has {{ $value }} blocks of excess lag after subtracting its configured Dogecoin confirmation depth from the node block height.
+          summary: Embedded Dogecoin indexer {{ $labels.job }} has been unchanged for 2 minutes.
+          description: Job {{ $labels.job }} instance {{ $labels.instance }} has reported an unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing and Dogecoin RPC availability.
         previousAnnotations:
-          summary: Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
-          description: Job {{ $labels.job }} currently lags by {{ $value }} blocks.
+          summary:
+            - Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
+            - Embedded Dogecoin indexer {{ $labels.job }} is more than __INDEXER_MAX_EXCESS_LAG__ blocks behind its confirmed target.
+          description:
+            - Job {{ $labels.job }} currently lags by {{ $value }} blocks.
+            - Job {{ $labels.job }} has {{ $value }} blocks of excess lag after subtracting its configured Dogecoin confirmation depth from the node block height.
 
       # Compare gauges at one-minute intervals. A decrease is not progress.
       # Require an hour of history and a currently present series; do not add

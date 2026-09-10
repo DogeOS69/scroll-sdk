@@ -158,23 +158,30 @@ annotations and other operator settings survive. Migration metadata is omitted
 from native Prometheus rules. See [the missing-metrics investigation](MISSING_METRICS_REVIEW.md)
 for the read-only testnet evidence and deployment prerequisites.
 
-`DogecoinIndexerLag` subtracts each job's configured Dogecoin confirmation depth
-before applying its threshold. Configure `dogecoinIndexerAlerts.confirmationsByJob`
-from the effective service configuration, including environment overrides. The
-generic examples use 6 for both services; a deployment using 60 and 120 must
-generate those actual values instead. Exact Prometheus job names are the map keys;
-only configured jobs are covered. The query compares `dogecoin_chain_block_height`
-with indexer height in the same namespace, not a global maximum header count:
+`DogecoinIndexerLag` now alerts when `indexer_dogecoin_last_synced_block`
+remains unchanged for two minutes, separately for each namespace, job and instance.
+The default `dogecoinIndexerAlerts.jobRegex` selects `l1-interface` and
+`withdrawal-processor`; change it if the deployment uses different job names.
+No node-tip metric or confirmation configuration is needed. The rule observes
+changes to the confirmed processed height, so a confirmation-policy change or
+lack of new Dogecoin blocks can also leave it unchanged and trigger the rule.
 
-```text
-excess_lag = max(node_block_height - confirmations - indexer_height, 0)
-```
+The query requires two minutes of history, multiple samples in the window, and
+a currently present series. It compares the window's left boundary as well as
+changes within the window to avoid firing early after a recent height update.
+Missing metrics do not count as a stall. Any observed height change, including
+a decrease, resets this unchanged-value condition. The rolling window already
+provides the two-minute delay, so `for` is `0s`; the one-minute evaluation
+interval determines when the condition is next checked.
 
-An excess greater than `maxExcessLagBlocks` (default 12) for 10 minutes fires.
-The known previous raw-gap query and unchanged descriptions migrate on upgrade,
-preserving operator settings. Confirmation settings initialize the new query;
-as with other Grafana thresholds, later policy changes require updating the
-saved Grafana rule. Prometheus fallback receives values changes on each upgrade.
+The name is retained to preserve the existing Grafana UID. Both the original
+raw-gap query and the shipped confirmation-adjusted query have exact migrations;
+unchanged descriptions and the old default `for: 10m` migrate with them.
+Operator-edited queries, pending periods, pause state and notification settings
+are preserved. Retain old `confirmationsByJob` / `maxExcessLagBlocks` values during
+an upgrade if they were customized: they only reconstruct the old query for
+migration and do not affect the new rule. If they are no longer available or the
+saved query was edited, update the existing Grafana rule explicitly.
 
 `businessAlerts.enabled` installs the accepted safety, proof-work, WF job,
 replay/reorg recovery, signer, TSO progress, and DA publication alerts. The

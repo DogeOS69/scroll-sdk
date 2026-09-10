@@ -30,7 +30,7 @@ def grafana_rules(docs):
 
 def without_migration_metadata(rules):
     return {name: {key: value for key, value in rule.items()
-                   if key not in ("previousExpr", "previousAnnotations")}
+                   if key not in ("previousExpr", "previousAnnotations", "previousFor")}
             for name, rule in rules.items()}
 
 
@@ -101,29 +101,28 @@ class TemplateTests(unittest.TestCase):
         self.assertEqual(charts["additionalServiceMonitors"], examples["additionalServiceMonitors"])
         self.assertEqual(charts["dogecoinIndexerAlerts"], examples["dogecoinIndexerAlerts"])
 
-    def test_indexer_confirmation_depths_are_per_job_and_use_block_height(self):
-        rules = grafana_rules(render(
+    def test_indexer_stall_uses_two_minutes_without_confirmation_inputs(self):
+        rule = grafana_rules(render())["DogecoinIndexerLag"]
+        self.assertIn('job=~"l1-interface|withdrawal-processor"', rule["expr"])
+        self.assertIn("[2m]", rule["expr"])
+        self.assertIn("offset 2m", rule["expr"])
+        self.assertNotIn("dogecoin_chain_block_height", rule["expr"])
+        self.assertEqual(rule["for"], "0s")
+        legacy = grafana_rules(render(
             "--set", "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=60",
             "--set", "dogecoinIndexerAlerts.confirmationsByJob.withdrawal-processor=120",
-            "--set", "dogecoinIndexerAlerts.maxExcessLagBlocks=7"))
-        rule = rules["DogecoinIndexerLag"]
-        self.assertIn('job="l1-interface"})) - 60, 0) > 7', rule["expr"])
-        self.assertIn('job="withdrawal-processor"})) - 120, 0) > 7', rule["expr"])
-        self.assertIn("dogecoin_chain_block_height", rule["expr"])
-        self.assertNotIn("dogecoin_synced_headers_total", rule["expr"])
-        self.assertIn("more than 7 blocks", rule["annotations"]["summary"])
+            "--set", "dogecoinIndexerAlerts.maxExcessLagBlocks=7"))["DogecoinIndexerLag"]
+        self.assertEqual(legacy["expr"], rule["expr"])
+        self.assertIn('job="l1-interface"})) - 60, 0) > 7', legacy["previousExpr"][1])
+        self.assertIn('job="withdrawal-processor"})) - 120, 0) > 7', legacy["previousExpr"][1])
 
-    def test_indexer_confirmation_depths_and_threshold_must_be_valid(self):
-        for setting in ("dogecoinIndexerAlerts.confirmationsByJob.l1-interface=0",
-                        "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=-1",
-                        "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=1.5",
-                        "dogecoinIndexerAlerts.confirmationsByJob.l1-interface=<TODO>",
-                        "dogecoinIndexerAlerts.maxExcessLagBlocks=-1"):
-            with self.subTest(setting=setting):
-                result = subprocess.run(["helm", "template", "scroll-monitor", str(CHART),
-                                         "--set", setting], text=True, capture_output=True)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn("dogecoinIndexerAlerts", result.stderr)
+    def test_indexer_job_selector_is_configurable_and_required(self):
+        rule = grafana_rules(render("--set", "dogecoinIndexerAlerts.jobRegex=custom-indexer"))["DogecoinIndexerLag"]
+        self.assertIn('job=~"custom-indexer"', rule["expr"])
+        result = subprocess.run(["helm", "template", "scroll-monitor", str(CHART),
+                                 "--set", "dogecoinIndexerAlerts.jobRegex="], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dogecoinIndexerAlerts.jobRegex", result.stderr)
 
     def test_new_service_rules_start_paused_without_changing_existing_rules(self):
         rules = grafana_rules(render())

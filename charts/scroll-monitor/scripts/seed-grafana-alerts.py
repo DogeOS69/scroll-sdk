@@ -127,8 +127,13 @@ def alert_rule(source, config, group):
     }
 
 
+def alternatives(value):
+    """Allow a single legacy value or multiple exactly known shipped values."""
+    return value if isinstance(value, list) else [value]
+
+
 def migrate_expression(existing, source, desired):
-    """Replace only a known shipped query, keeping all other operator settings."""
+    """Migrate known shipped defaults while preserving operator edits."""
     previous = source.get("previousExpr")
     if not previous or existing.get("labels", {}).get("managed_by") != "scroll-monitor":
         return None
@@ -137,7 +142,7 @@ def migrate_expression(existing, source, desired):
         return None
     query = queries[0]
     # Be conservative: even whitespace edits inside strings may be intentional.
-    if query.get("model", {}).get("expr") != previous:
+    if query.get("model", {}).get("expr") not in alternatives(previous):
         return None
     if query.get("datasourceUid") != desired["data"][0]["datasourceUid"]:
         return None
@@ -147,9 +152,11 @@ def migrate_expression(existing, source, desired):
             query["model"]["expr"] = source["expr"]
     # Correct shipped explanations only when the operator has not edited them.
     for key, previous in source.get("previousAnnotations", {}).items():
-        previous = previous.replace("$value", "$values.A.Value")
-        if updated.get("annotations", {}).get(key) == previous:
+        previous = [value.replace("$value", "$values.A.Value") for value in alternatives(previous)]
+        if updated.get("annotations", {}).get(key) in previous:
             updated["annotations"][key] = desired["annotations"][key]
+    if "previousFor" in source and updated.get("for") == source["previousFor"]:
+        updated["for"] = desired["for"]
     for field in ("id", "updated", "provenance"):
         updated.pop(field, None)
     return updated

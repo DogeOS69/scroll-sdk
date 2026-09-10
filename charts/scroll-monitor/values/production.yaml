@@ -88,15 +88,9 @@ serviceAlerts:
   paused: true
 
 dogecoinIndexerAlerts:
-  maxExcessLagBlocks: 12 # Tolerated extra backlog AFTER the confirmation window.
-  # Generator: copy each service's effective dogecoin_indexer.confirmations.
-  # These 6-block values match the generic examples; do not use them unchanged
-  # when a deployment uses different depths (e.g. 60 for L1, 120 for WP).
-  # Map keys must match the generated Prometheus job names.
-  confirmationsByJob:
-    l1-interface: 6 # DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__CONFIRMATIONS.
-    withdrawal-processor: 6 # WithdrawalProcessor.toml [dogecoin_indexer].confirmations,
-                           # or DOGEOS_WITHDRAWAL_DOGECOIN_INDEXER__CONFIRMATIONS override.
+  # Alert when an indexer's synced height stays unchanged for 2 minutes.
+  # Generator: match the actual Prometheus job names; no confirmation input needed.
+  jobRegex: "l1-interface|withdrawal-processor"
 
 businessAlerts:
   enabled: true
