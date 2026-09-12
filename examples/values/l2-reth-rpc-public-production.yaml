@@ -51,10 +51,6 @@ reth:
   extraArgs:
     - "--network.legacy-geth-header-transform"
     - "true"
-    - "--rpc.max-trace-filter-blocks"
-    - "100"
-    - "--rpc.gascap"
-    - "30000000"
 
   ports:
     http: 8545
@@ -105,24 +101,24 @@ reth:
     disableTransactionsBackup: false
     rollupNode: true
     rollupNodeAdmin: false
-    maxConnections: "200"
-    maxRequestSize: "2"
-    maxResponseSize: "32"
+    maxConnections: ""
+    maxRequestSize: ""
+    maxResponseSize: ""
     maxSubscriptionsPerConnection: ""
     maxBlocksPerFilter: ""
-    maxLogsPerResponse: "10000"
-    maxTracingRequests: "2"
+    maxLogsPerResponse: ""
+    maxTracingRequests: ""
 
   http:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: eth,net,web3,debug
+    api: eth,net,web3,rpc
 
   ws:
     enabled: true
     addr: 0.0.0.0
-    api: eth,net,web3,debug
+    api: eth,net,web3,rpc
 
   service:
     p2p:
