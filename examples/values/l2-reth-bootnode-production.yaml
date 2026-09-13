@@ -106,12 +106,12 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: eth,net,web3,rpc
+    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   ws:
     enabled: false
     addr: 0.0.0.0
-    api: eth,net,web3,rpc
+    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   service:
     p2p:

@@ -119,13 +119,13 @@ reth:
     addr: 0.0.0.0
     corsDomain: "*"
     # Internal witness node: real materialization requires debug_executionWitness.
-    # Keep this endpoint private; rpc-public deliberately does not expose debug.
-    api: eth,net,web3,rpc,debug
+    # Keep proof-coordinator witness traffic on this private endpoint.
+    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   ws:
     enabled: true
     addr: 0.0.0.0
-    api: eth,net,web3,rpc
+    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   service:
     p2p:
