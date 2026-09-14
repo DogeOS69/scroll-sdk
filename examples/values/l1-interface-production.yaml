@@ -23,6 +23,25 @@ service:
       admin: {enabled: true, port: 9091, targetPort: 9091, protocol: TCP}
       # The binary derives the admin listener from HEALTH_LISTEN_ADDRESS port + 1.
 
+# Public JSON-RPC ingress is deployment-specific. When enabled, route it to the
+# JSON-RPC listener; port 9090 is health/metrics only and must not be exposed as
+# the JSON-RPC backend.
+ingress:
+  main:
+    enabled: false
+    primary: true
+    annotations: {}
+    labels: {}
+    ingressClassName: nginx
+    hosts:
+      - host: ""
+        paths:
+          - path: /
+            pathType: Prefix
+            service:
+              name: l1-interface
+              port: 8545
+
 probes:
   liveness:
     enabled: true
