@@ -78,7 +78,7 @@ persistence:
     type: pvc
     mountPath: /app/data
     accessMode: ReadWriteOnce
-    size: 10Gi
+    size: 100Gi
     retain: true
     # For a fresh-database cutover, provision a new claim and select it here.
     # Never point the new release at an incompatible previous-generation DB.
