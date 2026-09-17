@@ -56,6 +56,10 @@ dynamically reloadable configuration.
 
 ## Validation
 
+For TSO's public signer callbacks, configure and verify the separate field,
+application-body, and ingress-body limits as described in
+[`tso-ingress-body-limit.md`](tso-ingress-body-limit.md).
+
 The temporary Issue #843 testnet recovery posture is deliberately absent from
 all defaults. When authorized for a deployment, generate its bounded WP/TSO/Rust
 signer projections from one scrollsdk proof intent and follow

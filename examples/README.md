@@ -13,6 +13,10 @@ runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
 files under `examples/values/`.
 
+For sequencer CPU, memory, storage, and block-production settings, see the
+[sequencer sizing recommendations](../docs/sequencer-sizing.md), including
+measured transfer and full-gas workload results from the devnet test.
+
 For the seven DogeOS core services, see the
 [source-aligned example review and operator steps](core-service-review.md),
 including secret ownership, native-config generation and local validation.

@@ -72,7 +72,9 @@ ingress:
     # review ingress access controls/TLS before exposing this endpoint.
     enabled: true
     primary: true
-    annotations: {}
+    annotations:
+      # Keep nginx comfortably above TSO's current 4 MiB application body limit.
+      nginx.ingress.kubernetes.io/proxy-body-size: "16m"
     labels: {}
     ingressClassName: "nginx"
     hosts:
