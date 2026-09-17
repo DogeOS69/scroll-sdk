@@ -6,7 +6,7 @@ dogecoinConf:
   txindex: 1
   server: 1
   disablewallet: 0
-  rpcworkqueue: 128
+  rpcworkqueue: 256
   rpcallowip:
     # Option 1: Allow all (NOT recommended for production)
     - 0.0.0.0/0
@@ -39,7 +39,7 @@ storage:
   # Set this only when a single-replica deployment must reuse an existing synced datadir PVC.
   # For example, use dogecoin-testnet-data when migrating an old dogecoin-testnet release.
   existingClaim: ""
-  size: 50Gi              # Should be > 200Gi for mainnet
+  size: 100Gi             # Should be > 200Gi for mainnet
   retainPvcOnUninstall: true
 # Enable ingress
 ingress:

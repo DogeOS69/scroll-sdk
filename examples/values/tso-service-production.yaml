@@ -52,8 +52,13 @@ env:
     value: "http://withdrawal-processor:3000"
   - name: TIMEOUT_CHECK_INTERVAL_SECONDS
     value: "60"
-  # Use image transport defaults; stale explicit caps override release fixes.
-  # beta.3g / beta.4f default: 2 MiB PSBT base64, 4 MiB PSBT route bodies.
+  # Keep both TSO PSBT admission paths aligned with the tested large-PSBT
+  # deployment capacity. The Ingress limit below includes additional room for
+  # the complete JSON callback body.
+  - name: TSO_CORRECTNESS_MAX_PSBT_BASE64_LEN
+    value: "4194304"
+  - name: TSO_CUBESIGNER_MAX_PSBT_BASE64_LEN
+    value: "4194304"
   # dogeos-core requires the transaction journal path explicitly. This path
   # must survive Pod restarts; do not place it on the container filesystem.
   - name: TSO_JOURNAL_DB_PATH
