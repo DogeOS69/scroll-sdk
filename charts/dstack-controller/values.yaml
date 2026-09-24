@@ -1,0 +1,92 @@
+# Deploy as an independent Helm release. No fleet/task submission hooks.
+nameOverride: ""
+fullnameOverride: ""
+# First version supports one active controller, including with PostgreSQL.
+# Zero pauses the controller; it does NOT release remote GPU instances.
+replicaCount: 1
+image:
+  repository: dstackai/dstack
+  tag: "0.21.5"
+  digest: sha256:a502b38014dc9730ad712f60c067b84a00a4cf091982b81f9982fdc60ac6852b
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Create these Secrets separately, or use External Secrets to populate them.
+# config.yml contains native dstack projects/backends and encryption.keys.
+serverConfig:
+  existingSecret: dstack-controller-config
+  key: config.yml
+auth:
+  existingSecret: dstack-controller-auth
+  key: admin-token
+database:
+  type: sqlite
+  # Required for type=postgresql; value must be a postgresql+asyncpg:// URL.
+  existingSecret: ""
+  key: database-url
+
+# Persist the entire server directory, including SQLite and local logs.
+# PostgreSQL mode also retains this volume. Back up the config Secret separately.
+persistence:
+  existingClaim: ""
+  size: 10Gi
+  # null uses the default StorageClass; "" explicitly requests no StorageClass.
+  storageClass: null
+  accessModes: [ReadWriteOnce]
+  retain: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: false
+service:
+  port: 3000
+  annotations: {}
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  # Example: [{secretName: dstack-tls, hosts: [dstack.example.com]}]
+  tls: []
+
+# Mounted read-only under /etc/dstack/credentials/<name>.
+# Use native dstack file credential paths or environment variable references.
+credentialSecrets: []
+# - name: gcp
+#   secretName: dstack-gcp-credentials
+
+# Kubernetes EnvVar objects, including valueFrom.secretKeyRef.
+# Core server/auth/database environment variables are reserved by the chart.
+extraEnv: []
+podAnnotations: {}
+podSecurityContext: {}
+# Official image installs binaries under /root; preserve its default user.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  seccompProfile:
+    type: RuntimeDefault
+resources:
+  requests:
+    cpu: "1"
+    memory: 1Gi
+  limits:
+    memory: 2Gi
+startupProbe:
+  httpGet: {path: /, port: http}
+  periodSeconds: 5
+  failureThreshold: 60
+readinessProbe:
+  httpGet: {path: /, port: http}
+  periodSeconds: 10
+livenessProbe:
+  httpGet: {path: /, port: http}
+  periodSeconds: 30
+  failureThreshold: 3
+terminationGracePeriodSeconds: 60
+nodeSelector: {}
+tolerations: []
+affinity: {}

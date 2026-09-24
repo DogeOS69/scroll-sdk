@@ -1,0 +1,27 @@
+name: Test dstack controller chart
+on:
+  pull_request:
+    paths:
+      - charts/dstack-controller/**
+      - .github/workflows/test-dstack-controller.yaml
+  push:
+    paths:
+      - charts/dstack-controller/**
+      - .github/workflows/test-dstack-controller.yaml
+permissions:
+  contents: read
+jobs:
+  offline-chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install PyYAML==6.0.2
+      - run: helm lint --strict charts/dstack-controller
+      - run: helm lint --strict charts/dstack-controller -f charts/dstack-controller/values/production.yaml
+      - run: python -m unittest discover -s charts/dstack-controller/tests -p 'test_*.py' -v

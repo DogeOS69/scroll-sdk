@@ -1,0 +1,113 @@
+# DogeOS implementation informed by Nebius's dstack chart; see NOTICE.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dstack-controller.fullname" . }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  # Avoid overlapping controllers using the same SQLite database/RWO volume.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "dstack-controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dstack-controller.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "dstack-controller.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: controller
+          image: {{ include "dstack-controller.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: DSTACK_SERVER_DIR
+              value: /root/.dstack/server
+            # Do not discover cloud credentials from the controller host.
+            # Explicit backends may still opt into their native default creds.
+            - name: DSTACK_DEFAULT_CREDS_DISABLED
+              value: "1"
+            - name: DSTACK_SERVER_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret | quote }}
+                  key: {{ .Values.auth.key | quote }}
+            {{- if eq .Values.database.type "postgresql" }}
+            - name: DSTACK_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret | quote }}
+                  key: {{ .Values.database.key | quote }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: state
+              mountPath: /root/.dstack/server
+            - name: config
+              mountPath: /root/.dstack/server/config.yml
+              subPath: config.yml
+              readOnly: true
+            {{- range .Values.credentialSecrets }}
+            - name: {{ printf "credentials-%s" .name }}
+              mountPath: {{ printf "/etc/dstack/credentials/%s" .name }}
+              readOnly: true
+            {{- end }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ default (include "dstack-controller.fullname" .) .Values.persistence.existingClaim }}
+        - name: config
+          secret:
+            secretName: {{ .Values.serverConfig.existingSecret | quote }}
+            defaultMode: 0400
+            items:
+              - key: {{ .Values.serverConfig.key | quote }}
+                path: config.yml
+        {{- range .Values.credentialSecrets }}
+        - name: {{ printf "credentials-%s" .name }}
+          secret:
+            secretName: {{ .secretName | quote }}
+            defaultMode: 0400
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
