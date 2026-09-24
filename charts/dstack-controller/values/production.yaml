@@ -1,0 +1,13 @@
+# Apply together with site-specific Secret names, storage and ingress values.
+database:
+  type: postgresql
+  existingSecret: dstack-controller-database
+  key: database-url
+persistence:
+  size: 20Gi
+resources:
+  requests:
+    cpu: "1"
+    memory: 1Gi
+  limits:
+    memory: 4Gi
