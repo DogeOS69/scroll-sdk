@@ -10,6 +10,100 @@ The Sepolia example explicitly uses the user-selected
 `config.toml.example`'s `ethereumDa.submitterRpcUrl`. Other deployments must
 generate their own network's URL and chain ID.
 
+## Instatus native webhook configuration
+
+The initial integration uses **Grafana alerts → Instatus's native Grafana webhook**.
+There is no custom publisher, Instatus management API key, public Prometheus
+endpoint, or metric-series upload. Instatus manages the public components,
+incidents, and uptime history. Public alert selection and component mapping are
+separate, later decisions.
+
+The chart production profile and
+[operator example](values/scroll-monitor-production.yaml) contain the same
+commented `grafana.envValueFrom` and `grafana.alerting` blocks. By default these
+blocks are inactive: no Secret is required and no Instatus contact point or
+notification route is created. Use the existing Grafana chart fields; do not add
+a `statusPagePublisher` block to new or generated values. Remove that obsolete
+reserved block from values copied from the earlier architecture draft.
+
+### Field ownership
+
+| Field / value | Source | Handling |
+| --- | --- | --- |
+| Webhook URL (Secret value only) | Generated in the target Instatus workspace/page's Apps → Grafana integration | Environment-specific credential; provision outside Git and Helm values. Do not construct it from a page ID or reuse the REST API key. |
+| `grafana.envValueFrom.INSTATUS_GRAFANA_WEBHOOK_URL.secretKeyRef.name` | Operator supplies an existing Secret in Grafana's namespace | Example convention: `instatus-grafana-webhook`; preserve on regeneration. |
+| `…secretKeyRef.key` | Operator supplies the matching Secret data key | Example convention: `url`; preserve on regeneration. |
+| `grafana.alerting.instatus-contact-points.yaml` | Local provisioning filename | Stable convention, not assigned by Instatus. |
+| `apiVersion`, receiver `type`, `httpMethod` | Integration protocol | Keep `1`, `webhook`, and `POST`. |
+| `contactPoints[].orgId` | Actual Grafana organization containing the rules | Default `1`, matching bundled alert seeding; customize if using a different organization. |
+| Contact point `name` / receiver `uid` | Operator naming convention | Examples: `instatus-public` / `instatus-public-webhook`; choose unused identities and keep stable. Future policies reference the name. |
+| Receiver `disableResolveMessage` | Recovery behavior | Keep `false` to send recovery notifications. |
+| Receiver `settings.url` | Grafana environment interpolation | Keep literal `$INSTATUS_GRAFANA_WEBHOOK_URL`; Grafana resolves it at startup from the Secret-backed environment. |
+| Public alert routing and Instatus component/incident templates | Later operational configuration | Not prefilled or automatically enabled. Do not route all `managed_by=scroll-monitor` alerts to the public page. |
+
+“Dynamic” means supplied for the deployment, not automatically discovered by the
+CLI. This integration does not require page IDs, component IDs, an Instatus API
+key, event-auth tokens, or publisher storage settings in production YAML.
+
+`scrollsdk setup prep-charts` preserves the native `grafana.envValueFrom` and
+`grafana.alerting` configuration in both `scroll-monitor-production.yaml` and
+numbered variants. It does not generate a webhook, retrieve its value, create a
+Secret, or add these optional blocks to older files. Copy the commented example
+once for an existing deployment. YAML regeneration can discard comments; this
+source example and the ownership table remain the reference. No new CLI flag or
+`config.toml` field is needed.
+
+### Setup and ownership
+
+1. Create the Grafana integration in Instatus for the intended environment. Store
+   its generated URL through the existing secret-management workflow as key `url`
+   in Secret `instatus-grafana-webhook` in Grafana's namespace (or use your own
+   matching names). The complete URL is a credential.
+2. Uncomment both optional blocks in production values and deploy the chart.
+   This provisions a contact point only. Leave notification routes unconfigured
+   until the public alert selection and payload review are complete.
+3. Later, configure explicit notification policies or rule routing in Grafana,
+   plus the target component and incident behavior in Instatus. Keep the existing
+   internal Slack/email routes. Do not replace the entire notification policy
+   tree just to add the public destination.
+4. Validate firing and recovery on a separate test status page before enabling
+   production routing. Grafana's **Test** sends an actual webhook and can trigger
+   a real incident; it is not a dry-run.
+
+File-provisioned contact points are read-only in the Grafana UI. Alternatively,
+leave both YAML blocks commented and create the webhook contact point entirely
+in **Alerting → Contact points**, entering the actual URL there. UI-managed
+configuration persists in the existing Grafana database/PVC. Choose one owner for
+a contact point; do not import over an existing UI-created resource with the same
+identity. The `$INSTATUS_GRAFANA_WEBHOOK_URL` placeholder is for file provisioning,
+not a promise of environment expansion in the UI.
+
+On rotation, update the Secret and restart the Grafana Pod to refresh its
+environment and provisioning. Reloading provisioning files alone cannot refresh
+a running process's environment. The actual URL stays out of Helm-rendered
+ConfigMaps, but Grafana's runtime database and authorized contact-point readers
+may expose it; control access to Grafana and its backups accordingly.
+
+### Optional Alertmanager path
+
+If selected infrastructure alerts need to become public later, use Instatus's
+separate **Prometheus** integration webhook in the existing Alertmanager. This is
+an alternative source, not a relay after Grafana. Mount a separate existing
+Secret through `kube-prometheus-stack.alertmanager.alertmanagerSpec.secrets`, and
+use a receiver's `webhook_configs[].url_file` with
+`/etc/alertmanager/secrets/<secret-name>/<key>` and `send_resolved: true`.
+Append a selective child route and receiver to the existing configuration;
+preserve internal routing and avoid publishing the same event from both engines.
+This optional route is not enabled in the production examples.
+
+Only outbound HTTPS to the actual generated webhook host is needed. Do not assume
+it is the REST API host `api.instatus.com`. Instatus receives no internal
+Prometheus/Grafana credential, and no public monitoring ingress is added.
+See the [architecture](../docs/status-page-architecture.md),
+[Instatus Grafana integration](https://instatus.com/help/integrations/grafana),
+[Instatus Prometheus integration](https://instatus.com/help/integrations/prometheus),
+and [Grafana file provisioning](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/file-provisioning/).
+
 ## Account monitoring inputs
 
 The existing `scrollsdk setup prep-charts` balance reconciler consumes the

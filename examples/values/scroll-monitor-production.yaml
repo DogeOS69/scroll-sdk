@@ -1,4 +1,33 @@
 grafana:
+  # Optional Instatus native webhook; no custom publisher or management API key.
+  # Create the referenced Secret in Grafana's namespace with the URL generated
+  # by Instatus > Apps > Grafana. Never put the real URL in this values file.
+  # Uncomment BOTH blocks below to provision only a contact point, with no route.
+  # BEGIN OPTIONAL INSTATUS CONFIG
+  # envValueFrom:
+  #   INSTATUS_GRAFANA_WEBHOOK_URL:
+  #     secretKeyRef:
+  #       name: instatus-grafana-webhook # [OPERATOR] Existing Secret name.
+  #       key: url # [OPERATOR] Data key containing the generated webhook URL.
+  # alerting:
+  #   instatus-contact-points.yaml:
+  #     apiVersion: 1 # [FIXED] Grafana provisioning format.
+  #     contactPoints:
+  #       - orgId: 1 # [OPERATOR] Grafana org containing the alert rules; default 1.
+  #         name: instatus-public # [CONVENTION] Keep stable; used by future routes.
+  #         receivers:
+  #           - uid: instatus-public-webhook # [CONVENTION] Stable, unused receiver UID.
+  #             type: webhook # [FIXED] Native Grafana webhook receiver.
+  #             disableResolveMessage: false # [FIXED] Send recovery notifications.
+  #             settings:
+  #               url: $INSTATUS_GRAFANA_WEBHOOK_URL # [FIXED] Resolved by Grafana at startup.
+  #               httpMethod: POST # [FIXED]
+  # END OPTIONAL INSTATUS CONFIG
+  # File-provisioned contact points are read-only in the UI. Alternatively keep
+  # these blocks commented and create the contact point entirely in Grafana UI.
+  # Secret rotation requires restarting Grafana. Add selective routing only after
+  # public alert/component mappings are agreed; do not forward all managed alerts.
+  # See examples/scroll-monitor-configuration.md for field ownership and setup.
   # Email requires an SMTP transport. Create grafana-smtp with keys user and
   # password, then uncomment smtp below and smtp settings in grafana.ini.
   # smtp:

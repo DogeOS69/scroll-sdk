@@ -36,6 +36,22 @@ The default service endpoints assume every component is in the same namespace.
 They are configurable under `monitoring.datasources` and
 `alloy`.
 
+## Instatus status page
+
+Use the native outbound integration: Prometheus supplies metrics to Grafana;
+selected Grafana alerts notify Instatus over its generated webhook URL. There is
+no custom publisher, management API key, or new public monitoring endpoint.
+Instatus provides components, incident history, and uptime history; continuous
+numeric charts are outside the initial scope.
+
+Both production profiles include an optional, commented Grafana contact point
+with a Kubernetes Secret reference. It creates no notification policy and is
+inactive by default. Configure public alert routing only after selecting the
+public components and reviewing the outbound payload. Infrastructure alerts can
+later use Instatus's separate native Prometheus/Alertmanager integration.
+See the [configuration and Secret inventory](../../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration)
+and [architecture](../../docs/status-page-architecture.md).
+
 ## Dashboard and alert assets
 
 Dashboard ConfigMaps are controlled by `dashboards.bundled.enabled` and are
@@ -107,9 +123,12 @@ to use Prometheus/Alertmanager and are not editable Grafana rules.
    `managed_by = scroll-monitor` and select `scroll-ops`, or change the default
    policy's contact point if it should receive all Grafana alerts.
 
-The chart does not provision contact points or notification policies, so they
-remain editable and Helm upgrades preserve them. Creating a contact point alone
-does not route application alerts to it; complete step 4. Existing external
+By default, the chart does not provision contact points or notification policies,
+so UI-created resources remain editable and Helm upgrades preserve them. The
+optional Instatus file configuration above makes only that contact point
+file-managed and read-only in the UI; it does not provision notification policies.
+Creating a contact point alone does not route application alerts to it; complete
+step 4. Existing external
 Alertmanager receivers are not copied to Grafana automatically.
 
 Grafana OSS needs an SMTP transport before it can send email. Configure the
