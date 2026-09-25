@@ -2,6 +2,7 @@ from functools import lru_cache
 import json
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 import yaml
@@ -35,6 +36,41 @@ def without_migration_metadata(rules):
 
 
 class TemplateTests(unittest.TestCase):
+    def test_optional_instatus_example_provisions_only_a_secret_backed_contact_point(self):
+        profiles = [CHART / "values/production.yaml",
+                    CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"]
+        snippets = []
+        for profile in profiles:
+            text = profile.read_text()
+            # Exercise the operator-facing, commented example, not a separate fixture.
+            block = text.split("  # BEGIN OPTIONAL INSTATUS CONFIG\n", 1)[1].split(
+                "  # END OPTIONAL INSTATUS CONFIG", 1)[0]
+            snippets.append("grafana:\n" + "\n".join(line.replace("  # ", "  ", 1)
+                                                        for line in block.splitlines()))
+            disabled = yaml.safe_load(text)["grafana"]
+            self.assertNotIn("envValueFrom", disabled)
+            self.assertNotIn("alerting", disabled)
+        self.assertEqual(snippets[0], snippets[1])
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as values:
+            values.write(snippets[0])
+            values.flush()
+            docs = render("-f", str(values.name))
+        container = next(c for c in resource(docs, "Deployment", "grafana")
+                         ["spec"]["template"]["spec"]["containers"] if c["name"] == "grafana")
+        env = next(e for e in container["env"] if e["name"] == "INSTATUS_GRAFANA_WEBHOOK_URL")
+        self.assertEqual(env["valueFrom"], {"secretKeyRef": {"name": "instatus-grafana-webhook", "key": "url"}})
+        data = resource(docs, "ConfigMap", "grafana")["data"]
+        config = yaml.safe_load(data["instatus-contact-points.yaml"])
+        self.assertEqual(set(config), {"apiVersion", "contactPoints"})
+        receiver = config["contactPoints"][0]["receivers"][0]
+        self.assertEqual(receiver["settings"], {"url": "$INSTATUS_GRAFANA_WEBHOOK_URL", "httpMethod": "POST"})
+        self.assertEqual(receiver["type"], "webhook")
+        self.assertFalse(receiver["disableResolveMessage"])
+        self.assertTrue(any(m["mountPath"] == "/etc/grafana/provisioning/alerting/instatus-contact-points.yaml"
+                            for m in container["volumeMounts"]))
+        default_data = resource(render(), "ConfigMap", "grafana")["data"]
+        self.assertNotIn("instatus-contact-points.yaml", default_data)
+
     def test_grafana_and_prometheus_use_identical_metric_rules(self):
         native = resource(render("--set", "grafanaAlerting.enabled=false"),
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
