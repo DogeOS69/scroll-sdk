@@ -38,15 +38,16 @@ They are configurable under `monitoring.datasources` and
 
 ## Instatus status page
 
-Use the native outbound integration: Prometheus supplies metrics to Grafana;
-selected Grafana alerts notify Instatus over its generated webhook URL. There is
-no custom publisher, management API key, or new public monitoring endpoint.
+Prometheus supplies metrics to Grafana; component rules send notifications through
+an optional delivery verifier to Instatus webhook URLs. Production examples enable
+verified recovery with a durable journal. No management API key or new public
+monitoring endpoint is needed at runtime.
 Instatus provides components, incident history, and uptime history; continuous
 numeric charts are outside the initial scope.
 
-Both production profiles include an optional, commented Grafana contact point
-with a Kubernetes Secret reference. It creates no notification policy and is
-inactive by default. Configure public alert routing only after selecting the
+Both production profiles expose the `statusPage` inputs, defaulting to disabled
+with all components in observe mode. CLI generation creates component rules and
+Secret references without replacing the global notification policy. Configure public alert routing only after selecting the
 public components and reviewing the outbound payload. Infrastructure alerts can
 later use Instatus's separate native Prometheus/Alertmanager integration.
 See the [configuration and Secret inventory](../../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration)
@@ -520,9 +521,8 @@ components require a usable StorageClass.
 ## Public health rules and collection coverage
 
 See [the public status health design](../../docs/status-page-health-rules.md) for
-the eight component contracts, proposed failure/recovery windows, missing-data
-handling, source inventory, and activation tests. These are design rules, not
-new public notification policies. Existing internal alert rules are not
+the eight implemented component contracts, configurable failure/recovery windows,
+missing-data handling, source inventory, and activation tests. Existing internal alert rules are not
 implicitly suitable for public status or automatic recovery.
 
 PodMonitor discovery now follows ServiceMonitor discovery: Helm instance labels
@@ -537,3 +537,11 @@ endpoint. Keep its diagnostic rules paused until a supporting application image
 and scrape target exist; a ServiceMonitor cannot add an application endpoint.
 External public RPC/browser probes and monitor-loss detection remain prerequisites
 for reliable public automation. None of this requires exposing private monitoring.
+
+
+Component publication generation is available through `statusPage.publication`.
+Each component defaults to observe and may independently use manual or automatic
+mode. See [the publication configuration guide](../../docs/status-page-publication.md)
+for the health-expression contract, private component bindings, direct Grafana
+routing, verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
+installing the default values.
