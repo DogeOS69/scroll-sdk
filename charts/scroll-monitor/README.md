@@ -516,3 +516,24 @@ Alloy limits pod-log discovery to the release namespace by default. Set
 The chart does not install an ingress controller or a dynamic volume
 provisioner. The configured Grafana ingress requires nginx, and persistent
 components require a usable StorageClass.
+
+## Public health rules and collection coverage
+
+See [the public status health design](../../docs/status-page-health-rules.md) for
+the eight component contracts, proposed failure/recovery windows, missing-data
+handling, source inventory, and activation tests. These are design rules, not
+new public notification policies. Existing internal alert rules are not
+implicitly suitable for public status or automatic recovery.
+
+PodMonitor discovery now follows ServiceMonitor discovery: Helm instance labels
+in the release namespace. This includes Blockscout's existing frontend
+`/node-api/metrics` PodMonitor, which has no `release=scroll-monitor` label.
+The eager-materializer production example enables its application-owned
+ServiceMonitor; no supplemental duplicate is added here. These collection fixes
+provide telemetry, not an end-to-end proof of user-facing availability.
+
+The inspected proof-coordinator application revision has no production metrics
+endpoint. Keep its diagnostic rules paused until a supporting application image
+and scrape target exist; a ServiceMonitor cannot add an application endpoint.
+External public RPC/browser probes and monitor-loss detection remain prerequisites
+for reliable public automation. None of this requires exposing private monitoring.

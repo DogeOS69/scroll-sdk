@@ -371,6 +371,15 @@ kube-prometheus-stack:
       serviceMonitorNamespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
+      # Blockscout frontend exports through a PodMonitor, without a `release`
+      # label. Use the same namespace-scoped discovery contract as Services.
+      podMonitorSelector:
+        matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: Exists
+      podMonitorNamespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
 
   alertmanager:
     enabled: true
