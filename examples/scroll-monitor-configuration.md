@@ -10,6 +10,20 @@ The Sepolia example explicitly uses the user-selected
 `config.toml.example`'s `ethereumDa.submitterRpcUrl`. Other deployments must
 generate their own network's URL and chain ID.
 
+## Public health and collection templates
+
+The [health-rule design](../docs/status-page-health-rules.md) defines failure,
+recovery, missing-data behavior and evidence requirements for all eight public
+components. Thresholds there are proposed operating values, not deployed alerts.
+Keep each chain's working directory and Grafana independent.
+
+The production templates expose namespace-scoped `podMonitorSelector` and
+`podMonitorNamespaceSelector` under `kube-prometheus-stack.prometheus.prometheusSpec`.
+They include Blockscout's application-owned frontend PodMonitor without opening
+cross-namespace discovery. Eager materializer's own production values enable its
+ServiceMonitor; install only for deployments that actually use that optional
+service. Do not add duplicate supplemental monitors in scroll-monitor.
+
 ## Instatus native webhook configuration
 
 The runtime integration uses **Grafana alerts → Instatus's native Grafana webhook**.

@@ -234,6 +234,15 @@ alloy:
 kube-prometheus-stack:
   prometheus:
     prometheusSpec:
+      # [DEFAULT] Discover application PodMonitors (including Blockscout frontend)
+      # only in this deployment namespace, matching the chart's ServiceMonitor scope.
+      podMonitorSelector:
+        matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: Exists
+      podMonitorNamespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
       enableRemoteWriteReceiver: true
       resources:
         requests:
