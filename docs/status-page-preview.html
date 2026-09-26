@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DogeOS Testnet Status — Design Preview</title>
+<style>
+:root{color-scheme:light;--ink:#24251e;--muted:#65685c;--line:#e5e7df;--paper:#fff;--bg:#fafbf8;--gold:#c2a246;--green:#23734f;--yellow:#91620a;--red:#b13c35;--blue:#356497}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,select{font:inherit}button,a,select{touch-action:manipulation}button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b59738;outline-offset:4px}a{color:#4f613e;text-underline-offset:4px}.preview{background:#292d24;color:#f8f8ed;padding:13px 24px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;font-size:13px}.preview strong{letter-spacing:.06em}.preview select{background:#fff;color:var(--ink);border-radius:6px;padding:5px 10px;border:1px solid #ddd}.preview span{color:#d6dacd}.shell{max-width:920px;margin:auto;padding:48px 28px 30px}.brand{display:flex;align-items:center;justify-content:space-between;gap:20px}.wordmark{display:flex;align-items:center;gap:12px;font-size:23px;font-weight:750;letter-spacing:-.04em}.mark{width:38px;height:38px;border:1px solid #e1d19d;border-radius:12px;background:#f6efdb;display:grid;place-items:center;color:#866b25;font-size:23px}.tag{font-size:11px;letter-spacing:.08em;border:1px solid #dfd9c5;padding:3px 8px;border-radius:5px;color:#72623e;font-weight:650}.subscribe{border:1px solid #d8dacd;background:white;border-radius:8px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer}.intro{margin:38px 0 26px}.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#817346}.intro h1{font-size:36px;line-height:1.15;letter-spacing:-.045em;margin:9px 0 11px;font-weight:650}.intro p{color:var(--muted);margin:0;font-size:15px}.banner{display:flex;align-items:center;gap:15px;background:#edf5ee;border:1px solid #d6e7da;border-radius:11px;padding:21px 23px;color:var(--green)}.banner[data-tone=warning]{background:#fbf4e4;border-color:#eadbb5;color:var(--yellow)}.banner[data-tone=error]{background:#fbedeb;border-color:#ecd0cc;color:var(--red)}.banner[data-tone=unknown]{background:#edf2f7;border-color:#d4dfeb;color:var(--blue)}.icon{width:31px;height:31px;border:1px solid currentColor;border-radius:50%;display:grid;place-items:center;font-size:18px;flex-shrink:0}.banner h2{font-size:18px;margin:0;font-weight:650}.banner p{font-size:13px;margin:2px 0 0;color:#566251}.banner[data-tone=error] p,.banner[data-tone=warning] p,.banner[data-tone=unknown] p{color:inherit}.incident{margin-top:15px;border:1px solid #e4d8bb;background:#fffdf7;border-radius:11px;padding:22px 24px}.incident .meta{display:flex;gap:10px;color:#7f6a32;font-size:12px;align-items:center}.pill{border-radius:5px;padding:2px 7px;background:#f2e8cb;font-weight:650}.incident h3{margin:10px 0 7px;font-size:17px}.incident p{margin:8px 0;color:#565a50;font-size:14px}.network-head{margin:34px 0 13px;display:flex;align-items:center;justify-content:space-between;gap:15px}.network-head h2{font-size:17px;margin:0;letter-spacing:-.02em}.network-head span{color:var(--muted);font-size:12px}.components{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}.component{padding:18px 23px;border-bottom:1px solid var(--line)}.component:last-child{border-bottom:0}.component details summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none}.component details summary::-webkit-details-marker{display:none}.label{font-size:14px;font-weight:650}.label:after{content:' +';color:#939788;font-weight:400}.component details[open] .label:after{content:' −'}.status{font-size:12px;color:var(--green);text-align:right}.status:before{content:'●';font-size:9px;margin-right:7px}.status.warning{color:var(--yellow)}.status.error{color:var(--red)}.status.unknown{color:var(--blue)}details p{font-size:13px;color:var(--muted);margin:8px 0 0;max-width:650px}.history{height:19px;margin-top:13px;display:grid;grid-template-columns:repeat(90,minmax(0,1fr));gap:3px}.history span{background:#e4e7df;border-radius:2px}.history-caption{display:flex;justify-content:space-between;gap:8px;color:#737769;font-size:10px;margin-top:5px}.explanation{font-size:12px;color:var(--muted);margin:12px 2px 26px}.section{border-top:1px solid var(--line);padding:25px 0}.section h2{margin:0 0 8px;font-size:16px}.section p{margin:0;font-size:13px;color:var(--muted)}footer{border-top:1px solid var(--line);margin-top:4px;padding-top:22px;display:flex;justify-content:space-between;gap:20px;font-size:12px;color:var(--muted)}footer a{color:var(--muted)}dialog{max-width:460px;border:1px solid var(--line);border-radius:14px;padding:28px;color:var(--ink);box-shadow:0 20px 90px #0002}dialog::backdrop{background:#20282070}dialog h2{font-size:20px;margin-top:0}dialog p{font-size:14px;color:var(--muted)}[hidden]{display:none!important}@media(max-width:600px){.shell{padding:30px 17px 22px}.wordmark{font-size:20px;gap:8px}.mark{width:32px;height:32px}.tag{font-size:9px}.subscribe{padding:8px 10px;font-size:11px}.intro{margin-top:30px}.intro h1{font-size:29px}.component{padding:16px}.history{gap:2px}.network-head span{font-size:10px}.banner{padding:18px}.banner h2{font-size:16px}.status{font-size:11px}.history-caption{font-size:9px}.preview{gap:8px;padding:10px 14px}.preview span{width:100%;text-align:center}footer{flex-direction:column;gap:6px}}
+</style>
+</head>
+<body>
+<div class="preview"><strong>DESIGN PREVIEW</strong><label for="scenario">Scenario</label><select id="scenario"><option value="healthy">Normal operation</option><option value="withdrawals">Withdrawal delays</option><option value="rpc">RPC outage</option><option value="unknown">Monitoring unavailable</option><option value="maintenance">Planned maintenance</option><option value="resolved">Resolved incident</option></select><span>Illustrative states · No live data</span></div>
+<div class="shell">
+<header class="brand"><div class="wordmark"><span class="mark" aria-hidden="true">D</span>DogeOS <span class="tag">TESTNET</span></div><button class="subscribe" id="subscribe">Subscribe to updates</button></header>
+<main>
+<div class="intro"><div class="eyebrow">Network status</div><h1>DogeOS Testnet Status</h1><p>Service availability and incident updates for the DogeOS testnet.</p></div>
+<div aria-live="polite" aria-atomic="true"><section class="banner" id="banner" data-tone="healthy" aria-labelledby="headline"><div class="icon" id="icon" aria-hidden="true">✓</div><div><h2 id="headline">All systems operational</h2><p id="summary">All listed testnet services are operating normally in this example.</p></div></section><section class="incident" id="incident" hidden><div class="meta"><span class="pill" id="phase">Investigating</span><span id="notice-kind">Illustrative incident · Testnet</span></div><h3 id="incident-title"></h3><p id="incident-time" class="meta">Example update: 26 Sep 2026, 09:00 UTC</p><p id="incident-body"></p><p id="incident-update"></p></section></div>
+<div class="network-head"><h2>DogeOS Testnet</h2><span>8 components · Illustrative status</span></div>
+<div class="components" id="components"></div>
+<p class="explanation">History is not connected in this preview. Gray bars are placeholders, not measured uptime. Bridge Portal corresponds to the official Testnet bridge website. Links are Testnet examples; deployment endpoints come from the selected workspace. Block Explorer covers the deployment’s Blockscout instance.</p>
+<section class="section"><h2>Scheduled maintenance</h2><p id="maintenance-empty">No maintenance data loaded in this preview.</p><div id="maintenance-example" hidden><p><strong>Example only — Bridge Portal maintenance</strong></p><p>26 Sep 2026, 09:00–09:30 UTC · Affected component: Bridge Portal.</p><p>The bridge website may be unavailable during this illustrative window. This notice covers the website; deposit and withdrawal processing are tracked separately.</p></div></section>
+<section class="section"><h2>Incident history</h2><p id="history-empty">No historical incidents loaded. The production page will show published incidents and their updates.</p><div id="history-example" hidden><p><strong>Example only — Withdrawal processing delays</strong></p><p>26 Sep 2026 · Affected component: Withdrawals · All times UTC</p><ol><li><strong>09:00 — Investigating.</strong> Delays identified in Testnet withdrawal processing.</li><li><strong>09:15 — Identified.</strong> A processing issue has been isolated; recovery work is underway.</li><li><strong>09:40 — Monitoring.</strong> Processing has resumed. The remaining backlog is being monitored.</li><li><strong>10:00 — Resolved.</strong> Normal processing has been verified and the affected backlog has cleared in this illustrative scenario.</li></ol></div></section>
+</main>
+<footer><span>DogeOS · Testnet</span><span><a href="https://docs.dogeos.com/en/home">Documentation</a> · <a href="https://www.dogeos.com/">DogeOS website</a> · <a href="https://discord.gg/Bdzmy2JBmq">Support</a> · <a href="status-page-design.md">Design specification</a></span><span>Designed for Instatus</span></footer>
+</div>
+<dialog id="subscription"><h2>Subscribe to Testnet updates</h2><p>The production page will use Instatus subscriptions for incidents and maintenance. This design preview does not collect email addresses or send notifications.</p><form method="dialog"><button class="subscribe">Close</button></form></dialog>
+<noscript><p style="padding:24px">This interactive design preview requires JavaScript. No live status is available.</p></noscript>
+<script>
+const catalog = [
+ ['public-rpc','Public RPC','Availability of official DogeOS HTTP JSON-RPC and enabled WebSocket interfaces for network queries, transaction submission and subscriptions.'],
+ ['sequencing','Transaction Sequencing','Inclusion of accepted transactions in new DogeOS blocks.'],
+ ['deposits','Deposits','Processing of DOGE deposits from Dogecoin to DogeOS after the required confirmations.'],
+ ['withdrawals','Withdrawals','Processing of DOGE withdrawals from DogeOS to Dogecoin, including protocol processing and confirmation.'],
+ ['batch-publication','Batch Publication','Publication of DogeOS batch data to the configured data availability layer.'],
+ ['node-sync','Node Sync','Availability of the network data and services needed for supported DogeOS nodes to synchronize.'],
+ ['bridge-portal','Bridge Portal','Availability of the DogeOS Testnet bridge portal and its supporting API.'],
+ ['block-explorer','Block Explorer','Availability and indexing freshness of the DogeOS Blockscout explorer.']
+];
+const scenarios = {
+ maintenance:{tone:'unknown',icon:'i',headline:'Bridge Portal maintenance in progress',summary:'Illustrative maintenance window · 09:00–09:30 UTC.',phase:'In progress',component:'bridge-portal',status:'Under Maintenance',title:'Scheduled Bridge Portal maintenance',body:'The Testnet bridge website is undergoing planned maintenance in this example. Check the maintenance notice below for the affected scope and window.',update:'Example next update: 26 Sep 2026, 09:30 UTC.'},
+ resolved:{tone:'healthy',icon:'✓',headline:'All systems operational',summary:'The illustrative withdrawal incident has been resolved. See the example timeline below.'},
+ healthy:{tone:'healthy',icon:'✓',headline:'All systems operational',summary:'All listed testnet services are operating normally in this example.'},
+ withdrawals:{tone:'warning',icon:'!',headline:'Withdrawals are experiencing delays',summary:'Affects Testnet withdrawal processing.',component:'withdrawals',status:'Degraded Performance',title:'Withdrawal processing delays',body:'We are investigating delays affecting DOGE withdrawals from DogeOS Testnet to Dogecoin. Some requests are taking longer than the normal processing window.',update:'Example next update: 26 Sep 2026, 09:30 UTC. This is not a real incident.'},
+ rpc:{tone:'error',icon:'!',headline:'Public RPC is unavailable',summary:'Affects access through the official Testnet RPC endpoint.',component:'public-rpc',status:'Major Outage',title:'Testnet public RPC unavailable',body:'The official Testnet JSON-RPC endpoint is unavailable in this example. This affects queries and transaction submission through that endpoint. A public RPC outage alone does not establish that block production has stopped.',update:'Other component states in this illustration assume independent verification; live updates must confirm their actual impact.'},
+ unknown:{tone:'unknown',icon:'i',headline:'Current status verification is limited',summary:'Recent monitoring results are unavailable.',title:'Investigating a monitoring interruption',body:'We are investigating an interruption to our monitoring. We cannot currently verify the latest service status. This notice does not establish a network outage.',update:'Do not treat the last confirmed service state as a fresh health check. Production uses an incident notice when no Unknown component state is available.'}
+};
+// Preview fixture only: production endpoints must come from the selected deployment.
+const previewEndpoints = {
+ 'bridge-portal': {url:'https://portal.testnet.dogeos.com/bridge',label:'Open Testnet Bridge Portal'},
+ 'block-explorer': {url:'https://blockscout.testnet.dogeos.com/',label:'Open Testnet Blockscout'},
+ 'public-rpc': {url:'https://docs.dogeos.com/en/developers/developer-quickstart',label:'RPC connection details'}
+};
+const elements = {};
+for (const [id,name,description] of catalog) {
+ const row=document.createElement('div');row.className='component';
+ const details=document.createElement('details');const summary=document.createElement('summary');
+ const label=document.createElement('span');label.className='label';label.textContent=name;
+ const status=document.createElement('span');status.className='status';status.textContent='Operational';
+ summary.append(label,status);details.append(summary);
+ const text=document.createElement('p');text.textContent=description;details.append(text);
+ const endpoint=previewEndpoints[id];
+ if(endpoint){const entry=document.createElement('p');const link=document.createElement('a');link.href=endpoint.url;link.textContent=endpoint.label;entry.append(link);details.append(entry)}
+ row.append(details);
+ const history=document.createElement('div');history.className='history';history.setAttribute('aria-hidden','true');
+ for(let i=0;i<90;i++)history.append(document.createElement('span'));
+ row.append(history);
+ const caption=document.createElement('div');caption.className='history-caption';
+ for(const text of ['90-day history','No historical data loaded','Today']){const span=document.createElement('span');span.textContent=text;caption.append(span)}
+ row.append(caption);document.getElementById('components').append(row);elements[id]=status;
+}
+function renderScenario(key){
+ const s=scenarios[key];document.getElementById('banner').dataset.tone=s.tone;
+ document.getElementById('phase').textContent=s.phase||'Investigating';
+ document.getElementById('notice-kind').textContent=key==='maintenance'?'Illustrative maintenance · Testnet':'Illustrative incident · Testnet';
+ document.getElementById('maintenance-empty').hidden=key==='maintenance';document.getElementById('maintenance-example').hidden=key!=='maintenance';
+ document.getElementById('history-empty').hidden=key==='resolved';document.getElementById('history-example').hidden=key!=='resolved';
+ document.getElementById('icon').textContent=s.icon;document.getElementById('headline').textContent=s.headline;document.getElementById('summary').textContent=s.summary;
+ document.getElementById('incident').hidden=!s.title;
+ document.getElementById('incident-title').textContent=s.title||'';document.getElementById('incident-body').textContent=s.body||'';document.getElementById('incident-update').textContent=s.update||'';
+ for(const [id,element] of Object.entries(elements)){
+  const affected=id===s.component;
+  element.textContent=key==='unknown'?'Last confirmed: Operational':affected?s.status:'Operational';
+  element.className='status '+(key==='unknown'?'unknown':affected?s.tone:'');
+ }
+}
+document.getElementById('scenario').addEventListener('change',event=>renderScenario(event.target.value));
+document.getElementById('subscribe').addEventListener('click',()=>document.getElementById('subscription').showModal());
+renderScenario('healthy');
+</script>
+</body>
+</html>
