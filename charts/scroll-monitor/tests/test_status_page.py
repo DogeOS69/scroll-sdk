@@ -25,10 +25,58 @@ class StatusPageTests(unittest.TestCase):
                         "alerting": {"instatus-contact-points.yaml": copy.deepcopy(provisioning)}},
             "statusPage": {
                 "enabled": True, "environment": "testnet",
-                "catalog": {"environment": "testnet", "components": [{"key": "public-rpc", "name": "Public RPC"}]},
+                "catalog": {"groupName": "Testnet", "environment": "testnet", "components": [{"key": "public-rpc", "name": "Public RPC"}]},
                 "generated": {"env": env, "provisioning": provisioning, "environment": "testnet", "version": 1},
             },
         }
+
+    def publication_fixture(self, automatic=False):
+        defaults = yaml.safe_load((CHART / "values.yaml").read_text())
+        publication = copy.deepcopy(defaults["statusPage"]["publication"])
+        publication["delivery"]["enabled"] = False
+        key = "batch-publication"
+        if automatic:
+            publication["components"][key] = {"mode": "automatic", "rule": {"builtin": False, "expr": "fixture_health", "for": "5m"}}
+        envs = {"INSTATUS_BATCH_PUBLICATION_WEBHOOK_URL": {"secretKeyRef": {"name": "instatus-batch-publication-webhook", "key": "url"}}} if automatic else {}
+        provisioning = {"apiVersion": 1, "contactPoints": [], "groups": []}
+        if automatic:
+            provisioning["contactPoints"] = [{"orgId": 1, "name": "instatus-batch-publication", "receivers": [{
+                "uid": "instatus-batch-publication", "type": "webhook", "disableResolveMessage": True,
+                "settings": {"httpMethod": "POST", "url": "$INSTATUS_BATCH_PUBLICATION_WEBHOOK_URL"},
+            }]}]
+        return {
+            "grafana": {"envValueFrom": copy.deepcopy(envs), "alerting": {"instatus-component-publication.yaml": copy.deepcopy(provisioning)}},
+            "statusPage": {"enabled": True, "environment": "testnet", "publication": publication,
+                "instatus": {"pageId": "page-1", "componentIds": {key: "batch-1"}},
+                "catalog": {"groupName": "Testnet", "environment": "testnet", "components": [{"key": key, "name": "Batch Publication"}]},
+                "generated": {"version": 2, "environment": "testnet",
+                    "componentBindings": {key: {"pageId": "page-1", "componentId": "batch-1"}} if automatic else {},
+                    "componentPublication": {"orgId": 1, "datasourceUid": "scroll-prometheus", "inputs": copy.deepcopy(publication), "envs": envs, "provisioning": provisioning, "readiness": {}}}},
+        }
+
+    def test_component_observation_requires_no_webhook_and_automatic_uses_only_its_secret(self):
+        for automatic in [False, True]:
+            result = self.render(self.publication_fixture(automatic))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            docs = [doc for doc in yaml.safe_load_all(result.stdout) if doc]
+            deployment = next(doc for doc in docs if doc["kind"] == "Deployment" and doc["metadata"]["name"] == "grafana")
+            container = next(c for c in deployment["spec"]["template"]["spec"]["containers"] if c["name"] == "grafana")
+            envs = [e for e in container["env"] if e["name"].startswith("INSTATUS_")]
+            self.assertEqual(len(envs), 1 if automatic else 0)
+            if automatic:
+                self.assertEqual(envs[0]["valueFrom"]["secretKeyRef"]["name"], "instatus-batch-publication-webhook")
+
+    def test_component_publication_rejects_unapplied_binding_or_stale_mode(self):
+        missing = self.publication_fixture(True)
+        missing["statusPage"]["generated"]["componentBindings"] = {}
+        cross_component = self.publication_fixture(True)
+        cross_component["statusPage"]["instatus"]["componentIds"]["batch-publication"] = "another-component"
+        stale = self.publication_fixture(True)
+        stale["statusPage"]["publication"]["components"]["batch-publication"]["mode"] = "manual"
+        for values in [missing, cross_component, stale]:
+            result = self.render(values)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("statusPage", result.stderr)
 
     def render(self, values):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as file:
@@ -70,7 +118,9 @@ class StatusPageTests(unittest.TestCase):
         disabled["statusPage"]["enabled"] = False
         identity = self.fixture()
         identity["statusPage"]["grafana"] = {"orgId": 2}
-        for values in [missing, environment, secret, disabled, identity]:
+        group = self.fixture()
+        group["statusPage"]["catalog"]["groupName"] = "Mainnet"
+        for values in [missing, environment, secret, disabled, identity, group]:
             with self.subTest(values=values["statusPage"]):
                 result = self.render(values)
                 self.assertNotEqual(result.returncode, 0)

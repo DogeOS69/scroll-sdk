@@ -1,14 +1,16 @@
 # DogeOS public status page design
 
+当前实现状态及启用条件以 [组件发布配置](status-page-publication.md) 为准；本文中的页面预览和早期只读采样是设计记录，不代表当前线上健康。
+
 日期：2026-09-26。状态：设计草案，未创建或修改 Instatus 资源，未启用公开告警路由。
 
 配套 [可交互页面预览](status-page-preview.html) 可直接用浏览器打开，切换正常、提现延迟、RPC 中断、监控失联、维护和事故恢复场景。所有状态均为演示；没有真实历史、百分比或订阅投递。预览展示信息结构和视觉方向，生产使用 Instatus 原生页面，不部署这个 HTML 为另一套状态页服务。
 
 ## 设计结论
 
-采用面向用户能力的组件命名，按网络隔离页面。第一版使用独立 Testnet 页面，包含 6 个网络组件、Bridge Portal 和当前部署的 Blockscout，共 8 个组件。L2Scan 由用户明确排除在本次范围之外，后续单独设计。公开页面使用英文。
+采用面向用户能力的组件命名，复用 workspace **DogeOS (`6wxpx`)** 中的 **dogeos.instatus.com**，按 **Mainnet / Testnet / Devnet** 分组。每组包含 6 个网络组件、Bridge Portal 和当前部署的 Blockscout，共 8 个组件，三网完整接入后共 24 个。L2Scan 由用户明确排除在本次范围之外，后续单独设计。公开页面使用英文。
 
-用户已确认首版只覆盖 **DogeOS Testnet**，不创建或展示 Mainnet 分组。仓库 example 的 Devnet 名称和本稿的预览状态均不能证明公共 Testnet 的实时健康；上线时需核实实际网络与公开地址。内部 Devnet 不公开。
+用户最新决定为三网共页，替代此前 Testnet 独立页面方案。每个工作目录仍只对应一个网络，分别生成该组的组件、地址和 webhook。上线时核实各网络实际部署与公开地址；预览中的状态均不证明真实健康。
 
 页面回答四个问题：现在能否使用、哪项能力受影响、用户需要做什么、何时再次更新。默认不展示 TPS、区块高度、资金余额、内部拓扑或原始监控曲线。
 
@@ -16,7 +18,7 @@
 
 状态页组件描述的是能力，URL 属于部署环境。**Bridge Portal 的地址以用户选定工作目录中的 `frontends-production.yaml` 为准**；当前工具生成的目录布局通常为 `<工作目录>/values/frontends-production.yaml`。读取 `ingress.main.hosts[].host`，结合部署使用的协议与前端路由形成 Bridge URL，当前前端路由为 `/bridge`。不能把 `portal.testnet.dogeos.com` 写成生成器或通用模板常量。
 
-同样的能力可部署在 Testnet、Mainnet、Devnet，但各环境有自己的 Portal、RPC、Explorer、链身份和 Instatus 目标。当前只公开 Testnet。环境名称由部署选择明确提供，不能通过域名字符串推断，更不能通过替换 `testnet` 为 `mainnet` 来猜测 URL。
+同样的能力可部署在 Testnet、Mainnet、Devnet，但各环境有自己的 Portal、RPC、Explorer、链身份和 Instatus 组件组、独立 webhook；共享同一个页面 ID。环境名称由部署选择明确提供，不能通过域名字符串推断，更不能通过替换 `testnet` 为 `mainnet` 来猜测 URL。
 
 本次读取到的 Testnet values 与用户确认的 `https://portal.testnet.dogeos.com/bridge` 一致。这个 URL 是本页预览的 Testnet 示例数据，不是跨环境配置契约。生成器已有从 `spec.frontend.hosts.frontend` 写入 frontend ingress，以及从 `config.toml` 的 `ingress.FRONTEND_HOST` 更新它的路径，无需增加一套独立的 Portal 域名字段。
 
@@ -30,40 +32,43 @@ RPC 应取同一部署的有效公共入口；存在旧文件、多个 hosts 或
 | --- | --- | --- |
 | [Arbitrum](https://status.arbitrum.io/) | 按 ARB1、NOVA、SEPOLIA 分组；组件包括 Sequencer、Batch Poster、Validator、Feed，部分网络含 Arbiscan | 按网络分组，保留批次发布与网络同步能力；不照搬并不等价的 Validator / Feed 名称 |
 | [Optimism](https://status.optimism.io/) | Mainnet、Sepolia 分组；Public API、Deposits、Withdrawals、Transaction Sequencing、Batch Submission、Node Sync | 主要采用其面向用户的能力粒度，明确区分交易、充值、提现及节点同步 |
-| [Instatus components](https://instatus.com/help/status-page/components) | 组件、分组、排序和可用性历史可原生配置 | 使用供应商原生能力，不新增 publisher 或页面后端 |
+| [Instatus components](https://instatus.com/help/status-page/components) | 组件、分组、排序和可用性历史可原生配置 | 使用供应商原生页面；自动恢复由内部投递校验器核实 |
 
 两家当前均使用 Instatus，展示可用性历史及事故记录。公开页面无法证明它们内部采用了哪种采集或发布实现。以上页面在本次设计时读取，组件可能随运营调整。
 
 ## 页面结构与视觉
 
-首版页面名称 **DogeOS Testnet Status**；自定义域名按实际域名所有权和配置确定，不把候选域名当作已开通。
+页面名称 **DogeOS**，使用已选定的 `https://dogeos.instatus.com/`；自定义域名按实际域名所有权和配置确定，不把候选域名当作已开通。
 
 ```text
-DogeOS Testnet Status                              Subscribe to updates
-Service availability and incident updates for the DogeOS testnet.
+DogeOS                                            Subscribe to updates
+Service availability for Mainnet, Testnet and Devnet.
 
 [Overall status]
 [Active incident: impact, affected network/components, latest update]
 
-[DogeOS Testnet]                                      Current status
+[Mainnet]                                            Current status
   Public RPC                      Status + optional uptime history
   Transaction Sequencing          Status + optional uptime history
   Deposits                        Status + optional uptime history
   Withdrawals                     Status + optional uptime history
   Batch Publication               Status + optional uptime history
   Node Sync                       Status + optional uptime history
-  Bridge Portal                   Official Testnet bridge website
+  Bridge Portal                   This network’s official bridge website
   Block Explorer                  Deployment-owned Blockscout
+
+[Testnet] — same 8 components, independent status and URLs
+[Devnet]  — same 8 components, independent status and URLs
 
 [Scheduled maintenance]
 [Recent incidents / incident history]
 [Official website / Documentation / Support]
 ```
 
-- 窄栏、白底、深色文字、细分隔线。品牌点缀暂用金色，后续替换为确认的 DogeOS 品牌规范和 logo。
+- 窄栏、白底、深色文字、细分隔线。使用 [DogeOS 官方品牌库](https://github.com/DogeOS69/web-images) 的完整 logo 和 favicon；白字 logo 可在控制台配置给深色模式。
 - 绿色表示正常、黄色表示性能下降、橙色表示部分中断、红色表示严重中断，维护用蓝色。所有状态同时提供文字，避免只依赖颜色。
 - 事故置于组件列表上方；按受影响网络和能力描述，不让用户先翻日志或内部组件列表。
-- 预览展示网络分组；首版自动化创建独立 Testnet 页面及 8 个平铺组件，由页面标题标明网络，不创建分组，也不需要网络切换器。未来若开通 Mainnet，再单独决策页面与总状态隔离，避免测试网事件影响主网可用性的理解。
+- 按 Mainnet、Testnet、Devnet 顺序展示原生组件组。顶部总状态可能受任一组影响，因此事故标题必须明确网络；例如 “Testnet — Public RPC unavailable”，不能把测试网故障写成主网故障。三组在控制台初始化一次，CLI 后续只管理当前环境组内的组件。
 - 顶部订阅入口使用 Instatus 原生订阅。页脚只填写已确认的正式链接；首次提供邮件订阅，其他通道按账户能力和运营需要开启。
 - 时间使用明确时区的时间戳；事故应记录实际影响开始时间、每次更新和恢复时间。演示页面中的维护与历史占位不代表真实事件。
 
@@ -81,7 +86,7 @@ Service availability and incident updates for the DogeOS testnet.
 | 4 | Withdrawals / `withdrawals` | Processing of DOGE withdrawals from DogeOS to Dogecoin, including protocol processing and confirmation. | 提现完成链路；正常协议等待不算事故 |
 | 5 | Batch Publication / `batch-publication` | Publication of DogeOS batch data to the configured data availability layer. | 当前仓库为 Ethereum DA 路径；不等同于 Dogecoin 最终结算，也不作数据安全保证 |
 | 6 | Node Sync / `node-sync` | Availability of the network data and services needed for supported DogeOS nodes to synchronize. | 支持的节点同步/派生路径；不包含单个用户自建节点的本地配置问题 |
-| 7 | Bridge Portal / `bridge-portal` | Availability of the DogeOS Testnet bridge portal and its supporting API. | [portal.testnet.dogeos.com/bridge](https://portal.testnet.dogeos.com/bridge)；页面/API 访问与充值、提现处理分开 |
+| 7 | Bridge Portal / `bridge-portal` | Availability of the DogeOS bridge portal and its supporting API. | [portal.testnet.dogeos.com/bridge](https://portal.testnet.dogeos.com/bridge)；页面/API 访问与充值、提现处理分开 |
 | 8 | Block Explorer / `block-explorer` | Availability and indexing freshness of the DogeOS Blockscout explorer. | 当前部署的 Blockscout；域名来自 `blockscout-production.yaml`，网页能打开但索引明显滞后仍可降级 |
 
 Bridge Portal 的入口已由用户确认，并与 [DogeOS 官方部署教程中的 bridge 链接](https://docs.dogeos.com/en/developers/guides/contract-deployment-tutorial)一致。该确认仅明确组件对应的网站，不代表已完成充值、提现链路健康验证。
@@ -123,16 +128,16 @@ TSO、CubeSigner、proof-coordinator、withdrawal-processor、L1 Interface、数
 
 官方 [Testnet Bridge 指南](https://docs.dogeos.com/en/getting-started/user-guide/bridge)当前说明充值与提现处理可能需要最多约 4 小时，并标注为早期测试网实现。这是当前文档中的用户预期，不能直接作为新版本已承诺的 SLA；也不能把内部 15 分钟任务告警直接变成公开的充值或提现故障。先按实际部署版本核实正常流程和计时起点。
 
-本稿不把现有内部数值阈值声明为对外 SLA。后续按网络分别确认 RPC 错误率/延迟、批次发布时间预算、充值/提现正常时间范围、触发持续时间和恢复观察窗口，再实现公共规则。
+本稿不把现有内部数值阈值声明为对外 SLA。后续按网络分别确认 RPC 错误率/延迟、批次发布时间预算、充值/提现正常时间范围、触发持续时间和恢复观察窗口，应用已实现的公共规则；配置默认及实际覆盖见 [健康规则](status-page-health-rules.md)。
 
 ## 通知和发布方式
 
-沿用 [已定架构](status-page-architecture.md)：Prometheus → Grafana 公共状态规则 → Instatus 原生 webhook。无需自建 publisher，也不把内部 Prometheus 暴露给供应商。外部探测是观察已经公开的用户入口，不是让 Instatus 读取我们的私网监控。
+当前 [实现架构](status-page-architecture.md)：Prometheus → Grafana 公共状态规则 → 投递校验器 → Instatus 原生 webhook。校验器提供独立恢复窗口与持久化投递，不把内部 Prometheus 暴露给供应商。外部探测是观察已经公开的用户入口，不是让 Instatus 读取我们的私网监控。
 
 - 内部诊断告警继续发给内部接收端；新增公开规则应只保留网络、公开组件和可公开文案，不携带 Pod/IP、钱包、RPC 凭据、内部 URL、日志或请求内容。仅更改通知模板不保证 webhook 中所有 labels/annotations 都被过滤，必须检查实际 payload。
 - 建议在 Grafana 将一个网络/组件的多个原因聚合成一条公共状态规则，使用稳定标签如 `status_page=dogeos`、`network=<actual-network>`、`public_component=withdrawals`。评估聚合时考虑信号新鲜度；不得把缺失序列作为健康。
 - 初期可用一条聚合规则对应一个公开严重程度；升级/降级和跨组件事件由人工协调。不要把每个内部告警分别绑定同一组件并让任意 resolved 消息自动恢复它。
-- 先在测试页面验证供应商对同时 firing、部分 resolved、重复通知、分组及维护的行为。若原生集成不能可靠处理这些场景，首版保留人工恢复，不因这个需求立即新增 publisher。
+- 先在测试页面验证供应商对同时 firing、部分 resolved、重复通知、分组及维护的行为。默认校验器已处理本地三态及恢复窗口；供应商行为仍需测试页面验收，未验收组件保留 observe。
 - 若供应商不能从通知内容可靠选择目标组件，可给不同组件建立独立原生集成和 contact point。不要预设一个 webhook 必然支持任意动态映射。真实 ID/URL 只在接入时生成；具体方式以目标账户联调结果为准。
 - 运行密钥仍只需生成的 webhook URL，放入 Kubernetes Secret；不使用通用管理 API key。暂不改 production 的告警路由，也不为未确定的组件预写凭据引用。
 
@@ -158,7 +163,7 @@ TSO、CubeSigner、proof-coordinator、withdrawal-processor、L1 Interface、数
 
 | 内容 | 设计/预览 | 真实接入状态 |
 | --- | --- | --- |
-| Testnet 总状态、8 个公开组件和说明 | 已覆盖 | 远端页面尚未配置 |
+| 三网分组、每组 8 个公开组件和说明 | 已覆盖 | 远端页面尚未配置 |
 | HTTP RPC 与已启用的 WebSocket | 纳入同一个 Public RPC 组件；仅一种协议受影响可表达部分中断 | HTTP 已做只读采样；WebSocket 尚未验证 |
 | 当前事故、受影响范围、进度与带时区的更新时间 | 已覆盖；预览提供演示内容 | 未创建真实事故 |
 | 计划维护、影响范围与维护时间窗口 | 已覆盖；预览提供演示场景 | 未发布真实维护 |
@@ -167,17 +172,17 @@ TSO、CubeSigner、proof-coordinator、withdrawal-processor、L1 Interface、数
 | 订阅 | 使用 Instatus 原生订阅；预览按钮只说明行为 | 未连接真实订阅 |
 | 官网、文档、支持入口 | 已加入链接；支持链接取官方文档的 Discord 入口 | 仅链接，不建立额外客服系统 |
 | 手机布局、非颜色状态说明、监控失联提示 | 已覆盖 | 供应商生产主题还需核对 |
-| 地址随部署变化 | 已明确从工作目录配置读取的契约 | CLI 已从工作目录生成；预览仍使用 Testnet 示例数据 |
+| 地址随部署变化 | 已明确从工作目录配置读取的契约 | CLI 已从工作目录生成；预览展示三组；已确认链接只用于 Testnet 示例 |
 | 自动发布、恢复、去重和失联处理 | 已定义接入与验收边界 | Secret/webhook、路由和联调未完成 |
 
 官方 [Faucet 指南](https://docs.dogeos.com/en/getting-started/user-guide/faucet)还列出测试币领取服务。这是额外的候选范围，已询问用户；在未确认前仍维持 8 个组件。若纳入，应区分正常限领/风控与领取服务异常，网页可访问不等于成功发币；不以频繁真实领币作为默认探测。当前仓库未找到其 chart，不能猜测它的部署配置来源。
 
-L2Scan 明确排除；Mainnet、内部 Devnet、TPS/费用等数值曲线和内部服务逐项状态不属于这一版必需内容。
+三网统一展示；L2Scan、TPS/费用等数值曲线和内部服务逐项状态不属于本次范围。
 
 ## 上线准备与验收
 
 1. 确认实际公开网络、官方 RPC/Bridge/Explorer URL、品牌素材、支持入口及订阅通道；只创建实际对外服务的组件。
-2. 用 CLI 生成并应用页面名称、组件英文说明和排序。首版为独立 Testnet 页面的平铺组件；未积累的历史不补为 100%，确认公开观测及真实记录后再打开原生历史展示。
+2. 用 CLI 生成并应用页面名称、组件英文说明和排序。先在共享页面中初始化每个网络的原生组件组和 Public RPC 组件，再分别从各部署工作目录生成、应用；未积累的历史不补为 100%，确认公开观测及真实记录后再打开原生历史展示。
 3. 先人工维护缺乏端到端证据的组件；给公共入口补外部观测。优先自动化公开 RPC/页面可用性、已验证的排序和批次进度。
 4. 在独立测试页面验证触发、恢复、并发原因、观测缺失、发送端失联和维护流程，检查通知内容与原生聚合行为。
 5. 将生成的 webhook URL 注入现有 Secret 管理流程，再启用选择性 Grafana 路由。生产发布状态来自真实观测或人工确认，不来自此 HTML 预览。

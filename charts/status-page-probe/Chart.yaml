@@ -1,0 +1,5 @@
+apiVersion: v2
+name: status-page-probe
+description: Independent semantic probes for public DogeOS components
+version: 0.1.0
+appVersion: '1'
