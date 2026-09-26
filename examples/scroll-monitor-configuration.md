@@ -26,17 +26,21 @@ service. Do not add duplicate supplemental monitors in scroll-monitor.
 
 ## Instatus native webhook configuration
 
-The runtime integration uses **Grafana alerts → Instatus's native Grafana webhook**.
-No custom publisher, public Prometheus endpoint, or metric-series upload is added.
-The management API key belongs only to the explicit CLI planning/application step;
-it is never injected into the chart. Public alert selection and component routing
-remain separate, later decisions.
+The runtime integration uses **Grafana component alerts → delivery verifier →
+Instatus's native Grafana webhook**. The verifier confirms continuous recovery
+and keeps a durable delivery journal. No public Prometheus endpoint or numeric
+series upload is added. The management API key belongs only to the explicit CLI
+planning/application step; it is never injected into the chart.
 
 Enable the `statusPage` block in the chart production profile or
-[operator example](values/scroll-monitor-production.yaml), set `environment: testnet`,
+[operator example](values/scroll-monitor-production.yaml), set `environment` to this directory’s `mainnet`, `testnet`, or `devnet`,
 and run `scrollsdk setup status-page` (offline). `setup prep-charts` also generates
 it during normal chart preparation. The resulting values contain the public
 component catalog, native `grafana.envValueFrom` and `grafana.alerting` fields.
+All three deployments target workspace `6wxpx` and page `dogeos`, using the
+Mainnet / Testnet / Devnet component groups. Initialize each group with a Public RPC
+component in the Instatus console once. Page branding is shared; endpoints and
+webhooks remain deployment-specific. Keep shared name/branding settings identical.
 Defaults remain disabled, with no required Secret or public notification route.
 The commented native blocks below `grafana` remain a manual alternative when
 `statusPage.enabled=false`; do not uncomment them for automatic generation.
@@ -230,3 +234,7 @@ produce warning rules rather than false claims of zero signers or stale oracle
 values. The chart does not silently turn off monitoring when a service disappears.
 Existing Grafana rules retain user edits and pause choices on upgrades, apart
 from exact migrations of known shipped query defects.
+
+## Component publication v2
+
+See [component publication controls](../docs/status-page-publication.md) for independent manual/observe/automatic modes, one integration per automatic component, generated Secret references, and migration from the legacy bootstrap described above. Production templates default to observe with built-in health rules; missing required inputs report not ready. Verified recovery is enabled in the new examples; direct legacy delivery retains manual recovery. External probes and business deadlines must be configured per deployment.
