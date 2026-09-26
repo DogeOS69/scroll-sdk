@@ -67,6 +67,8 @@ Service availability and incident updates for the DogeOS testnet.
 - 顶部订阅入口使用 Instatus 原生订阅。页脚只填写已确认的正式链接；首次提供邮件订阅，其他通道按账户能力和运营需要开启。
 - 时间使用明确时区的时间戳；事故应记录实际影响开始时间、每次更新和恢复时间。演示页面中的维护与历史占位不代表真实事件。
 
+健康判断、故障/恢复窗口和采集缺口详见 [健康规则 v1](status-page-health-rules.md)。该设计尚未启用公开告警；组件初始正常状态不代表完成健康验证。
+
 ## 组件目录与公开英文说明
 
 本表定义公开组件目录。CLI 将同一组 8 个 key 生成为 `statusPage.catalog`，`--apply` 用其创建或更新 Instatus 组件；真实 component ID 由 Instatus 分配并保存。自动化入口与模板字段见 [配置生成与应用](status-page-automation.md)。
