@@ -1,0 +1,41 @@
+{{- if and (not .Values.statusPage.enabled) .Values.statusPage.generated }}
+{{- fail "statusPage was generated: remove its Grafana contact point and generated configuration before disabling" }}
+{{- end }}
+{{- if .Values.statusPage.enabled }}
+{{- $status := .Values.statusPage }}
+{{- $generated := $status.generated | default dict }}
+{{- $catalog := $status.catalog | default dict }}
+{{- if or (ne (int ($generated.version | default 0)) 1) (empty $catalog.components) }}
+{{- fail "statusPage.enabled requires generated configuration: run scrollsdk setup status-page or setup prep-charts first" }}
+{{- end }}
+{{- if or (ne $status.environment $generated.environment) (ne $status.environment $catalog.environment) }}
+{{- fail "statusPage environment differs from the generated catalog; regenerate for this deployment" }}
+{{- end }}
+{{- if not .Values.grafana.enabled }}
+{{- fail "statusPage requires bundled Grafana" }}
+{{- end }}
+{{- $env := get (.Values.grafana.envValueFrom | default dict) "INSTATUS_GRAFANA_WEBHOOK_URL" | default dict }}
+{{- $provisioning := get (.Values.grafana.alerting | default dict) "instatus-contact-points.yaml" | default dict }}
+{{- if or (ne (toJson $env) (toJson $generated.env)) (ne (toJson $provisioning) (toJson $generated.provisioning)) }}
+{{- fail "statusPage native Grafana configuration differs from generation; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- if ne (toJson $env.secretKeyRef) (toJson $status.grafana.webhookSecretRef) }}
+{{- fail "statusPage Secret reference changed; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- $point := first $provisioning.contactPoints }}
+{{- $receiver := first $point.receivers }}
+{{- if or (ne (int $point.orgId) (int $status.grafana.orgId)) (ne $point.name $status.grafana.contactPointName) (ne $receiver.uid $status.grafana.receiverUid) }}
+{{- fail "statusPage Grafana identity changed; rerun scrollsdk setup status-page" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-status-page" .Release.Name | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  # Deployment metadata only. Grafana uses its native alerting provisioning file.
+  # This ConfigMap performs no outbound calls and contains no credentials.
+  catalog.json: {{ $catalog | toJson | quote }}
+{{- end }}

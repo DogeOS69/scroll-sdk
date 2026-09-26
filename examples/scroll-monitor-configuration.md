@@ -12,25 +12,36 @@ generate their own network's URL and chain ID.
 
 ## Instatus native webhook configuration
 
-The initial integration uses **Grafana alerts → Instatus's native Grafana webhook**.
-There is no custom publisher, Instatus management API key, public Prometheus
-endpoint, or metric-series upload. Instatus manages the public components,
-incidents, and uptime history. Public alert selection and component mapping are
-separate, later decisions.
+The runtime integration uses **Grafana alerts → Instatus's native Grafana webhook**.
+No custom publisher, public Prometheus endpoint, or metric-series upload is added.
+The management API key belongs only to the explicit CLI planning/application step;
+it is never injected into the chart. Public alert selection and component routing
+remain separate, later decisions.
 
-The chart production profile and
-[operator example](values/scroll-monitor-production.yaml) contain the same
-commented `grafana.envValueFrom` and `grafana.alerting` blocks. By default these
-blocks are inactive: no Secret is required and no Instatus contact point or
-notification route is created. Use the existing Grafana chart fields; do not add
-a `statusPagePublisher` block to new or generated values. Remove that obsolete
-reserved block from values copied from the earlier architecture draft.
+Enable the `statusPage` block in the chart production profile or
+[operator example](values/scroll-monitor-production.yaml), set `environment: testnet`,
+and run `scrollsdk setup status-page` (offline). `setup prep-charts` also generates
+it during normal chart preparation. The resulting values contain the public
+component catalog, native `grafana.envValueFrom` and `grafana.alerting` fields.
+Defaults remain disabled, with no required Secret or public notification route.
+The commented native blocks below `grafana` remain a manual alternative when
+`statusPage.enabled=false`; do not uncomment them for automatic generation.
+
+Use `scrollsdk setup status-page --plan` for a read-only remote comparison and
+`--apply` to create/reconcile Instatus resources. Both read `INSTATUS_API_KEY`
+from the command environment. See the complete
+[automation contract and field ownership](../docs/status-page-automation.md)
+for page creation, input paths, ID persistence, failure recovery and teardown.
+First webhook initialization uses `--plan --create-webhook`, then
+`--apply --create-webhook`. The URL and a Kubernetes Secret artifact are saved
+privately under `secrets/status-page/`; ordinary `--apply` reuses
+that binding. Apply the Secret separately to the existing Grafana namespace.
 
 ### Field ownership
 
 | Field / value | Source | Handling |
 | --- | --- | --- |
-| Webhook URL (Secret value only) | Generated in the target Instatus workspace/page's Apps → Grafana integration | Environment-specific credential; provision outside Git and Helm values. Do not construct it from a page ID or reuse the REST API key. |
+| Webhook URL (Secret value only) | Returned by Instatus's integration-create API via CLI `--apply --create-webhook`, or generated in Apps → Grafana | Environment-specific credential; provision outside Git and Helm values. Do not construct it from a page ID or reuse the REST API key. |
 | `grafana.envValueFrom.INSTATUS_GRAFANA_WEBHOOK_URL.secretKeyRef.name` | Operator supplies an existing Secret in Grafana's namespace | Example convention: `instatus-grafana-webhook`; preserve on regeneration. |
 | `…secretKeyRef.key` | Operator supplies the matching Secret data key | Example convention: `url`; preserve on regeneration. |
 | `grafana.alerting.instatus-contact-points.yaml` | Local provisioning filename | Stable convention, not assigned by Instatus. |
@@ -41,26 +52,23 @@ reserved block from values copied from the earlier architecture draft.
 | Receiver `settings.url` | Grafana environment interpolation | Keep literal `$INSTATUS_GRAFANA_WEBHOOK_URL`; Grafana resolves it at startup from the Secret-backed environment. |
 | Public alert routing and Instatus component/incident templates | Later operational configuration | Not prefilled or automatically enabled. Do not route all `managed_by=scroll-monitor` alerts to the public page. |
 
-“Dynamic” means supplied for the deployment, not automatically discovered by the
-CLI. This integration does not require page IDs, component IDs, an Instatus API
-key, event-auth tokens, or publisher storage settings in production YAML.
-
-`scrollsdk setup prep-charts` preserves the native `grafana.envValueFrom` and
-`grafana.alerting` configuration in both `scroll-monitor-production.yaml` and
-numbered variants. It does not generate a webhook, retrieve its value, create a
-Secret, or add these optional blocks to older files. Copy the commented example
-once for an existing deployment. YAML regeneration can discard comments; this
-source example and the ownership table remain the reference. No new CLI flag or
-`config.toml` field is needed.
+The CLI dynamically derives URLs and chain identity from the selected deployment.
+Instatus supplies page/component IDs and the integration webhook URL. Secret
+names, data keys and Grafana organization are deployment inputs; protocol values
+and default contact-point identities are stable conventions. API key and webhook
+URL values must remain outside production YAML.
 
 ### Setup and ownership
 
-1. Create the Grafana integration in Instatus for the intended environment. Store
-   its generated URL through the existing secret-management workflow as key `url`
+1. Initialize the intended environment's Grafana integration with CLI
+   `--apply --create-webhook`, or create it in the Instatus dashboard and adopt
+   its URL using `--apply --webhook-url-file /private/instatus-grafana.url`. Store
+   its generated URL through the private Secret artifact or existing secret-management workflow as key `url`
    in Secret `instatus-grafana-webhook` in Grafana's namespace (or use your own
    matching names). The complete URL is a credential.
-2. Uncomment both optional blocks in production values and deploy the chart.
-   This provisions a contact point only. Leave notification routes unconfigured
+2. Generate values with `scrollsdk setup status-page`, review/apply the Instatus
+   metadata separately, and deploy the chart through the existing Helm workflow.
+   The runtime change provisions a contact point only. Leave notification routes unconfigured
    until the public alert selection and payload review are complete.
 3. Later, configure explicit notification policies or rule routing in Grafana,
    plus the target component and incident behavior in Instatus. Keep the existing

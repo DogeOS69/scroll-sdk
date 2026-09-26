@@ -1,8 +1,47 @@
+# Status-page automation. Default is offline/disabled; see docs/status-page-automation.md.
+statusPage:
+  enabled: false # [OPERATOR] Set true before CLI generation.
+  environment: "" # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
+  sources:
+    frontends: frontends-production.yaml # [OPERATOR] Filename in this values directory.
+    publicRpc: l2-reth-rpc-public-production.yaml # [OPERATOR] Select the ENABLED public RPC release.
+    blockscout: blockscout-production.yaml # [OPERATOR] Deployed Blockscout; L2Scan excluded.
+    scheme: https # [OPERATOR] Actual external scheme; no domain substitution.
+    bridgePath: /bridge # [CONVENTION] Public route, appended to frontend ingress host.
+  grafana:
+    orgId: 1 # [OPERATOR] Organization in scroll-monitor's Grafana, not Instatus.
+    contactPointName: instatus-public # [CONVENTION] Stable local Grafana name.
+    receiverUid: instatus-public-webhook # [CONVENTION] Stable unused Grafana UID.
+    webhookSecretRef:
+      name: instatus-grafana-webhook # [OPERATOR] Target Secret in the existing Grafana namespace.
+      key: url # [OPERATOR] Secret data key holding the Instatus-generated Grafana webhook URL.
+  instatus:
+    pageId: "" # [INSTATUS] Existing dedicated page ID, or filled automatically after page creation.
+    subdomain: "" # [GENERATED] mainnet=dogeos, testnet=dogeos-testnet, devnet=dogeos-devnet.
+    # Stable per environment: repeated deployments reuse the existing Project.
+    email: "" # [OPERATOR] Page owner email; required only when creating a page.
+    initialStatus: OPERATIONAL # [DEFAULT] Initial state for NEW components only; existing live status is preserved.
+    # This initializes the page; it is not a health-check result. Override if needed.
+    # Allowed: OPERATIONAL, UNDERMAINTENANCE, DEGRADEDPERFORMANCE, PARTIALOUTAGE, MAJOROUTAGE.
+    showUptime: false # [OPERATOR] Enable after public alert coverage/history is ready.
+    componentIds: {} # [GENERATED] Persisted by --apply; may map existing component keys to IDs.
+  # [GENERATED] catalog and generated are written by the CLI; do not edit manually.
+  # Native grafana.envValueFrom and grafana.alerting are generated too.
+  # [SECRET] INSTATUS_API_KEY is an environment variable used by CLI --plan/--apply only.
+  # First webhook: scrollsdk setup status-page --plan --create-webhook, then --apply --create-webhook.
+  # [PRIVATE GENERATED] secrets/status-page/binding.json + grafana.secret.yaml.
+  # Keep that directory in private backups; ordinary --apply reuses it.
+  # Apply grafana.secret.yaml to the existing Grafana namespace separately.
+  # Existing URL: --apply --webhook-url-file /private/instatus-grafana.url.
+  # [GENERATED] generated.webhookRequested prevents replacement if private state is lost.
+  # Neither API key, webhook URL nor integration ID belongs in this YAML.
+
 grafana:
   # Optional Instatus native webhook; no custom publisher or management API key.
   # Create the referenced Secret in Grafana's namespace with the URL generated
-  # by Instatus > Apps > Grafana. Never put the real URL in this values file.
-  # Uncomment BOTH blocks below to provision only a contact point, with no route.
+  # by CLI --apply --create-webhook or Instatus > Apps > Grafana. Never inline the URL.
+  # Manual alternative when statusPage.enabled=false: uncomment BOTH blocks.
+  # When statusPage.enabled=true, the CLI generates these fields; leave this example commented.
   # BEGIN OPTIONAL INSTATUS CONFIG
   # envValueFrom:
   #   INSTATUS_GRAFANA_WEBHOOK_URL:
