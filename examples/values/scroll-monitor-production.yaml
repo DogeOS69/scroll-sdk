@@ -1,61 +1,61 @@
 # Status-page automation. Default is offline/disabled; see docs/status-page-automation.md.
 statusPage:
-  enabled: false # [OPERATOR] Set true before CLI generation.
-  environment: "" # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
+  enabled: false  # [OPERATOR] Set true before CLI generation.
+  environment: ""  # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
   sources:
-    frontends: frontends-production.yaml # [OPERATOR] Filename in this values directory.
-    publicRpc: l2-reth-rpc-public-production.yaml # [OPERATOR] Select the ENABLED public RPC release.
-    blockscout: blockscout-production.yaml # [OPERATOR] Deployed Blockscout; L2Scan excluded.
-    scheme: https # [OPERATOR] Actual external scheme; no domain substitution.
-    bridgePath: /bridge # [CONVENTION] Public route, appended to frontend ingress host.
+    frontends: frontends-production.yaml  # [OPERATOR] Filename in this values directory.
+    publicRpc: l2-reth-rpc-public-production.yaml  # [OPERATOR] Select the ENABLED public RPC release.
+    blockscout: blockscout-production.yaml  # [OPERATOR] Deployed Blockscout; L2Scan excluded.
+    scheme: https  # [OPERATOR] Actual external scheme; no domain substitution.
+    bridgePath: /bridge  # [CONVENTION] Public route, appended to frontend ingress host.
   grafana:
-    orgId: 1 # [OPERATOR] Organization in scroll-monitor's Grafana, not Instatus.
-    contactPointName: instatus-public # [LEGACY] Bootstrap name; publication uses per-component names.
-    receiverUid: instatus-public-webhook # [LEGACY] Bootstrap UID; retained for existing installations.
+    orgId: 1  # [OPERATOR] Organization in scroll-monitor's Grafana, not Instatus.
+    contactPointName: instatus-public  # [LEGACY] Bootstrap name; publication uses per-component names.
+    receiverUid: instatus-public-webhook  # [LEGACY] Bootstrap UID; retained for existing installations.
     webhookSecretRef:
-      name: instatus-grafana-webhook # [LEGACY] Bootstrap Secret; component references are generated below.
-      key: url # [LEGACY] Bootstrap Secret data key.
+      name: instatus-grafana-webhook  # [LEGACY] Bootstrap Secret; component references are generated below.
+      key: url  # [LEGACY] Bootstrap Secret data key.
   # [OPERATOR] Independent component modes: manual, observe or automatic.
   # Observe is the default. Missing evidence never means Operational.
   publication:
-    observationContactPointName: grafana-default-email # Existing INTERNAL receiver; configure real SMTP/contact delivery.
+    observationContactPointName: grafana-default-email  # Existing INTERNAL receiver; configure real SMTP/contact delivery.
     delivery:
-      enabled: true # Validate health and recovery before forwarding component webhooks.
-      image: python:3.12.11-alpine3.22 # [DEFAULT] Standard-library runtime; no custom image build.
-      storageClassName: "" # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
-      storageSize: 1Gi # [DEFAULT] One SQLite delivery journal, single replica.
+      enabled: true  # Validate health and recovery before forwarding component webhooks.
+      image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
+      storageClassName: ""  # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
+      storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
     incidents:
-      manageTemplates: true # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
-      affectedStatus: DEGRADEDPERFORMANCE # [DEFAULT] One severity per component; operators can escalate.
-      notifySubscribers: false # [OPERATOR] Opt in after incident wording and delivery acceptance.
+      manageTemplates: true  # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
+      affectedStatus: DEGRADEDPERFORMANCE  # [DEFAULT] One severity per component; operators can escalate.
+      notifySubscribers: false  # [OPERATOR] Opt in after incident wording and delivery acceptance.
     heartbeat:
-      enabled: false # [OPERATOR] Enable independent Instatus detection of lost monitoring.
-      alertIds: [] # [OPERATOR] Instatus monitor alert destination IDs; required when enabled.
+      enabled: false  # [OPERATOR] Enable independent Instatus detection of lost monitoring.
+      alertIds: []  # [OPERATOR] Instatus monitor alert destination IDs; required when enabled.
       # [GENERATED] Cron monitor: 60s period + 180s grace, no public component/incident.
       # [PRIVATE GENERATED] secrets/status-page/heartbeat.json and heartbeat.secret.yaml.
     health:
-      failureFor: 5m # [DEFAULT] Continuous failure confirmation.
-      recoveryFor: 10m # [DEFAULT] Continuous fresh health before recovery; resets on restart/gaps.
-      freshnessSeconds: 120 # [DEFAULT] Maximum observation/snapshot age.
-      minimumProbeLocations: 2 # [OPERATOR] Actual independent locations, not replicas.
-      maxBlockAgeSeconds: 120 # [OPERATOR] Confirm continuous block production and normal block period.
-      maxRpcLatencySeconds: 2 # [DEFAULT] p95 threshold after at least 10 samples within 5 minutes.
-      maxIndexLagSeconds: 120 # [DEFAULT] Explorer indexed block vs canonical RPC block time.
-      maxNodeLagSeconds: 120 # [DEFAULT] External canary node vs canonical RPC block time.
-      depositDeadlineSeconds: 0 # [REQUIRED FOR BUILTIN] Set confirmed normal processing deadline; 0 means unconfigured.
-      withdrawalDeadlineSeconds: 0 # [REQUIRED FOR BUILTIN] Count only protocol-eligible, unfulfilled withdrawals.
-      batchPublicationDeadlineSeconds: 0 # [REQUIRED FOR BUILTIN] Include time awaiting transaction confirmation.
-      ethDaSubmitterJobRegex: eth-da-submitter # [OPERATOR] Prometheus job for the actual publisher.
-      withdrawalProcessorJobRegex: withdrawal-processor # [OPERATOR] Withdrawal role only; exclude proof-work-only replicas.
+      failureFor: 5m  # [DEFAULT] Continuous failure confirmation.
+      recoveryFor: 10m  # [DEFAULT] Continuous fresh health before recovery; resets on restart/gaps.
+      freshnessSeconds: 120  # [DEFAULT] Maximum observation/snapshot age.
+      minimumProbeLocations: 2  # [OPERATOR] Actual independent locations, not replicas.
+      maxBlockAgeSeconds: 120  # [OPERATOR] Confirm continuous block production and normal block period.
+      maxRpcLatencySeconds: 2  # [DEFAULT] p95 threshold after at least 10 samples within 5 minutes.
+      maxIndexLagSeconds: 120  # [DEFAULT] Explorer indexed block vs canonical RPC block time.
+      maxNodeLagSeconds: 120  # [DEFAULT] External canary node vs canonical RPC block time.
+      depositDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Set confirmed normal processing deadline; 0 means unconfigured.
+      withdrawalDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Count only protocol-eligible, unfulfilled withdrawals.
+      batchPublicationDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Include time awaiting transaction confirmation.
+      ethDaSubmitterJobRegex: eth-da-submitter  # [OPERATOR] Prometheus job for the actual publisher.
+      withdrawalProcessorJobRegex: withdrawal-processor  # [OPERATOR] Withdrawal role only; exclude proof-work-only replicas.
     probes:
-      metricsTargets: [] # [OPERATOR] Private reachable host:port per external location; CLI merges the Prometheus scrape job.
+      metricsTargets: []  # [OPERATOR] Private reachable host:port per external location; CLI merges the Prometheus scrape job.
       # Empty if your existing private federation/remote-write already supplies the probe metrics.
-      sequencingMode: unconfigured # [OPERATOR] continuous or on-demand; on-demand requires custom eligible-work rule.
-      bridgeChecks: [] # [OPERATOR] Required public API checks: [{url: https://..., path: [field], equals: value}].
-      explorerApiUrls: [] # [GENERATED/OPERATOR] CLI can derive Blockscout backend ingress; [] requires an override.
-      explorerSelector: "" # [OPERATOR] Reviewed CSS selector proving rendered explorer data, e.g. a block link.
-      nodeRpcUrl: "" # [OPERATOR] Independently operated sync canary; override per external probe location.
-      nodeDependencyChecks: [] # [OPERATOR] Semantic JSON checks for public bootstrap/DA dependencies.
+      sequencingMode: unconfigured  # [OPERATOR] continuous or on-demand; on-demand requires custom eligible-work rule.
+      bridgeChecks: []  # [OPERATOR] Required public API checks: [{url: https://..., path: [field], equals: value}].
+      explorerApiUrls: []  # [GENERATED/OPERATOR] CLI can derive Blockscout backend ingress; [] requires an override.
+      explorerSelector: ""  # [OPERATOR] Reviewed CSS selector proving rendered explorer data, e.g. a block link.
+      nodeRpcUrl: ""  # [OPERATOR] Independently operated sync canary; override per external probe location.
+      nodeDependencyChecks: []  # [OPERATOR] Semantic JSON checks for public bootstrap/DA dependencies.
     components:
       public-rpc: {mode: observe, rule: {builtin: true}}
       sequencing: {mode: observe, rule: {builtin: true}}
@@ -72,24 +72,24 @@ statusPage:
     # --apply --create-webhook creates/reuses one integration per automatic component.
     # --probe-values values/status-page-probe-production.yaml exports external probe values.
   instatus:
-    workspaceSlug: 6wxpx # [OPERATOR] Existing DogeOS workspace; validated by --plan/--apply.
-    pageId: "" # [GENERATED] Shared dogeos page ID; same for all three deployments.
-    subdomain: dogeos # [CONVENTION] One public page for Mainnet, Testnet and Devnet.
-    pageName: DogeOS # [SHARED] Keep page name/branding identical across deployments.
-    groupId: "" # [GENERATED] Discovered from the group named Mainnet/Testnet/Devnet.
+    workspaceSlug: 6wxpx  # [OPERATOR] Existing DogeOS workspace; validated by --plan/--apply.
+    pageId: ""  # [GENERATED] Shared dogeos page ID; same for all three deployments.
+    subdomain: dogeos  # [CONVENTION] One public page for Mainnet, Testnet and Devnet.
+    pageName: DogeOS  # [SHARED] Keep page name/branding identical across deployments.
+    groupId: ""  # [GENERATED] Discovered from the group named Mainnet/Testnet/Devnet.
     # [ONE-TIME SETUP] In Instatus, create each network group with a Public RPC component.
     # Public REST API can attach components to groups; group creation requires the dashboard.
-    branding: # [SHARED DEFAULTS] Official DogeOS brand assets; {} leaves existing branding unchanged.
+    branding:  # [SHARED DEFAULTS] Official DogeOS brand assets; {} leaves existing branding unchanged.
       # Upload the logo in Instatus Look & feel; omitted here to preserve that URL.
       # Raw GitHub logo URLs are rejected by the public page image optimizer.
       faviconUrl: https://raw.githubusercontent.com/DogeOS69/web-images/main/dogeos_favicon.png
       websiteUrl: https://www.dogeos.com/
-    email: "" # [OPERATOR] Page owner email; required only when creating a page.
-    initialStatus: OPERATIONAL # [DEFAULT] Initial state for NEW components only; existing live status is preserved.
+    email: ""  # [OPERATOR] Page owner email; required only when creating a page.
+    initialStatus: OPERATIONAL  # [DEFAULT] Initial state for NEW components only; existing live status is preserved.
     # This initializes the page; it is not a health-check result. Override if needed.
     # Allowed: OPERATIONAL, UNDERMAINTENANCE, DEGRADEDPERFORMANCE, PARTIALOUTAGE, MAJOROUTAGE.
-    showUptime: false # [OPERATOR] Enable after public alert coverage/history is ready.
-    componentIds: {} # [GENERATED] Persisted by --apply; may map existing component keys to IDs.
+    showUptime: false  # [OPERATOR] Enable after public alert coverage/history is ready.
+    componentIds: {}  # [GENERATED] Persisted by --apply; may map existing component keys to IDs.
   # [GENERATED] catalog and generated are written by the CLI; do not edit manually.
   # Native grafana.envValueFrom and grafana.alerting are generated too.
   # [SECRET] INSTATUS_API_KEY is an environment variable used by CLI --plan/--apply only.
@@ -171,7 +171,7 @@ dashboards:
 grafanaAlerting:
   enabled: true
 prometheusRules:
-  enabled: true # Fallback when Grafana alerting is disabled.
+  enabled: true  # Fallback when Grafana alerting is disabled.
 
 # Balance settings consumed by the configuration generator. Public addresses
 # and RPC URLs become SCROLL_BALANCE_* environment variables in the exporter.
@@ -185,14 +185,14 @@ balanceMonitoring:
     jobRegex: ".*withdrawal-processor.*"
   ethereum:
     feeOracle:
-      address: "<TODO>" # Canonical l2GasOracleSender public signer address.
-      rpcUrl: "<TODO>" # config.toml general.L2_RPC_ENDPOINT (reachable from the exporter).
-      expectedChainId: "<TODO>" # config.toml general.CHAIN_ID_L2; keep as a string.
+      address: "<TODO>"  # Canonical l2GasOracleSender public signer address.
+      rpcUrl: "<TODO>"  # config.toml general.L2_RPC_ENDPOINT (reachable from the exporter).
+      expectedChainId: "<TODO>"  # config.toml general.CHAIN_ID_L2; keep as a string.
       minimumEth: 5
     ethDaSubmitter:
-      address: "<TODO>" # Canonical l1CommitSender public signer address.
-      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com" # Sepolia example; generate from ethereumDa.submitterRpcUrl.
-      expectedChainId: "<TODO>" # doge-config ethereumDa.chainId; keep as a string.
+      address: "<TODO>"  # Canonical l1CommitSender public signer address.
+      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com"  # Sepolia example; generate from ethereumDa.submitterRpcUrl.
+      expectedChainId: "<TODO>"  # doge-config ethereumDa.chainId; keep as a string.
       minimumEth: 0.1
   exporter:
     enabled: true
