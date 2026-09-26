@@ -4,6 +4,9 @@ description: Ahead-of-time Scroll chunk materialization for DogeOS
 type: application
 version: 0.1.1
 appVersion: v0.3.0-beta.4e
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com
 dependencies:
   - name: common
     repository: oci://ghcr.io/scroll-tech/scroll-sdk/helm
