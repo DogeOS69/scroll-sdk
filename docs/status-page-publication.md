@@ -205,3 +205,16 @@ incident, an independent recovery window and stable sanitized event identity.
 PromQL cases use the real Prometheus 2.52 promtool. Neither test uses Instatus
 credentials. Python delivery/Helm tests live in `charts/scroll-monitor/tests`;
 independent probe tests live in `charts/status-page-probe/tests`.
+
+The SDK `Test status page` workflow runs chart/delivery tests and the real Chromium
+probe cases on relevant pull requests and pushes. The CLI `Status page acceptance`
+workflow enables all three runtime flags above against a pinned SDK commit, real
+Prometheus and Grafana. Update that SDK pin deliberately when changing the shared
+generation contract. CI uses local receiver/API fixtures and no Instatus credentials.
+
+Core images must include the [health-observation fixes in #1304](https://github.com/DogeOS69/dogeos-core/pull/1304), not only #1297:
+index coverage must match `tip - confirmations`, unchanged canonical replay snapshots
+must retain their first observation time, and public DA age must survive retries.
+The indexed deposit observation trails the planner's RPC eligibility by one block;
+account for that observation boundary when choosing the deployment deadline. Stored
+timestamps overwritten by older images cannot be reconstructed automatically.

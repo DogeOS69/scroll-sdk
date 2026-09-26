@@ -105,7 +105,7 @@ def run(values):
         (root / 'datasources/prometheus.yaml').write_text(yaml.safe_dump({'apiVersion': 1, 'datasources': [{'name': 'Prometheus', 'uid': datasource_uid, 'type': 'prometheus', 'url': url, 'access': 'proxy', 'jsonData': {'httpMethod': 'GET'}}]}))
         name = f'status-grafana-{os.getpid()}'
         try:
-            subprocess.run(['docker', 'run', '-d', '--rm', '--name', name, '--network', 'host', '--user', str(os.getuid()), '-e', f'GF_SERVER_HTTP_PORT={grafana_port}', '-e', 'GF_ANALYTICS_REPORTING_ENABLED=false', '-e', 'GF_ANALYTICS_CHECK_FOR_UPDATES=false', '-e', 'GF_PATHS_PROVISIONING=/fixtures', '-e', 'GF_PATHS_DATA=/tmp/grafana-data', '-e', 'GF_PATHS_LOGS=/tmp/grafana-logs', '-v', f'{root}:/fixtures:ro', 'grafana/grafana:11.1.5'], check=True, capture_output=True)
+            subprocess.run(['docker', 'run', '-d', '--rm', '--name', name, '--network', 'host', '--user', str(os.getuid()), '-e', f'GF_SERVER_HTTP_PORT={grafana_port}', '-e', 'GF_ANALYTICS_REPORTING_ENABLED=false', '-e', 'GF_ANALYTICS_CHECK_FOR_UPDATES=false', '-e', 'GF_PATHS_PROVISIONING=/fixtures', '-e', 'GF_PATHS_DATA=/tmp/grafana-data', '-e', 'GF_PATHS_LOGS=/tmp/grafana-logs', '-v', f'{root}:/fixtures:ro', 'grafana/grafana:11.1.5'], check=True, capture_output=True, timeout=60)
             wait_for(lambda: bool(captured), 'Grafana firing was not accepted by verifier')
             assert len(captured) == 1 and captured[0]['status'] == 'firing'
             assert notifications and notifications[0]['alerts'][0]['labels']['managed_by'] == 'scroll-sdk-status-page'
@@ -124,11 +124,17 @@ def run(values):
             assert captured[1]['groupKey'] == captured[0]['groupKey']
             print('PASS: actual Grafana firing, NoData hold, verified recovery, sanitized stable HTTP events')
         except Exception:
-            logs = subprocess.run(['docker', 'logs', '--tail', '40', name], capture_output=True, text=True)
-            print(logs.stdout + logs.stderr, file=sys.stderr)
+            try:
+                logs = subprocess.run(['docker', 'logs', '--tail', '40', name], capture_output=True, text=True, timeout=10)
+                print(logs.stdout + logs.stderr, file=sys.stderr)
+            except subprocess.TimeoutExpired:
+                print('Docker log collection timed out', file=sys.stderr)
             raise
         finally:
-            subprocess.run(['docker', 'rm', '-f', name], capture_output=True)
+            try:
+                subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=20)
+            except subprocess.TimeoutExpired:
+                print(f'Docker cleanup timed out for test container {name}', file=sys.stderr)
             stopped.set()
             collector.join(timeout=15)
             delivery.db.close()

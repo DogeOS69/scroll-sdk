@@ -1,0 +1,47 @@
+name: Test status page
+
+on:
+  pull_request:
+    paths:
+      - charts/scroll-monitor/**
+      - charts/status-page-probe/**
+      - examples/values/scroll-monitor-production.yaml
+      - examples/values/status-page-probe-production.yaml
+      - .github/workflows/test-status-page.yaml
+  push:
+    paths:
+      - charts/scroll-monitor/**
+      - charts/status-page-probe/**
+      - examples/values/scroll-monitor-production.yaml
+      - examples/values/status-page-probe-production.yaml
+      - .github/workflows/test-status-page.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chart-delivery-and-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: |
+          pip install PyYAML==6.0.2 playwright==1.55.0 websocket-client==1.8.0
+          playwright install --with-deps chromium
+          helm dependency build charts/scroll-monitor
+      - name: Validate component provisioning and durable delivery
+        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_status_page*.py' -v
+      - name: Validate independent probes with a real browser
+        env:
+          STATUS_PROBE_BROWSER_TEST: '1'
+        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_*.py' -v
+      - name: Lint independent probe chart
+        run: helm lint --strict charts/status-page-probe
