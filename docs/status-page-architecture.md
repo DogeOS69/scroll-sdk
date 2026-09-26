@@ -2,6 +2,8 @@
 
 日期：2026-09-26。决策：第一阶段使用原生 webhook 推送，不实现自建 publisher，不展示连续数值指标图表。仓库提供可选配置示例，尚未部署或验证生产 webhook 链路。
 
+初始化自动化已补齐：CLI 的 `setup status-page --apply --create-webhook` 调用 Instatus 创建 Grafana integration，并保存响应中的 `integration.uniqueUrl`。真实 API 已验证，临时验证集成已删除；没有发送告警或事故通知。integration ID 与 URL 一并按凭据保存到 Git 忽略的私有目录。普通 `--apply` 复用本地绑定；查询已有集成的公共 API 尚未验证，记录丢失或创建结果不明时停止并恢复/导入已有 URL，不能自动重建。完整命令、Secret 应用及备份要求见 [初始化说明](status-page-automation.md#automatically-obtain-the-grafana-webhook)。
+
 ## 架构与通信方向
 
 scroll-monitor 已包含 Prometheus、Grafana 和 Alertmanager。Prometheus 采集指标，Grafana 查询指标并计算应用告警；经明确选择的告警由 Grafana 向 Instatus 推送。Instatus 承担公开页面、组件状态、事故及可用性历史。
@@ -55,7 +57,7 @@ Instatus 的 uptime 展示来自其事故/中断历史，不等同于把 Prometh
 - webhook URL 由 Instatus 动态生成并进入 Secret；Secret 名称/key、Grafana org ID 按部署填写；contact point 名称和 UID 使用稳定约定。协议类型、POST、恢复通知和环境变量引用按示例固定。
 - 文件配置只创建 contact point，通知路由仍在后续人工选择公开告警时设置，避免覆盖整棵现有 notification policy tree。
 - 可选择完全在 Grafana UI 管理 contact point；不要同时用 YAML 接管同一个对象。文件配置的 contact point 在 UI 中只读，现有 UI 管理的其他 contact points 和通知策略保持原有方式。
-- CLI 保留原生 Grafana 配置和 Secret 引用；不新增 Instatus 登录、密钥保存、远程页面创建或自动选择告警功能。
+- CLI 默认离线生成原生 Grafana 配置、Secret 引用和公开组件目录；`--plan` 只读比较，显式 `--apply` 才创建或更新 Instatus 页面/组件。管理 API key 仅通过命令环境读取，不保存或注入运行时；不自动选择公开告警。详见 [自动化配置契约](status-page-automation.md)。
 
 字段来源、配置示例和启用步骤见 [配置生成说明](../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration) 及 [production example](../examples/values/scroll-monitor-production.yaml)。Grafana 文件管理规则见 [官方 provisioning 文档](https://grafana.com/docs/grafana/latest/alerting/set-up/provision-alerting-resources/file-provisioning/)。
 
