@@ -495,7 +495,8 @@ kube-prometheus-stack:
     nameOverride: kube-state-metrics
     fullnameOverride: kube-state-metrics
 
-# Optional internal dstack monitoring. Apply values/dstack.yaml as an overlay
+# The bundled Dstack/GPU dashboard is always available, even without metrics.
+# Optional internal dstack alerts and log collection. Apply values/dstack.yaml as an overlay
 # to also allow ServiceMonitor discovery in the controller namespace.
 dstack:
   enabled: false

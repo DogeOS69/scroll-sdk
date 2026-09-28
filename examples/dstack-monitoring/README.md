@@ -87,6 +87,17 @@ To disable an existing integration, keep the monitoring block and set
 `enabled: false`, regenerate and apply BOTH files. Omitting the block leaves
 previously generated files untouched, consistent with other optional CLI inputs.
 
+## Dashboard availability
+
+**DogeOS / Dstack and GPU fleets** is included in the Grafana DogeOS folder
+whenever bundled dashboards are enabled. There is no separate dstack dashboard
+switch; panels without metrics show **No data**.
+
+When dstack runs locally or is not ready for monitoring, leave `dstack.enabled`
+false (the default) and upgrade only scroll-monitor. This keeps dstack alerts and
+namespace log discovery disabled and does not install or modify dstack. Do not
+apply the full `values/dstack.yaml` overlay until connecting the controller.
+
 ## Coverage and limits
 
 - Controller unavailable and native scrape failure alerts are gated by desired

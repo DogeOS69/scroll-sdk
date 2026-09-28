@@ -5,7 +5,22 @@
 Deployment directory: `/mnt/wsl/data/github/dogeos69/dogeos-aws-devnet`.
 Cluster: `dogeos-devnet-cluster`; all commands selected its explicit kube context.
 Namespace: `default`; Helm release: `scroll-monitor`.
-Final release: revision 10, chart `scroll-monitor-0.1.33-dogeos`, deployed successfully.
+Status-page acceptance release: revision 10, chart `scroll-monitor-0.1.33-dogeos`,
+deployed successfully. The subsequent dashboard-only upgrade is recorded below.
+
+### Follow-up: bundled dstack dashboard
+
+Upgraded scroll-monitor to `0.1.34-dogeos`, revision 11. Grafana serves
+`DogeOS / Dstack and GPU fleets` (UID `dogeos-dstack`) in folder `dogeos`, with
+19 panels. The dashboard is now bundled independently of `dstack.enabled`;
+panels without metrics display `No data`.
+
+Dstack still runs locally and was not modified or deployed to Kubernetes.
+The upgrade retained the existing Helm user values and left `dstack.enabled`
+false, without adding dstack alerts or namespace log collection. The existing
+Grafana alert rules and Alloy configuration were preserved. The deployment
+artifact contained the committed chart plus the dashboard-template change;
+other agents' uncommitted monitoring changes were excluded.
 
 The operator authorized changes only to scroll-monitor configuration and resources,
 including reinstall/upgrade of that release. Other chain configuration and service
