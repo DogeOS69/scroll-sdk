@@ -86,10 +86,11 @@ class DstackMonitoringTests(unittest.TestCase):
         fallback = one(render(MONITOR, values), 'PrometheusRule', 'monitor-dogeos')['spec']['groups']
         self.assertEqual(native, [r for g in fallback for r in g['rules'] if r['alert'].startswith('Dstack')])
 
-    def test_disabled_integration_leaves_baseline_unchanged(self):
+    def test_disabled_integration_keeps_dashboard_without_collection_or_alerts(self):
         docs = render(MONITOR)
         self.assertEqual(rules(docs), [])
-        self.assertNotIn('dstack.json', one(docs, 'ConfigMap', 'grafana-dogeos-dashboards')['data'])
+        dashboard = json.loads(one(docs, 'ConfigMap', 'grafana-dogeos-dashboards')['data']['dstack.json'])
+        self.assertEqual(dashboard['uid'], 'dogeos-dstack')
         self.assertNotIn('dstack-system', one(docs, 'ConfigMap', 'grafana-alloy-config')['data']['config.alloy'])
 
     def test_optional_host_inventory_and_validation(self):
@@ -106,6 +107,11 @@ class DstackMonitoringTests(unittest.TestCase):
             values['dstack']['gpuHosts']['expectedHosts'] = bad
             with self.assertRaises(AssertionError):
                 render(MONITOR, values)
+
+    def test_external_dashboard_management_omits_bundled_dstack_dashboard(self):
+        docs = render(MONITOR, {'dashboards': {'bundled': {'enabled': False}}})
+        self.assertFalse(any(d['kind'] == 'ConfigMap' and
+                             d['metadata']['name'] == 'grafana-dogeos-dashboards' for d in docs))
 
 
 if __name__ == '__main__':
