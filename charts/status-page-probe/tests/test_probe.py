@@ -17,6 +17,17 @@ spec.loader.exec_module(module)
 
 
 class ProbeTests(unittest.TestCase):
+    def test_bridge_history_contract_accepts_empty_or_nonempty_history(self):
+        checks = [{'path': ['results'], 'type': 'array'}, {'path': ['total'], 'type': 'number'}]
+        for response in [{'results': [], 'total': 0}, {'results': [{'hash': 'example'}], 'total': 1}]:
+            for check in checks:
+                module.check_json_value(check, response)
+        for response in [{'error': 'unavailable'}, {'results': None, 'total': 0},
+                         {'results': [], 'total': '0'}, {'results': [], 'total': False}]:
+            with self.assertRaises(module.TargetFailure):
+                for check in checks:
+                    module.check_json_value(check, response)
+
     def setUp(self):
         self.chain = '0x7b'
         self.rpc_error = False

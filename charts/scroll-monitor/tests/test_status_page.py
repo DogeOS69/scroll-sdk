@@ -34,6 +34,7 @@ class StatusPageTests(unittest.TestCase):
         defaults = yaml.safe_load((CHART / "values.yaml").read_text())
         publication = copy.deepcopy(defaults["statusPage"]["publication"])
         publication["delivery"]["enabled"] = False
+        publication["probes"]["mode"] = "external"  # This fixture exercises legacy external publication.
         key = "batch-publication"
         if automatic:
             publication["components"][key] = {"mode": "automatic", "rule": {"builtin": False, "expr": "fixture_health", "for": "5m"}}

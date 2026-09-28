@@ -1,0 +1,119 @@
+{{- $status := .Values.statusPage }}
+{{- $node := ($status.publication | default dict).nodeSync | default dict }}
+{{- if and $status.enabled (eq ($node.mode | default "external") "official") }}
+{{- $generated := $status.generated | default dict }}
+{{- $config := $generated.nodeSync | default dict }}
+{{- if or (empty $config.reference) (empty $config.followers) (ne (toJson $config) (toJson (($generated.componentPublication | default dict).nodeSync))) }}
+{{- fail "statusPage official Node Sync requires regenerated CLI configuration" }}
+{{- end }}
+{{- if or (ne $config.chainId $status.catalog.chainId) (ne $config.environment $status.environment) }}
+{{- fail "statusPage Node Sync identity changed; regenerate" }}
+{{- end }}
+{{- $name := printf "%s-status-node-sync" .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- $namespace := $node.namespace | default .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+data:
+  node-sync.json: {{ $config | toJson | quote }}
+  node-sync.py: |
+{{ .Files.Get "scripts/status-page-node-sync.py" | indent 4 }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+---
+# EndpointSlices have generated names. Discovery needs namespace-scoped list
+# access; no Secrets, Pod exec, writes or cluster-wide permissions are granted.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+rules:
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: {{ $name }}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: scroll-status-node-sync, app.kubernetes.io/instance: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: scroll-status-node-sync, app.kubernetes.io/instance: {{ .Release.Name }}}
+      annotations:
+        checksum/config: {{ $config | toJson | sha256sum }}
+        checksum/script: {{ .Files.Get "scripts/status-page-node-sync.py" | sha256sum }}
+    spec:
+      serviceAccountName: {{ $name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: node-sync
+          image: {{ $node.image | quote }}
+          command: [python3, /config/node-sync.py]
+          ports: [{name: metrics, containerPort: 9112}]
+          env:
+            - {name: NODE_NAMESPACE, value: {{ $namespace | quote }}}
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 120
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: {{ $name }}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {app.kubernetes.io/name: scroll-status-node-sync, app.kubernetes.io/instance: {{ .Release.Name }}}
+spec:
+  selector:
+    app.kubernetes.io/name: scroll-status-node-sync
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports: [{name: metrics, port: 9112, targetPort: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $name }}
+  labels: {release: {{ .Release.Name }}}
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: scroll-status-node-sync, app.kubernetes.io/instance: {{ .Release.Name }}}
+  endpoints: [{port: metrics, path: /metrics, interval: 30s, scrapeTimeout: 10s}]
+{{- end }}

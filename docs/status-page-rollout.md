@@ -1,6 +1,6 @@
 # DogeOS shared status page rollout
 
-更新：2026-09-27。通用功能的部署与验收说明，保留前期只读核实记录；本次实现未部署具体链或更改公开状态。页面结构见 [设计稿](status-page-design.md)，运行架构见 [架构文档](status-page-architecture.md)。
+更新：2026-09-28。通用功能的部署与验收说明，保留前期只读核实记录；本次实现未部署具体链或更改公开状态。页面结构见 [设计稿](status-page-design.md)，运行架构见 [架构文档](status-page-architecture.md)。
 
 ## 1. 先固定部署，再读取地址
 
@@ -21,7 +21,7 @@
 
 CLI 现有来源链：`spec.frontend.hosts.frontend` → `frontends-production.yaml` 的 ingress；`prep-charts` 使用 `config.toml` 的 `ingress.FRONTEND_HOST` 更新前端 host。本次新增的 `setup status-page` 复用这些部署文件生成入口，`prep-charts` 在源 values 更新后生成状态页配置。具体命令与字段见 [自动化契约](status-page-automation.md)。
 
-当前公开设计为 **Mainnet / Testnet / Devnet 共用页面**：workspace `6wxpx`，页面 `dogeos.instatus.com`。每个工作目录只负责自己的组，URL、链身份与 webhook Secret 各自配置。下文 Testnet 核实记录不能作为其他网络的健康证据。控制台分组初始化、自动化入口与旧页面迁移见 [配置契约](status-page-automation.md)。
+当前公开设计为 **Mainnet / Testnet / Devnet 共用页面**：workspace `6wxpx`，页面 `dogeos.instatus.com`。每个工作目录只负责自己的组，URL、链身份与 webhook Secret 各自配置。下文 Testnet 核实记录不能作为其他网络的健康证据。用户已确认三个网络分组创建完成，当前部署只复用已有组；新页面的一次性初始化、自动化入口与旧页面迁移见 [配置契约](status-page-automation.md)。
 
 ## 2. 本次 Testnet 只读核实
 
@@ -45,30 +45,30 @@ CLI 现有来源链：`spec.frontend.hosts.frontend` → `frontends-production.y
 当前实现见 [组件发布配置](status-page-publication.md)。上述 2026-09-26 采样只是历史记录。
 通用模板不会代填具体链的业务 SLA 或把入口可访问等同于完整业务可用。
 
-1. 部署包含新 public queue 指标的 dogeos-core 镜像。确认 WP 和 DA 实际 target
+1. 部署包含已合并 #1312、#1314（或等效后续修复）和 public queue 指标的 dogeos-core 镜像；
+   不再要求合并 #1304。具体 merge revision 见 [组件发布配置](status-page-publication.md)。确认 WP 和 DA 实际 target
    与 `health.*JobRegex` 匹配；proof-only WP 不属于业务队列 target。
 2. 确认充值、协议 eligible 提现、批次发布的 deadline，填写对应 `health` 参数。
    设置真实出块模式、块龄、延迟和采样新鲜度；未填写的业务 deadline 保持未配置。
-3. 填写 Bridge 必要 API 的 JSON path/期望值、Explorer 实际数据 selector，
-   配置独立 canary node 和同步依赖检查；内置 WebSocket 检查是 JSON-RPC 请求，
-   不覆盖订阅推送完整性，有订阅 SLO 时另加语义探针/自定义规则。
-4. 构建 `charts/status-page-probe/Dockerfile` 镜像；在至少两个独立位置部署探针，
-   设置不同实际 location。配置私网 `metricsTargets` 或现有 Prometheus federation。
-   不在该链集群内复制两个 Pod 来代替独立探测。
-5. 配置真正可用的内部 Grafana contact point。需要集群失联通知时，填写 Instatus
-   内部 monitor alert IDs 并启用 heartbeat；这些不是公开订阅者，也不是 Grafana UID。
+3. 选择 `probes.mode: alloy`，核实自动派生的公网 RPC、Bridge 和 Blockscout API 地址。
+   该模式检查入口可用性，不证明浏览器渲染或索引新鲜度；参见 [Alloy 探测](status-page-alloy.md)。
+   Sequencing 需自定义指标规则，已启用 WebSocket 的 RPC 需额外覆盖，否则保持未就绪。
+   Node Sync 可选择 official，填写活跃 sequencer 和各 follower 的 values/release。
+4. 复用现有 Alloy 单副本，确认 DNS 实际走公网入口、TLS 有效、私网 remote-write 可用。
+   首版不部署额外探针 Pod。需要完整浏览器/链一致性检查时才选择可选 external 模式。
+5. 配置真正可用的内部 Grafana contact point。Alloy 模式启用 automatic 前必须填写
+   Instatus 内部 monitor alert IDs 并启用 heartbeat；这些不是公开订阅者或 Grafana UID。
 
 ## 4. 生成、观察、逐组件启用
 
 ```sh
-scrollsdk setup status-page --deployment-dir /path/to/network \
-  --probe-values values/status-page-probe-production.yaml
+scrollsdk setup status-page --deployment-dir /path/to/network
 scrollsdk setup status-page --deployment-dir /path/to/network --plan --create-webhook
 scrollsdk setup status-page --deployment-dir /path/to/network --apply --create-webhook
 ```
 
 初期所有组件 observe，不需要组件 webhook。检查 CLI readiness 的缺项，应用生成的
-Helm values 和独立探针，观察真实指标及 missing-data 告警。配置 ready 不等于实时健康。
+Helm values（包含已有 Alloy 的探测配置），观察真实指标及 missing-data 告警。配置 ready 不等于实时健康。
 
 选择已完成验收的组件改为 automatic，重新生成并 review/apply；创建组件独立集成与
 Secret。将 `secrets/status-page/<key>.secret.yaml`（及可选 heartbeat Secret）通过已有
@@ -95,8 +95,9 @@ Secret 流程应用到 monitoring namespace，再部署监控。CLI apply 本身
 | 人工接管 | manual 部署后停止该组件自动投递；保留事件与私有收据 |
 
 本地已覆盖 Prometheus 表达式、CLI→Helm、真实 Grafana→校验器→本地 HTTP 接收端、
-浏览器及数据库异常用例。真实 Instatus 模板、重复通知、维护及订阅行为仍是供应商
-验收项。首次心跳需确认已成功到达并启动 provider 计时。
+浏览器及数据库异常用例。真实 Instatus 模板、重复通知、恢复关联及订阅行为仍是
+首版供应商验收项。首次心跳需确认已成功到达并启动 provider 计时。
+计划维护与自动发布的联动优先级降低，最后处理；不作为首版部署的阻塞项。
 
 ## 6. 运维与回退
 
@@ -105,3 +106,16 @@ Cron Monitor 是真实 provider 配置；不要把含凭据的响应加入日志
 停用单组件先改 manual/observe 并部署；停用 heartbeat 需 apply 暂停远端计时。
 旧的 operator 自建路由要单独退役。发生不明确投递、PVC 丢失或人工接管，先暂停组件，
 核对实际 Instatus 事故和持久化记录，恢复确认后再启用。不能删除收据强制重建。
+
+## 7. 当前交付顺序
+
+1. 已完成项：复用已有 Mainnet/Testnet/Devnet 分组；当前文档已按官方 Node Sync 和
+   已合并 core 修复更新。历史采样仍保留日期，不视为当前线上验证。
+2. 发布配套：先发布 SDK commit，再发布固定引用该 SDK commit 的 CLI commit；
+   本地双仓库验收已通过，远端 CI 结果需在推送后确认。
+3. 公网入口探测：按 [Alloy 方案](status-page-alloy.md) 先接一条链验证；额外外部位置是可选后续工作。
+4. 现场验收：确认应用镜像、业务时限、探测覆盖范围、采集连通性和内部接收人，
+   完成真实 Instatus 故障、重复投递、恢复及心跳验收，再逐组件自动发布。
+5. 最后处理：计划维护窗口与自动发布的联动。在此之前按 manual 流程操作维护。
+
+第 2–4 项仍待交付或现场验收；本文更新没有执行部署、Instatus 写入或公开事故操作。

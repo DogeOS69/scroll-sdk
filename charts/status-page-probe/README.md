@@ -1,5 +1,9 @@
 # Independent public status probes
 
+Optional **external** deep-probe mode. The selected first-release public-entrypoint
+mode reuses existing Alloy; see [Alloy setup](../../docs/status-page-alloy.md).
+Do not deploy this chart or export its values for `probes.mode: alloy`.
+
 Build and push the runtime image from this directory's Dockerfile to your registry.
 It contains Chromium, pinned Playwright and a WebSocket client; the probe script is
 mounted from the Helm chart. There are no blockchain signing or Instatus credentials.
@@ -19,8 +23,9 @@ helm upgrade --install dogeos-testnet-probe ./charts/status-page-probe \
   --namespace monitoring -f /path/to/site/probe-values.yaml
 ```
 
-`config` is generated. `overrides.nodeRpcUrl` can select that site's independent
-sync canary. The node must already be deployed and following the network. Review
+`config` is generated. Public probes remain external when official Node Sync is
+collected inside the chain cluster. Only in optional external Node Sync mode does
+`overrides.nodeRpcUrl` select that site's already running sync canary. Review
 the required API JSON checks and explorer CSS data selector for the deployed versions.
 URLs come from selected deployment inputs; no domain substitutions are performed.
 
@@ -51,6 +56,9 @@ Increasing replica count at one site is not additional independent evidence. Dup
 reporters for a location prevent publication, as do disagreement or stale observations.
 
 The probe performs read-only calls and browser form interactions, never transactions.
+CLI `bridgeChecks: auto` derives typed history API checks from the selected
+frontend configuration. Each JSON check requires either `equals` or `type`;
+the latter validates a response field without requiring a fixed transaction count.
 A broken local browser gives unknown; a loaded browser that encounters a broken page
 reports affected. A dead probe's last timestamp ages out. Sequencing requires valid
 RPC observations and explicit continuous production mode. On-demand chains need a
@@ -66,3 +74,9 @@ STATUS_PROBE_BROWSER_TEST=1 python3 -m unittest discover -s charts/status-page-p
 ```
 
 `STATUS_PROBE_CHROMIUM_PATH` may select an existing local Chromium binary for tests.
+
+Deployment options, public request routing, private scrape isolation and the
+proposed VM packaging are in [the independent probe plan](../../docs/status-page-independent-probes.md).
+The Helm chart is implemented; VM packaging and automatic image publication are
+proposals pending implementation. No separate Grafana or full node is required
+at an external probe site when using official Node Sync.

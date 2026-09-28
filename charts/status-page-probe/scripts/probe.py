@@ -78,15 +78,29 @@ def block(url, chain_id):
     return {'height': height, 'hash': result['hash'].lower(), 'timestamp': timestamp, 'url': url}
 
 
-def check_json(check):
-    value = http_json(check['url'])
+def check_json_value(check, value):
     for part in check['path']:
         need(isinstance(value, (list, dict)))
         try:
             value = value[part]
         except (KeyError, IndexError, TypeError) as exc:
             raise TargetFailure() from exc
-    need(value == check['equals'])
+    if 'type' in check:
+        types = {
+            'array': isinstance(value, list),
+            'object': isinstance(value, dict),
+            'string': isinstance(value, str),
+            'number': type(value) in (int, float) and math.isfinite(value),
+            'boolean': isinstance(value, bool),
+            'null': value is None,
+        }
+        need(types.get(check['type'], False))
+    else:
+        need(value == check['equals'])
+
+
+def check_json(check):
+    check_json_value(check, http_json(check['url']))
 
 
 class Probe:
@@ -130,9 +144,7 @@ class Probe:
                             if (!r.ok) throw new Error('API unavailable');
                             return await r.json();
                         }""", check['url'])
-                        for part in check['path']:
-                            value = value[part]
-                        need(value == check['equals'])
+                        check_json_value(check, value)
                 else:
                     # A reviewed deployment-specific rendered UI element is mandatory.
                     selector = self.config.get('explorerSelector')

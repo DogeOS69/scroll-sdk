@@ -65,6 +65,8 @@ credentials are scoped webhook URLs, never the management API key.
 | `statusPage.environment` | Operator | `testnet`, `mainnet`, or `devnet`. Never inferred from a hostname or Dogecoin's network. Select the network owned by this deployment directory. |
 | Network name / chain ID | `config.toml`: `general.CHAIN_NAME_L2`, `general.CHAIN_ID_L2` | Recorded in the local catalog; does not change the shared page title. |
 | `sources.frontends` | Selected deployment frontend values | Read `ingress.main.hosts[].host`; append `sources.bridgePath` (default `/bridge`). |
+| `sources.frontendsConfig` | Selected frontend runtime config values | Read `scrollConfig` TOML, verify chain ID and derive the actual Bridge history API checks; `""` disables inference. |
+| `sources.sequencer` | Selected effective Reth sequencer values | Derive continuous/on-demand mode and record block interval; select the actual numbered file when needed. `""` disables inference. |
 | `sources.publicRpc` | Selected **enabled** public RPC values | Read all HTTP hosts and enabled WebSocket hosts. Default filename is `l2-reth-rpc-public-production.yaml`; select the actual release, including old/numbered layouts if applicable. |
 | `sources.blockscout` | Selected deployment Blockscout values | Read `blockscout-stack.frontend.ingress.hostname`; L2Scan is excluded. |
 | `sources.scheme` | Operator, default `https` | Actual external protocol; WebSocket uses `wss` for HTTPS. It is explicit because TLS may terminate upstream of ingress. |
@@ -99,7 +101,11 @@ to that group. Three deployments produce 24 components on the shared page.
 Only deployed, verified networks should be initialized; missing deployment data
 never results in fabricated endpoints or health.
 
-## Initialize the shared page and groups once
+## Reuse existing groups; initialize only a new page
+
+The operator confirmed that Mainnet, Testnet and Devnet groups are already created.
+Normal deployment reuses them; group creation automation is not a remaining task.
+The following bootstrap instructions apply only to a new page or a missing group.
 
 Read-only API verification resolved workspace `6wxpx` to
 `cmuh3p8v200r21mlbhhjg03nr` and its `dogeos` page to
@@ -320,13 +326,19 @@ API reference: [status pages](https://instatus.com/help/api/status-pages),
 
 SDK production examples provide all eight keys with `mode: observe` and
 `rule.builtin: true`. Modes are `manual`, `observe`, `automatic`. Built-in rules
-cover public RPC, continuous sequencing, bridge browser/API, Blockscout freshness,
-canary node sync, and new dogeos-core deposit/withdrawal/DA queue observations.
+depend on `probes.mode`. The optional external mode covers public RPC, continuous sequencing, bridge browser/API, Blockscout freshness,
+official follower or optional external canary node sync, and new dogeos-core deposit/withdrawal/DA queue observations.
 The SDK [publication guide](status-page-publication.md)
 defines their semantics, operational limits and runtime tests.
 
+New examples select [existing Alloy probes](status-page-alloy.md) for public-entrypoint
+availability. Browser, indexing, WebSocket and sequencing claims are not inferred
+from HTTP success. Missing `probes.mode` preserves external-mode compatibility.
+
 | Publication input | Ownership / default |
 | --- | --- |
+| `probes.mode` | `alloy` in examples, `external` for legacy inputs; Alloy adds no public probe Pod |
+| `probes.alloyChecks` | Optional GET response RE2 assertions, additive to generated targets |
 | `components.<key>.mode` | Operator; observe by default, activation is per component |
 | `components.<key>.rule` | Built-in by default; custom rules require `builtin: false`, `expr`, optional `for` |
 | `health.failureFor` / `recoveryFor` | Default 5m / 10m; per-component `rule.for` overrides failure |
@@ -335,11 +347,12 @@ defines their semantics, operational limits and runtime tests.
 | `probes.sequencingMode` | unconfigured; choose continuous or provide custom eligible-work expression for on-demand |
 | `probes.bridgeChecks` / `nodeDependencyChecks` | Required semantic JSON checks `{url,path,equals}`; no secret-bearing URLs |
 | `probes.explorerApiUrls` / `explorerSelector` | Backend ingress derived when available; operator supplies rendered data selector |
-| `probes.nodeRpcUrl` | Operator's independent canary node; per-site override supported by probe chart |
+| `nodeSync` | Select `official` with active sequencer and deployed follower values/release pairs; Service/port/replicas derived. See [Node Sync](status-page-node-sync.md). Default `external` preserves existing configurations. |
+| `probes.nodeRpcUrl` | Optional external mode's independent canary; per-site override supported by probe chart |
 | `probes.metricsTargets` | Private `host:port` targets; CLI owns only the `status-page-external-probes` scrape job |
 | `delivery` | Production enabled; Python image, PVC size/storage class exposed; existing component values default direct mode |
 | `incidents` | Manage create/resolve templates in examples; default Degraded Performance, subscriber notification false |
-| `heartbeat` | Optional; needs Instatus internal monitor alert IDs, distinct from Grafana receivers/subscribers |
+| `heartbeat` | Required before automatic publication in Alloy mode; otherwise optional; needs Instatus internal monitor alert IDs, distinct from Grafana receivers/subscribers |
 | `observationContactPointName` | Internal Grafana receiver; default name does not configure SMTP/recipients |
 
 Expressions must return exactly one 0 (healthy), 1 (affected), or no series
@@ -356,15 +369,16 @@ modes stop the component's verifier activity when deployed, preserving bindings 
 incidents. Use manual mode before taking over a public incident.
 
 ```sh
-# Offline, also export separate probe-chart values; set image/location before deploying.
-scrollsdk setup status-page --probe-values values/status-page-probe-production.yaml
+# Offline: includes Alloy configuration in scroll-monitor.
+scrollsdk setup status-page
+# Optional external mode only: --probe-values values/status-page-probe-production.yaml
 # Read-only review, including incident policy and heartbeat target state.
 scrollsdk setup status-page --plan --create-webhook
 # Create/reuse selected component integrations and optional Cron Monitor.
 scrollsdk setup status-page --apply --create-webhook
 ```
 
-Export preserves top-level image/location options and regenerates `config`. Run
+In external mode only, export preserves top-level image/location options and regenerates `config`. Run
 probes at two or more independent sites, not two replicas in the chain cluster.
 The CLI does not deploy probes, nodes, Helm releases or Secrets.
 
@@ -388,3 +402,17 @@ provisioning. Retire competing legacy public routes before automatic activation.
 Apply scoped Secrets and generated Helm values through the existing deployment
 workflow. Instatus template behavior and real-account incident delivery require
 acceptance on a test target before enabling public subscriber notifications.
+
+## Delivery status and order
+
+Existing network groups are ready for reuse. Planned-maintenance integration is
+last priority, after Alloy probe acceptance and real Instatus failure/recovery
+acceptance. Until implemented, deploy the component in `manual` before maintenance;
+editing its remote maintenance status alone does not pause local automation.
+
+The Alloy and official Node Sync changes are released as a coordinated SDK/CLI
+pair. The CLI acceptance workflow must pin the corresponding SDK commit; publish
+that SDK commit before the CLI commit so CI can fetch its templates. Local runtime
+acceptance does not establish a remote CI result before both commits are pushed. Optional external-mode probe image
+publication and the proposed VM package are not required for Alloy mode;
+the existing probe Helm chart and configuration export are already available.

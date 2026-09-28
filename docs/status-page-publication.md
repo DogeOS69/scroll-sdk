@@ -8,7 +8,9 @@ own eight components on the shared Instatus page. L2Scan is outside this feature
 ## Data flow and credentials
 
 ```text
-Independent probe locations ──metrics──> chain Prometheus <── dogeos-core /metrics
+Existing Alloy public-entrypoint probes ──metrics──> chain Prometheus <── dogeos-core /metrics
+                                               ^
+                          official Node Sync collector (inside the chain cluster)
                                                │
                                                v
                                          chain Grafana
@@ -33,10 +35,11 @@ resources and is never placed in values, a ConfigMap or a runtime Pod. The optio
 Cron heartbeat URL is a separate, narrowly scoped Secret held by Grafana.
 
 No provider needs access to internal Grafana, Prometheus, application databases or
-Kubernetes. Independent probes inspect public user endpoints. Prometheus can scrape
-their metrics over a private connection; do not expose the chain's monitoring APIs
-in order to deploy them. These probes are not installed into the chain cluster by
-scroll-monitor: use the separate `status-page-probe` chart in independent locations.
+Kubernetes. The selected first-release path reuses Alloy inside the chain cluster
+and its private remote-write connection. No separate public probe Pod is added.
+See [Alloy probes](status-page-alloy.md) for exact coverage and heartbeat requirements.
+The optional `external` mode uses separate deep probes in independent locations
+with private metric collection; its deployment is not required for Alloy mode.
 
 ## Component modes
 
@@ -66,6 +69,15 @@ Every health expression yields exactly one unlabelled **0** (healthy), **1**
 multiple results. Missing observations and query errors notify the internal receiver;
 they never resolve a public incident.
 
+New examples select `probes.mode: alloy`: HTTP entrypoint availability and response
+patterns for Public RPC, Bridge and Blockscout, with coverage exposed in readiness
+and public descriptions. This does not prove browser rendering or indexing freshness.
+Sequencing requires a custom rule; enabled WebSocket RPC leaves its built-in unready.
+Official Node Sync and business rules are unchanged. Details: [Alloy](status-page-alloy.md).
+
+The following table describes the deeper **external** probe mode and the shared
+business/Node Sync rules:
+
 | Component | Implemented evidence | Deployment inputs |
 | --- | --- | --- |
 | Public RPC | Every declared HTTP/WS endpoint: chain ID, block number, block contents; p95 request-sequence latency after at least 10 samples/5 minutes | URLs/chain ID generated; independent locations and latency threshold |
@@ -73,11 +85,11 @@ they never resolve a public incident.
 | Deposits | Confirmed canonical deposits not yet scanned, plus committed deposit messages not yet included by L2; complete indices and canonical RPC checks | New dogeos-core metrics; confirmed processing deadline |
 | Withdrawals | Protocol-eligible canonical withdrawal indices not fulfilled; complete unique queue, replay/indexer agreement and canonical RPC checks | New dogeos-core metrics; confirmed processing deadline |
 | Batch Publication | Ready, submitted and failed lifecycle batches still awaiting publication confirmation; excludes confirmed/finalized/orphaned work | New dogeos-core metrics; deadline including normal confirmation time |
-| Node Sync | Independent canary node follows canonical RPC history and configured public sync/DA dependencies answer semantic checks | Operate a canary node at each probe location, its RPC and dependency checks |
+| Node Sync | Official per-Pod follower height/hash versus the active sequencer, or an explicitly selected external canary | Select effective sequencer, bootnode and RPC sources; see [Node Sync](status-page-node-sync.md). External mode requires canary/dependency checks. |
 | Bridge Portal | Chromium renders the deposit UI, produces the expected recipient payload, switches to withdrawal UI, validates runtime chain ID and API JSON through browser fetch | Reviewed required public API checks |
 | Block Explorer | Rendered data selector, Blockscout block API, indexed hash verified against canonical RPC and index lag measured by block time | Backend ingress derived when available; reviewed data selector and lag threshold |
 
-Public probes require the configured number of **distinct locations** to report
+External-mode public probes require the configured number of **distinct locations** to report
 valid, fresh, binary observations and agree. Disagreement, duplicate reporters,
 missing locations and stale/future timestamps produce unknown. A location label
 is a deployment assertion: two replicas in the same cluster are not independent.
@@ -85,7 +97,9 @@ All configured endpoints within a location contribute to that component's result
 
 The bundled sequencing probe supports continuous block production. An on-demand
 chain must provide a custom expression based on accepted, executable pending work;
-absence of blocks on an idle chain is not a failure. The node probe observes an
+absence of blocks on an idle chain is not a failure. Official Node Sync uses a
+separate in-cluster collector; internal Pods are not independent probe locations.
+In external mode, the node probe observes an
 operating canary and its dependencies; it does not create a node or perform a fresh
 snapshot/bootstrap on every check. The bridge check does not submit deposits,
 withdrawals, connect wallets or prove that a transfer completed; business components
@@ -96,22 +110,32 @@ public SLA. The withdrawal deadline starts at protocol eligibility, not the init
 user transaction; earlier batch/DA delays are observed by the other components.
 Jobs must select the actual withdrawal processor role, excluding proof-only workers.
 
+Production examples use `sequencingMode: auto` and `bridgeChecks: auto` with the
+selected sequencer and frontend runtime configuration files. These regenerate
+from current deployment evidence and preserve explicit overrides. See
+[source-derived defaults](status-page-defaults.md) for source fields, API response
+contracts, observed Devnet inputs, and why service timers are not public deadlines.
+
 ## Configuration and commands
 
 All fields, owners and defaults are in `examples/values/scroll-monitor-production.yaml`.
 The local workflow is:
 
 ```sh
-scrollsdk setup status-page --deployment-dir /path/to/network \
-  --probe-values values/status-page-probe-production.yaml
+scrollsdk setup status-page --deployment-dir /path/to/network
 scrollsdk setup status-page --deployment-dir /path/to/network --plan --create-webhook
 scrollsdk setup status-page --deployment-dir /path/to/network --apply --create-webhook
 ```
 
-The first command is offline. Probe export preserves existing top-level image and
+The first command is offline. Alloy mode generates the existing ConfigMap; do not
+use `--probe-values` in this mode. Automatic mode requires an enabled internal
+heartbeat. Only for `probes.mode: external`, add `--probe-values values/status-page-probe-production.yaml`. That probe export preserves existing top-level image and
 location settings while regenerating `config` from the selected deployment. The
 operator supplies the built probe image and independent location, then deploys that
-chart separately. Per-location canary addresses can be passed through the probe
+chart separately. The proposed external-site delivery is described in
+[independent probe deployment](status-page-independent-probes.md); its VM packaging
+and image-release workflow are not implemented yet. In external Node Sync mode,
+per-location canary addresses can be passed through the probe
 chart's `overrides.nodeRpcUrl`. Prometheus needs a scrape path to each location;
 set `publication.probes.metricsTargets` to generate its private scrape job, or
 use existing federation. See the separate probe chart README. `--plan` only reads, including Cron Monitor
@@ -212,9 +236,26 @@ workflow enables all three runtime flags above against a pinned SDK commit, real
 Prometheus and Grafana. Update that SDK pin deliberately when changing the shared
 generation contract. CI uses local receiver/API fixtures and no Instatus credentials.
 
-Core images must include the [health-observation fixes in #1304](https://github.com/DogeOS69/dogeos-core/pull/1304), not only #1297:
-index coverage must match `tip - confirmations`, unchanged canonical replay snapshots
-must retain their first observation time, and public DA age must survive retries.
-The indexed deposit observation trails the planner's RPC eligibility by one block;
-account for that observation boundary when choosing the deployment deadline. Stored
-timestamps overwritten by older images cannot be reconstructed automatically.
+Core images must contain the merged fixes in [core #1312](https://github.com/DogeOS69/dogeos-core/pull/1312)
+(merge `c579df82ce2c8377ccde8001c91ad10d67f040c6`) and
+[core #1314](https://github.com/DogeOS69/dogeos-core/pull/1314)
+(merge `421806bbdb83b45b230d1f2359d62d1fc39e0387`), or equivalent later changes.
+Both merges were verified on 2026-09-28. These supply indexer-confirmation-aligned
+coverage, replay ages that survive unchanged canonical rewrites, and DA waiting
+ages that survive retries. **Merging #1304 is not a deployment prerequisite.**
+Verify the built image's source revision and live metric contract; a PR merge or
+CLI configuration-ready result does not prove that the running image has it.
+Performance follow-up is handled separately and is not evidence of live acceptance.
+
+The indexed deposit observation boundary and the deployed confirmation settings
+must be included when choosing the processing deadline. Old timestamps already
+overwritten by earlier images cannot be reconstructed automatically.
+
+## Delivery priorities
+
+The operator confirmed that the Mainnet/Testnet/Devnet groups already exist. Reuse
+them; group creation automation is not an outstanding delivery item. Maintenance
+window integration is deferred until after the probe deployment and live public
+failure/recovery acceptance. Until then, deploy a component in `manual` before
+operator-led maintenance or incident takeover; changing Instatus alone does not
+pause local automatic delivery. No new maintenance automation is claimed here.

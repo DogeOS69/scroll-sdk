@@ -1,15 +1,16 @@
 # Status page 接入架构
 
-当前实现：2026-09-27。Mainnet、Testnet、Devnet 共用 `dogeos.instatus.com`，
+当前实现：2026-09-28。Mainnet、Testnet、Devnet 共用 `dogeos.instatus.com`，
 workspace 为 `6wxpx`，每组 8 个组件；L2Scan 不在范围内。每个网络仍拥有自己的
 工作目录、scroll-monitor、Prometheus、Grafana、Secret 和组件绑定。
 
 ## 通信方向
 
 ```text
-独立位置的 RPC / 浏览器 / 同步节点探针 ──指标──┐
+现有 Alloy 经公网入口探测 ─────────指标──┐
                                              v
 该链 dogeos-core /metrics ───────────────> Prometheus
+该链官方 Node Sync 逐 Pod 采集器 ────────────^
                                              │ 内网查询
                                              v
                                           Grafana
@@ -23,8 +24,8 @@ workspace 为 `6wxpx`，每组 8 个组件；L2Scan 不在范围内。每个网�
                               Instatus 当前网络的公开组件
 ```
 
-Instatus 不访问内部 Grafana、Prometheus 或 Kubernetes。外部探针检查已有用户入口，
-在独立位置运行，通过私网采集指标。Alertmanager 和现有内部告警继续各自的职责，
+Instatus 不访问内部 Grafana、Prometheus 或 Kubernetes。现有 Alloy 经公网 DNS/Ingress 检查已有用户入口，
+在该链集群内运行，通过已有私网 remote-write 写入指标。Alertmanager 和现有内部告警继续各自的职责，
 不自动转发到公开页面。整个集群失联时，独立 Cron Monitor 通知值班人员；页面保留
 最后确认状态，监控失联不等价于整条链故障。
 
@@ -62,11 +63,15 @@ HTTP 结果不明确且健康已变化时暂停相反事件，内部报警并由
 ## 配置与启用
 
 组件可独立使用 `manual`、`observe`、`automatic`。示例默认全部 observe；
-业务 deadline 默认 0（未配置），外部语义检查及独立探针位置由部署方填写。
+业务 deadline 默认 0（未配置）；首版复用已有 Alloy。只有选用 external 深度模式时才需要外部语义检查和独立位置。
 CLI 自动生成目录、规则、组件 contact point、Secret 引用和探针配置，保留已有
 Grafana 全局通知策略。`--plan` 只读；`--apply` 管理 Instatus 资源，不部署 K8s。
-同一网络重跑复用绑定。共享页面元数据应用需按页面串行执行；首次父分组仍在
-Instatus 控制台初始化，随后 CLI 复用组内组件。
+同一网络重跑复用绑定。共享页面元数据应用需按页面串行执行。用户已确认三个网络
+分组创建完成；CLI 复用已有分组，不将分组初始化列为当前待办。全新页面的一次性
+初始化说明仍保留在配置文档中，正常重部署不重复执行。
+
+计划维护窗口与自动发布的联动最后处理；在实现前先部署组件 manual 模式，
+再人工操作维护。首版公网入口探测复用现有 Alloy，见 [Alloy 方案](status-page-alloy.md)；外部独立位置是可选后续工作。
 
 完整字段、健康规则、故障边界与命令见 [组件发布配置](status-page-publication.md)、
 [健康规则](status-page-health-rules.md)、[上线验收](status-page-rollout.md) 和
@@ -95,3 +100,5 @@ Instatus 控制台初始化，随后 CLI 复用组内组件。
 兼容性观察：指标列表返回的 name 实际为对象，而非文档示例中的字符串；验证因此只回写原有字符串 suffix。另一次使用默认 Python User-Agent 的读取返回 403，恢复明确的应用 User-Agent 后返回 200；原因尚未定位，不能把该 403 当作 token scope 的证据。后续客户端应设置明确 User-Agent，并区分 HTTP 网关拒绝与 API JSON 鉴权错误。
 
 健康规则的三态判定、每组件发布来源、外部观测和模板采集审计见 [健康规则 v1](status-page-health-rules.md)。按组件发布生成能力见 [组件发布配置](status-page-publication.md)，旧单个初始化 webhook 保留兼容；线上路由需在部署生成配置后才生效。
+
+首版入口采集链路为现有 Alloy → 公网 DNS/Ingress → 服务，再经私网 remote-write → Prometheus → Grafana → 已有投递校验器 → Instatus。Alloy 自动发布要求配置 Instatus 内部心跳目的地，监控失联不等于所有业务组件故障。
