@@ -161,14 +161,6 @@ grafana:
     dashboardproviders.yaml:
       apiVersion: 1
       providers:
-        - name: 'scroll'
-          orgId: 1
-          folder: 'scroll'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/scroll/
         - name: 'kubernetes'
           orgId: 1
           folder: 'kubernetes'
@@ -205,7 +197,6 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/blockscout/
   dashboardsConfigMaps:
-    scroll: grafana-scroll-dashboards
     kubernetes: grafana-kubernetes-dashboards
     dogeos: grafana-dogeos-dashboards
     reth: grafana-reth-dashboards

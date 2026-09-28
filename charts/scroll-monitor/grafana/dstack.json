@@ -2,7 +2,7 @@
   "uid": "dogeos-dstack",
   "title": "DogeOS / Dstack and GPU fleets",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "refresh": "30s",
   "time": {
@@ -28,7 +28,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Native metrics show the controller\u2019s latest cached observation. **A successful scrape does not establish GPU reachability or freshness.** Fleet GPU counts are allocated capacity, not a hardware health check. Empty job panels can mean no active tasks. Hardware panels require DCGM support. Host panels require the optional always-on Alloy collector. Proof completion is monitored separately in the proof-coordinator / worker dashboards."
+        "content": "Native metrics show the controller’s latest cached observation. **A successful scrape does not establish GPU reachability or freshness.** Fleet GPU counts are allocated capacity, not a hardware health check. Empty job panels can mean no active tasks. Hardware panels require DCGM support. Host panels require the optional always-on Alloy collector. Proof completion is monitored separately in the proof-coordinator / worker dashboards."
       }
     },
     {
@@ -49,7 +49,7 @@
         {
           "refId": "A",
           "expr": "up{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_source=\"native\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -58,6 +58,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -87,7 +90,7 @@
         {
           "refId": "A",
           "expr": "scrape_duration_seconds{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_source=\"native\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -96,6 +99,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -124,8 +130,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (dstack_fleet_name,dstack_gpu_name) (dstack_instance_gpu_count{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name,dstack_fleet_name,dstack_gpu) (dstack_instance_gpu_count{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_fleet_name}} {{dstack_gpu}}"
         }
       ],
       "fieldConfig": {
@@ -134,6 +140,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -162,8 +171,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (dstack_project_name) (dstack_instance_price_dollars_per_hour{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (dstack_instance_price_dollars_per_hour{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
         }
       ],
       "fieldConfig": {
@@ -172,6 +181,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -200,8 +212,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (dstack_project_name) (increase(dstack_run_count_failed_total{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (increase(dstack_run_count_failed_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
         }
       ],
       "fieldConfig": {
@@ -210,6 +222,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -219,7 +234,8 @@
           "displayMode": "list",
           "placement": "bottom"
         }
-      }
+      },
+      "description": "Increase of the controller-exported run-count counter, grouped by project. These counters are reconstructed from retained run records; deleting records or resetting state can affect the estimate."
     },
     {
       "id": 7,
@@ -238,8 +254,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (dstack_project_name) (increase(dstack_run_count_done_total{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (increase(dstack_run_count_done_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
         }
       ],
       "fieldConfig": {
@@ -248,6 +264,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -257,7 +276,8 @@
           "displayMode": "list",
           "placement": "bottom"
         }
-      }
+      },
+      "description": "Increase of the controller-exported run-count counter, grouped by project. These counters are reconstructed from retained run records; deleting records or resetting state can affect the estimate."
     },
     {
       "id": 8,
@@ -276,8 +296,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "dstack_job_gpu_usage_ratio{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "dstack_job_gpu_usage_ratio{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -286,6 +306,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -314,8 +337,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "dstack_job_gpu_memory_usage_bytes{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "dstack_job_gpu_memory_usage_bytes{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -324,6 +347,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -352,16 +378,19 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rate(dstack_job_cpu_time_seconds_total{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[5m])",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "rate(dstack_job_cpu_time_seconds_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[5m])",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "cores",
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -390,8 +419,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "dstack_job_memory_working_set_bytes{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "dstack_job_memory_working_set_bytes{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -400,6 +429,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -428,8 +460,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "DCGM_FI_DEV_GPU_TEMP{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "DCGM_FI_DEV_GPU_TEMP{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -438,6 +470,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -466,8 +501,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "DCGM_FI_DEV_POWER_USAGE{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "DCGM_FI_DEV_POWER_USAGE{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -476,6 +511,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -504,8 +542,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "DCGM_FI_DEV_XID_ERRORS{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "DCGM_FI_DEV_XID_ERRORS{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -514,6 +552,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -542,8 +583,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "DCGM_FI_DEV_ECC_DBE_VOL_TOTAL{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
-          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+          "expr": "DCGM_FI_DEV_ECC_DBE_VOL_TOTAL{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
         }
       ],
       "fieldConfig": {
@@ -552,6 +593,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -590,6 +634,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -628,6 +675,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -666,6 +716,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -704,6 +757,9 @@
           "noValue": "No data",
           "color": {
             "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
           }
         },
         "overrides": []
@@ -768,7 +824,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "query": "label_values(dstack_instance_gpu_count{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\"}, dstack_project_name)",
+        "query": "label_values(dstack_instance_gpu_count{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\"}, dstack_project_name)",
         "refresh": 1,
         "includeAll": true,
         "allValue": ".*",
