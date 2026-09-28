@@ -104,3 +104,13 @@ this repository for this review. Source extracts and synthetic query-test data
 were temporary local artifacts. The checked-in tests validate dashboard
 structure and query behavior constraints; they are not a copied service metric
 contract and do not replace reviewing updated core source.
+
+## Acceptance with older application images
+
+Do not upgrade application images to validate this chart. Skip panels and alerts
+whose metric implementation is absent from the deployed image, and record the
+reason as an image prerequisite rather than a failed dashboard. In particular,
+Proof Coordinator application telemetry stays `No data` until its new image is
+published and deployed. Missing business snapshots must not become healthy public
+status. Use Slack as the first internal notification acceptance target; leave
+SMTP disabled unless the operator explicitly configures it.

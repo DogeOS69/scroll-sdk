@@ -32,6 +32,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+      - name: Validate supplemental WebSocket RPC checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/status-ws-test" --ignore-scripts ws@8.18.3
+          STATUS_WS_TEST_PACKAGE="$RUNNER_TEMP/status-ws-test/package.json" node --test charts/scroll-monitor/tests/test_status_page_websocket.mjs
       - name: Install test dependencies
         run: |
           pip install PyYAML==6.0.2 playwright==1.55.0 websocket-client==1.8.0

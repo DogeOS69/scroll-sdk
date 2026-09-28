@@ -16,8 +16,8 @@ Grafana 主规则 KeepLast，独立 missing 规则通知内部接收者；投递
 首版选择 `probes.mode: alloy`，复用已有 Alloy，不新增公网探针 Pod。
 Public RPC 检查 HTTP JSON-RPC 响应模式和延迟；Bridge/Blockscout 检查页面与 API
 入口的 HTTP/TLS 可用性。CLI readiness 标注 `public-entrypoint`，公开说明不再宣称
-这些检查证明浏览器功能或索引新鲜度。已启用的 WebSocket 无法覆盖时保留未就绪。
-Sequencing 需要自定义指标规则；Node Sync 和业务队列规则不变。
+这些检查证明浏览器功能或索引新鲜度。WebSocket 通过已有 Alloy Pod 内的辅助容器执行实际 JSON-RPC 检查。
+官方 Node Sync 模式且连续出块时，Sequencing 复用参考 sequencer 的区块时间；其他模式需要自定义规则。
 完整参数和边界见 [Alloy 公网探测](status-page-alloy.md)。
 
 ## 八个组件（external 深度探测模式及通用业务规则）
@@ -54,7 +54,7 @@ DA 规则把已提交但未确认的工作保留在积压内，防止离开待�
 | `health.maxRpcLatencySeconds` | `2` | Alloy 每个 HTTP 探测 / external RPC 查询序列的 p95，需 5 分钟内至少 10 个样本 |
 | 最大块龄 / 索引延迟 / 节点落后时间 | 各 `120` 秒 | 部署方按实际链行为确认 |
 | 充值 / 提现 / 批次 deadline | `0` | 未配置；不编造业务 SLA，不生成对应内置规则 |
-| `incidents.affectedStatus` | `DEGRADEDPERFORMANCE` | 第一版统一故障等级，严重事件由人工升级 |
+| `components.<key>.affectedStatus` | 无默认值 | CLI 管理的自动发布必须显式配置并审查规则语义；二值规则不能自动推导严重程度 |
 | `incidents.notifySubscribers` | `false` | 明确启用后才在模板中请求订阅通知 |
 
 以上是配置默认，不是公开承诺。旧设计讨论的 3/5/10 分钟分级及恢复迟滞不自动

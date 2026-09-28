@@ -1,145 +1,135 @@
 # Devnet status-page acceptance — 2026-09-28
 
-## Scope and configuration
+The local scroll-monitor chart `0.1.37-dogeos` was applied to the
+`dogeos-devnet-cluster` EKS cluster, namespace `default`, release `scroll-monitor`.
+The E2E cleanup Helm revision is **17**; the automatic activation follow-up below
+uses revision **18**. This is a local deployment result,
+not evidence that the SDK/CLI changes have been committed, published or passed
+remote CI.
 
-Deployment directory: `/mnt/wsl/data/github/dogeos69/dogeos-aws-devnet`.
-Cluster: `dogeos-devnet-cluster`; all commands selected its explicit kube context.
-Namespace: `default`; Helm release: `scroll-monitor`.
-Status-page acceptance release: revision 10, chart `scroll-monitor-0.1.33-dogeos`,
-deployed successfully. The subsequent dashboard-only upgrade is recorded below.
+## Scope and environment preservation
 
-### Follow-up: bundled dstack dashboard
+- Compared all 59 non-monitor files under the deployment's `values/` directory:
+  no changes.
+- Compared container images in all 20 non-monitor Deployments/StatefulSets:
+  no changes. No dogeos-core image upgrade was performed.
+- Changed the scroll-monitor values, its component binding receipts and Secrets.
+  Reused the existing Instatus page and Devnet components.
+- Slack webhook and channel remain empty for the operator to fill manually.
+  No real Slack message was sent. SMTP remains disabled; email was not tested.
+- Proof Coordinator remains **No data** until its new image is available.
+  Image-dependent dashboard/alert/business-metric checks were skipped.
+- Captured credentials, provider responses and live telemetry stay outside the
+  repository. This document contains results, not example service metrics.
 
-Upgraded scroll-monitor to `0.1.34-dogeos`, revision 11. Grafana serves
-`DogeOS / Dstack and GPU fleets` (UID `dogeos-dstack`) in folder `dogeos`, with
-19 panels. The dashboard is now bundled independently of `dstack.enabled`;
-panels without metrics display `No data`.
+## Component results after E2E cleanup, before automatic activation
 
-Dstack still runs locally and was not modified or deployed to Kubernetes.
-The upgrade retained the existing Helm user values and left `dstack.enabled`
-false, without adding dstack alerts or namespace log collection. The existing
-Grafana alert rules and Alloy configuration were preserved. The deployment
-artifact contained the committed chart plus the dashboard-template change;
-other agents' uncommitted monitoring changes were excluded.
+| Component | Automatic delivery acceptance | Real observation after cleanup | Final mode |
+| --- | --- | --- | --- |
+| Public RPC | Failure and recovery passed | HTTP and WebSocket checks healthy | observe |
+| Transaction Sequencing | Failure and recovery passed | Continuous reference-node block age healthy | observe |
+| Node Sync | Failure and recovery passed | Selected official followers healthy | observe |
+| Bridge Portal | Failure and recovery passed | Availability rule affected; some configured checks fail | observe |
+| Block Explorer | Failure and recovery passed | Availability rule affected; some configured checks fail | observe |
+| Deposits | Skipped: deployed image lacks required complete evidence | Not re-evaluated | observe |
+| Withdrawals | Skipped: deployed image lacks required complete evidence | Not re-evaluated | observe |
+| Batch Publication | Previously accepted; retained | Delivery has no active/pending event or error | automatic |
 
-The operator authorized changes only to scroll-monitor configuration and resources,
-including reinstall/upgrade of that release. Other chain configuration and service
-releases were not changed. SHA-256 comparison covers 61 pre-existing configuration
-files outside scroll-monitor and found no changes during the acceptance run.
+The five new tests used temporary synthetic fault/recovery expressions in the
+monitor's configuration. Each created exactly one `[E2E TEST]` incident and
+automatically resolved that same incident. Public subscriber notification was
+disabled. No business transaction or service failure was injected. This verifies
+the publication pipeline, not a real business outage or business recovery.
 
-The shared Instatus page is `dogeos.instatus.com`; this deployment owns only its
-existing Devnet group. The run reused that page and all eight component IDs.
-Management credentials remained in an ignored local file and were not added to
-Helm values, runtime Pods or source files. Monitor-owned webhook/heartbeat receipts
-and Secret manifests use the deployment's existing `secrets/status-page/` directory.
+All five incidents were resolved before cleanup. The normal Instatus templates,
+real built-in rules, original publication modes, 5-minute failure confirmation and
+10-minute recovery confirmation were restored. Batch Publication's deadline is
+30 minutes. No synthetic constant expression remains in component rule inputs.
+The other three existing components retained their identities and statuses.
+New private webhook bindings remain reusable for later component activation.
 
-The operator confirmed these configurable business deadlines:
+The public page does not automatically follow the seven components left in
+`observe`. In particular, resolution of the Bridge/Explorer **test incidents**
+does not declare their actual checks healthy.
 
-| Rule | Seconds | Meaning |
-| --- | ---: | --- |
-| Deposits | 900 | Eligible deposit wait after required confirmations |
-| Withdrawals | 3600 | Wait after protocol eligibility |
-| Batch Publication | 1800 | Batch creation to confirmation; reconfirmed as 30 minutes |
+## Implementation and validation
 
-Normal failure confirmation is 5 minutes. Normal recovery requires 10 continuous
-minutes of fresh healthy observations. These windows are separate from business
-deadlines and the 30-second collection interval.
+- WebSocket RPC: read-only chain-ID/block-number exchanges from an auxiliary
+  container in the existing Alloy Pod, with bounded request time, chain checking,
+  freshness and missing-data protection. No additional probe Pod is needed.
+- Continuous sequencing: reference-node evidence collected independently of
+  follower failures by the existing official Node Sync collector.
+- Scheduled maintenance: local component delivery suppression with fresh
+  confirmation after the window. See [maintenance windows](status-page-maintenance.md).
+  Automatic synchronization of Instatus maintenance notices is still separate;
+  operators publish those notices themselves.
+- SDK status-page Python suite: 29 passed. WebSocket socket/startup tests: 3 passed.
+  Helm lint passed. CLI full status-page suite: 90 passed, including runtime
+  Prometheus/Alloy/Grafana and local SDK rendering. TypeScript and targeted lint
+  passed (existing complexity warnings remain).
+- The SDK and CLI must be released together. When committing these changes,
+  update the CLI acceptance workflow's immutable SDK commit pin to the newly
+  published SDK commit before submitting the CLI changes.
 
-## Real observations
+Pending operator actions are Slack configuration and notification acceptance,
+future business-image-dependent acceptance, and deliberate activation of each
+component after its real checks are satisfactory. These were not bypassed with
+fabricated healthy metrics.
 
-| Component | Observation | Publication |
-| --- | --- | --- |
-| Public RPC | HTTP chain ID and block-number checks succeed; configured WebSocket is not covered by Alloy | Observe; built-in component unready |
-| Transaction Sequencing | No accepted sequencing-progress expression is configured | Observe; built-in component unready |
-| Deposits | Public deposit snapshot validity is 0; eligible queue evidence absent | Observe; unknown, never mapped to healthy |
-| Withdrawals | Public withdrawal snapshot validity is 0; eligible queue evidence absent | Observe; unknown, never mapped to healthy |
-| Batch Publication | Built-in DA health returns one fresh value 0 | Automatic, component-specific integration |
-| Node Sync | Built-in comparison returns one fresh value 0; active sequencer and four official followers configured | Observe |
-| Bridge Portal | Portal page succeeds; Bridge API fails TLS validation with a self-signed certificate | Observe; affected |
-| Block Explorer | Blockscout fails TLS validation because its certificate is expired | Observe; affected |
+## Automatic activation follow-up
 
-Alloy probes run in the existing cluster through configured public domains. They
-are not an independent geographic vantage point or browser rendering test. TLS
-validation remains enabled. Certificate/service fixes are outside this run's
-allowed configuration scope.
+The operator subsequently authorized automatic publication wherever prerequisites
+were met. Revision **18** enables `automatic` for Public RPC, Transaction
+Sequencing, Node Sync, Bridge Portal and Block Explorer. Batch Publication remains
+automatic; Deposits and Withdrawals remain in observe mode because the deployed
+business images do not provide the required verified evidence.
 
-An independent Instatus Cron monitor receives Grafana heartbeats. It is internal,
-has no public component, and cannot create public incidents. Its configured email
-recipient is the operator-selected internal address. The period is 180 seconds
-with 180 seconds grace. Normal one-minute Grafana repeats were observed arriving
-at two-minute intervals; the original 60-second period produced false degradation.
-During the outbound delivery failure, provider statistics recorded a missed
-heartbeat at 04:36:44 UTC and recovery at 04:41:19 UTC. This independently detected
-monitoring delivery loss without creating a public incident. Email inbox delivery
-itself was not verified.
+The activation gate is trustworthy health evidence and working scoped delivery,
+not a requirement that every service be healthy. Independent HTTPS requests
+confirmed the failing Bridge API certificate is self-signed and Blockscout's
+certificate has expired. These are real public-access failures, not missing
+metrics or probe regex errors. They are eligible for automatic incident reporting.
+No certificate, ingress or business service was modified.
 
-Existing Grafana SMTP is unconfigured. Observation alerts are evaluated and visible
-in Grafana, but the existing default email contact point cannot deliver them.
-The separate Instatus heartbeat notification does not depend on Grafana SMTP.
+The five existing webhook bindings and normal single-component templates were
+verified and reused. Grafana's live rules route to their matching public receivers;
+the verifier tracks all six automatic components. Failure confirmation remains
+5 minutes and recovery confirmation 10 minutes. Public subscriber notifications
+remain disabled. Slack remains empty, SMTP disabled, and Proof Coordinator's
+image-dependent checks remain skipped.
 
-## Authorized E2E event
+Only `values/scroll-monitor-production.yaml` changed in the deployment values
+directory. All 20 non-monitor workload image sets remain unchanged. This follow-up
+does not change the shared templates' safe default of observe mode for new chains.
 
-The operator explicitly authorized a public `[E2E TEST]` event for Devnet with
-subscriber notifications disabled. Both Instatus template `notify` and integration
-`onFailNotifySubscribers` / `onRecoverNotifySubscribers` were read back as false.
-Only Devnet Batch Publication was bound to the test integration.
+At 10:39 UTC, real automatic publication was verified: Bridge Portal and Block
+Explorer each entered `DEGRADEDPERFORMANCE` with one `INVESTIGATING` incident.
+Their incident IDs are `cmul47kp803ih0xo8kdvj6210` and
+`cmul47jzv00fv1mpcctofraw5`, respectively. These are genuine certificate-related
+incidents, not E2E test events, and were left active for observed recovery.
+Public RPC, Sequencing and Node Sync remained `OPERATIONAL`. No temporary fault
+or recovery expressions were used for this activation.
 
-A temporary, time-bounded monitor expression simulated failure without interrupting
-DA or any chain service. Grafana entered firing, armed the delivery verifier, and
-the verifier persisted a single event identity to its PVC. A diagnostic replay of
-that same queued event with an explicit User-Agent succeeded while debugging the
-outbound client. The corrected worker subsequently retried and acknowledged the
-same event automatically: pending=0, error=0, active=1. Instatus contained one event,
-not a second incident after restart/retry.
+## Severity correction
 
-Incident: `cmukra0l80ds21blcixbapkkw`.
-Created: `2026-09-28T04:37:00.668Z`.
-Title: `[E2E TEST] Devnet Batch Publication: simulated disruption`.
+The initial `DEGRADEDPERFORMANCE` classification above came from an inappropriate
+global template default, not measured slow performance. Both current incidents
+were corrected in place after the endpoint failures were independently reproduced:
+Bridge Portal is `PARTIALOUTAGE`; Block Explorer is `MAJOROUTAGE`. Their original
+IDs and start times remain intact and both are still under investigation. No
+recovery or replacement incident was manufactured, and subscribers were not notified.
 
-The temporary rule was replaced with real DA health, normal 5-minute failure and
-10-minute recovery windows, and the confirmed 1800-second DA deadline. Recovery
-verification started with the replacement delivery Pod at approximately 04:44 UTC.
-Instatus automatically marked the same incident `RESOLVED` at
-`2026-09-28T04:54:14.681Z`. The verifier's error, pending and active-incident metrics
-all returned to 0. No direct management-API incident resolution was used.
-Mainnet/Testnet component identity and status matched the pre-test snapshot.
+The existing creation templates now use these explicit component policies. The
+CLI rejects the old global `incidents.affectedStatus` and requires reviewed
+per-component severity for managed automatic publication. Other existing policies
+were preserved explicitly; this migration does not assert they can classify all
+possible failures. See [severity semantics and remaining dynamic-classification
+work](status-page-severity.md). Fixed template policies remain a limitation of the
+current binary-health publication path.
 
-After recovery, the CLI successfully reapplied the ordinary managed templates while retaining
-`notifySubscribers: false`, the same integration/template IDs, and the existing
-heartbeat. A final provider read confirmed eight Devnet components and Batch
-Publication `OPERATIONAL`. The E2E event remains as a resolved historical record.
-
-## Fixes discovered by live acceptance
-
-- Add the Prometheus-selected instance label to Node Sync and delivery ServiceMonitors.
-- Send the explicit delivery client User-Agent accepted by the provider.
-- Check Blockscout's JSON `/api/v2/stats` endpoint when discovery returns a backend root URL.
-- Persist the integration's create/resolve template IDs in its private receipt.
-- Encode integration templates using `name.default.value` and `message.default.value`.
-- Reconcile and verify subscriber flags on both the templates and the integration.
-- Verify automatic create/publish/recovery flags and template component ownership.
-- Allow heartbeat scheduling jitter with a 180-second period rather than 60 seconds.
-
-The current public integration API behaves differently from its short documentation
-example: minimal label-only/template requests returned HTTP 500 validation errors.
-The corrected shape was verified against this account; the CLI also verifies the
-resulting template and integration policy before producing deployable credentials.
-Older component bindings lacking template IDs require recovery of those IDs from
-the existing integration, not creation of another integration.
-
-## Validation and remaining work
-
-- SDK: 24 status-page template, Node Sync and durable-delivery tests passed.
-- CLI: 57 tests passed with Helm rendering, Prometheus expression scenarios and
-  Alloy runtime checks enabled; final typed-client/policy unit regression passed.
-- CLI TypeScript build passed; targeted ESLint has zero errors.
-- Actual devnet Prometheus, Grafana, official-node collector and Instatus account
-  were used; no chain service fault was injected.
-
-This is not evidence that every public component is automatically updated or
-healthy. WebSocket coverage, sequencing progress, valid withdrawal-processor
-business snapshots, affected public TLS endpoints, and a working internal Grafana
-notification destination still need resolution before enabling those components.
-Planned-maintenance suppression remains deferred as previously agreed. Dstack
-monitoring is a separate internal-only feature; no dstack/GPU runtime was deployed
-in this acceptance run.
+The severity-policy configuration was applied successfully as Helm revision
+**19**. Business workload images are unchanged. Validation passed: 91 CLI
+status-page tests, 29 SDK status-page tests, TypeScript compilation and targeted
+lint (complexity warnings remain). Mainnet/Testnet component identities and
+statuses are unchanged; the corrected public component statuses and future
+creation templates were both read back from Instatus.

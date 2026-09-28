@@ -332,7 +332,7 @@ The SDK [publication guide](status-page-publication.md)
 defines their semantics, operational limits and runtime tests.
 
 New examples select [existing Alloy probes](status-page-alloy.md) for public-entrypoint
-availability. Browser, indexing, WebSocket and sequencing claims are not inferred
+availability. Browser and indexing claims are not inferred
 from HTTP success. Missing `probes.mode` preserves external-mode compatibility.
 
 | Publication input | Ownership / default |
@@ -407,10 +407,13 @@ acceptance on a test target before enabling public subscriber notifications.
 
 ## Delivery status and order
 
-Existing network groups are ready for reuse. Planned-maintenance integration is
-last priority, after Alloy probe acceptance and real Instatus failure/recovery
-acceptance. Until implemented, deploy the component in `manual` before maintenance;
-editing its remote maintenance status alone does not pause local automation.
+Existing network groups are reused. Scheduled suppression is available through
+`publication.maintenanceWindows` (UTC start/end and selected component keys).
+Delivery resumes only after a fresh full confirmation interval. Publish the
+matching Instatus maintenance notice separately; changing remote maintenance
+status alone does not pause local automation. Management API synchronization of
+maintenance notices remains a separate, lower-priority item. See
+[maintenance windows](status-page-maintenance.md).
 
 The Alloy and official Node Sync changes are released as a coordinated SDK/CLI
 pair. The CLI acceptance workflow must pin the corresponding SDK commit; publish

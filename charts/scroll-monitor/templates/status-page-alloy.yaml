@@ -26,4 +26,21 @@
 {{- fail "statusPage Alloy probe identity changed; regenerate" }}
 {{- end }}
 {{- end }}
+{{- if $config.websocketTargets }}
+{{- $containers := .Values.alloy.controller.extraContainers | default list }}
+{{- $found := false }}
+{{- range $container := $containers }}
+{{- if eq $container.name "status-websocket" }}{{- $found = true }}{{- end }}
+{{- end }}
+{{- if not $found }}{{- fail "statusPage WebSocket checks require regenerated Alloy sidecar configuration" }}{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scroll-status-websocket
+data:
+  config.json: {{ dict "websocketTargets" $config.websocketTargets | toJson | quote }}
+  probe.mjs: |
+{{ .Files.Get "scripts/status-page-websocket.mjs" | indent 4 }}
+{{- end }}
 {{- end }}
