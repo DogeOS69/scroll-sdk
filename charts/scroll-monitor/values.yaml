@@ -33,7 +33,7 @@ statusPage:
     heartbeat:
       enabled: false  # [OPERATOR] Enable independent Instatus detection of lost monitoring.
       alertIds: []  # [OPERATOR] Instatus monitor alert destination IDs; required when enabled.
-      # [GENERATED] Cron monitor: 60s period + 180s grace, no public component/incident.
+      # [GENERATED] Cron monitor: 180s period + 180s grace, no public component/incident.
       # [PRIVATE GENERATED] secrets/status-page/heartbeat.json and heartbeat.secret.yaml.
     health:
       failureFor: 5m  # [DEFAULT] Continuous failure confirmation.
