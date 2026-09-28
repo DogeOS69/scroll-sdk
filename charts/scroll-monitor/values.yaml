@@ -460,8 +460,10 @@ kube-prometheus-stack:
       # Scope discovery to the Helm release namespace without requiring
       # monitoring-specific labels on application ServiceMonitors.
       serviceMonitorNamespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: In
+            values: ['{{ .Release.Namespace }}']
       # Blockscout frontend exports through a PodMonitor, without a `release`
       # label. Use the same namespace-scoped discovery contract as Services.
       podMonitorSelector:
@@ -492,3 +494,23 @@ kube-prometheus-stack:
   kube-state-metrics:
     nameOverride: kube-state-metrics
     fullnameOverride: kube-state-metrics
+
+# Optional internal dstack monitoring. Apply values/dstack.yaml as an overlay
+# to also allow ServiceMonitor discovery in the controller namespace.
+dstack:
+  enabled: false
+  namespace: dstack-system
+  # Must match the controller Deployment name (prefer fullnameOverride).
+  controllerName: dstack-controller
+  alerts:
+    enabled: true
+    unavailableFor: 2m
+    failedRunsThreshold: 3
+  # Optional always-on host Alloy collectors; empty inventory permits autoscaling to zero.
+  # Stable host IDs, explicitly retired from this list on decommission.
+  gpuHosts:
+    enabled: false
+    expectedHosts: []
+    staleAfterSeconds: 180
+    unavailableFor: 5m
+    diskAvailableRatio: 0.1

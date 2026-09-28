@@ -48,3 +48,27 @@
 {{- if and .Values.grafana.enabled .Values.monitoring.datasources.loki.enabled (not .Values.loki.enabled) }}
   {{- fail "the bundled Grafana Loki datasource requires loki.enabled=true; disable monitoring.datasources.loki.enabled when logs are not installed" }}
 {{- end }}
+
+{{- if .Values.dstack.enabled }}
+{{- range $value := list .Values.dstack.namespace .Values.dstack.controllerName }}
+{{- if or (not (regexMatch "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$" $value)) (gt (len $value) 63) }}
+{{- fail "dstack namespace/controllerName must be Kubernetes DNS labels" }}
+{{- end }}
+{{- end }}
+{{- if or (not (regexMatch "^[1-9][0-9]*[smh]$" .Values.dstack.alerts.unavailableFor)) (not (regexMatch "^[1-9][0-9]*$" (toString .Values.dstack.alerts.failedRunsThreshold))) }}
+{{- fail "dstack alerts require a positive duration and failedRunsThreshold" }}
+{{- end }}
+{{- if .Values.dstack.gpuHosts.enabled }}
+{{- range .Values.dstack.gpuHosts.expectedHosts }}
+{{- if not (regexMatch "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" .) }}
+{{- fail "dstack.gpuHosts.expectedHosts must contain stable host IDs" }}
+{{- end }}
+{{- end }}
+{{- if or (lt (int .Values.dstack.gpuHosts.staleAfterSeconds) 60) (not (regexMatch "^[1-9][0-9]*[smh]$" .Values.dstack.gpuHosts.unavailableFor)) (le (float64 .Values.dstack.gpuHosts.diskAvailableRatio) 0.0) (ge (float64 .Values.dstack.gpuHosts.diskAvailableRatio) 1.0) }}
+{{- fail "dstack.gpuHosts requires staleAfterSeconds >= 60, a positive duration, and diskAvailableRatio between 0 and 1" }}
+{{- end }}
+{{- if ne (len .Values.dstack.gpuHosts.expectedHosts) (len (uniq .Values.dstack.gpuHosts.expectedHosts)) }}
+{{- fail "dstack.gpuHosts.expectedHosts must be unique" }}
+{{- end }}
+{{- end }}
+{{- end }}

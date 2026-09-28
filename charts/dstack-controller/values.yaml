@@ -90,3 +90,15 @@ terminationGracePeriodSeconds: 60
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Internal monitoring only. Requires Prometheus Operator CRDs when enabled.
+monitoring:
+  enabled: false
+  # Independent of admin/backend credentials. Secret lives in this release namespace.
+  auth:
+    existingSecret: dstack-controller-monitoring
+    key: token
+  interval: 30s
+  scrapeTimeout: 10s
+  # Limits protect Prometheus against unexpectedly large fleet/job label sets.
+  sampleLimit: 50000

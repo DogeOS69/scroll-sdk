@@ -5,6 +5,9 @@
 {{- if not $namespaces -}}
   {{- $namespaces = list .Release.Namespace -}}
 {{- end -}}
+{{- if .Values.dstack.enabled -}}
+{{- $namespaces = append $namespaces .Values.dstack.namespace | uniq -}}
+{{- end -}}
 ---
 apiVersion: v1
 kind: ConfigMap

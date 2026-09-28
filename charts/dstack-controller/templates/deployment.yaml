@@ -59,6 +59,19 @@ spec:
                   name: {{ .Values.database.existingSecret | quote }}
                   key: {{ .Values.database.key | quote }}
             {{- end }}
+            {{- if .Values.monitoring.enabled }}
+            - name: DSTACK_ENABLE_PROMETHEUS_METRICS
+              value: "1"
+            - name: DSTACK_OTEL_METRICS_ENABLED
+              value: "1"
+            - name: DSTACK_OTEL_METRICS_EXPORTERS
+              value: prometheus
+            - name: DSTACK_PROMETHEUS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.monitoring.auth.existingSecret | quote }}
+                  key: {{ .Values.monitoring.auth.key | quote }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

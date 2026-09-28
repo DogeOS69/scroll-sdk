@@ -4,7 +4,7 @@
 {{- if and .Values.ingress.enabled (empty .Values.ingress.hosts) -}}
 {{- fail "ingress.hosts must be set when ingress is enabled" -}}
 {{- end -}}
-{{- $reserved := list "HOME" "DSTACK_SERVER_DIR" "DSTACK_SERVER_ADMIN_TOKEN" "DSTACK_DATABASE_URL" "DSTACK_SERVER_PORT" "DSTACK_SERVER_HOST" "DSTACK_SERVER_CONFIG_DISABLED" "DSTACK_DEFAULT_CREDS_DISABLED" -}}
+{{- $reserved := list "HOME" "DSTACK_SERVER_DIR" "DSTACK_SERVER_ADMIN_TOKEN" "DSTACK_DATABASE_URL" "DSTACK_SERVER_PORT" "DSTACK_SERVER_HOST" "DSTACK_SERVER_CONFIG_DISABLED" "DSTACK_DEFAULT_CREDS_DISABLED" "DSTACK_ENABLE_PROMETHEUS_METRICS" "DSTACK_PROMETHEUS_AUTH_TOKEN" "DSTACK_OTEL_METRICS_ENABLED" "DSTACK_OTEL_METRICS_EXPORTERS" -}}
 {{- $seen := dict -}}
 {{- range .Values.extraEnv -}}
 {{- if or (has .name $reserved) (hasKey $seen .name) -}}
@@ -18,4 +18,17 @@
 {{- fail (printf "duplicate credentialSecrets name: %s" .name) -}}
 {{- end -}}
 {{- $_ := set $mounts .name true -}}
+{{- end -}}
+
+{{- if and .Values.monitoring.enabled (or (eq .Values.monitoring.auth.existingSecret .Values.auth.existingSecret) (eq .Values.monitoring.auth.existingSecret .Values.serverConfig.existingSecret) (eq .Values.monitoring.auth.existingSecret .Values.database.existingSecret)) -}}
+{{- fail "monitoring.auth.existingSecret must be separate from controller credentials" -}}
+{{- end -}}
+{{- if .Values.monitoring.enabled -}}
+{{- $interval := .Values.monitoring.interval -}}
+{{- $timeout := .Values.monitoring.scrapeTimeout -}}
+{{- $intervalSeconds := int (trimSuffix "s" $interval) -}}
+{{- $timeoutSeconds := int (trimSuffix "s" $timeout) -}}
+{{- if gt $timeoutSeconds $intervalSeconds -}}
+{{- fail "monitoring.scrapeTimeout must not exceed monitoring.interval" -}}
+{{- end -}}
 {{- end -}}
