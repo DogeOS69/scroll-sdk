@@ -72,7 +72,7 @@ they never resolve a public incident.
 New examples select `probes.mode: alloy`: HTTP entrypoint availability and response
 patterns for Public RPC, Bridge and Blockscout, with coverage exposed in readiness
 and public descriptions. This does not prove browser rendering or indexing freshness.
-Sequencing requires a custom rule; enabled WebSocket RPC leaves its built-in unready.
+Official continuous sequencers use the reference collector for block-age checks; other sequencing modes require a custom rule. Configured WebSocket RPC uses a supplemental container inside the existing Alloy Pod, with real read-only JSON-RPC exchanges.
 Official Node Sync and business rules are unchanged. Details: [Alloy](status-page-alloy.md).
 
 The following table describes the deeper **external** probe mode and the shared
@@ -263,4 +263,4 @@ them; group creation automation is not an outstanding delivery item. Maintenance
 window integration is deferred until after the probe deployment and live public
 failure/recovery acceptance. Until then, deploy a component in `manual` before
 operator-led maintenance or incident takeover; changing Instatus alone does not
-pause local automatic delivery. No new maintenance automation is claimed here.
+pause local automatic delivery. Scheduled per-component suppression is available through `publication.maintenanceWindows`; see [maintenance windows](status-page-maintenance.md). Publish the corresponding Instatus notice separately.

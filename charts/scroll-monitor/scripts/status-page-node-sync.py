@@ -164,7 +164,29 @@ def observe(config, client, now=None):
     return results
 
 
-def metrics(config, results, observed, reason="unknown"):
+def sequencing(config, client, now=None):
+    """Reference-only observation; follower failures cannot classify the sequencer.
+
+    A reachable, correctly identified reference with an old head is affected.
+    Missing discovery/RPC evidence is unknown, not an asserted sequencer outage.
+    """
+    source = config["reference"]
+    pods = client.discover(source)
+    if len(pods) != 1 or not pods[0]["ready"]:
+        raise Unknown("reference_not_ready")
+    pod = pods[0]
+    if quantity(client.rpc(pod, source, "eth_chainId", [])) != int(config["chainId"]):
+        raise Unknown("reference_wrong_chain")
+    head = block(client.rpc(pod, source, "eth_getBlockByNumber", ["latest", False]))
+    if client.discover(source) != pods:
+        raise Unknown("population_changed")
+    age = (time.time() if now is None else now) - head[1]
+    if age < 0:
+        raise Unknown("future_block_time")
+    return int(age > config["maxBlockAgeSeconds"])
+
+
+def metrics(config, results, observed, reason="unknown", sequence=None):
     identity = {"environment": config["environment"], "chain_id": config["chainId"], "component_key": "node-sync"}
     labels = lambda fields: ",".join(f"{key}={json.dumps(str(value))}" for key, value in fields.items())
     lines = [f"scroll_status_node_sync_timestamp_seconds{{{labels(identity)}}} {observed}"]
@@ -173,6 +195,10 @@ def metrics(config, results, observed, reason="unknown"):
         lines.append(f"scroll_status_node_sync_affected{{{labels(identity)}}} {max(row[2] for row in results)}")
         for role, pod, affected, reason in results:
             lines.append(f"scroll_status_node_sync_member_affected{{{labels({**identity, 'role': role, 'pod_name': pod, 'reason': reason})}}} {affected}")
+    seq_identity = {**identity, "component_key": "sequencing"}
+    lines.append(f"scroll_status_sequencing_timestamp_seconds{{{labels(seq_identity)}}} {observed}")
+    if sequence is not None:
+        lines.append(f"scroll_status_sequencing_affected{{{labels(seq_identity)}}} {sequence}")
     return ("\n".join(lines) + "\n").encode()
 
 
@@ -188,6 +214,10 @@ def main():
             observed = time.time()  # Never rejuvenate an old round with its completion time.
             client.deadline = start + 60
             try:
+                sequence = sequencing(config, client)
+            except Exception:
+                sequence = None
+            try:
                 results = observe(config, client)
                 reason = "complete"
             except Exception as error:
@@ -196,7 +226,7 @@ def main():
                 results = None
                 reason = str(error) if isinstance(error, Unknown) else "request_or_decode_error"
             with lock:
-                state.update(body=metrics(config, results, observed, reason), tick=time.monotonic())
+                state.update(body=metrics(config, results, observed, reason, sequence), tick=time.monotonic())
             time.sleep(max(1, 30 - (time.monotonic() - start)))
 
     class Handler(BaseHTTPRequestHandler):

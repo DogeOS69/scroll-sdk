@@ -193,6 +193,15 @@ data:
 
     {{- if $statusProbes }}
     {{- $probe := .Values.statusPage.generated.alloyProbes }}
+    {{- if $probe.websocketTargets }}
+    prometheus.scrape "status_websocket" {
+      targets = [{ __address__ = "127.0.0.1:9113" }]
+      job_name = "status-page-alloy-websocket"
+      scrape_interval = "30s"
+      scrape_timeout = "10s"
+      forward_to = [prometheus.remote_write.scroll.receiver]
+    }
+    {{- end }}
     prometheus.exporter.blackbox "status_page" {
       config = {{ dict "modules" $probe.modules | toJson | quote }}
       {{- range $target := $probe.targets }}

@@ -64,6 +64,13 @@ class Delivery:
         self.memory = {}
         self.send = send or request_json
         self.last_tick = 0
+        self.windows = config.get("maintenanceWindows", [])
+        for window in self.windows:
+            if (not isinstance(window.get("start"), (int, float)) or
+                    not isinstance(window.get("end"), (int, float)) or
+                    not math.isfinite(window["start"]) or not math.isfinite(window["end"]) or
+                    window["end"] <= window["start"] or not isinstance(window.get("components"), list)):
+                raise ValueError("invalid maintenance window")
         for key, component in self.components.items():
             identity = json.dumps([config["environment"], config["chainId"], component["pageId"], component["componentId"]])
             row = self.db.execute("SELECT identity FROM events WHERE key=?", (key,)).fetchone()
@@ -111,6 +118,13 @@ class Delivery:
         with self.lock:
             for key, component in self.components.items():
                 state = self.memory.setdefault(key, {})
+                state["maintenance"] = any(key in w["components"] and w["start"] <= now < w["end"] for w in self.windows)
+                if state["maintenance"]:
+                    # Preserve durable active/pending identity; never create or
+                    # resolve incidents inside the window. Restart confirmation
+                    # from fresh evidence after the window, including restarts.
+                    state.update(last=now, value=None, since=now)
+                    continue
                 value = samples.get(key)
                 if value not in (0, 1):
                     value = None
@@ -170,6 +184,7 @@ class Delivery:
                 labels = f'component_key="{key}"'
                 lines.append(f'scroll_status_delivery_observation_known{{{labels}}} {int(state.get("value") is not None)}')
                 lines.append(f'scroll_status_delivery_error{{{labels}}} {state.get("delivery_error", 0)}')
+                lines.append(f'scroll_status_delivery_maintenance{{{labels}}} {int(state.get("maintenance", False))}')
                 active, pending = self.db.execute("SELECT active, pending FROM events WHERE key=?", (key,)).fetchone()
                 lines.append(f'scroll_status_delivery_pending{{{labels}}} {int(pending is not None)}')
                 lines.append(f'scroll_status_delivery_incident_active{{{labels}}} {int(active is not None)}')

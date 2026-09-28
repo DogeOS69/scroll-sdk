@@ -52,7 +52,7 @@ CLI 现有来源链：`spec.frontend.hosts.frontend` → `frontends-production.y
    设置真实出块模式、块龄、延迟和采样新鲜度；未填写的业务 deadline 保持未配置。
 3. 选择 `probes.mode: alloy`，核实自动派生的公网 RPC、Bridge 和 Blockscout API 地址。
    该模式检查入口可用性，不证明浏览器渲染或索引新鲜度；参见 [Alloy 探测](status-page-alloy.md)。
-   Sequencing 需自定义指标规则，已启用 WebSocket 的 RPC 需额外覆盖，否则保持未就绪。
+   官方连续出块模式的 Sequencing 复用参考节点采集器；WSS 由现有 Alloy Pod 内的辅助容器检查。其他出块模式仍需自定义规则。
    Node Sync 可选择 official，填写活跃 sequencer 和各 follower 的 values/release。
 4. 复用现有 Alloy 单副本，确认 DNS 实际走公网入口、TLS 有效、私网 remote-write 可用。
    首版不部署额外探针 Pod。需要完整浏览器/链一致性检查时才选择可选 external 模式。

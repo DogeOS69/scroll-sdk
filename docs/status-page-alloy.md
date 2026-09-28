@@ -1,8 +1,9 @@
 # Public-entrypoint probes in the existing Alloy
 
 Decision: use each chain's existing Alloy instance to request its public domains.
-No additional probe Pod, exporter deployment, Grafana plugin or external VM is
-required for this mode. Generate configuration offline, review it, and apply it
+No additional probe Pod or external VM is required. When public WebSocket URLs
+are configured, the CLI adds a small Node.js helper container to the existing
+Alloy Pod; Alloy scrapes it over localhost and reuses its private remote-write path. Generate configuration offline, review it, and apply it
 through the normal monitoring deployment workflow. This document does not claim
 that any particular chain has been deployed or its public status verified.
 
@@ -79,13 +80,15 @@ when using the separate deep-probe chart. `--probe-values` is rejected in Alloy 
 
 | Component | Alloy evidence | Deliberately not established by that evidence |
 | --- | --- | --- |
-| Public RPC | Each public HTTP endpoint accepts `eth_chainId` and `eth_blockNumber`; expected response patterns, JSON content type, latency | Full JSON validation, block contents/freshness, cross-node consistency, transaction inclusion, WebSocket |
+| Public RPC | Each public HTTP endpoint accepts `eth_chainId` and `eth_blockNumber`; expected response patterns, JSON content type, latency | Full JSON validation, block contents/freshness, cross-node consistency, transaction inclusion |
 | Bridge Portal | Each page returns HTML/200; each derived history API returns JSON content type/200; optional body assertions | Browser rendering, CORS/browser fetch, wallet behavior, API JSON-path semantics, successful deposit/withdrawal |
 | Block Explorer | Frontend returns HTML/200 and configured backend APIs return JSON content type/200 | Browser rendering, indexing freshness or canonical block-hash agreement |
 
 The CLI records `coverage: public-entrypoint` in readiness and narrows these public
-component descriptions to availability. An enabled WebSocket endpoint makes the
-Public RPC built-in unready, rather than silently excluding it. Missing Bridge or
+component descriptions to availability. Configured WebSocket endpoints execute real chain-ID and block-number JSON-RPC
+exchanges in the supplemental container, including TLS validation, response IDs,
+quantity validation, timeouts and latency. Missing or stale helper telemetry
+keeps Public RPC unknown; a failed exchange is affected. Missing Bridge or
 Explorer API endpoints also leave the corresponding built-in unready.
 
 The pinned Blackbox implementation supports response regular expressions, not a
@@ -93,8 +96,11 @@ general JSON parser or arbitrary Python/JavaScript execution. A pattern match is
 not a full semantic JSON validation. Do not describe these checks as equivalent
 to the optional browser/chain-aware external checks.
 
-Sequencing remains unready in Alloy mode until a suitable custom metric expression
-is supplied. Returning a block number alone does not prove new blocks or accepted
+With official Node Sync and continuous block production, Sequencing uses the
+existing collector to read the active reference sequencer directly. A fresh valid
+reference with an old block is affected; missing RPC/discovery evidence is unknown.
+Follower failure does not itself mark Sequencing affected. Other modes still need
+a custom metric expression. Returning a block number alone does not prove new blocks or accepted
 transactions are progressing. Official Node Sync and the application business
 metrics retain their existing rules; business deadlines still require confirmed
 operator inputs. No missing check is replaced with a constant healthy expression.

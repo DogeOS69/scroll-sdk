@@ -20,7 +20,11 @@ statusPage:
   # [OPERATOR] Independent component modes: manual, observe or automatic.
   # Observe is the default. Missing evidence never means Operational.
   publication:
-    observationContactPointName: grafana-default-email  # Existing INTERNAL receiver; configure real SMTP/contact delivery.
+    observationContactPointName: slack-alerts  # [OPERATOR] Existing INTERNAL Slack contact point; configure the Secret-backed example below.
+    # [OPERATOR] UTC windows pause public delivery only for selected components.
+    # Deploy before the window; after it ends, fresh failure/recovery windows restart.
+    maintenanceWindows: []
+    # - {id: planned-upgrade, start: '2026-12-01T01:00:00Z', end: '2026-12-01T02:00:00Z', components: [sequencing, node-sync]}
     delivery:
       enabled: true  # Validate health and recovery before forwarding component webhooks.
       image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
@@ -28,7 +32,6 @@ statusPage:
       storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
     incidents:
       manageTemplates: true  # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
-      affectedStatus: DEGRADEDPERFORMANCE  # [DEFAULT] One severity per component; operators can escalate.
       notifySubscribers: false  # [OPERATOR] Opt in after incident wording and delivery acceptance.
     heartbeat:
       enabled: false  # [OPERATOR] Enable independent Instatus detection of lost monitoring.
@@ -64,9 +67,11 @@ statusPage:
       # Optional per-source service overrides templated/custom names. replicas: 0 excludes intentional standby.
       # All selected follower Pods must be observed. A missing/stale reference produces unknown.
     probes:
+      websocketImage: node:22.23.3-alpine3.23  # [DEFAULT] Auxiliary container in the existing Alloy Pod when WSS is configured.
       mode: alloy  # [OPERATOR] Existing Alloy probes public entrypoints; external retains browser/chain-aware probes.
       # [SCOPE] Alloy checks HTTP/TLS, RPC chain ID/block-number patterns and API availability.
-      # It does not prove browser rendering, indexing freshness, sequencing or WebSocket health.
+      # Browser rendering and indexing freshness require external checks.
+      # WebSocket uses the Alloy helper; continuous sequencing uses the official reference collector.
       # CLI narrows public descriptions/readiness accordingly; unsupported built-ins stay unready.
       # Automatic publication in alloy mode requires heartbeat.enabled + internal alertIds above.
       alloyChecks: []  # [OPTIONAL] Additional GET body assertions using RE2, combined with all generated checks.
@@ -81,6 +86,10 @@ statusPage:
       explorerSelector: ""  # [OPERATOR] EXTERNAL ONLY: Reviewed CSS selector proving rendered explorer data.
       nodeRpcUrl: ""  # [OPERATOR] Independently operated sync canary; override per external probe location.
       nodeDependencyChecks: []  # [OPERATOR] Semantic JSON checks for public bootstrap/DA dependencies.
+    # [REQUIRED BEFORE AUTOMATIC] Set components.<key>.affectedStatus after reviewing
+    # that rule's impact: DEGRADEDPERFORMANCE / PARTIALOUTAGE / MAJOROUTAGE.
+    # No implicit severity. A binary built-in does NOT dynamically distinguish them.
+    # Mixed latency/availability rules need separate severity evidence for dynamic grading.
     components:
       public-rpc: {mode: observe, rule: {builtin: true}}
       sequencing: {mode: observe, rule: {builtin: true}}
@@ -128,6 +137,25 @@ statusPage:
   # Neither API key, webhook URL nor integration ID belongs in this YAML.
 
 grafana:
+  # [OPERATOR] First notification acceptance target: Slack. Email stays disabled.
+  # Create the Secret outside values; never commit a Slack webhook URL.
+  # Merge into the existing envValueFrom/alerting mappings (do not duplicate keys).
+  # envValueFrom:
+  #   GRAFANA_SLACK_WEBHOOK_URL:
+  #     secretKeyRef: {name: grafana-slack, key: webhook-url}
+  # alerting:
+  #   internal-slack.yaml:
+  #     apiVersion: 1
+  #     contactPoints:
+  #       - orgId: 1
+  #         name: slack-alerts
+  #         receivers:
+  #           - uid: internal-slack
+  #             type: slack
+  #             disableResolveMessage: false
+  #             settings:
+  #               url: $GRAFANA_SLACK_WEBHOOK_URL
+  #               recipient: ''  # Fill the internal Slack channel manually.
   # Optional Instatus native webhook; no custom publisher or management API key.
   # Create the referenced Secret in Grafana's namespace with the URL generated
   # by CLI --apply --create-webhook or Instatus > Apps > Grafana. Never inline the URL.

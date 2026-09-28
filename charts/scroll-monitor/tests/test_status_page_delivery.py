@@ -44,6 +44,32 @@ class DeliveryTests(unittest.TestCase):
         self.tick(1, 100, 110, 120)
         self.assertEqual([event['status'] for event in self.sent], ['firing'])
 
+    def test_maintenance_blocks_failure_and_requires_a_new_complete_window(self):
+        self.delivery.windows = [{'start': 110, 'end': 150, 'components': ['public-rpc']}]
+        self.delivery.notify('public-rpc', self.firing, 100)
+        self.tick(1, 100, 110, 120, 130, 140)
+        self.assertEqual(self.sent, [])
+        self.assertIn('scroll_status_delivery_maintenance{component_key="public-rpc"} 1', self.delivery.metrics())
+        self.tick(1, 150, 160)
+        self.assertEqual(self.sent, [])
+        self.tick(1, 170)
+        self.assertEqual([e['status'] for e in self.sent], ['firing'])
+
+    def test_maintenance_preserves_active_incident_across_restart(self):
+        self.fire()
+        self.config['maintenanceWindows'] = [{'start': 130, 'end': 180, 'components': ['public-rpc']}]
+        self.delivery.db.close()
+        self.delivery = self.open()
+        self.tick(0, 130, 140, 150, 160, 170, 180, 190, 200)
+        self.assertEqual(len(self.sent), 1)
+        self.tick(0, 210)
+        self.assertEqual(self.sent[-1]['status'], 'resolved')
+        self.assertEqual(self.sent[0]['groupKey'], self.sent[-1]['groupKey'])
+
+    def test_another_component_maintenance_does_not_pause_this_component(self):
+        self.delivery.windows = [{'start': 90, 'end': 200, 'components': ['node-sync']}]
+        self.fire()
+
     def test_unknown_lifecycle_and_short_recovery_cannot_resolve(self):
         self.fire()
         self.assertFalse(self.delivery.notify('public-rpc', {'status': 'resolved'}, 125))

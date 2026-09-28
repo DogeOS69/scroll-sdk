@@ -55,6 +55,21 @@ class NodeSyncTests(unittest.TestCase):
     def observe(self):
         return mod.observe(self.config, self.client, 1300)
 
+    def test_sequencing_stale_reference_is_affected_but_follower_failure_is_not(self):
+        self.client.heads['rpc-1'] = 0
+        self.assertEqual(mod.sequencing(self.config, self.client, 1300), 0)
+        self.assertEqual(mod.sequencing(self.config, self.client, 1421), 1)
+        self.client.chains['seq-0'] = 1
+        with self.assertRaises(mod.Unknown):
+            mod.sequencing(self.config, self.client, 1300)
+
+    def test_sequencing_missing_or_future_reference_is_unknown(self):
+        with self.assertRaises(mod.Unknown):
+            mod.sequencing(self.config, self.client, 1299)
+        self.client.pods['seq'] = []
+        with self.assertRaises(mod.Unknown):
+            mod.sequencing(self.config, self.client, 1300)
+
     def test_every_replica_is_checked_and_normal_head_race_is_allowed(self):
         self.client.heads['rpc-0'] = 99
         self.client.heads['rpc-1'] = 101
