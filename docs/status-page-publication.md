@@ -49,7 +49,7 @@ with private metric collection; its deployment is not required for Alloy mode.
 | `observe` | Built-in or custom rule evaluates when required inputs exist | Internal observation receiver only |
 | `automatic` | Requires configured health inputs and an applied component binding | Verified failure and, when delivery is enabled, verified recovery |
 
-All production examples default to `observe` with `rule.builtin: true`. Missing
+All production examples default to `automatic` with `rule.builtin: true`. Explicit `observe` remains an opt-out. Automatic generation rejects missing required inputs rather than downgrading publication. Missing
 configuration is reported explicitly; missing observations do not manufacture
 `vector(0)` health. CLI readiness is **configuration readiness, not live health**.
 Existing values without a publication block retain the legacy bootstrap path.
@@ -264,3 +264,9 @@ window integration is deferred until after the probe deployment and live public
 failure/recovery acceptance. Until then, deploy a component in `manual` before
 operator-led maintenance or incident takeover; changing Instatus alone does not
 pause local automatic delivery. Scheduled per-component suppression is available through `publication.maintenanceWindows`; see [maintenance windows](status-page-maintenance.md). Publish the corresponding Instatus notice separately.
+
+WF stalls are included in both deposit and withdrawal health. A fresh, online WP
+with overdue active work and no WF progress for `health.wfStallSeconds` (3600 by
+default) produces a public failure even when the corresponding business snapshot
+is invalid. An idle WF is not an outage. Both WF and business health must be known
+healthy to recover. See [the WF rule contract](status-page-health-rules.md#wf-停滞影响充值和提现).

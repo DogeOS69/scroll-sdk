@@ -18,7 +18,7 @@ statusPage:
       name: instatus-grafana-webhook  # [LEGACY] Bootstrap Secret; component references are generated below.
       key: url  # [LEGACY] Bootstrap Secret data key.
   # [OPERATOR] Independent component modes: manual, observe or automatic.
-  # Observe is the default. Missing evidence never means Operational.
+  # Automatic is the default; configure inputs and webhook bindings before deployment.
   publication:
     observationContactPointName: slack-alerts  # [OPERATOR] Existing INTERNAL Slack contact point; configure the Secret-backed example below.
     # [OPERATOR] UTC windows pause public delivery only for selected components.
@@ -48,6 +48,7 @@ statusPage:
       maxIndexLagSeconds: 120  # [DEFAULT] Explorer indexed block vs canonical RPC block time.
       maxNodeLagSeconds: 120  # [DEFAULT] Follower/canary lag measured in canonical block time.
       depositDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Set confirmed normal processing deadline; 0 means unconfigured.
+      wfStallSeconds: 3600  # [DEFAULT] No WF progress with overdue queued/in-flight work; affects BOTH deposits and withdrawals.
       withdrawalDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Count only protocol-eligible, unfulfilled withdrawals.
       batchPublicationDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Include time awaiting transaction confirmation.
       ethDaSubmitterJobRegex: eth-da-submitter  # [OPERATOR] Prometheus job for the actual publisher.
@@ -81,6 +82,8 @@ statusPage:
       metricsTargets: []  # [OPERATOR] EXTERNAL ONLY: Private host:port per location; empty in alloy mode.
       # Empty if your existing private federation/remote-write already supplies the probe metrics.
       sequencingMode: auto  # [DERIVED] Selected reth.sequencer.allowEmptyBlocks; on-demand requires a custom eligible-work rule.
+      # Set bridgeChecks: disabled in Alloy mode when the legacy history API is retired.
+      # This explicitly monitors page availability only; auto still requires the API.
       bridgeChecks: auto  # [DERIVED] Frontend history /txs API; Alloy uses URLs only. JSON path/type overrides require external mode.
       explorerApiUrls: []  # [GENERATED/OPERATOR] CLI can derive Blockscout backend ingress; [] requires an override.
       explorerSelector: ""  # [OPERATOR] EXTERNAL ONLY: Reviewed CSS selector proving rendered explorer data.
@@ -91,14 +94,14 @@ statusPage:
     # No implicit severity. A binary built-in does NOT dynamically distinguish them.
     # Mixed latency/availability rules need separate severity evidence for dynamic grading.
     components:
-      public-rpc: {mode: observe, rule: {builtin: true}}
-      sequencing: {mode: observe, rule: {builtin: true}}
-      deposits: {mode: observe, rule: {builtin: true}}
-      withdrawals: {mode: observe, rule: {builtin: true}}
-      batch-publication: {mode: observe, rule: {builtin: true}}
-      node-sync: {mode: observe, rule: {builtin: true}}
-      bridge-portal: {mode: observe, rule: {builtin: true}}
-      block-explorer: {mode: observe, rule: {builtin: true}}
+      public-rpc: {mode: automatic, rule: {builtin: true}}
+      sequencing: {mode: automatic, rule: {builtin: true}}
+      deposits: {mode: automatic, affectedStatus: MAJOROUTAGE, rule: {builtin: true}}
+      withdrawals: {mode: automatic, affectedStatus: MAJOROUTAGE, rule: {builtin: true}}
+      batch-publication: {mode: automatic, rule: {builtin: true}}
+      node-sync: {mode: automatic, rule: {builtin: true}}
+      bridge-portal: {mode: automatic, rule: {builtin: true}}
+      block-explorer: {mode: automatic, rule: {builtin: true}}
     # Custom rule alternative: {builtin: false, expr: '<EXACTLY_ONE_0_OR_1_SERIES>', for: 5m}
     # 0=healthy, 1=affected, absent=unknown; expression must enforce source completeness/freshness.
     # [GENERATED] Per-component instatus-<key> contact point, rule UID status-<key>.
@@ -257,13 +260,12 @@ balanceMonitoring:
     intervalSeconds: 60
     rpcTimeoutSeconds: 10
 
-# Generator/operator decision: enable only when TSO is deployed and its own
-# chart does not create a ServiceMonitor. The TSO production example already
-# enables an application-owned monitor; legacy deployments may need this one.
-# Derive selector labels and named ports from the generated TSO Service.
+# TSO is scraped by scroll-monitor by default. Keep the TSO chart's own
+# ServiceMonitor disabled to avoid duplicate scraping of the same endpoint.
+# Disable this entry only when another chart owns it or TSO is absent.
 additionalServiceMonitors:
   tso:
-    enabled: false
+    enabled: true
     selector:
       matchLabels:
         app.kubernetes.io/name: tso-service

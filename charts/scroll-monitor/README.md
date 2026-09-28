@@ -552,7 +552,7 @@ for reliable public automation. None of this requires exposing private monitorin
 
 
 Component publication generation is available through `statusPage.publication`.
-Each component defaults to observe and may independently use manual or automatic
+Each component defaults to automatic and may explicitly use manual or observe
 mode. See [the publication configuration guide](../../docs/status-page-publication.md)
 for the health-expression contract, private component bindings, direct Grafana
 routing, verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
