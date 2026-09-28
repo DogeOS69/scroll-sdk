@@ -359,6 +359,52 @@
     },
     "affinity": {
       "type": "object"
+    },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string",
+              "minLength": 1
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "existingSecret",
+            "key"
+          ]
+        },
+        "interval": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*s$"
+        },
+        "scrapeTimeout": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*s$"
+        },
+        "sampleLimit": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "auth",
+        "interval",
+        "scrapeTimeout",
+        "sampleLimit"
+      ]
     }
   },
   "required": [
@@ -386,6 +432,7 @@
     "terminationGracePeriodSeconds",
     "nodeSelector",
     "tolerations",
-    "affinity"
+    "affinity",
+    "monitoring"
   ]
 }

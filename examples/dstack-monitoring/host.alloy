@@ -1,0 +1,45 @@
+// Optional, always-on Alloy service on a Linux GPU host (not inside a task).
+// Required environment: DSTACK_HOST_ID, DSTACK_NAMESPACE, DSTACK_CONTROLLER,
+// DSTACK_REMOTE_WRITE_URL, DSTACK_REMOTE_WRITE_TOKEN_FILE.
+// Run with --server.http.listen-addr=127.0.0.1:12345 and a persistent storage path.
+prometheus.exporter.unix "host" {
+  set_collectors = ["cpu", "diskstats", "filesystem", "loadavg", "meminfo", "netdev", "time", "uname"]
+}
+
+prometheus.scrape "host" {
+  targets         = prometheus.exporter.unix.host.targets
+  job_name        = "dstack-host"
+  scrape_interval = "30s"
+  scrape_timeout  = "10s"
+  forward_to      = [prometheus.relabel.host.receiver]
+}
+
+prometheus.relabel "host" {
+  forward_to = [prometheus.remote_write.monitor.receiver]
+  rule {
+    target_label = "dstack_host"
+    replacement  = sys.env("DSTACK_HOST_ID")
+  }
+  rule {
+    target_label = "dstack_namespace"
+    replacement  = sys.env("DSTACK_NAMESPACE")
+  }
+  rule {
+    target_label = "dstack_controller"
+    replacement  = sys.env("DSTACK_CONTROLLER")
+  }
+  rule {
+    target_label = "dstack_source"
+    replacement  = "host"
+  }
+}
+
+prometheus.remote_write "monitor" {
+  endpoint {
+    url = sys.env("DSTACK_REMOTE_WRITE_URL")
+    authorization {
+      type             = "Bearer"
+      credentials_file = sys.env("DSTACK_REMOTE_WRITE_TOKEN_FILE")
+    }
+  }
+}

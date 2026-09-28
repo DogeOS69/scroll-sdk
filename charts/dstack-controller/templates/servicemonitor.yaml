@@ -1,0 +1,34 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "dstack-controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames: [{{ .Release.Namespace | quote }}]
+  selector:
+    matchLabels:
+      {{- include "dstack-controller.selectorLabels" . | nindent 6 }}
+  sampleLimit: {{ .Values.monitoring.sampleLimit }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.interval }}
+      scrapeTimeout: {{ .Values.monitoring.scrapeTimeout }}
+      honorLabels: false
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ .Values.monitoring.auth.existingSecret | quote }}
+          key: {{ .Values.monitoring.auth.key | quote }}
+      relabelings:
+        - targetLabel: dstack_controller
+          replacement: {{ include "dstack-controller.fullname" . | quote }}
+        - targetLabel: dstack_namespace
+          replacement: {{ .Release.Namespace | quote }}
+        - targetLabel: dstack_source
+          replacement: native
+{{- end }}

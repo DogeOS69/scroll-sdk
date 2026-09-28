@@ -1,0 +1,11 @@
+// OPTIONAL: append to host.alloy only when a persistent host DCGM exporter exists.
+// Reuse an existing exporter; do not start another hostengine blindly.
+// DSTACK_DCGM_ADDRESS must be its actual loopback address, e.g. 127.0.0.1:9400.
+// A task-scoped shim exporter is not an always-on host exporter.
+prometheus.scrape "dcgm" {
+  targets         = [{"__address__" = sys.env("DSTACK_DCGM_ADDRESS")}]
+  job_name        = "dstack-host-dcgm"
+  scrape_interval = "30s"
+  scrape_timeout  = "10s"
+  forward_to      = [prometheus.relabel.host.receiver]
+}

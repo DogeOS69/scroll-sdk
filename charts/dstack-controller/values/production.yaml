@@ -11,3 +11,14 @@ resources:
     memory: 1Gi
   limits:
     memory: 4Gi
+
+# Opt in after creating the monitoring Secret and installing Prometheus Operator.
+# Apply the companion scroll-monitor dstack overlay as documented.
+monitoring:
+  enabled: false
+  auth:
+    existingSecret: dstack-controller-monitoring
+    key: token
+  interval: 30s
+  scrapeTimeout: 10s
+  sampleLimit: 50000

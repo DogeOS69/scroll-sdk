@@ -48,6 +48,14 @@
 {{- $groups = concat $groups $serviceGroups -}}
 {{- end -}}
 {{- end -}}
+{{- if and .Values.dstack.enabled .Values.dstack.alerts.enabled -}}
+{{- $dstack := .Files.Get "alerts/dstack.yaml" | replace "__DSTACK_NAMESPACE__" .Values.dstack.namespace | replace "__DSTACK_CONTROLLER__" .Values.dstack.controllerName | replace "__DSTACK_UNAVAILABLE_FOR__" .Values.dstack.alerts.unavailableFor | replace "__DSTACK_FAILED_RUNS__" (toString .Values.dstack.alerts.failedRunsThreshold) | fromYaml -}}
+{{- $groups = concat $groups $dstack.groups -}}
+{{- if .Values.dstack.gpuHosts.enabled -}}
+{{- $hostGroups := include "scroll-monitor.dstackHostRules" . | fromYaml -}}
+{{- $groups = concat $groups $hostGroups.groups -}}
+{{- end -}}
+{{- end -}}
 {{/* Migration metadata belongs to the Grafana seeder, not Prometheus rules. */}}
 {{- if not $grafanaManaged -}}
 {{- range $group := $groups -}}

@@ -181,3 +181,9 @@ host credentials. It checks HTTP readiness, authenticated API access and
 identity persistence after container recreation, then removes its container
 and volume. It does not verify Kubernetes CSI/Ingress, external PostgreSQL or
 real provider provisioning; those require a separate isolated deployment test.
+
+## Internal monitoring
+
+Enable `monitoring.enabled` to expose authenticated native metrics and create a
+ServiceMonitor. See [the monitoring guide](../../examples/dstack-monitoring/README.md)
+for CLI generation, namespace discovery, GPU coverage, and optional host Alloy.

@@ -545,3 +545,10 @@ mode. See [the publication configuration guide](../../docs/status-page-publicati
 for the health-expression contract, private component bindings, direct Grafana
 routing, verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
 installing the default values.
+
+## Dstack and GPU monitoring
+
+Apply `values/dstack.yaml` after production values to enable internal controller
+alerts, the Dstack/GPU dashboard, cross-namespace ServiceMonitor discovery and
+controller logs. See [the integration guide](../../examples/dstack-monitoring/README.md).
+This does not configure public status-page routing.
