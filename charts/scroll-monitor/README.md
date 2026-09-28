@@ -403,7 +403,7 @@ production stack:
 
 | Dashboard coverage | Services | Source |
 | --- | --- | --- |
-| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `proof-coordinator`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
+| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
 | External native application metrics | `attestation-signer` | Operator-managed Prometheus scrape target |
 | Exporter-backed application metrics | `dogecoin` | Prometheus metrics exporter |
 | Runtime health and logs | All Kubernetes workloads | kube-state-metrics, cAdvisor, and Loki |
@@ -413,7 +413,8 @@ Dedicated dashboards cover `attestation-signer`, `proof-coordinator`, and
 `withdrawal-processor`, which owns and exports the durable work-item gauges;
 the coordinator dashboard does not manufacture a second queue authority.
 
-The three dashboards select application metrics through Prometheus `job` and
+The signer dashboards and the coordinator's optional application panels select
+application metrics through Prometheus `job` and
 `instance` labels instead of Kubernetes-only labels. This lets the same panels
 work for in-cluster ServiceMonitors and for Attestation Signers on external EC2
 hosts. External scrape targets are deliberately not configured by this chart:
@@ -441,14 +442,25 @@ those host addresses to this chart. After Prometheus reloads successfully, the
 Attestation Signer dashboard discovers the job and all three `instance` values
 and shows their individual `up` status.
 
-The Attestation Signer exports latency and payload-size observations as
-Prometheus summaries. Its dashboard reads the exported `quantile` series
-directly and preserves the `instance` label because summary quantiles cannot be
-aggregated across signers. The `_sum / _count` series remain available for
-average calculations. The CubeSigner and coordinator dashboards use their own
-native metric types. The dashboards also expose bounded request, worker,
-signing, callback, replay, and policy outcome counters as rates so throughput
-and failure-volume changes remain visible.
+The current dogeos-core metrics initializer exports Rust time histograms ending
+in `_seconds` or `_latency_ms` as Prometheus buckets. Latency panels use
+`histogram_quantile()` over bucket rates, with seconds and milliseconds kept in
+their original units. Non-time distributions still need their exporter checked:
+DA batch sizes use per-instance summary quantiles; Attestation Signer artifact
+sizes use summaries in the current baseline and buckets in
+[dogeos-core #1007](https://github.com/DogeOS69/dogeos-core/pull/1007). The artifact
+size panel supports both without combining summary quantiles across instances.
+
+The extended Attestation Signer queue/freshness panels and Proof Coordinator
+application panels require #1007 and an image exposing its metrics. They remain
+in clearly labelled collapsed rows. The coordinator's always-visible panels use
+Kubernetes runtime state and WP-owned queues; Pod readiness is not claim-plane
+readiness. Request-lifetime and work-attempt panels describe their different
+timing boundaries explicitly.
+
+See [the dashboard source review](DASHBOARD_REVIEW.md) for the per-dashboard
+findings, source revisions, verification and remaining rollout requirements.
+Service metric exposition examples belong in dogeos-core, not this repository.
 The CubeSigner dashboard follows the metric contract merged in dogeos-core
 #1009: it shows proof-fallback signs, policy denials, live policy evaluations,
 the observed policy rule identity, and the two integrity counters that must

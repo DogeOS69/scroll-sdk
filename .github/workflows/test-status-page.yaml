@@ -39,6 +39,8 @@ jobs:
           helm dependency build charts/scroll-monitor
       - name: Validate component provisioning and durable delivery
         run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_status_page*.py' -v
+      - name: Validate DogeOS dashboard queries and panel wiring
+        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_dogeos_dashboards.py' -v
       - name: Validate independent probes with a real browser
         env:
           STATUS_PROBE_BROWSER_TEST: '1'
