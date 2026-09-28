@@ -62,7 +62,7 @@ HTTP 结果不明确且健康已变化时暂停相反事件，内部报警并由
 
 ## 配置与启用
 
-组件可独立使用 `manual`、`observe`、`automatic`。示例默认全部 observe；
+组件可独立使用 `manual`、`observe`、`automatic`。示例默认全部 automatic；
 业务 deadline 默认 0（未配置）；首版复用已有 Alloy。只有选用 external 深度模式时才需要外部语义检查和独立位置。
 CLI 自动生成目录、规则、组件 contact point、Secret 引用和探针配置，保留已有
 Grafana 全局通知策略。`--plan` 只读；`--apply` 管理 Instatus 资源，不部署 K8s。

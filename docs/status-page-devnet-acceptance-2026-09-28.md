@@ -100,7 +100,7 @@ image-dependent checks remain skipped.
 
 Only `values/scroll-monitor-production.yaml` changed in the deployment values
 directory. All 20 non-monitor workload image sets remain unchanged. This follow-up
-does not change the shared templates' safe default of observe mode for new chains.
+At that revision, the shared templates still defaulted to observe. The later WF-stall rollout below supersedes that default.
 
 At 10:39 UTC, real automatic publication was verified: Bridge Portal and Block
 Explorer each entered `DEGRADEDPERFORMANCE` with one `INVESTIGATING` incident.
@@ -133,3 +133,57 @@ status-page tests, 29 SDK status-page tests, TypeScript compilation and targeted
 lint (complexity warnings remain). Mainnet/Testnet component identities and
 statuses are unchanged; the corrected public component statuses and future
 creation templates were both read back from Instatus.
+
+## Retired Bridge History API correction
+
+The operator subsequently confirmed that `bridge-history-api.devnet.doge.xyz`
+is an obsolete, intentionally undeployed dependency. Its failed probe therefore
+did not establish a current Bridge Portal business outage. The earlier Bridge
+incident was caused by an incorrect monitoring dependency.
+
+Revision **20** explicitly sets Alloy `publication.probes.bridgeChecks: disabled`.
+Only the bridge website is now checked; the public description states HTTPS
+website availability. The live page probe succeeds, the component rule returns
+healthy, and the delivery verifier has no error. Existing incident recovery still
+uses the configured fresh-health confirmation window. This does not verify wallet,
+deposit or withdrawal operations. External browser mode is unchanged.
+
+The correction passed 93 CLI status-page tests. Blockscout remains independently
+affected: its expired `blockscout-tls` Secret exists, but the matching Certificate
+and normal Ingress are absent. A standalone Certificate repair manifest was
+prepared and server-dry-run validated only; no Blockscout or ingress change was
+applied, in keeping with the monitor-only deployment scope.
+
+## WF stall publication rollout (supersedes observation-only business components)
+
+On 2026-09-28, a real WF stall was observed: WF sequence 580 did not change over
+three hours, protocol batch height remained 333, and active queued/built jobs were
+older than six hours. DA confirmed batches continued progressing independently.
+The operator requested that WF stalls affect both deposits and withdrawals and
+that component publication default to automatic.
+
+The SDK/CLI now include a configurable `wfStallSeconds: 3600` guard with pending
+work and fresh WP evidence. Confirmed WF failure overrides invalid/missing
+business snapshots, while recovery requires both sources to be healthy. The
+Devnet component modes were explicitly migrated to automatic with MAJOROUTAGE;
+public subscriber notifications remain disabled. Existing page, group, component
+IDs and six other integrations were reused; two component integrations were added.
+No dogeos-core image or business deployment was changed.
+
+The first Helm upgrade attempt hit the 1 MiB release Secret limit before applying
+workloads. Tests and Python caches were removed from the isolated deployment chart;
+its rendered runtime resources were verified identical before retrying. The SDK
+now excludes these artifacts with `.helmignore`. The successful rollout is revision
+21, changing only the status-page/Grafana configuration and their two Deployments.
+
+Validation: CLI status-page runtime suite 94 passing; SDK status-page tests 29
+passing; TypeScript build and Helm lint passed. WF regression cases include idle
+work, active progress, overdue built work, invalid/missing business snapshots,
+missing history, stale evidence, and no recovery from unknown health.
+
+At 2026-09-28 15:00 UTC (2026-09-29 00:00 JST), the Instatus API confirmed both
+existing Devnet Deposits and Withdrawals components as MAJOROUTAGE. This was the
+real WF stall, not a synthetic test. The generated expressions evaluated to 1,
+Grafana completed its normal 5-minute pending window, and subscriber notifications
+remained disabled. No recovery was forced: invalid business snapshots must not
+resolve these incidents after WF resumes until valid healthy evidence is available.

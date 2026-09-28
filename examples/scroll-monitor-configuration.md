@@ -237,4 +237,4 @@ from exact migrations of known shipped query defects.
 
 ## Component publication v2
 
-See [component publication controls](../docs/status-page-publication.md) for independent manual/observe/automatic modes, one integration per automatic component, generated Secret references, and migration from the legacy bootstrap described above. Production templates default to observe with built-in health rules; missing required inputs report not ready. Verified recovery is enabled in the new examples; direct legacy delivery retains manual recovery. External probes and business deadlines must be configured per deployment.
+See [component publication controls](../docs/status-page-publication.md) for independent manual/observe/automatic modes, one integration per automatic component, generated Secret references, and migration from the legacy bootstrap described above. Production templates default to automatic with built-in health rules; missing required inputs report not ready. Verified recovery is enabled in the new examples; direct legacy delivery retains manual recovery. External probes and business deadlines must be configured per deployment.

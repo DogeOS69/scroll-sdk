@@ -324,7 +324,7 @@ API reference: [status pages](https://instatus.com/help/api/status-pages),
 
 ## Component publication v2
 
-SDK production examples provide all eight keys with `mode: observe` and
+SDK production examples provide all eight keys with `mode: automatic` and
 `rule.builtin: true`. Modes are `manual`, `observe`, `automatic`. Built-in rules
 depend on `probes.mode`. The optional external mode covers public RPC, continuous sequencing, bridge browser/API, Blockscout freshness,
 official follower or optional external canary node sync, and new dogeos-core deposit/withdrawal/DA queue observations.
@@ -339,7 +339,7 @@ from HTTP success. Missing `probes.mode` preserves external-mode compatibility.
 | --- | --- |
 | `probes.mode` | `alloy` in examples, `external` for legacy inputs; Alloy adds no public probe Pod |
 | `probes.alloyChecks` | Optional GET response RE2 assertions, additive to generated targets |
-| `components.<key>.mode` | Operator; observe by default, activation is per component |
+| `components.<key>.mode` | Operator; automatic by default, explicit manual/observe remain available |
 | `components.<key>.rule` | Built-in by default; custom rules require `builtin: false`, `expr`, optional `for` |
 | `health.failureFor` / `recoveryFor` | Default 5m / 10m; per-component `rule.for` overrides failure |
 | `health.*DeadlineSeconds` | Deposit, withdrawal and batch publication: 0 means unconfigured; supply confirmed budgets |

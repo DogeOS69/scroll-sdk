@@ -33,6 +33,8 @@ class StatusPageTests(unittest.TestCase):
     def publication_fixture(self, automatic=False):
         defaults = yaml.safe_load((CHART / "values.yaml").read_text())
         publication = copy.deepcopy(defaults["statusPage"]["publication"])
+        for component in publication["components"].values():
+            component["mode"] = "observe"  # This fixture explicitly opts out of the automatic default.
         publication["delivery"]["enabled"] = False
         publication["probes"]["mode"] = "external"  # This fixture exercises legacy external publication.
         key = "batch-publication"
@@ -133,6 +135,8 @@ class StatusPageTests(unittest.TestCase):
     def test_defaults_are_disabled_and_examples_match(self):
         defaults = yaml.safe_load((CHART / "values.yaml").read_text())["statusPage"]
         self.assertFalse(defaults["enabled"])
+        self.assertTrue(all(c["mode"] == "automatic" for c in defaults["publication"]["components"].values()))
+        self.assertEqual(defaults["publication"]["health"]["wfStallSeconds"], 3600)
         for profile in [CHART / "values/production.yaml", CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"]:
             self.assertEqual(yaml.safe_load(profile.read_text())["statusPage"], defaults)
         result = self.render({})

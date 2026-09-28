@@ -1,7 +1,7 @@
 # 公开组件健康规则
 
 当前实现：2026-09-28。规则和采集器已实现；实际启用需要部署对应应用镜像、
-现有 Alloy 公网探测及生成的监控配置。默认全部 `observe`，不将初始 OPERATIONAL 当作健康证据。
+现有 Alloy 公网探测及生成的监控配置。默认全部 `automatic`，不将初始 OPERATIONAL 当作健康证据。
 字段与生成命令见 [组件发布配置](status-page-publication.md)。
 
 ## 三态契约
@@ -84,3 +84,22 @@ scroll-monitor 的 PodMonitor 发现与 ServiceMonitor 一致按 release namespa
 回归包含真实 Prometheus 表达式求值、CLI 到 Helm 渲染、Grafana 11.1.5 通知格式、
 浏览器渲染/接口故障、投递重启与未知期间禁止恢复、业务数据库完整性与重组。
 完整部署验收步骤见 [rollout](status-page-rollout.md)。
+
+## WF 停滞影响充值和提现
+
+充值与提现的内置规则同时检查 WF。`health.wfStallSeconds` 默认 3600 秒，
+要求相同 WP 实例在完整窗口内 WF 序号不变，且存在超过该时限的 queued、building、
+built、failed_retryable、bug、proposed_to_tso 或 awaiting_replay 工作。
+历史 completed / failed_terminal 行不参与；无待处理工作的空闲不算故障。
+样本必须新鲜、数值有效且采集目标在线；新实例历史不足时为 unknown。
+
+WF 明确停滞时，两项组件均输出 affected，即使业务 snapshot_valid=0 或业务快照缺失。
+业务积压超时本身也可独立判为 affected。只有 WF 与业务快照都证明正常，才允许恢复；
+缺失指标不会以 0 替代。正常故障确认窗口 `failureFor`（默认 5m）及恢复窗口
+`recoveryFor`（默认 10m）继续适用，因此默认 WF 停滞需持续约 65 分钟后发布。
+
+新模板及省略 mode 的组件默认 automatic。顶层 statusPage.enabled 仍需显式启用；
+自动模式缺少业务时限、健康表达式、heartbeat 或明确严重程度时，CLI 报错，
+不会静默降级为 observe。既有配置中显式 observe 需要主动迁移。
+充值和提现示例明确采用 MAJOROUTAGE；二元规则尚不能区分 WF 全停与部分请求超时，
+需要更细严重程度时应提供经过评审的自定义规则和策略。

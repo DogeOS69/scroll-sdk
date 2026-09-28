@@ -7,6 +7,14 @@ Alloy Pod; Alloy scrapes it over localhost and reuses its private remote-write p
 through the normal monitoring deployment workflow. This document does not claim
 that any particular chain has been deployed or its public status verified.
 
+If the legacy Bridge History API is retired, explicitly set
+`statusPage.publication.probes.bridgeChecks: disabled` in Alloy mode. This removes
+the API targets, including addresses still present in historical frontend config,
+and narrows the public component description to website availability over HTTPS.
+It does not prove wallet, deposit or withdrawal flows. `auto` continues to require
+the discovered API; a missing discovery value never silently disables that check.
+External browser mode does not accept this page-only opt-out.
+
 ```text
 existing Alloy -> public DNS / public ingress -> RPC, Bridge, Blockscout
        |
