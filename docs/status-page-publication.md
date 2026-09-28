@@ -158,16 +158,21 @@ monitoring namespace, then deploy the generated monitor values. Files have mode
 0600, the directory 0700, and a Git exclusion. Creation intent is durably saved
 before POST. Ambiguous responses, lost receipts, changed targets, existing remote
 heartbeat names and duplicate bindings block a second creation. Restore private
-backups instead of deleting ownership metadata to force recreation. Component
-webhook adoption remains available through `--webhook-component` and
-`--webhook-url-file` with private JSON `{integrationId,url}`.
+backups instead of deleting ownership metadata to force recreation.
+
+Bindings created by older CLI versions may lack the template IDs. Restore those
+IDs from the existing integration before applying; never create a replacement to
+repair missing private state. Managed updates verify both the template and
+integration subscriber flags: setting template `notify: false` alone is insufficient.
+Use `--webhook-component` and `--webhook-url-file` with private JSON `{integrationId,url,createTemplateId,resolveTemplateId}`.
 
 With `incidents.manageTemplates: true`, apply sends component-scoped creation and
 resolution templates using the published Instatus integration/template contracts.
 The default affected status is Degraded Performance; subscriber notifications default
 to false. `--plan` exposes the incident policy. These provider contracts are covered
-by mocked transport tests; a real-account acceptance run is still required before
-public activation. No production incidents are created by local validation.
+by transport tests and a [Devnet acceptance run](status-page-devnet-acceptance-2026-09-28.md).
+Each new deployment still needs scope and delivery verification before public
+activation. Local validation does not create public incidents.
 
 ## Failure, recovery and delivery state
 
@@ -198,9 +203,9 @@ already accepted event from the verifier; component mode is the publication cont
 `heartbeat.enabled: true` requires Instatus **monitor alert destination IDs** in
 `heartbeat.alertIds`. These are provider-side internal alert destinations, distinct
 from Grafana contact points and from public page subscribers. Grafana evaluates a
-Prometheus freshness query and sends the Cron Monitor a heartbeat every minute.
+Prometheus freshness query and requests a Cron Monitor heartbeat every minute; group scheduling may deliver every two minutes.
 Datasource errors/NoData stop the heartbeat. When verified delivery is active,
-the heartbeat also requires a fresh verifier tick and no delivery error. Instatus checks a 60-second period with
+the heartbeat also requires a fresh verifier tick and no delivery error. Instatus checks a 180-second period with
 180-second grace, independently of the chain cluster. It creates no extra public
 component or incident and does not claim that monitoring loss means chain downtime.
 The first delivered ping activates provider-side timing. Verify the selected internal

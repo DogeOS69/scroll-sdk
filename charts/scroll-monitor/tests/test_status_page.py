@@ -67,6 +67,36 @@ class StatusPageTests(unittest.TestCase):
             if automatic:
                 self.assertEqual(envs[0]["valueFrom"]["secretKeyRef"]["name"], "instatus-batch-publication-webhook")
 
+    def test_status_collectors_match_the_real_prometheus_discovery_selector(self):
+        values = self.publication_fixture(True)
+        status = values["statusPage"]
+        publication = status["publication"]
+        publication["delivery"]["enabled"] = True
+        publication["nodeSync"]["mode"] = "official"
+        status["catalog"]["chainId"] = "291"
+        delivery = {"prometheusUrl": "http://prometheus-prometheus:9090", "orgId": 1,
+                    "components": {"batch-publication": {"webhookEnv": "INSTATUS_BATCH_PUBLICATION_WEBHOOK_URL"}}}
+        node = {"chainId": "291", "environment": "testnet",
+                "reference": {"service": "sequencer", "port": 8545, "replicas": 1},
+                "followers": [{"service": "rpc", "port": 8545, "replicas": 1}]}
+        generated = status["generated"]
+        generated.update(delivery=delivery, nodeSync=node)
+        generated["componentPublication"].update(delivery=copy.deepcopy(delivery), nodeSync=copy.deepcopy(node),
+                                                 inputs=copy.deepcopy(publication))
+        result = self.render(values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = [d for d in yaml.safe_load_all(result.stdout) if d]
+        spec = next(d for d in docs if d["kind"] == "Prometheus")["spec"]
+        for name in ["scroll-monitor-status-node-sync", "scroll-monitor-status-delivery"]:
+            monitor = next(d for d in docs if d["kind"] == "ServiceMonitor" and d["metadata"]["name"] == name)
+            labels = monitor["metadata"]["labels"]
+            for expression in spec["serviceMonitorSelector"]["matchExpressions"]:
+                self.assertEqual(expression["operator"], "Exists")
+                self.assertIn(expression["key"], labels)
+            service = next(d for d in docs if d["kind"] == "Service" and d["metadata"]["name"] == name)
+            for key, value in monitor["spec"]["selector"]["matchLabels"].items():
+                self.assertEqual(service["metadata"]["labels"][key], value)
+
     def test_component_publication_rejects_unapplied_binding_or_stale_mode(self):
         missing = self.publication_fixture(True)
         missing["statusPage"]["generated"]["componentBindings"] = {}

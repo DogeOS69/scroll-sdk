@@ -1,6 +1,6 @@
 # DogeOS shared status page rollout
 
-更新：2026-09-28。通用功能的部署与验收说明，保留前期只读核实记录；本次实现未部署具体链或更改公开状态。页面结构见 [设计稿](status-page-design.md)，运行架构见 [架构文档](status-page-architecture.md)。
+更新：2026-09-28。通用功能的部署与验收说明，保留前期只读核实记录。Devnet 实际部署、经授权的公开 E2E 事件与当前限制见 [Devnet 验收记录](status-page-devnet-acceptance-2026-09-28.md)。页面结构见 [设计稿](status-page-design.md)，运行架构见 [架构文档](status-page-architecture.md)。
 
 ## 1. 先固定部署，再读取地址
 
@@ -78,7 +78,7 @@ Secret 流程应用到 monitoring namespace，再部署监控。CLI apply 本身
 
 ## 5. 验收场景
 
-先在测试目标验证以下场景，不用真实公共页面来做故障演练：
+默认在测试目标验证以下场景。若明确授权在共享公开页演练，应限定到指定网络和组件、标注测试事件、关闭订阅者通知，并完成恢复。
 
 | 场景 | 必须满足 |
 | --- | --- |
