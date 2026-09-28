@@ -386,14 +386,16 @@ Each automatic integration is bound to exactly one component. Names are
 `instatus-<key>`, Secret `instatus-<key>-webhook`, data key `url`. Private files are
 `secrets/status-page/<key>.binding.json` and `<key>.secret.yaml`. Subsequent apply
 uses PUT and reuses the integration. Recover/adopt using `--webhook-component <key>`
-and `--webhook-url-file /private/component.json` containing `{integrationId,url}`.
+and `--webhook-url-file /private/component.json` containing `{integrationId,url,createTemplateId,resolveTemplateId}`.
 A URL alone is not the management ID. Creation intent is persisted before POST;
 ambiguous results block duplication until receipts are restored/adopted.
 
 Optional Cron Monitor uses `heartbeat.json` and `heartbeat.secret.yaml` in the same
 private directory. It creates no public component/incident, alerts only internal
 destinations, and detects lost Grafana/Prometheus or failed delivery through a
-missing heartbeat. First successful ping activates monitoring. Disable and apply
+missing heartbeat. Grafana requests one-minute repeats, but group scheduling can
+produce two-minute delivery intervals. The provider allows a three-minute period
+plus three-minute grace. First successful ping activates monitoring. Disable and apply
 to pause the provider monitor; deploy to pause the retained Grafana heartbeat rule.
 Restore its receipt after an ambiguous response, rather than creating another monitor.
 

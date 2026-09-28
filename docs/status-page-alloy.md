@@ -149,3 +149,7 @@ Local acceptance runs the rendered configuration in Alloy v1.8.2, writes real
 probe metrics to Prometheus v2.52.0, verifies their labels, and tests failure/body
 assertions against temporary HTTP fixtures. Promtool exercises missing, duplicate,
 stale and revision-mismatched evidence. No live chain or Instatus page is mutated.
+
+For Blockscout, a discovered backend root URL is checked at `/api/v2/stats`
+to require a JSON API response. An explicitly configured non-root API path is
+preserved. TLS certificate validation remains enabled for all public targets.

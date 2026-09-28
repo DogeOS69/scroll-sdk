@@ -25,7 +25,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def request_json(url, payload=None):
     data = None if payload is None else json.dumps(payload).encode()
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json", "User-Agent": "scroll-sdk/status-page-delivery"})
     with urllib.request.build_opener(NoRedirect).open(req, timeout=10) as response:
         raw = response.read(1024 * 1024 + 1)
         if len(raw) > 1024 * 1024:
