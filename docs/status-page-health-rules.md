@@ -1,7 +1,7 @@
 # 公开组件健康规则
 
-当前实现：2026-09-27。规则和采集器已实现；实际启用需要部署对应应用镜像、
-独立探针及生成的监控配置。默认全部 `observe`，不将初始 OPERATIONAL 当作健康证据。
+当前实现：2026-09-28。规则和采集器已实现；实际启用需要部署对应应用镜像、
+现有 Alloy 公网探测及生成的监控配置。默认全部 `observe`，不将初始 OPERATIONAL 当作健康证据。
 字段与生成命令见 [组件发布配置](status-page-publication.md)。
 
 ## 三态契约
@@ -11,7 +11,16 @@
 Grafana 主规则 KeepLast，独立 missing 规则通知内部接收者；投递校验器在未知期间
 重置确认窗口，不发送恢复。`up=1` 仅说明 scrape 成功，必须同时检查业务快照时间。
 
-## 八个组件
+## 探测模式
+
+首版选择 `probes.mode: alloy`，复用已有 Alloy，不新增公网探针 Pod。
+Public RPC 检查 HTTP JSON-RPC 响应模式和延迟；Bridge/Blockscout 检查页面与 API
+入口的 HTTP/TLS 可用性。CLI readiness 标注 `public-entrypoint`，公开说明不再宣称
+这些检查证明浏览器功能或索引新鲜度。已启用的 WebSocket 无法覆盖时保留未就绪。
+Sequencing 需要自定义指标规则；Node Sync 和业务队列规则不变。
+完整参数和边界见 [Alloy 公网探测](status-page-alloy.md)。
+
+## 八个组件（external 深度探测模式及通用业务规则）
 
 | 组件 | 已实现的判断 | 需要部署方提供 |
 | --- | --- | --- |
@@ -20,13 +29,14 @@ Grafana 主规则 KeepLast，独立 missing 规则通知内部接收者；投递
 | Deposits | 已满足确认的规范链未扫描充值 + 已提交但未被 L2 消费的充值；索引、replay 和 RPC 规范链一致 | 新 WP 镜像、明确处理 deadline |
 | Withdrawals | 协议 eligible 的未完成提现索引范围，完整唯一队列与规范 replay；最早 eligibility 时间 | 新 WP 镜像、明确处理 deadline；不是从用户最初交易起算 |
 | Batch Publication | pending_publish / submitted / failed 的尚未确认批次，排除已确认、finalized 和归档项 | 新 DA 镜像、包含正常确认时间的 deadline |
-| Node Sync | 每个位置的独立跟随节点，与规范链哈希和时间比较；同步依赖的语义响应 | 已运行的 canary 节点、其 RPC 和依赖检查；不自动启动链节点 |
-| Bridge Portal | Chromium 渲染充值/提现 UI、检查链身份及充值 payload；在浏览器中验证必要 API 响应 | API URL、JSON path、期望值；不签名或发起转账 |
+| Node Sync | official 模式逐 Pod 比较 bootnode、内部 RPC、公开 RPC 与活跃 sequencer 的同高度 hash 和时间差；参考源失效或成员不完整为未知 | 选择有效 values/release；独立 canary 是可选的 external 模式，见 [Node Sync](status-page-node-sync.md) |
+| Bridge Portal | Chromium 渲染充值/提现 UI、检查链身份及充值 payload；在浏览器中验证必要 API 响应 | 默认从 frontend 配置生成 API 类型检查，可覆盖 JSON path/语义；不签名或发起转账 |
 | Block Explorer | Chromium 数据选择器 + Blockscout 最新索引块 API；与规范链同高度哈希及块时间比较 | 后端入口（可自动派生）、真实数据 CSS selector、容忍索引延迟 |
 
-公开探测需至少两个独立位置、每个位置数据新鲜有效且结果一致；部分缺失、重复
+external 模式的公开 RPC/网页探测需至少两个独立位置、每个位置数据新鲜有效且结果一致；部分缺失、重复
 reporter 或观测分歧进入未知，不能由一台成功探针覆盖另一台失败探针。
 位置独立性由实际部署保证，两个同集群副本改名不构成独立位置。
+官方 Node Sync 采集器在链内运行，不计入外部探针位置数。
 
 业务规则必须选择完整的实际服务 target 集合；WP 的 proof-only role 不应混入。
 充值完整性检查覆盖中途扫描游标、缺记录、未分类数据、replay 落后和同高度重组。
@@ -40,8 +50,8 @@ DA 规则把已提交但未确认的工作保留在积压内，防止离开待�
 | `health.failureFor` | `5m` | 持续异常确认；组件可通过 `rule.for` 覆盖 |
 | `health.recoveryFor` | `10m` | 连续新鲜健康才恢复 |
 | `health.freshnessSeconds` | `120` | 底层观测最大年龄 |
-| `health.minimumProbeLocations` | `2` | 不允许小于两个位置 |
-| `health.maxRpcLatencySeconds` | `2` | RPC 三步查询序列 p95，需 5 分钟内至少 10 个样本 |
+| `health.minimumProbeLocations` | `2` | 仅 external 模式使用；Alloy 不冒充两个位置 |
+| `health.maxRpcLatencySeconds` | `2` | Alloy 每个 HTTP 探测 / external RPC 查询序列的 p95，需 5 分钟内至少 10 个样本 |
 | 最大块龄 / 索引延迟 / 节点落后时间 | 各 `120` 秒 | 部署方按实际链行为确认 |
 | 充值 / 提现 / 批次 deadline | `0` | 未配置；不编造业务 SLA，不生成对应内置规则 |
 | `incidents.affectedStatus` | `DEGRADEDPERFORMANCE` | 第一版统一故障等级，严重事件由人工升级 |
@@ -56,10 +66,12 @@ DA 规则把已提交但未确认的工作保留在积压内，防止离开待�
 不能让某个原因的恢复覆盖另一项故障。原有内部诊断规则不直接映射公开状态。
 校验器持久化当前事件，并在重启、未知、采样中断和时钟回退后重新等待完整窗口。
 人工维护/事故接管先部署 manual 模式；已有事故和收据保留。
+计划维护窗口与自动发布的联动已后置，放在首版探针部署及真实故障/恢复验收之后。
 
 整个监控集群失联通过 Instatus Cron Monitor 的心跳超时通知内部值班人员。
 有投递校验器时心跳同时依赖其新鲜运行和无投递错误。监控失联不自动改所有组件为故障。
-真实 Instatus 的模板、维护、重复投递和 subscriber 行为需在测试目标完成验收；
+真实 Instatus 的模板、重复投递、恢复关联和 subscriber 行为需在测试目标完成首版验收；
+维护联动的专项验收随其后续实现进行；
 本地测试使用本地 HTTP 接收器，不触发公开事故。
 
 ## 采集模板修复与验证

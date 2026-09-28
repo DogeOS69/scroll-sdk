@@ -4,6 +4,8 @@ statusPage:
   environment: ""  # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
   sources:
     frontends: frontends-production.yaml  # [OPERATOR] Filename in this values directory.
+    frontendsConfig: frontends-config.yaml  # [SOURCE] Read actual REACT_APP_BRIDGE_API_URI and verify chain ID; empty disables inference.
+    sequencer: l2-reth-sequencer-production.yaml  # [SOURCE] Select the effective sequencer file (e.g. ...-0.yaml), not an inactive/base template.
     publicRpc: l2-reth-rpc-public-production.yaml  # [OPERATOR] Select the ENABLED public RPC release.
     blockscout: blockscout-production.yaml  # [OPERATOR] Deployed Blockscout; L2Scan excluded.
     scheme: https  # [OPERATOR] Actual external scheme; no domain substitution.
@@ -37,23 +39,46 @@ statusPage:
       failureFor: 5m  # [DEFAULT] Continuous failure confirmation.
       recoveryFor: 10m  # [DEFAULT] Continuous fresh health before recovery; resets on restart/gaps.
       freshnessSeconds: 120  # [DEFAULT] Maximum observation/snapshot age.
-      minimumProbeLocations: 2  # [OPERATOR] Actual independent locations, not replicas.
+      minimumProbeLocations: 2  # [EXTERNAL MODE ONLY] Independent locations; unused in alloy mode.
       maxBlockAgeSeconds: 120  # [OPERATOR] Confirm continuous block production and normal block period.
       maxRpcLatencySeconds: 2  # [DEFAULT] p95 threshold after at least 10 samples within 5 minutes.
       maxIndexLagSeconds: 120  # [DEFAULT] Explorer indexed block vs canonical RPC block time.
-      maxNodeLagSeconds: 120  # [DEFAULT] External canary node vs canonical RPC block time.
+      maxNodeLagSeconds: 120  # [DEFAULT] Follower/canary lag measured in canonical block time.
       depositDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Set confirmed normal processing deadline; 0 means unconfigured.
       withdrawalDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Count only protocol-eligible, unfulfilled withdrawals.
       batchPublicationDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Include time awaiting transaction confirmation.
       ethDaSubmitterJobRegex: eth-da-submitter  # [OPERATOR] Prometheus job for the actual publisher.
       withdrawalProcessorJobRegex: withdrawal-processor  # [OPERATOR] Withdrawal role only; exclude proof-work-only replicas.
+    nodeSync:
+      mode: external  # [OPERATOR] Set official and select deployed sources below to use in-cluster followers.
+      namespace: ""  # [OPERATOR] Node namespace; empty uses scroll-monitor's Helm namespace.
+      image: python:3.12.11-alpine3.22  # [DEFAULT] Read-only RPC collector; no Instatus credentials.
+      reference: {}  # [SOURCE] Exactly one ACTIVE sequencer release (one replica, allowEmptyBlocks: true).
+      # reference: {values: l2-reth-sequencer-production.yaml, release: l2-reth-sequencer, role: sequencer}
+      followers: []  # [SOURCE] Select effective values/release pairs, including numbered bootnode files when deployed.
+      # followers:
+      #   - {values: l2-reth-bootnode-production.yaml, release: l2-reth-bootnode, role: bootnode}
+      #   - {values: l2-reth-rpc-production.yaml, release: l2-reth-rpc, role: internal-rpc}
+      #   - {values: l2-reth-rpc-public-production.yaml, release: l2-reth-rpc-public, role: public-rpc}
+      # [DERIVED] Service name, HTTP port, replica count and chain ID come from each selected values file.
+      # Optional per-source service overrides templated/custom names. replicas: 0 excludes intentional standby.
+      # All selected follower Pods must be observed. A missing/stale reference produces unknown.
     probes:
-      metricsTargets: []  # [OPERATOR] Private reachable host:port per external location; CLI merges the Prometheus scrape job.
+      mode: alloy  # [OPERATOR] Existing Alloy probes public entrypoints; external retains browser/chain-aware probes.
+      # [SCOPE] Alloy checks HTTP/TLS, RPC chain ID/block-number patterns and API availability.
+      # It does not prove browser rendering, indexing freshness, sequencing or WebSocket health.
+      # CLI narrows public descriptions/readiness accordingly; unsupported built-ins stay unready.
+      # Automatic publication in alloy mode requires heartbeat.enabled + internal alertIds above.
+      alloyChecks: []  # [OPTIONAL] Additional GET body assertions using RE2, combined with all generated checks.
+      # - {component: bridge-portal, url: 'https://YOUR_PUBLIC_API/health', bodyRegex: ['"status"\s*:\s*"ok"']}
+      # URLs must use public DNS/ingress with valid TLS, without privileged allowlisting or credentials.
+      # [GENERATED] generated.alloyProbes modules/targets/revision; never deploy a separate probe chart in alloy mode.
+      metricsTargets: []  # [OPERATOR] EXTERNAL ONLY: Private host:port per location; empty in alloy mode.
       # Empty if your existing private federation/remote-write already supplies the probe metrics.
-      sequencingMode: unconfigured  # [OPERATOR] continuous or on-demand; on-demand requires custom eligible-work rule.
-      bridgeChecks: []  # [OPERATOR] Required public API checks: [{url: https://..., path: [field], equals: value}].
+      sequencingMode: auto  # [DERIVED] Selected reth.sequencer.allowEmptyBlocks; on-demand requires a custom eligible-work rule.
+      bridgeChecks: auto  # [DERIVED] Frontend history /txs API; Alloy uses URLs only. JSON path/type overrides require external mode.
       explorerApiUrls: []  # [GENERATED/OPERATOR] CLI can derive Blockscout backend ingress; [] requires an override.
-      explorerSelector: ""  # [OPERATOR] Reviewed CSS selector proving rendered explorer data, e.g. a block link.
+      explorerSelector: ""  # [OPERATOR] EXTERNAL ONLY: Reviewed CSS selector proving rendered explorer data.
       nodeRpcUrl: ""  # [OPERATOR] Independently operated sync canary; override per external probe location.
       nodeDependencyChecks: []  # [OPERATOR] Semantic JSON checks for public bootstrap/DA dependencies.
     components:
@@ -70,14 +95,15 @@ statusPage:
     # [GENERATED] Per-component instatus-<key> contact point, rule UID status-<key>.
     # [PRIVATE GENERATED] Secret instatus-<key>-webhook, key url; secrets/status-page/<key>.binding.json and .secret.yaml.
     # --apply --create-webhook creates/reuses one integration per automatic component.
-    # --probe-values values/status-page-probe-production.yaml exports external probe values.
+    # EXTERNAL ONLY: --probe-values values/status-page-probe-production.yaml exports deep-probe values.
   instatus:
     workspaceSlug: 6wxpx  # [OPERATOR] Existing DogeOS workspace; validated by --plan/--apply.
     pageId: ""  # [GENERATED] Shared dogeos page ID; same for all three deployments.
     subdomain: dogeos  # [CONVENTION] One public page for Mainnet, Testnet and Devnet.
     pageName: DogeOS  # [SHARED] Keep page name/branding identical across deployments.
     groupId: ""  # [GENERATED] Discovered from the group named Mainnet/Testnet/Devnet.
-    # [ONE-TIME SETUP] In Instatus, create each network group with a Public RPC component.
+    # [ONE-TIME SETUP] DogeOS network groups already exist; reuse them on every deployment.
+    # For a NEW page only, initialize missing groups in the Instatus dashboard.
     # Public REST API can attach components to groups; group creation requires the dashboard.
     branding:  # [SHARED DEFAULTS] Official DogeOS brand assets; {} leaves existing branding unchanged.
       # Upload the logo in Instatus Look & feel; omitted here to preserve that URL.

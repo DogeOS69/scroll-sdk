@@ -1,0 +1,29 @@
+{{- $status := .Values.statusPage }}
+{{- $probes := (($status.publication | default dict).probes | default dict) }}
+{{- if and $status.enabled (eq (int (($status.generated | default dict).version | default 0)) 2) (eq ($probes.mode | default "external") "alloy") }}
+{{- $generated := $status.generated | default dict }}
+{{- $config := $generated.alloyProbes | default dict }}
+{{- if or (empty $config.targets) (empty $config.modules) (ne (toJson $config) (toJson (($generated.componentPublication | default dict).alloyProbes))) }}
+{{- fail "statusPage Alloy probes require regenerated CLI configuration" }}
+{{- end }}
+{{- if not .Values.alloy.enabled }}
+{{- fail "statusPage Alloy probes require alloy.enabled" }}
+{{- end }}
+{{- if or (not (has .Values.alloy.controller.type (list "statefulset" "deployment"))) (ne (int .Values.alloy.controller.replicas) 1) .Values.alloy.controller.autoscaling.enabled .Values.alloy.alloy.clustering.enabled }}
+{{- fail "statusPage Alloy probes require exactly one Alloy instance without clustering or autoscaling" }}
+{{- end }}
+{{- if or .Values.alloy.alloy.configMap.create (ne .Values.alloy.alloy.configMap.name "grafana-alloy-config") (ne .Values.alloy.alloy.configMap.key "config.alloy") }}
+{{- fail "statusPage Alloy probes require the bundled grafana-alloy-config ConfigMap" }}
+{{- end }}
+{{- if empty .Values.alloy.metrics.prometheusRemoteWrite.url }}
+{{- fail "statusPage Alloy probes require the existing Prometheus remote-write URL" }}
+{{- end }}
+{{- if and (index .Values "kube-prometheus-stack").enabled (not (index .Values "kube-prometheus-stack").prometheus.prometheusSpec.enableRemoteWriteReceiver) }}
+{{- fail "statusPage Alloy probes require the bundled Prometheus remote-write receiver" }}
+{{- end }}
+{{- range $target := $config.targets }}
+{{- if or (ne $target.environment $status.environment) (ne $target.chain_id $status.catalog.chainId) (ne $target.status_probe_config $config.revision) }}
+{{- fail "statusPage Alloy probe identity changed; regenerate" }}
+{{- end }}
+{{- end }}
+{{- end }}

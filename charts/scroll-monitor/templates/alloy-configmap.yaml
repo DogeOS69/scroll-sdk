@@ -1,4 +1,6 @@
 {{- if .Values.alloy.enabled }}
+{{- $generatedStatus := .Values.statusPage.generated | default dict }}
+{{- $statusProbes := and .Values.statusPage.enabled (eq (int ($generatedStatus.version | default 0)) 2) (eq ((.Values.statusPage.publication.probes | default dict).mode | default "external") "alloy") }}
 {{- $namespaces := .Values.alloy.logs.namespaces -}}
 {{- if not $namespaces -}}
   {{- $namespaces = list .Release.Namespace -}}
@@ -184,6 +186,45 @@ data:
       }
     }
 
+    {{- end }}
+
+    {{- if $statusProbes }}
+    {{- $probe := .Values.statusPage.generated.alloyProbes }}
+    prometheus.exporter.blackbox "status_page" {
+      config = {{ dict "modules" $probe.modules | toJson | quote }}
+      {{- range $target := $probe.targets }}
+      target {
+        name    = {{ $target.name | quote }}
+        address = {{ $target.address | quote }}
+        module  = {{ $target.module | quote }}
+        labels = {
+          environment         = {{ $target.environment | quote }},
+          chain_id            = {{ $target.chain_id | quote }},
+          component_key       = {{ $target.component_key | quote }},
+          check_id            = {{ $target.check_id | quote }},
+          status_probe_config = {{ $target.status_probe_config | quote }},
+        }
+      }
+      {{- end }}
+    }
+
+    prometheus.scrape "status_page" {
+      targets         = prometheus.exporter.blackbox.status_page.targets
+      scrape_interval = "30s"
+      scrape_timeout  = "10s"
+      forward_to      = [prometheus.relabel.status_page.receiver]
+    }
+
+    prometheus.relabel "status_page" {
+      forward_to = [prometheus.remote_write.scroll.receiver]
+      rule {
+        target_label = "job"
+        replacement  = "status-page-alloy"
+      }
+    }
+    {{- end }}
+
+    {{- if or .Values.alloy.metrics.otlp.enabled $statusProbes }}
     prometheus.remote_write "scroll" {
       endpoint {
         url = {{ .Values.alloy.metrics.prometheusRemoteWrite.url | quote }}
