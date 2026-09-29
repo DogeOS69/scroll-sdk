@@ -10,6 +10,30 @@ global:
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
+{{/*
+Cap glibc malloc arenas at the container's CPU limit. glibc defaults to
+8 x the node's CPUs, and each arena keeps memory its threads freed, so the
+processor's RSS grew until it was OOMKilled (DogeOS69/dogeos-core#1313).
+Appended here rather than in values.yaml because a values file that sets
+`env` replaces the whole list. Both map and list env formats are supported;
+an explicit MALLOC_ARENA_MAX in either format wins.
+*/}}
+{{- $env := .Values.env | default list -}}
+{{- $arenaMax := dict "valueFrom" (dict "resourceFieldRef" (dict "resource" "limits.cpu" "divisor" "1")) -}}
+{{- if kindIs "map" $env -}}
+{{- if not (hasKey $env "MALLOC_ARENA_MAX") -}}
+{{- $_ := set $env "MALLOC_ARENA_MAX" $arenaMax -}}
+{{- end -}}
+{{- $_ := set .Values "env" $env -}}
+{{- else -}}
+{{- $hasArenaMax := false -}}
+{{- range $env }}{{ if eq .name "MALLOC_ARENA_MAX" }}{{ $hasArenaMax = true }}{{ end }}{{ end -}}
+{{- if not $hasArenaMax -}}
+{{- $_ := set $arenaMax "name" "MALLOC_ARENA_MAX" -}}
+{{- $_ := set .Values "env" (append $env $arenaMax) -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}
 ---

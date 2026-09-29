@@ -1,0 +1,30 @@
+name: Test withdrawal processor chart
+on:
+  pull_request:
+    paths:
+      - charts/withdrawal-processor/**
+      - .github/tests/test_withdrawal_processor.py
+      - .github/workflows/test-withdrawal-processor.yaml
+  push:
+    paths:
+      - charts/withdrawal-processor/**
+      - .github/tests/test_withdrawal_processor.py
+      - .github/workflows/test-withdrawal-processor.yaml
+permissions:
+  contents: read
+jobs:
+  chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install PyYAML==6.0.2
+      - name: Download declared chart dependencies
+        run: helm dependency build charts/withdrawal-processor
+      - run: helm lint --strict charts/withdrawal-processor
+      - run: python3 -m unittest discover -s .github/tests -p 'test_withdrawal_processor.py' -v

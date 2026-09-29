@@ -1,6 +1,6 @@
 # withdrawal-processor
 
-![Version: 0.1.21](https://img.shields.io/badge/Version-0.1.21-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.22](https://img.shields.io/badge/Version-0.1.22-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
@@ -18,6 +18,34 @@ Kubernetes: `>=1.22.0-0`
 |------------|------|---------|
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.1 |
+
+## glibc malloc arenas
+
+The chart injects `MALLOC_ARENA_MAX` from the container's `limits.cpu` through
+the Downward API at container startup. The value rounds up to whole CPUs:
+`500m` gives 1 arena and `1500m` gives 2. This limits allocator memory retention;
+it does not set the application's worker thread count or guarantee an RSS limit.
+
+An explicit `MALLOC_ARENA_MAX` in `env` takes precedence. Both supported env
+formats work:
+
+```yaml
+env:
+  MALLOC_ARENA_MAX: "2"
+```
+
+```yaml
+env:
+  - name: MALLOC_ARENA_MAX
+    value: "2"
+```
+
+Keep a CPU limit when relying on automatic arena sizing. If the container has
+no CPU limit, Kubernetes exposes the node's allocatable CPU count instead;
+set an explicit arena limit if that behavior is unsuitable for the workload.
+In-place CPU resizing does not update environment variables in an already
+running container. Restart the container for the arena limit to reflect the
+new CPU limit. See the [Kubernetes Downward API documentation](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/#information-available-via-resourcefieldref).
 
 ## Values
 

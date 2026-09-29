@@ -550,7 +550,7 @@ resources:
     cpu: "500m"
   limits:
     memory: "2Gi"
-    cpu: "1500m"
+    cpu: "1500m"  # also caps glibc malloc arenas (MALLOC_ARENA_MAX), see templates/common.yaml
 
 serviceMonitor:
   main:
