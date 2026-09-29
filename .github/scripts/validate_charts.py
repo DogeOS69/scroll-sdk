@@ -91,7 +91,7 @@ def validate_example_makefile():
     # Modified regex to extract service name from URL and version
     # Modified regex to support versions with suffixes like -dogeos
     version_patterns = set(re.findall(
-        r"helm upgrade -i [^\s]+\s+oci://.+?/helm/?.*?([^/\s]+)\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
+        r"helm (?:--kube-context\s+(?:\"[^\"]*\"|\S+)\s+)?upgrade -i [^\s]+\s+oci://.+?/helm/?.*?([^/\s]+)\s+.*?--version=(\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+)?)",
         makefile_content,
     ))
 
