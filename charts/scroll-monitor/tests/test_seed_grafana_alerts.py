@@ -1,4 +1,7 @@
 import copy
+import contextlib
+import io
+import json
 import importlib.util
 from pathlib import Path
 import unittest
@@ -78,6 +81,78 @@ class SeedTests(unittest.TestCase):
         self.client.writes.clear()
         SEED.seed(self.client, self.config)
         self.assertEqual(self.client.writes, [])
+
+    def test_values_update_untouched_query_and_for_preserving_ui_pause_and_routing(self):
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        saved["isPaused"] = True
+        saved["notification_settings"] = {"receiver": "operator-contact"}
+        source = self.config["groups"][0]["rules"][0]
+        source.update(expr="max(ready) < 0.8", **{"for": "7m"})
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
+        self.assertEqual(saved["for"], "7m")
+        self.assertTrue(saved["isPaused"])
+        self.assertEqual(saved["notification_settings"], {"receiver": "operator-contact"})
+        baseline = json.loads(saved["annotations"][SEED.BASELINE])
+        self.assertEqual(baseline["queryA"], SEED.fingerprint(SEED.managed_fields(saved)["queryA"]))
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_ui_query_edit_is_preserved_and_reported_when_values_change(self):
+        SEED.seed(self.client, self.config)
+        self.client.group["rules"][0]["data"][0]["model"]["expr"] = "ready < 0.3"
+        self.config["groups"][0]["rules"][0]["expr"] = "ready < 0.7"
+        self.client.writes.clear()
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config)
+        self.assertIn("DRIFT NotReady", output.getvalue())
+        self.assertEqual(self.client.group["rules"][0]["data"][0]["model"]["expr"], "ready < 0.3")
+        self.assertEqual(self.client.writes, [])
+
+    def test_first_upgrade_adopts_matching_legacy_fields_but_not_unknown_differences(self):
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        saved["annotations"].pop(SEED.BASELINE)
+        saved["for"] = "19m"
+        SEED.seed(self.client, self.config)
+        baseline = json.loads(self.client.group["rules"][0]["annotations"][SEED.BASELINE])
+        self.assertIn("queryA", baseline)
+        self.assertNotIn("for", baseline)
+        self.config["groups"][0]["rules"][0].update(expr="ready < 0.8", **{"for": "6m"})
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        self.assertEqual(saved["data"][0]["model"]["expr"], "ready < 0.8")
+        self.assertEqual(saved["for"], "19m")
+
+    def test_explicit_pause_overrides_existing_rule_and_removal_restores_ui_control(self):
+        SEED.seed(self.client, self.config)
+        self.config["pauseRules"] = {"NotReady": True}
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+        self.config["pauseRules"]["NotReady"] = False
+        SEED.seed(self.client, self.config)
+        self.assertFalse(self.client.group["rules"][0]["isPaused"])
+        self.config.pop("pauseRules")
+        self.client.group["rules"][0]["isPaused"] = True
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+
+    def test_dry_run_never_writes_new_folder_rules_or_existing_changes(self):
+        SEED.seed(self.client, self.config, dry_run=True)
+        self.assertEqual(self.client.writes, [])
+        SEED.seed(self.client, self.config)
+        before = copy.deepcopy(self.client.group)
+        self.client.writes.clear()
+        self.config["groups"][0]["rules"][0]["expr"] = "ready < 0.7"
+        self.config["pauseRules"] = {"NotReady": True}
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config, dry_run=True)
+        self.assertIn("PLAN dogeos.metrics: 0 new, 1 updates", output.getvalue())
+        self.assertEqual(self.client.writes, [])
+        self.assertEqual(self.client.group, before)
 
     def test_paused_rule_can_be_resumed_and_is_not_repaused_on_upgrade(self):
         self.config["groups"][0]["rules"][0]["isPaused"] = True
@@ -210,6 +285,10 @@ class SeedTests(unittest.TestCase):
                 expected = copy.deepcopy(original)
                 expected["data"][0]["model"]["expr"] = source["expr"]
                 expected["annotations"]["description"] = source["annotations"]["description"].replace("$value", "$values.A.Value")
+                baseline = json.loads(expected["annotations"][SEED.BASELINE])
+                for field in ("queryA", "annotation:description"):
+                    baseline[field] = SEED.fingerprint(SEED.managed_fields(expected)[field])
+                expected["annotations"][SEED.BASELINE] = json.dumps(baseline, sort_keys=True)
                 self.assertEqual(client.group["rules"][0], expected)
                 self.assertEqual(client.group["interval"], 120)
                 self.assertEqual(len(client.writes), 1)
@@ -239,7 +318,8 @@ class SeedTests(unittest.TestCase):
                     self.assertEqual(saved["uid"], uid)
                     self.assertEqual(saved["for"], "0s")
                     self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
-                    self.assertEqual(saved["annotations"], source["annotations"])
+                    self.assertEqual({k: v for k, v in saved["annotations"].items()
+                                      if k != SEED.BASELINE}, source["annotations"])
                     self.assertEqual(len(client.writes), 1)
                     client.writes.clear()
                     SEED.seed(client, config)

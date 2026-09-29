@@ -50,3 +50,16 @@ app.kubernetes.io/name: {{ include "dogecoin.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+
+{{/*
+A local, authenticated RPC round trip. No rpcwait: kubelet owns retries/timeouts.
+Exit 0 means RPC is usable, including during IBD; it does not imply full sync.
+The password stays in the runtime config and is not passed as a process argument.
+*/}}
+{{- define "dogecoin.rpcProbeCommand" -}}
+- /dogecoin/bin/dogecoin-cli
+- -conf=/tmp/dogecoin.conf
+- -rpcconnect=127.0.0.1
+- {{ printf "-rpcport=%v" .Values.service.rpcPort | quote }}
+- getblockchaininfo
+{{- end -}}

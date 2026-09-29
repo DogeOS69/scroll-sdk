@@ -238,8 +238,12 @@ dashboards:
 
 grafanaAlerting:
   # Seed editable, enabled Grafana-managed application rules via the HTTP API.
-  # Existing rules (including UI edits and pause state) survive Helm upgrades.
+  # Untouched expressions/thresholds follow chart upgrades; UI edits and pause
+  # state are preserved. Legacy rules without a baseline report drift safely.
   enabled: true
+  # Explicit rule-name -> boolean overrides. Unlike default pause state, these
+  # also apply to existing chart-managed rules. Remove an override for UI control.
+  pauseRules: {}
   folderUID: scroll-monitor-alerts
   folderTitle: Scroll Monitor Alerts
   logs:
@@ -263,12 +267,14 @@ grafanaAlerting:
       cpu: 100m
       memory: 64Mi
 
+# TSO is scraped by default. Disable this supplemental monitor only when the
+# TSO chart already owns a monitor or TSO is intentionally absent.
 # Supplemental monitors for services whose own chart does not create one.
 # Enable only one monitor per endpoint to avoid duplicate scraping. These
 # discover Services in the scroll-monitor release namespace, using named ports.
 additionalServiceMonitors:
   tso:
-    enabled: false
+    enabled: true
     selector:
       matchLabels:
         app.kubernetes.io/name: tso-service
@@ -312,12 +318,14 @@ balanceMonitoring:
     jobRegex: ".*withdrawal-processor.*"
   ethereum:
     feeOracle:
+      enabled: true
       minimumEth: 5
       address: ""
       # Fee oracle submits to its configured L2 RPC. Override for another chain.
       rpcUrl: http://l2-rpc:8545
       expectedChainId: ""
     ethDaSubmitter:
+      enabled: true
       minimumEth: 0.1
       address: ""
       rpcUrl: ""
@@ -448,11 +456,6 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 50Gi
-      alerting:
-        alertmanagers:
-          - name: alertmanager-main
-            namespace: default
-            port: web
       serviceMonitorSelector:
         matchExpressions:
           - key: app.kubernetes.io/instance
@@ -515,3 +518,17 @@ dstack:
     staleAfterSeconds: 180
     unavailableFor: 5m
     diskAvailableRatio: 0.1
+
+# EKS exposes managed scheduler/controller-manager metrics through the API server.
+# Also disable kubeScheduler.serviceMonitor.enabled and
+# kubeControllerManager.serviceMonitor.enabled in kube-prometheus-stack when
+# enabling this profile. Keep their enabled/defaultRules switches on.
+eksControlPlane:
+  enabled: false
+
+# Receiver credentials remain in your existing Alertmanager configuration/Secret.
+# Set true to reject upgrades whose inline configuration still drops all alerts.
+# With alertmanagerSpec.useExistingSecret=true, verify the referenced Secret
+# separately; Helm cannot inspect it during an offline render.
+infrastructureAlerts:
+  requireReceiver: false

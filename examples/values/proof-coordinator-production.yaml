@@ -17,7 +17,7 @@ proofCoordinator:
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5a
 
 # Application process and arguments are deployment policy. Keep them in the
 # production values rather than introducing a chart revision for this rollout.

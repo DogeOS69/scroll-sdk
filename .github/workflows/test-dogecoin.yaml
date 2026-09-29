@@ -1,0 +1,33 @@
+name: Test Dogecoin chart
+on:
+  pull_request:
+    paths:
+      - charts/dogecoin/**
+      - charts/external-secrets-lib/**
+      - examples/values/dogecoin-production.yaml
+      - .github/workflows/test-dogecoin.yaml
+  push:
+    paths:
+      - charts/dogecoin/**
+      - charts/external-secrets-lib/**
+      - examples/values/dogecoin-production.yaml
+      - .github/workflows/test-dogecoin.yaml
+permissions:
+  contents: read
+jobs:
+  chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install PyYAML==6.0.2
+      - run: mkdir -p charts/dogecoin/charts
+      - run: helm package charts/external-secrets-lib --destination charts/dogecoin/charts
+      - run: helm lint --strict charts/dogecoin
+      - run: helm lint --strict charts/dogecoin -f charts/dogecoin/values/production.yaml
+      - run: python3 -m unittest discover -s charts/dogecoin/tests -p 'test_*.py' -v

@@ -7,7 +7,7 @@
 {{- $logGroups := (.Files.Get "alerts/logs.yaml" | replace "__NAMESPACES__" (join "|" $namespaces) | fromYaml).groups }}
 {{- $groups = concat $groups $logGroups }}
 {{- end }}
-{{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups }}
+{{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups "pauseRules" (include "scroll-monitor.pauseRules" . | fromYaml) }}
 ---
 apiVersion: v1
 kind: ConfigMap
