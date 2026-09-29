@@ -74,7 +74,7 @@ prepare:
 
 install-dogecoin:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n "$(NAMESPACE)" \
-		--version=0.1.12 \
+		--version=0.1.13 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:

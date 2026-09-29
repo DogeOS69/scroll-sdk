@@ -502,9 +502,9 @@ monitoring-specific labels or version bumps in application charts.
 An absent ServiceMonitor produces no `up` series at all; changing the Prometheus
 selector cannot create a missing monitor. When an application's chart does not
 provide one, `additionalServiceMonitors` can supply a monitor owned by this chart.
-The bundled TSO entry is disabled by default to avoid duplicating a monitor
-already managed by the application. For a deployment with a `tso-service`
-Service on the named `http` port and no TSO monitor, merge this into its values:
+The bundled TSO entry is enabled by default because the TSO chart does not
+create its own monitor. Disable this supplemental entry when TSO is intentionally
+absent or another owner already scrapes it. The default is:
 
 ```yaml
 additionalServiceMonitors:

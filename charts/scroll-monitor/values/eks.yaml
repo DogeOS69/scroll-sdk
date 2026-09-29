@@ -1,0 +1,10 @@
+# Merge after the base/production values. Uses EKS >= 1.28 control-plane APIs.
+eksControlPlane:
+  enabled: true
+kube-prometheus-stack:
+  kubeScheduler:
+    serviceMonitor:
+      enabled: false
+  kubeControllerManager:
+    serviceMonitor:
+      enabled: false

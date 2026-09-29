@@ -1,3 +1,17 @@
+{{/* Explicit overrides are authoritative, including for existing Grafana rules. */}}
+{{- define "scroll-monitor.pauseRules" -}}
+{{- $pauses := dict -}}
+{{- if not .Values.balanceMonitoring.ethereum.feeOracle.enabled -}}
+{{- $_ := set $pauses "FeeOracleAccountBalanceLow" true -}}
+{{- $_ := set $pauses "FeeOracleBalanceMonitorMissing" true -}}
+{{- end -}}
+{{- if not .Values.balanceMonitoring.ethereum.ethDaSubmitter.enabled -}}
+{{- $_ := set $pauses "EthDASubmitterAccountBalanceLow" true -}}
+{{- $_ := set $pauses "EthDASubmitterBalanceMonitorMissing" true -}}
+{{- end -}}
+{{- mergeOverwrite $pauses .Values.grafanaAlerting.pauseRules | toYaml -}}
+{{- end -}}
+
 {{/* Keep Grafana and Prometheus fallback definitions identical. */}}
 {{- define "scroll-monitor.metricGroups" -}}
 {{/* Reconstruct the shipped confirmation query only for conservative migration.
@@ -56,15 +70,29 @@
 {{- $groups = concat $groups $hostGroups.groups -}}
 {{- end -}}
 {{- end -}}
-{{/* Migration metadata belongs to the Grafana seeder, not Prometheus rules. */}}
-{{- if not $grafanaManaged -}}
+{{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}
+{{- $pauses := include "scroll-monitor.pauseRules" . | fromYaml -}}
+{{- $filteredGroups := list -}}
 {{- range $group := $groups -}}
+{{- $rules := list -}}
 {{- range $rule := $group.rules -}}
+{{- if hasKey $pauses $rule.alert -}}
+{{- $_ := set $rule "isPaused" (index $pauses $rule.alert) -}}
+{{- end -}}
+{{- if or $grafanaManaged (not ($rule.isPaused | default false)) -}}
+{{- if not $grafanaManaged -}}
 {{- $_ := unset $rule "previousExpr" -}}
 {{- $_ := unset $rule "previousAnnotations" -}}
 {{- $_ := unset $rule "previousFor" -}}
+{{- $_ := unset $rule "isPaused" -}}
+{{- end -}}
+{{- $rules = append $rules $rule -}}
 {{- end -}}
 {{- end -}}
+{{- if $rules -}}
+{{- $_ := set $group "rules" $rules -}}
+{{- $filteredGroups = append $filteredGroups $group -}}
 {{- end -}}
-{{- dict "groups" $groups | toYaml -}}
+{{- end -}}
+{{- dict "groups" $filteredGroups | toYaml -}}
 {{- end -}}

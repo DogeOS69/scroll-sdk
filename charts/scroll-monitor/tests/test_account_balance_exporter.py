@@ -138,6 +138,19 @@ class BalanceTests(unittest.TestCase):
             self.assertEqual(exporter.results[account]["error"], "invalid_address")
         self.assertEqual(self.server.calls, [])
 
+    def test_disabled_account_is_not_queried_or_exported(self):
+        config = BALANCE.account_config({"SCROLL_BALANCE_FEE_ORACLE_ENABLED": "false"})
+        self.assertNotIn("fee-oracle", config)
+        self.assertIn("eth-da-submitter", config)
+        exporter = BALANCE.Exporter({"eth-da-submitter": self.account})
+        exporter.refresh()
+        self.assertNotIn('account="fee-oracle"', exporter.render())
+        self.assertEqual(len(self.server.calls), 2)
+
+    def test_invalid_enabled_flag_does_not_silently_disable_monitoring(self):
+        with self.assertRaisesRegex(ValueError, "ENABLED must be true or false"):
+            BALANCE.account_config({"SCROLL_BALANCE_FEE_ORACLE_ENABLED": "flase"})
+
     def test_malformed_rpc_quantities_are_rejected(self):
         for value in (None, 0, "0", "-1", "0x", "0x00", "0x-1", "NaN"):
             with self.subTest(value=value):

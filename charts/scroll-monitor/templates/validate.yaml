@@ -1,11 +1,52 @@
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
   {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
 {{- end }}
+{{- range $name, $paused := .Values.grafanaAlerting.pauseRules }}
+{{- if not (kindIs "bool" $paused) }}
+{{- fail (printf "grafanaAlerting.pauseRules.%s must be a boolean" $name) }}
+{{- end }}
+{{- end }}
+{{- $stack := index .Values "kube-prometheus-stack" }}
+{{- if .Values.eksControlPlane.enabled }}
+{{- if or (not $stack.enabled) (not $stack.prometheus.enabled) }}
+{{- fail "eksControlPlane requires the bundled Prometheus" }}
+{{- end }}
+{{- if or $stack.kubeScheduler.serviceMonitor.enabled $stack.kubeControllerManager.serviceMonitor.enabled }}
+{{- fail "eksControlPlane requires kube-prometheus-stack.kubeScheduler.serviceMonitor.enabled=false and kubeControllerManager.serviceMonitor.enabled=false to avoid duplicate targets" }}
+{{- end }}
+{{- if or (not $stack.kubeScheduler.enabled) (not $stack.kubeControllerManager.enabled) }}
+{{- fail "eksControlPlane requires kubeScheduler.enabled and kubeControllerManager.enabled to retain their monitoring rules" }}
+{{- end }}
+{{- end }}
+{{- if .Values.infrastructureAlerts.requireReceiver }}
+{{- if not $stack.alertmanager.enabled }}
+{{- fail "infrastructureAlerts.requireReceiver requires the bundled Alertmanager" }}
+{{- end }}
+{{- if not $stack.alertmanager.alertmanagerSpec.useExistingSecret }}
+{{- $configured := false }}
+{{- $defaultReceiver := $stack.alertmanager.config.route.receiver }}
+{{- range $receiver := $stack.alertmanager.config.receivers }}
+{{- if eq $receiver.name $defaultReceiver }}
+{{- range $key, $value := $receiver }}
+{{- if and (hasSuffix "_configs" $key) (not (empty $value)) }}
+{{- $configured = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if not $configured }}
+{{- fail "infrastructureAlerts.requireReceiver: configure a default Alertmanager receiver with a notification integration, or provide alertmanagerSpec.useExistingSecret" }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if empty .Values.dogecoinIndexerAlerts.jobRegex }}
 {{- fail "dogecoinIndexerAlerts.jobRegex must select the indexer jobs" }}
 {{- end }}
 {{- if .Values.balanceMonitoring.enabled }}
 {{- range $account := .Values.balanceMonitoring.ethereum }}
+{{- if not (kindIs "bool" $account.enabled) }}
+{{- fail "balanceMonitoring.ethereum account enabled flags must be booleans" }}
+{{- end }}
 {{- if lt (float64 $account.minimumEth) 0.0 }}
 {{- fail "balanceMonitoring Ethereum thresholds must be nonnegative" }}
 {{- end }}

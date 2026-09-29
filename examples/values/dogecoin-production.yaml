@@ -1,3 +1,29 @@
+replicaCount: 1
+
+# Recreate updates wait for the old Pod to exit; allow chainstate/wallet flushes.
+# Tune from observed shutdown time. This is a maximum, not a startup delay.
+terminationGracePeriodSeconds: 300
+
+# No fixed startup delay: a fast regtest node can become ready immediately.
+# Startup/readiness use local authenticated getblockchaininfo (not full sync).
+# Liveness checks the RPC socket only after startup succeeds, avoiding IBD restarts.
+probes:
+  startup:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 720  # About 1 hour for loading/reindexing; increase if needed.
+  liveness:
+    initialDelaySeconds: 0
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readiness:
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 3
+
 fullnameOverride: dogecoin
 
 dogecoinConf:

@@ -17,7 +17,7 @@ For sequencer CPU, memory, storage, and block-production settings, see the
 [sequencer sizing recommendations](../docs/sequencer-sizing.md), including
 measured transfer and full-gas workload results from the devnet test.
 
-For the seven DogeOS core services, see the
+For the eight DogeOS core services, see the
 [source-aligned example review and operator steps](core-service-review.md),
 including secret ownership, native-config generation and local validation.
 The follow-up [startup command decision](core-service-review.md#startup-command-decision)
@@ -41,6 +41,13 @@ than keeping a second hand-maintained generated configuration. Keep intentional
 environment differences explicit (for example, DA MAX_OPEN_L2_TIME is 3000s
 in the example while this devnet uses 300s). Validate Helm rendering and the
 native config, record manual steps in the CLI handbook, and commit each fix.
+
+## Core release configuration
+
+The core service examples target **v0.3.0-beta.5a**. See the
+[beta.5a configuration notes](core-beta5a-configuration.md) for required native
+settings, temporary WP memory sizing, proof release selection and monitoring
+limitations.
 
 ## Scripts
 

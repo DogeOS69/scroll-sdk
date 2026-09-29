@@ -187,22 +187,16 @@ are 1–120 and 1–15 seconds respectively.
 
 ## Metrics discovery inputs
 
-`additionalServiceMonitors.tso` is a supplemental monitor owned by scroll-monitor.
-The generator/operator must select exactly one owner for TSO scraping:
+`additionalServiceMonitors.tso` is enabled by default and owned by scroll-monitor.
+The TSO production profiles leave the application-owned ServiceMonitor disabled.
+No opt-in is required for the standard TSO Service in the release namespace.
+If another chart already owns the scrape, set this supplemental monitor to false
+so each endpoint has one owner. Its selector must match the Service labels and
+its port is the named Service port `http`, not the numeric port `3000`.
 
-- When generated TSO values enable their own ServiceMonitor, leave the
-  supplemental entry disabled. This is the current TSO production example.
-- For a legacy TSO deployment without its own monitor, set
-  `additionalServiceMonitors.tso.enabled: true` in scroll-monitor values.
-  Populate `selector.matchLabels` from the actual generated Service labels and
-  `endpoints[].port` from the **named Service port**, normally `http`.
-  The normal path is `/metrics`, with a 30-second interval and 10-second timeout.
-- Keep the entry disabled if TSO is not part of the deployment. Supplemental
-  monitors discover Services only in the scroll-monitor release namespace.
-
-The existing balance reconciler does not infer this new ServiceMonitor ownership
-decision. The explicit example supplies the field contract for the generator
-and operator to retain/populate; no separate CLI repository was changed here.
+A ServiceMonitor does not override NetworkPolicy. On deployments that enforce
+TSO's direct-sign isolation, arrange a metrics-only listener or proxy rather than
+opening the shared port (which also serves `/propose`) without reviewing access.
 
 ## Dogecoin indexer stall monitoring
 
@@ -228,12 +222,127 @@ An absent `up` series can mean no ServiceMonitor was selected. It is different
 from `up == 0`, which means a discovered endpoint failed its scrape. Check both
 target discovery and the native metric before relying on an alert.
 
-If fee-oracle is intentionally not deployed, review and pause its Grafana rules,
-including funding rules for any account that is no longer used. Missing metrics
-produce warning rules rather than false claims of zero signers or stale oracle
-values. The chart does not silently turn off monitoring when a service disappears.
-Existing Grafana rules retain user edits and pause choices on upgrades, apart
-from exact migrations of known shipped query defects.
+## Intentionally absent Fee Oracle
+
+Disable its balance collection and explicitly pause the two service-health rules:
+
+```yaml
+balanceMonitoring:
+  ethereum:
+    feeOracle:
+      enabled: false
+grafanaAlerting:
+  pauseRules:
+    FeeOracleStale: true
+    FeeOracleMetricMissing: true
+```
+
+A disabled balance account is not queried and exports no account series. Its
+low-balance and missing-balance-monitor rules are automatically paused as well.
+`pauseRules` is an explicit override, applied to both new and existing
+scroll-monitor-managed Grafana rules. Set an entry to false to resume through
+values, or remove it to return pause control to the UI. Removing an override
+preserves the current pause state; it does not implicitly resume a rule.
+Prometheus fallback omits explicitly paused rules because it has no pause state.
+Disabling a balance account alone does not declare the service absent.
+
+## Grafana rule updates and preview
+
+The seeder records hashes of the last chart-managed expression, pending period,
+and annotations in the internal `__scroll_monitor_last_applied__` annotation.
+An unchanged field follows new values on subsequent upgrades. A field edited in
+Grafana is preserved and a `DRIFT <rule>: ...` message identifies the difference.
+Pause state, notification routing, labels, title and group interval remain under
+UI control, except for explicit `pauseRules` entries.
+
+Existing installations have no baseline. The first upgrade migrates exact known
+legacy expressions, adopts fields already matching the desired configuration,
+and reports other differences without guessing whether they were UI edits.
+Resolve a legacy difference in Grafana to match the desired field; the following
+upgrade records the baseline. A future values change can then update it safely.
+The seeder does not delete user rules or rules removed from the chart.
+
+Render locally and extract the seed inputs (no Kubernetes access):
+
+```bash
+helm template scroll-monitor ./charts/scroll-monitor -n default \
+  -f /path/to/scroll-monitor-production.yaml > /tmp/scroll-monitor-rendered.yaml
+python3 - <<'PYCODE'
+import pathlib, yaml
+for doc in yaml.safe_load_all(pathlib.Path('/tmp/scroll-monitor-rendered.yaml').read_text()):
+    if doc and doc['kind'] == 'ConfigMap' and doc['metadata']['name'] == 'scroll-monitor-grafana-alerts':
+        pathlib.Path('/tmp/scroll-monitor-rules.json').write_text(doc['data']['rules.json'])
+PYCODE
+```
+
+To compare with a Grafana server, provide `GRAFANA_URL` and a read-capable
+`GRAFANA_TOKEN` through the environment, then run:
+
+```bash
+python3 charts/scroll-monitor/scripts/seed-grafana-alerts.py \
+  /tmp/scroll-monitor-rules.json --dry-run
+```
+
+This preview performs GET requests only, reports planned additions/updates and
+conflicts, and does not create folders, unlock groups or write rules. The Helm
+post-install/post-upgrade Job performs the actual updates when you apply.
+
+## EKS control-plane metrics
+
+Merge `charts/scroll-monitor/values/eks.yaml` into the deployment values. It enables
+API-server-backed scheduler and controller-manager scraping, disables their old
+Pod-based ServiceMonitors, and keeps the upstream alert/recording rules enabled.
+The generated ClusterRole grants only `get` on `ksh/metrics` and `kcm/metrics` in
+`metrics.eks.amazonaws.com`, bound to the actual Prometheus ServiceAccount.
+TLS validates the mounted CA and `kubernetes.default.svc` server name.
+
+The ServiceMonitor discovers the `default/kubernetes` Service even when the
+monitoring release is in another namespace, and sets the jobs to
+`kube-scheduler` / `kube-controller-manager` for the retained upstream rules.
+Do not turn off the top-level component `enabled` switches: those also remove
+upstream rules. Helm validation rejects duplicate old scrapers in this profile.
+See [AWS control-plane metrics](https://docs.aws.amazon.com/eks/latest/userguide/view-raw-metrics.html).
+
+## Infrastructure notification routing
+
+Grafana contact points apply to Grafana-managed application rules. The bundled
+Prometheus infrastructure rules use the bundled Alertmanager, whose upstream
+default receiver is `null`. Chart installation does not invent a notification
+destination. Helm NOTES flags this configuration; production installations that
+require delivery should set `infrastructureAlerts.requireReceiver: true`.
+
+For a webhook receiver, use the following example with a pre-existing Secret
+`infrastructure-webhook` containing a `url` key. Supply your actual receiver URL;
+never commit it in values when it contains a credential:
+
+```yaml
+infrastructureAlerts:
+  requireReceiver: true
+kube-prometheus-stack:
+  alertmanager:
+    alertmanagerSpec:
+      secrets: [infrastructure-webhook]
+    config:
+      route:
+        receiver: infrastructure
+        group_by: [namespace, alertname]
+        routes:
+          - receiver: "null"
+            matchers: ['alertname="Watchdog"']
+      receivers:
+        - name: "null"
+        - name: infrastructure
+          webhook_configs:
+            - url_file: /etc/alertmanager/secrets/infrastructure-webhook/url
+              send_resolved: true
+```
+
+This strict check verifies an inline default receiver has an integration; it
+cannot establish external delivery or inspect an existing Alertmanager Secret.
+If using `alertmanagerSpec.useExistingSecret`, validate that Secret and receiver
+separately. SMTP and other channels use the upstream Alertmanager configuration.
+After applying, verify routing and delivery with your configured notification
+channel; a successful Helm upgrade alone is not delivery confirmation.
 
 ## Component publication v2
 

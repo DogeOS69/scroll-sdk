@@ -71,6 +71,73 @@ class TemplateTests(unittest.TestCase):
         default_data = resource(render(), "ConfigMap", "grafana")["data"]
         self.assertNotIn("instatus-contact-points.yaml", default_data)
 
+    def test_eks_profile_replaces_scrapers_and_retains_rules_and_custom_sa(self):
+        docs = render("--set", "eksControlPlane.enabled=true",
+                      "--set", "kube-prometheus-stack.kubeScheduler.serviceMonitor.enabled=false",
+                      "--set", "kube-prometheus-stack.kubeControllerManager.serviceMonitor.enabled=false",
+                      "--set", "kube-prometheus-stack.prometheus.serviceAccount.name=metrics-reader")
+        monitor = resource(docs, "ServiceMonitor", "scroll-monitor-eks-control-plane")
+        self.assertEqual(monitor["spec"]["namespaceSelector"]["matchNames"], ["default"])
+        jobs = {e["relabelings"][0]["replacement"] for e in monitor["spec"]["endpoints"]}
+        self.assertEqual(jobs, {"kube-scheduler", "kube-controller-manager"})
+        for endpoint in monitor["spec"]["endpoints"]:
+            self.assertEqual(endpoint["tlsConfig"]["serverName"], "kubernetes.default.svc")
+            self.assertNotIn("insecureSkipVerify", endpoint["tlsConfig"])
+        self.assertFalse(any(d["kind"] == "ServiceMonitor" and d["metadata"]["name"] in
+                             {"prometheus-kube-scheduler", "prometheus-kube-controller-manager"} for d in docs))
+        alerts = {r["alert"] for d in docs if d["kind"] == "PrometheusRule"
+                  for g in d["spec"]["groups"] for r in g["rules"] if "alert" in r}
+        self.assertTrue({"KubeSchedulerDown", "KubeControllerManagerDown"} <= alerts)
+        binding = resource(docs, "ClusterRoleBinding", "monitoring-scroll-monitor-eks-metrics")
+        self.assertEqual(binding["subjects"], [{"kind": "ServiceAccount", "name": "metrics-reader", "namespace": "monitoring"}])
+        role = resource(docs, "ClusterRole", "monitoring-scroll-monitor-eks-metrics")
+        self.assertEqual(role["rules"], [{"apiGroups": ["metrics.eks.amazonaws.com"],
+                                        "resources": ["ksh/metrics", "kcm/metrics"], "verbs": ["get"]}])
+
+    def test_eks_requires_disabling_old_scrapers(self):
+        result = subprocess.run(["helm", "template", "scroll-monitor", str(CHART),
+                                 "--set", "eksControlPlane.enabled=true"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("avoid duplicate targets", result.stderr)
+
+    def test_pause_and_account_switches_reject_string_booleans(self):
+        for option in ("grafanaAlerting.pauseRules.FeeOracleStale=false",
+                       "balanceMonitoring.ethereum.feeOracle.enabled=false"):
+            result = subprocess.run(["helm", "template", "scroll-monitor", str(CHART),
+                                     "--set-string", option], text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("boolean", result.stderr)
+
+    def test_explicit_pauses_and_disabled_balance_account_are_consistent(self):
+        args = ("--set", "balanceMonitoring.ethereum.feeOracle.enabled=false",
+                "--set", "grafanaAlerting.pauseRules.FeeOracleMetricMissing=true")
+        docs = render(*args)
+        rules = grafana_rules(docs)
+        self.assertTrue(rules["FeeOracleMetricMissing"]["isPaused"])
+        self.assertTrue(rules["FeeOracleAccountBalanceLow"]["isPaused"])
+        config = json.loads(resource(docs, "ConfigMap", "scroll-monitor-grafana-alerts")["data"]["rules.json"])
+        self.assertTrue(config["pauseRules"]["FeeOracleBalanceMonitorMissing"])
+        env = resource(docs, "Deployment", "scroll-monitor-account-balances")["spec"]["template"]["spec"]["containers"][0]["env"]
+        self.assertIn({"name": "SCROLL_BALANCE_FEE_ORACLE_ENABLED", "value": "false"}, env)
+        native = resource(render(*args, "--set", "grafanaAlerting.enabled=false"),
+                          "PrometheusRule", "scroll-monitor-dogeos")
+        names = {r["alert"] for g in native["spec"]["groups"] for r in g["rules"]}
+        self.assertNotIn("FeeOracleAccountBalanceLow", names)
+        self.assertNotIn("FeeOracleBalanceMonitorMissing", names)
+        self.assertNotIn("FeeOracleMetricMissing", names)
+        self.assertIn("EthDASubmitterAccountBalanceLow", names)
+
+    def test_require_receiver_rejects_null_default_but_accepts_real_integration(self):
+        result = subprocess.run(["helm", "template", "scroll-monitor", str(CHART),
+                                 "--set", "infrastructureAlerts.requireReceiver=true"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("configure a default Alertmanager receiver", result.stderr)
+        docs = render("--set", "infrastructureAlerts.requireReceiver=true",
+                      "--set", "kube-prometheus-stack.alertmanager.config.route.receiver=ops",
+                      "--set", "kube-prometheus-stack.alertmanager.config.receivers[0].name=ops",
+                      "--set", "kube-prometheus-stack.alertmanager.config.receivers[0].webhook_configs[0].url=https://alerts.example.com/")
+        self.assertTrue(any(d["kind"] == "Alertmanager" for d in docs))
+
     def test_grafana_and_prometheus_use_identical_metric_rules(self):
         native = resource(render("--set", "grafanaAlerting.enabled=false"),
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
@@ -189,10 +256,10 @@ class TemplateTests(unittest.TestCase):
             self.assertEqual(sum(len(group["rules"]) for group in groups), 43)
             self.assertFalse(any("isPaused" in rule for group in groups for rule in group["rules"]))
 
-    def test_supplemental_tso_monitor_is_opt_in_and_discoverable(self):
+    def test_supplemental_tso_monitor_is_default_and_discoverable(self):
         self.assertFalse(any(doc["metadata"]["name"] == "scroll-monitor-extra-tso"
-                             for doc in render()))
-        docs = render("--set", "additionalServiceMonitors.tso.enabled=true")
+                             for doc in render("--set", "additionalServiceMonitors.tso.enabled=false")))
+        docs = render()
         monitor = resource(docs, "ServiceMonitor", "scroll-monitor-extra-tso")
         self.assertEqual(monitor["metadata"]["namespace"], "monitoring")
         self.assertEqual(monitor["metadata"]["labels"]["app.kubernetes.io/instance"], "scroll-monitor")

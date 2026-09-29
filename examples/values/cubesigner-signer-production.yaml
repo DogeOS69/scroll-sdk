@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5a
 
 global:
   nameOverride: "cubesigner-signer"
@@ -85,6 +85,9 @@ env:
     value: "393216"
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_RESPONSE_JSON_BYTES"
     value: "393216"
+  # Generated from explicit cubesigner.mode in doge-config.toml. For a testnet
+  # observe deployment, select transport_only in that source and run prep-charts.
+  # Production/enforce deployments require this policy mode and matching receipts.
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_MODE"
     value: "production_verifier_key_policy"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_SDK_VERSION"

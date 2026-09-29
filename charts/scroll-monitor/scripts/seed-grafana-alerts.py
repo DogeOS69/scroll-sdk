@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Seed UI-editable Grafana rules without replacing operators' existing rules."""
 
+import argparse
 import base64
 import copy
 import hashlib
@@ -11,6 +12,87 @@ import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
+
+
+BASELINE = "__scroll_monitor_last_applied__"
+
+
+def fingerprint(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def managed_fields(rule):
+    """Only manage expression A, pending period and chart annotations.
+
+    Pause, routing, labels, group interval, and expression pipeline B/C remain
+    operator-owned. Include the datasource in A's fingerprint so a UI datasource
+    change prevents an expression update against a different source.
+    """
+    queries = [q for q in rule.get("data", []) if q.get("refId") == "A"]
+    fields = {"for": rule.get("for", "0s")}
+    if len(queries) == 1:
+        fields["queryA"] = {
+            "expr": queries[0].get("model", {}).get("expr"),
+            "datasourceUid": queries[0].get("datasourceUid"),
+        }
+    for key, value in rule.get("annotations", {}).items():
+        if key != BASELINE:
+            fields["annotation:" + key] = value
+    return fields
+
+
+def reconcile_rule(existing, source, desired, pause=None):
+    """Three-way merge; unknown legacy differences are reported, never guessed."""
+    if existing.get("labels", {}).get("managed_by") != "scroll-monitor":
+        print(f'DRIFT {desired["title"]}: UID belongs to an unmanaged rule; preserved', flush=True)
+        return None
+    updated = migrate_expression(existing, source, desired) or copy.deepcopy(existing)
+    try:
+        baseline = json.loads(existing.get("annotations", {}).get(BASELINE, "{}"))
+        if not isinstance(baseline, dict):
+            baseline = {}
+    except (ValueError, TypeError):
+        baseline = {}
+    current_fields = managed_fields(updated)
+    desired_fields = managed_fields(desired)
+    changed = []
+    conflicts = []
+    # Track only known untouched fields; never adopt a differing legacy field.
+    next_baseline = {k: v for k, v in baseline.items() if k in desired_fields}
+    for field, target in desired_fields.items():
+        current = current_fields.get(field)
+        if current == target:
+            next_baseline[field] = fingerprint(target)
+            continue
+        if field not in baseline or fingerprint(current) != baseline[field]:
+            conflicts.append(field)
+            continue
+        if field == "queryA":
+            for query in updated["data"]:
+                if query.get("refId") == "A":
+                    query["model"]["expr"] = target["expr"]
+                    query["datasourceUid"] = target["datasourceUid"]
+                    if "datasource" in query["model"]:
+                        query["model"]["datasource"]["uid"] = target["datasourceUid"]
+        elif field == "for":
+            updated["for"] = target
+        else:
+            updated.setdefault("annotations", {})[field.removeprefix("annotation:")] = target
+        next_baseline[field] = fingerprint(target)
+        changed.append(field)
+    if pause is not None and updated.get("isPaused", False) != pause:
+        updated["isPaused"] = pause
+        changed.append("isPaused (explicit override)")
+    updated.setdefault("annotations", {})[BASELINE] = json.dumps(next_baseline, sort_keys=True)
+    if conflicts:
+        print(f'DRIFT {desired["title"]}: preserved UI/legacy differences in {", ".join(conflicts)}', flush=True)
+    if changed:
+        print(f'UPDATE {desired["title"]}: {", ".join(changed)}', flush=True)
+    if updated == existing:
+        return None
+    for field in ("id", "updated", "provenance"):
+        updated.pop(field, None)
+    return updated
 
 
 class Grafana:
@@ -65,7 +147,7 @@ def alert_rule(source, config, group):
         key: value.replace("$value", "$values.A.Value")
         for key, value in source.get("annotations", {}).items()
     }
-    return {
+    rule = {
         "uid": uid,
         "orgID": 1,
         "folderUID": config["folderUID"],
@@ -75,7 +157,7 @@ def alert_rule(source, config, group):
         "for": source.get("for", "0s"),
         "noDataState": "OK",
         "execErrState": "Error",
-        "isPaused": source.get("isPaused", False),
+        "isPaused": config.get("pauseRules", {}).get(source["alert"], source.get("isPaused", False)),
         "labels": {**source.get("labels", {}), "managed_by": "scroll-monitor"},
         "annotations": annotations,
         "data": [
@@ -125,6 +207,9 @@ def alert_rule(source, config, group):
             },
         ],
     }
+    rule["annotations"][BASELINE] = json.dumps(
+        {key: fingerprint(value) for key, value in managed_fields(rule).items()}, sort_keys=True)
+    return rule
 
 
 def alternatives(value):
@@ -162,9 +247,9 @@ def migrate_expression(existing, source, desired):
     return updated
 
 
-def seed(client, config):
+def seed(client, config, dry_run=False):
     folder = quote(config["folderUID"], safe="")
-    if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None:
+    if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None and not dry_run:
         client.request("POST", "/api/folders", {
             "uid": config["folderUID"], "title": config["folderTitle"],
         })
@@ -184,12 +269,17 @@ def seed(client, config):
         for source, rule in desired:
             current = next((item for item in rules if item["uid"] == rule["uid"]), None)
             if current is not None:
-                migrated = migrate_expression(current, source, rule)
+                migrated = reconcile_rule(current, source, rule,
+                                          config.get("pauseRules", {}).get(source["alert"]))
                 if migrated is not None:
                     migrations.append(migrated)
         unlock = any(rule.get("provenance") == "api" for rule in rules)
         if not additions and not unlock and not migrations:
             print(f'Preserved {group["name"]}: {len(rules)} existing rules', flush=True)
+            continue
+        if dry_run:
+            print(f'PLAN {group["name"]}: {len(additions)} new, '
+                  f'{len(migrations)} updates, unlock={unlock}', flush=True)
             continue
         if unlock:
             for rule in rules:
@@ -209,12 +299,16 @@ def seed(client, config):
         for rule in migrations:
             client.request("PUT", f'/api/v1/provisioning/alert-rules/{quote(rule["uid"], safe="")}', rule)
         print(f'Seeded {group["name"]}: {len(additions)} new, '
-              f'{len(migrations)} queries migrated, {len(rules)} existing', flush=True)
+              f'{len(migrations)} rules updated, {len(rules)} existing', flush=True)
 
 
 if __name__ == "__main__":
     try:
-        with open(sys.argv[1], encoding="utf-8") as source:
-            seed(Grafana(), json.load(source))
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("config", help="rendered rules.json")
+        parser.add_argument("--dry-run", action="store_true", help="GET only; report differences without writes")
+        args = parser.parse_args()
+        with open(args.config, encoding="utf-8") as source:
+            seed(Grafana(), json.load(source), dry_run=args.dry_run)
     except (RuntimeError, OSError, ValueError) as error:
         sys.exit(str(error))

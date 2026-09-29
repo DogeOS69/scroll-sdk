@@ -1,0 +1,9 @@
+# Local regression-test chain. All networks share adaptive probe defaults:
+# an immediate successful RPC probe bypasses the remaining startup allowance.
+# Storage settings are intentionally inherited from the operator's values.
+dogecoinConf:
+  testnet: 0
+  regtest: 1
+service:
+  port: 18444
+  rpcPort: 18332

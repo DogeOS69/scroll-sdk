@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5a
 
 # Empty command/args explicitly retain the image ENTRYPOINT and CMD.
 command: []
@@ -99,6 +99,7 @@ configMaps:
 
       DOGEOS_ETH_DA_SUBMITTER_BATCH__GENESIS_JSON_PATH: /app/genesis/genesis.json
       DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "auto"
+      # Must be strictly greater than the execution genesis gasLimit.
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "15000000"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_BLOCKS_PER_CHUNK: "128"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_CHUNK_BYTES_SIZE: "122880"
