@@ -7,7 +7,7 @@ global:
 image:
   repository: dogeos69/fee-oracle
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5a
+  tag: v0.3.0-beta.5c
 
 service:
   main:

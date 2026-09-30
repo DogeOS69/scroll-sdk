@@ -1,6 +1,10 @@
 # Core beta.5a configuration
 
-The eight core service values examples select `v0.3.0-beta.5a`: withdrawal-processor,
+Historical reference: the current examples select beta.5c. See the
+[beta.5c configuration notes](core-beta5c-configuration.md) for the current
+release. The in-place upgrade notes below apply only to beta.5 → beta.5a.
+
+At the beta.5a rollout, the eight core service values examples selected `v0.3.0-beta.5a`: withdrawal-processor,
 proof-coordinator, eager-materializer, l1-interface, eth-da-submitter, fee-oracle,
 tso-service and cubesigner-signer. Keep matching init-container images aligned
 with the application image when generating deployment values. This selection

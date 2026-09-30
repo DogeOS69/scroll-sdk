@@ -5,6 +5,12 @@ the bridge operator's cluster. The bridge operator receives only the signer's
 HTTPS endpoint and compressed public key. It never receives the WIF, KMS
 credentials, private RPC credentials, or the partner's trust policy.
 
+The reference Compose image defaults to `v0.3.0-beta.5c`. The environment
+example includes that binary's release/commit approval pins. When upgrading
+an existing beta.5b signer, update its selected image and approval pins together
+while retaining its identity, policy bundle and database volume. See the
+[beta.5c upgrade checklist](../../examples/core-beta5c-configuration.md).
+
 The current dogeos-core contract is `attestation_evidence_v2`:
 
 ```text

@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5a
+  tag: v0.3.0-beta.5c
 
 # Empty command/args explicitly retain the image ENTRYPOINT and CMD.
 command: []

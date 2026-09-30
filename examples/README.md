@@ -44,10 +44,14 @@ native config, record manual steps in the CLI handbook, and commit each fix.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.5a**. See the
-[beta.5a configuration notes](core-beta5a-configuration.md) for required native
-settings, temporary WP memory sizing, proof release selection and monitoring
-limitations.
+The core service examples target **v0.3.0-beta.5c**. Follow the
+[beta.5c configuration and upgrade checklist](core-beta5c-configuration.md)
+for required native settings, image/build pins, eager proving and verification.
+Beta.5b-to-beta.5c upgrades preserve existing databases and proof identities;
+these in-place instructions do not cover older release transitions.
+
+The [beta.5a configuration notes](core-beta5a-configuration.md) remain a
+historical reference for that release's settings and memory diagnostics.
 
 ## Contracts images
 
