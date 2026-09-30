@@ -11,7 +11,7 @@
 #   policy/                 — canonical context and optional production AggVK
 services:
   attestation-signer:
-    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.2}
+    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.5c}
     command: ["-c", "/etc/dogeos-partner/attestation-signer.toml"]
     restart: unless-stopped
     env_file:
