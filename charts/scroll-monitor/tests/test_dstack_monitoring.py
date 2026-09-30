@@ -34,9 +34,11 @@ def rules(docs):
 
 
 class DstackMonitoringTests(unittest.TestCase):
-    def test_opt_in_native_metrics_with_separate_secret_and_exact_service_selector(self):
+    def test_default_native_metrics_with_separate_secret_and_exact_service_selector(self):
         default = render(CONTROLLER)
-        self.assertFalse(any(d['kind'] == 'ServiceMonitor' for d in default))
+        self.assertTrue(any(d['kind'] == 'ServiceMonitor' for d in default))
+        disabled = render(CONTROLLER, {'monitoring': {'enabled': False}})
+        self.assertFalse(any(d['kind'] == 'ServiceMonitor' for d in disabled))
         docs = render(CONTROLLER, {'fullnameOverride': 'custom-dstack', 'monitoring': {
             'enabled': True, 'auth': {'existingSecret': 'metrics', 'key': 'bearer'}, 'interval': '60s'}})
         service = one(docs, 'Service')
@@ -67,8 +69,8 @@ class DstackMonitoringTests(unittest.TestCase):
             with self.subTest(values=values), self.assertRaises(AssertionError):
                 render(CONTROLLER, values)
 
-    def test_monitor_overlay_discovers_both_namespaces_and_provisions_dashboard(self):
-        values = yaml.safe_load((MONITOR / 'values/dstack.yaml').read_text())
+    def test_defaults_discover_both_namespaces_and_provision_dashboard(self):
+        values = {}
         docs = render(MONITOR, values)
         selector = one(docs, 'Prometheus')['spec']['serviceMonitorNamespaceSelector']
         self.assertFalse(selector.get('matchLabels'))
@@ -87,7 +89,7 @@ class DstackMonitoringTests(unittest.TestCase):
         self.assertEqual(native, [r for g in fallback for r in g['rules'] if r['alert'].startswith('Dstack')])
 
     def test_disabled_integration_keeps_dashboard_without_collection_or_alerts(self):
-        docs = render(MONITOR)
+        docs = render(MONITOR, {'dstack': {'enabled': False}})
         self.assertEqual(rules(docs), [])
         dashboard = json.loads(one(docs, 'ConfigMap', 'grafana-dogeos-dashboards')['data']['dstack.json'])
         self.assertEqual(dashboard['uid'], 'dogeos-dstack')

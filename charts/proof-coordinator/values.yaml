@@ -57,6 +57,9 @@ service:
   main:
     enabled: false
     ports:
+      # The shared chart enables an unconfigured HTTP port by default.
+      http:
+        enabled: false
       prover:
         enabled: true
         primary: true

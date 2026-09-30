@@ -560,9 +560,10 @@ installing the default values.
 
 ## Dstack and GPU monitoring
 
-Apply `values/dstack.yaml` after production values to enable internal controller
-alerts, cross-namespace ServiceMonitor discovery and
-controller logs. The Dstack/GPU dashboard is included with bundled dashboards,
+Internal controller alerts, controller logs and ServiceMonitor discovery in
+`dstack-system` are enabled by default. Apply the CLI-generated
+`scroll-monitor-dstack.yaml` after production values to select a different
+controller namespace. Set `dstack.enabled: false` to disable this integration. The Dstack/GPU dashboard is included with bundled dashboards,
 even when dstack monitoring is disabled; unconnected panels show No data.
 See [the integration guide](../../examples/dstack-monitoring/README.md).
 This does not configure public status-page routing.

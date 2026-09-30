@@ -184,6 +184,8 @@ real provider provisioning; those require a separate isolated deployment test.
 
 ## Internal monitoring
 
-Enable `monitoring.enabled` to expose authenticated native metrics and create a
-ServiceMonitor. See [the monitoring guide](../../examples/dstack-monitoring/README.md)
+`monitoring.enabled` defaults to true: the controller exposes authenticated native
+metrics and creates a ServiceMonitor. Provide the dedicated monitoring Secret
+(the CLI generates it), and install Prometheus Operator CRDs first. Set it to
+false to disable metrics and the ServiceMonitor. See [the monitoring guide](../../examples/dstack-monitoring/README.md)
 for CLI generation, namespace discovery, GPU coverage, and optional host Alloy.
