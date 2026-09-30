@@ -93,7 +93,7 @@ affinity: {}
 
 # Internal monitoring only. Requires Prometheus Operator CRDs when enabled.
 monitoring:
-  enabled: false
+  enabled: true
   # Independent of admin/backend credentials. Secret lives in this release namespace.
   auth:
     existingSecret: dstack-controller-monitoring

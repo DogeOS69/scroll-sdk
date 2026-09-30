@@ -34,7 +34,7 @@ class ControllerTemplates(unittest.TestCase):
     def test_default_has_no_provisioning_hooks_gpu_or_cluster_privileges(self):
         docs = resources()
         self.assertEqual({d["kind"] for d in docs}, {
-            "Deployment", "Service", "ServiceAccount", "PersistentVolumeClaim"})
+            "Deployment", "Service", "ServiceAccount", "PersistentVolumeClaim", "ServiceMonitor"})
         self.assertTrue(all("helm.sh/hook" not in d["metadata"].get("annotations", {}) for d in docs))
         deployment = resource(docs, "Deployment")
         self.assertEqual(deployment["spec"]["strategy"], {"type": "Recreate"})

@@ -460,13 +460,13 @@ kube-prometheus-stack:
         matchExpressions:
           - key: app.kubernetes.io/instance
             operator: Exists
-      # Scope discovery to the Helm release namespace without requiring
-      # monitoring-specific labels on application ServiceMonitors.
+      # Discover application and default dstack controller ServiceMonitors.
+      # The generated dstack overlay selects a custom controller namespace.
       serviceMonitorNamespaceSelector:
         matchExpressions:
           - key: kubernetes.io/metadata.name
             operator: In
-            values: ['{{ .Release.Namespace }}']
+            values: ['{{ .Release.Namespace }}', dstack-system]
       # Blockscout frontend exports through a PodMonitor, without a `release`
       # label. Use the same namespace-scoped discovery contract as Services.
       podMonitorSelector:
@@ -499,10 +499,10 @@ kube-prometheus-stack:
     fullnameOverride: kube-state-metrics
 
 # The bundled Dstack/GPU dashboard is always available, even without metrics.
-# Optional internal dstack alerts and log collection. Apply values/dstack.yaml as an overlay
-# to also allow ServiceMonitor discovery in the controller namespace.
+# Internal dstack alerts and log collection are enabled by default.
+# For another controller namespace, apply the generated scroll-monitor-dstack.yaml overlay.
 dstack:
-  enabled: false
+  enabled: true
   namespace: dstack-system
   # Must match the controller Deployment name (prefer fullnameOverride).
   controllerName: dstack-controller

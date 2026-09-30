@@ -280,6 +280,13 @@ serviceAlerts:
   enabled: true
   paused: true
 
+# Internal dstack monitoring is enabled by default. Apply the generated
+# scroll-monitor-dstack.yaml overlay when the controller uses another namespace.
+dstack:
+  enabled: true
+  namespace: dstack-system
+  controllerName: dstack-controller
+
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
   # Generator: match the actual Prometheus job names; no confirmation input needed.

@@ -47,7 +47,8 @@ dstackController:
       diskAvailableRatio: 0.1
 ```
 
-Only `monitoring.enabled` is needed to opt in; other values shown are defaults.
+Monitoring is enabled by default whenever the CLI generates a controller.
+The values shown above are defaults; set `monitoring.enabled: false` to opt out.
 Namespace must be the actual controller installation namespace. The CLI sets a
 stable `fullnameOverride` when monitoring is enabled so target labels, alerts
 and Kubernetes Deployment metrics agree across release names. On an existing
@@ -83,9 +84,9 @@ namespace list. If discovery already includes more namespaces, retain them when
 combining overlays. Prometheus Operator/Prometheus and Alloy need their normal
 cross-namespace RBAC. Custom namespace-restricted installations must grant it.
 
-To disable an existing integration, keep the monitoring block and set
-`enabled: false`, regenerate and apply BOTH files. Omitting the block leaves
-previously generated files untouched, consistent with other optional CLI inputs.
+To disable an existing integration, set `monitoring.enabled: false`, regenerate
+and apply BOTH files. Omitting the monitoring block selects the enabled defaults.
+Omitting the entire controller block still skips controller generation.
 
 ## Dashboard availability
 
@@ -93,8 +94,8 @@ previously generated files untouched, consistent with other optional CLI inputs.
 whenever bundled dashboards are enabled. There is no separate dstack dashboard
 switch; panels without metrics show **No data**.
 
-When dstack runs locally or is not ready for monitoring, leave `dstack.enabled`
-false (the default) and upgrade only scroll-monitor. This keeps dstack alerts and
+When dstack runs locally or is not ready for monitoring, explicitly set
+`dstack.enabled: false` and upgrade only scroll-monitor. This keeps dstack alerts and
 namespace log discovery disabled and does not install or modify dstack. Do not
 apply the full `values/dstack.yaml` overlay until connecting the controller.
 

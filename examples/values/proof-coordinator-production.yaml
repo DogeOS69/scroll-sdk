@@ -30,6 +30,12 @@ service:
   main:
     enabled: true
     ports:
+      # Disable the unused HTTP port inherited from the shared chart.
+      http:
+        enabled: false
+        port: 80
+        targetPort: 80
+        protocol: TCP
       prover:
         enabled: true
         primary: true
