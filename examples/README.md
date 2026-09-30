@@ -44,14 +44,22 @@ native config, record manual steps in the CLI handbook, and commit each fix.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.5c**. Follow the
-[beta.5c configuration and upgrade checklist](core-beta5c-configuration.md)
-for required native settings, image/build pins, eager proving and verification.
-Beta.5b-to-beta.5c upgrades preserve existing databases and proof identities;
-these in-place instructions do not cover older release transitions.
+The core service examples target **v0.3.0-beta.5c**, with contracts
+**deploy-dogeos-v0.3.0-rc.2** and CLI genesis generator
+**gen-configs-dogeos-v0.3.0-rc.2**. Upgrading **beta.5b to beta.5c** preserves
+the existing databases and proof identities after removing the retired WP
+finality fields and updating image/build pins. Follow the
+[beta.5c configuration and upgrade checklist](core-beta5c-configuration.md).
+The earlier beta.5a-to-beta.5b cutover required fresh databases and new
+Bridge/proof identities; the beta.5c in-place instructions do not cover that
+older transition. See the [fresh deployment checklist](../docs/fresh-deployment-known-issues.md)
+for owner access, Bridge funding, CubeSigner binding, retained L2 runtime
+configuration and dstack bootstrap/monitoring. Copy the hidden `.scrollsdkignore`
+when starting from these examples.
 
-The [beta.5a configuration notes](core-beta5a-configuration.md) remain a
-historical reference for that release's settings and memory diagnostics.
+The [beta.5a configuration notes](core-beta5a-configuration.md) remain a historical
+reference for native settings and memory diagnostics; their in-place upgrade
+instructions describe beta.5 to beta.5a only.
 
 ## Contracts images
 

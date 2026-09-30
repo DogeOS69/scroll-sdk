@@ -1,8 +1,9 @@
 # Core beta.5a configuration
 
 Historical reference: the current examples select beta.5c. See the
-[beta.5c configuration notes](core-beta5c-configuration.md) for the current
-release. The in-place upgrade notes below apply only to beta.5 → beta.5a.
+[beta.5c configuration notes](core-beta5c-configuration.md) for the current release. See the
+[fresh deployment checklist](../docs/fresh-deployment-known-issues.md) before
+using them. The in-place upgrade notes below apply only to beta.5 → beta.5a.
 
 At the beta.5a rollout, the eight core service values examples selected `v0.3.0-beta.5a`: withdrawal-processor,
 proof-coordinator, eager-materializer, l1-interface, eth-da-submitter, fee-oracle,

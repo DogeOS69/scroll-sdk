@@ -22,6 +22,9 @@ L1_CONTRACT_DEPLOYMENT_BLOCK = 0
 DEPLOYER_PRIVATE_KEY = ""
 
 DEPLOYER_ADDR = ""
+# setup gen-keystore --accounts defaults an empty owner to the deployer.
+# An explicit owner is preserved. Confirm its wallet/multisig signing access
+# before deploying; changing this file cannot transfer existing contracts.
 OWNER_ADDR = ""
 
 # Required: nonzero EVM address of the L2 gas oracle service signer (including KMS/HSM).
