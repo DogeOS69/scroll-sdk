@@ -1315,7 +1315,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Current registered signer count.",
+      "description": "Current registered signer count. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1369,7 +1369,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (tso_core_registered_signers_count{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((tso_core_registered_signers_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} signers",
           "refId": "A",
           "instant": true,
@@ -1621,7 +1621,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Dogecoin block heights from the node through embedded indexers to protocol-confirmed state.",
+      "description": "Dogecoin block heights from the node through embedded indexers to protocol-confirmed state. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1726,7 +1726,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} withdrawal-processor \u00b7 confirmed",
           "refId": "D"
         }
@@ -1739,7 +1739,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "L2 batch index across proposal, Ethereum settlement, discovery, and protocol-state consumers.",
+      "description": "L2 batch index across proposal, Ethereum settlement, discovery, and protocol-state consumers. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1853,7 +1853,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 indexed",
           "refId": "E"
         },
@@ -1871,7 +1871,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 protocol",
           "refId": "G"
         }
@@ -1884,7 +1884,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Selected comparable L2 ending-block frontiers from DA settlement through durable AdvanceL2 processing, replay validation, and withdrawal fulfillment. Use the service dashboards for every intermediate stage.",
+      "description": "Selected comparable L2 ending-block frontiers from DA settlement through durable AdvanceL2 processing, replay validation, and withdrawal fulfillment. Use the service dashboards for every intermediate stage. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. WP completed progress is canonical replay; other WP stages extend it with live jobs. A reorg can move these frontiers backward.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1989,7 +1989,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"completed\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"completed\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"advance_l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"advance_l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"advance_l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 completed",
           "refId": "D"
         },
@@ -2007,7 +2007,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} withdrawals \u00b7 fulfilled through",
           "refId": "F"
         },
@@ -2016,7 +2016,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} withdrawals \u00b7 oldest unfulfilled",
           "refId": "G"
         }
@@ -2029,7 +2029,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Canonical WF transaction number across state and replay read models.",
+      "description": "Canonical WF transaction number across state and replay read models. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2125,7 +2125,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} withdrawal-processor \u00b7 state",
           "refId": "C"
         },
@@ -2134,7 +2134,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} withdrawal-processor \u00b7 replay",
           "refId": "D"
         }
@@ -2147,7 +2147,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Deposit queue discovery and relayed cursors across the two protocol consumers.",
+      "description": "Deposit queue discovery and relayed cursors across the two protocol consumers. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2243,7 +2243,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} deposit \u00b7 withdrawal-processor relayed",
           "refId": "C"
         }
@@ -2256,7 +2256,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and the backlog is their difference.",
+      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and the backlog is their difference. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2343,7 +2343,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 acknowledged next",
           "refId": "B"
         },
@@ -2352,7 +2352,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 fulfilled next",
           "refId": "C"
         },
@@ -2361,7 +2361,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} WP \u00b7 unfulfilled backlog",
           "refId": "D"
         }
@@ -2483,7 +2483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Durable proof work queue observed at the Withdrawal Processor authority boundary. Proof Coordinator now has native operational metrics in its dedicated dashboard, but does not duplicate queue ownership.",
+      "description": "Durable proof work queue observed at the Withdrawal Processor authority boundary. Proof Coordinator now has native operational metrics in its dedicated dashboard, but does not duplicate queue ownership. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2561,7 +2561,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, proof_family, phase, status) (withdrawal_processor_proof_work_item_count{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_item_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{proof_family}} \u00b7 {{phase}} \u00b7 {{status}}",
           "refId": "A"
         }
@@ -2574,7 +2574,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Age of the oldest active or failed proof work by stage.",
+      "description": "Age of the oldest active or failed proof work by stage. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2652,12 +2652,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, proof_family, phase, status) (withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable|failed_terminal\"})",
+          "expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{proof_family}} \u00b7 {{phase}} \u00b7 {{status}}",
           "refId": "A"
         }
       ],
-      "title": "Oldest Active or Failed Proof Work",
+      "title": "Oldest Non-terminal Proof Work",
       "type": "timeseries"
     },
     {
@@ -2665,7 +2665,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Current TSO in-memory transactions.",
+      "description": "Current TSO in-memory transactions. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2743,7 +2743,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (namespace, status) (tso_core_transactions_by_status{namespace=~\"$namespace\"})",
+          "expr": "sum by (namespace, status) ((tso_core_transactions_by_status{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_metrics_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{status}}",
           "refId": "A"
         }

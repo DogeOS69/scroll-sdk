@@ -99,7 +99,9 @@ flow/head/new-work capability inputs remain separate integration work.
 ## Validation
 
 `tests/fixtures/tso-signing-v1.prom` is produced by the Rust collector renderer
-and matches `dogeos-core/crates/tso_core/tests/golden/signing-metrics-v1.prom`.
+and matches `dogeos-core/crates/tso_core/tests/golden/signing-metrics-v1.prom`
+at core commit `7e3ee2877e3cd18eaa524473d6a14a83e659f29d`. The snapshot schema
+remains v1; reordered metric families and updated HELP text need no parser change.
 To refresh it from a core checkout:
 
 ```sh

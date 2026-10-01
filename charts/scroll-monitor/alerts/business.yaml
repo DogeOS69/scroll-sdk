@@ -35,14 +35,17 @@ groups:
       summary: An AdvanceL1 parent is blocked by a terminal proof child.
       description: Inspect the {{ $labels.phase }} proof child and failure class {{ $labels.failure_class }}.
   - alert: ProofWorkRetryBudgetExhausted
-    expr: max by (namespace, job, family) (withdrawal_processor_proof_work_stuck_item_count) > 0
+    previousExpr: "max by (namespace, job, family) (withdrawal_processor_proof_work_stuck_item_count) > 0"
+    previousAnnotations:
+      description: "{{ $value }} stuck items in proof family {{ $labels.family }}. Check workers, proof inputs, and durable work status."
+    expr: max by (namespace, job, instance, proof_family) (withdrawal_processor_proof_work_stuck_item_count and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 0
     for: __PROOF_STUCK_FOR__
     labels:
       severity: critical
       service: withdrawal-processor
     annotations:
       summary: Proof work exceeded the retry-attempt ceiling.
-      description: '{{ $value }} stuck items in proof family {{ $labels.family }}. Check workers, proof inputs, and durable work status.'
+      description: '{{ $value }} stuck items in proof family {{ $labels.proof_family }}. Check workers, proof inputs, and durable work status.'
   - alert: L2ProofRangeTerminal
     expr: max by (namespace, job) (withdrawal_processor_l2_proof_pipeline_terminal_ranges) > 0
     for: __PROOF_STUCK_FOR__
@@ -53,7 +56,8 @@ groups:
       summary: The active L2 proof pipeline has terminal ranges.
       description: '{{ $value }} attached terminal ranges were observed in the latest pass. Inspect current work rather than historical terminal rows.'
   - alert: WFJobStalled
-    expr: max by (namespace, job, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~"proposed_to_tso|awaiting_replay"}) > __JOB_MAX_AGE__
+    previousExpr: "max by (namespace, job, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"proposed_to_tso|awaiting_replay\"}) > __JOB_MAX_AGE__"
+    expr: max by (namespace, job, instance, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~"proposed_to_tso|awaiting_replay"} and on (namespace, job, instance) __WP_JOBS_VALID__) > __JOB_MAX_AGE__
     for: 5m
     labels:
       severity: critical
@@ -71,7 +75,8 @@ groups:
       summary: TSO signer communication or quorum collection is failing.
       description: Signer event {{ $labels.event_type }} is recurring. Inspect required roles, signer readiness, and responses.
   - alert: TSOSigningProgressStalled
-    expr: sum by (namespace, job) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"}) > 0 and ((sum by (namespace, job) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job) (tso_core_transactions_by_status) * 0)) == 0)
+    previousExpr: "sum by (namespace, job) (tso_core_transactions_by_status{status=~\"proposed|collecting_signatures|collecting_p2pkh\"}) > 0 and ((sum by (namespace, job) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job) (tso_core_transactions_by_status) * 0)) == 0)"
+    expr: (sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"}) > 0 and ((sum by (namespace, job, instance) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job, instance) (tso_core_transactions_by_status) * 0)) == 0)) and on (namespace, job, instance) __TSO_STATUS_VALID__
     for: 15m
     labels:
       severity: critical
@@ -183,3 +188,21 @@ groups:
     annotations:
       summary: Ethereum DA canonicality observations remain abnormal.
       description: Stage {{ $labels.stage }} repeatedly reports {{ $labels.kind }}. Check provider consistency and reorg recovery.
+  - alert: TSOTransactionObservationUnavailable
+    expr: (max by (namespace, job, instance) (tso_core_transactions_by_status) or on (namespace, job, instance) up{job=~".*tso-service.*"}) unless on (namespace, job, instance) __TSO_STATUS_VALID__
+    for: 5m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: TSO transaction observation is unavailable.
+      description: The transaction snapshot is invalid, stale, or cannot be scraped. Retained counts do not establish current signing progress or recovery.
+  - alert: WPProtocolObservationUnavailable
+    expr: withdrawal_processor_protocol_snapshot_valid unless on (namespace, job, instance, source) (withdrawal_processor_protocol_snapshot_valid == 1 and on (namespace, job, instance, source) (withdrawal_processor_protocol_snapshot_timestamp_seconds <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds < 120) and on (namespace, job, instance) (up == 1))
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: WP protocol observation is unavailable.
+      description: Source {{ $labels.source }} is invalid, stale, or cannot be scraped. Retained values do not establish current health or recovery.

@@ -146,7 +146,7 @@ class TemplateTests(unittest.TestCase):
         grafana.pop("ServiceErrorOrPanickedLogs")
         grafana = {name: rule for name, rule in grafana.items() if not rule.get("isPaused")}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 46)  # Includes three default dstack alerts.
+        self.assertEqual(len(native), 48)  # Includes three default dstack alerts.
 
     def test_configurable_thresholds_and_quorum_are_rendered(self):
         docs = render("--set", "balanceMonitoring.feeWallet.minimumDoge=250",
@@ -238,7 +238,7 @@ class TemplateTests(unittest.TestCase):
         })
         self.assertNotIn("isPaused", rules["FeeWalletBalanceLow"])
         self.assertNotIn("isPaused", rules["ProtocolStateWFTxNumberStalled"])
-        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 47)
+        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 49)
 
     def test_explicit_activation_is_equivalent_across_backends(self):
         grafana = grafana_rules(render("--set", "serviceAlerts.paused=false"))
@@ -249,12 +249,12 @@ class TemplateTests(unittest.TestCase):
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
         native = {rule["alert"]: rule for group in native for rule in group["rules"]}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 153)
+        self.assertEqual(len(native), 155)
 
     def test_disabling_grafana_does_not_activate_paused_rules(self):
         for setting in ("grafanaAlerting.enabled=false", "grafana.enabled=false"):
             groups = resource(render("--set", setting), "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
-            self.assertEqual(sum(len(group["rules"]) for group in groups), 46)
+            self.assertEqual(sum(len(group["rules"]) for group in groups), 48)
             self.assertFalse(any("isPaused" in rule for group in groups for rule in group["rules"]))
 
     def test_supplemental_tso_monitor_is_default_and_discoverable(self):

@@ -275,6 +275,12 @@ tests:
   input_series:
   - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
     values: 1+0x10
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: TSOCorrectnessQuorumUnavailable
@@ -286,13 +292,20 @@ tests:
         service: tso-service
         severity: critical
       exp_annotations:
-        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and policy thresholds.
+        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and
+          policy thresholds.
         summary: TSO Correctness signer quorum is unavailable.
 - name: quorum-count-2
   interval: 1m
   input_series:
   - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
     values: 2+0x10
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: TSOCorrectnessQuorumUnavailable
@@ -302,6 +315,12 @@ tests:
   input_series:
   - series: tso_core_registered_signers_by_role{namespace="monitoring",job="tso-service",role="Correctness"}
     values: 3+0x10
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: TSOCorrectnessQuorumUnavailable
@@ -311,24 +330,27 @@ tests:
   input_series:
   - series: tso_core_registered_signers_count{namespace="monitoring",job="tso-service"}
     values: 3+0x10
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: TSOCorrectnessQuorumUnavailable
-    exp_alerts:
-    - exp_labels:
-        namespace: monitoring
-        job: tso-service
-        role: Correctness
-        service: tso-service
-        severity: critical
-      exp_annotations:
-        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and policy thresholds.
-        summary: TSO Correctness signer quorum is unavailable.
+    exp_alerts: []
 - name: tso-no-completion
   interval: 1m
   input_series:
   - series: tso_core_transactions_by_status{namespace="monitoring",job="tso-service",status="collecting_signatures"}
     values: 1+0x25
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_metrics_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_observation_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 20m
     alertname: TSOSigningProgressStalled
@@ -339,7 +361,8 @@ tests:
         service: tso-service
         severity: critical
       exp_annotations:
-        description: Signing work has remained pending without a completed cycle. Check whether every bridge input can reach its required quorum.
+        description: Signing work has remained pending without a completed cycle. Check whether every bridge input can reach
+          its required quorum.
         summary: TSO has pending transactions but no completed signing cycle.
 - name: tso-completing
   interval: 1m
@@ -348,6 +371,12 @@ tests:
     values: 1+0x25
   - series: tso_core_signing_cycle_latency_seconds_count{namespace="monitoring",job="tso-service"}
     values: 0+1x25
+  - series: up{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_metrics_snapshot_valid{namespace="monitoring",job="tso-service"}
+    values: 1+0x200
+  - series: tso_core_observation_timestamp_seconds{namespace="monitoring",job="tso-service"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 20m
     alertname: TSOSigningProgressStalled
@@ -382,8 +411,14 @@ tests:
 - name: proof-stuck-0
   interval: 1m
   input_series:
-  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",family="scroll_batch"}
+  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",proof_family="scroll_batch"}
     values: 0+0x20
+  - series: up{namespace="monitoring",job="app"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",source="proof_work"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: ProofWorkRetryBudgetExhausted
@@ -391,8 +426,14 @@ tests:
 - name: proof-stuck-1
   interval: 1m
   input_series:
-  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",family="scroll_batch"}
+  - series: withdrawal_processor_proof_work_stuck_item_count{namespace="monitoring",job="app",proof_family="scroll_batch"}
     values: 1+0x20
+  - series: up{namespace="monitoring",job="app"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",source="proof_work"}
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: ProofWorkRetryBudgetExhausted
@@ -400,9 +441,9 @@ tests:
     - exp_labels:
         namespace: monitoring
         job: app
-        family: scroll_batch
         service: withdrawal-processor
         severity: critical
+        proof_family: scroll_batch
       exp_annotations:
         description: 1 stuck items in proof family scroll_batch. Check workers, proof inputs, and durable work status.
         summary: Proof work exceeded the retry-attempt ceiling.

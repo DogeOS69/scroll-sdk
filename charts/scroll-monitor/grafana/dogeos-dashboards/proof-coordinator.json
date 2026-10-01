@@ -51,22 +51,23 @@
     },
     {
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
-      "description": "The durable proof queue is owned by Withdrawal Processor, not Proof Coordinator.",
+      "description": "The durable proof queue is owned by Withdrawal Processor, not Proof Coordinator. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
       "fieldConfig": {"defaults": {"unit": "none", "noValue": "No data"}, "overrides": []},
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 21},
       "id": 112,
-      "targets": [{"expr": "max by (namespace, proof_family, phase, status) (withdrawal_processor_proof_work_item_count{namespace=~\"$wp_namespace\"})", "legendFormat": "{{namespace}} {{proof_family}} {{phase}} {{status}}", "refId": "A"}],
+      "targets": [{"expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_item_count{namespace=~\"$wp_namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$wp_namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$wp_namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$wp_namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$wp_namespace\"} == 1))))", "legendFormat": "{{namespace}} {{proof_family}} {{phase}} {{status}}", "refId": "A"}],
       "title": "Durable Proof Queue (WP-owned)",
       "type": "timeseries"
     },
     {
       "id": 115,
-      "title": "Oldest Active or Failed Proof Work (WP-owned)",
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
+      "title": "Oldest Non-terminal Proof Work (WP-owned)",
       "type": "timeseries",
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 29},
       "fieldConfig": {"defaults": {"unit": "s", "noValue": "No data"}, "overrides": []},
-      "targets": [{"refId": "A", "datasource": {"type": "prometheus", "uid": "${datasource}"}, "expr": "max by (namespace, proof_family, phase, status) (withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$wp_namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable|failed_terminal\"})", "legendFormat": "{{namespace}} {{proof_family}} {{phase}} {{status}}"}]
+      "targets": [{"refId": "A", "datasource": {"type": "prometheus", "uid": "${datasource}"}, "expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$wp_namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$wp_namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$wp_namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$wp_namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$wp_namespace\"} == 1))))", "legendFormat": "{{namespace}} {{proof_family}} {{phase}} {{status}}"}]
     },
     {
       "id": 120,

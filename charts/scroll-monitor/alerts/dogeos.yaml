@@ -96,8 +96,10 @@ groups:
           description: Combined failure increase is {{ $value }}.
 
       - alert: TSONoRegisteredSigners
-        previousExpr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
-        expr: sum(tso_core_registered_signers_count) < 1
+        previousExpr:
+          - sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+          - sum(tso_core_registered_signers_count) < 1
+        expr: max by (namespace, job, instance) (tso_core_registered_signers_count and on (namespace, job, instance) __TSO_REGISTRY_VALID__) < 1
         for: 5m
         labels:
           severity: critical
@@ -109,14 +111,18 @@ groups:
           description: TSO reports fewer than one registered signer or the metric is absent.
 
       - alert: TSOSignerMetricMissing
-        expr: absent(tso_core_registered_signers_count)
+        previousExpr: "absent(tso_core_registered_signers_count)"
+        previousAnnotations:
+          summary: "TSO signer count cannot be evaluated because its metric is missing."
+          description: "Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers."
+        expr: absent(tso_core_registered_signers_count) or ((tso_core_registered_signers_count or on (namespace, job, instance) up{job=~".*tso-service.*"}) unless on (namespace, job, instance) __TSO_REGISTRY_VALID__)
         for: 5m
         labels:
           severity: warning
           service: tso-service
         annotations:
-          summary: TSO signer count cannot be evaluated because its metric is missing.
-          description: Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers.
+          summary: TSO signer count cannot be evaluated because its observation is unavailable.
+          description: Check registry snapshot validity, its success timestamp, the TSO ServiceMonitor, and target discovery. Missing, invalid, or stale telemetry does not establish that there are no registered signers.
 
       # Keep the alert name for the existing Grafana UID. The rolling window
       # includes a comparison with its left boundary and requires real samples.

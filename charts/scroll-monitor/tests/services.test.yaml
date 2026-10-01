@@ -1300,6 +1300,12 @@ tests:
   input_series:
   - series: withdrawal_processor_protocol_job_oldest_age_seconds{status="building"}
     values: 1801x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="jobs"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="jobs"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="WFBuildQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1311,6 +1317,12 @@ tests:
   input_series:
   - series: withdrawal_processor_protocol_job_oldest_age_seconds{status="building"}
     values: 1800x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="jobs"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="jobs"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="WFBuildQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1320,6 +1332,12 @@ tests:
   input_series:
   - series: tso_core_transactions_by_status{status="collecting_p2pkh"}
     values: 101x60
+  - series: up
+    values: 1+0x200
+  - series: tso_core_metrics_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_observation_timestamp_seconds
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="TSOSigningQueueLarge",alertstate="firing"})
     eval_time: 45m
@@ -1331,6 +1349,12 @@ tests:
   input_series:
   - series: tso_core_transactions_by_status{status="collecting_p2pkh"}
     values: 100x60
+  - series: up
+    values: 1+0x200
+  - series: tso_core_metrics_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_observation_timestamp_seconds
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="TSOSigningQueueLarge",alertstate="firing"})
     eval_time: 45m
@@ -1420,6 +1444,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status="pending"}
     values: 1801x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofMaterializationQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1431,6 +1461,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status="pending"}
     values: 1800x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofMaterializationQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1440,6 +1476,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status="remote_result_submitted"}
     values: 1801x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofVerificationQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1451,6 +1493,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status="remote_result_submitted"}
     values: 1800x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofVerificationQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1460,6 +1508,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_retryable"}
     values: 3601x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -1471,6 +1525,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_retryable"}
     values: 3600x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
     eval_time: 45m
@@ -2472,6 +2532,12 @@ tests:
   input_series:
   - series: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status="failed_terminal"}
     values: 99999x60
+  - series: up
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_valid{source="proof_work"}
+    values: 1+0x200
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{source="proof_work"}
+    values: 0+60x200
   promql_expr_test:
   - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
     eval_time: 45m

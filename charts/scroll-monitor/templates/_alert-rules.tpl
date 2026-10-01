@@ -12,6 +12,11 @@
 {{- mergeOverwrite $pauses .Values.grafanaAlerting.pauseRules | toYaml -}}
 {{- end -}}
 
+{{/* Cached facts require source success and age, not just a fresh scrape. */}}
+{{- define "scroll-monitor.snapshotGuard" -}}
+{{- printf "(%s == 1 and on (namespace, job, instance) (%s <= time() and time() - %s < 120) and on (namespace, job, instance) (up == 1))" .valid .timestamp .timestamp -}}
+{{- end -}}
+
 {{/* Keep Grafana and Prometheus fallback definitions identical. */}}
 {{- define "scroll-monitor.metricGroups" -}}
 {{/* Reconstruct the shipped confirmation query only for conservative migration.
@@ -37,8 +42,9 @@
 {{- $groups = concat $groups $business.groups -}}
 {{- $quorum := list -}}
 {{- range $role, $threshold := .Values.businessAlerts.requiredSignersByRole -}}
-{{- $expr := printf "max by (namespace, job) (tso_core_registered_signers_by_role{role=%s}) < %v or (max by (namespace, job) (tso_core_registered_signers_count) unless max by (namespace, job) (tso_core_registered_signers_by_role{role=%s}))" ($role | quote) $threshold ($role | quote) -}}
-{{- $quorum = append $quorum (dict "alert" (printf "TSO%sQuorumUnavailable" $role) "expr" $expr "for" "5m" "labels" (dict "severity" "critical" "service" "tso-service" "role" $role) "annotations" (dict "summary" (printf "TSO %s signer quorum is unavailable." $role) "description" (printf "Registered %s signers are below the configured requirement of %v. Check signer registration and policy thresholds." $role $threshold))) -}}
+{{- $previous := printf "max by (namespace, job) (tso_core_registered_signers_by_role{role=%s}) < %v or (max by (namespace, job) (tso_core_registered_signers_count) unless max by (namespace, job) (tso_core_registered_signers_by_role{role=%s}))" ($role | quote) $threshold ($role | quote) -}}
+{{- $expr := printf "max by (namespace, job, instance) (tso_core_registered_signers_by_role{role=%s} and on (namespace, job, instance) __TSO_REGISTRY_VALID__) < %v" ($role | quote) $threshold -}}
+{{- $quorum = append $quorum (dict "alert" (printf "TSO%sQuorumUnavailable" $role) "expr" $expr "previousExpr" $previous "for" "5m" "labels" (dict "severity" "critical" "service" "tso-service" "role" $role) "annotations" (dict "summary" (printf "TSO %s signer quorum is unavailable." $role) "description" (printf "Registered %s signers are below the configured requirement of %v. Check signer registration and policy thresholds." $role $threshold))) -}}
 {{- end -}}
 {{- if $quorum -}}
 {{- $groups = append $groups (dict "name" "dogeos.quorum" "interval" "1m" "rules" $quorum) -}}
@@ -75,12 +81,21 @@
 {{- $groups = concat $groups $hostGroups.groups -}}
 {{- end -}}
 {{- end -}}
+{{- $guards := dict -}}
+{{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
+{{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
+{{- range $source := list "jobs" "proof_work" -}}
+{{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
+{{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}
 {{- $pauses := include "scroll-monitor.pauseRules" . | fromYaml -}}
 {{- $filteredGroups := list -}}
 {{- range $group := $groups -}}
 {{- $rules := list -}}
 {{- range $rule := $group.rules -}}
+{{- range $marker, $guard := $guards -}}
+{{- $_ := set $rule "expr" (replace $marker $guard $rule.expr) -}}
+{{- end -}}
 {{- if hasKey $pauses $rule.alert -}}
 {{- $_ := set $rule "isPaused" (index $pauses $rule.alert) -}}
 {{- end -}}

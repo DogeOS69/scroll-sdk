@@ -107,6 +107,17 @@ class PolicyTests(unittest.TestCase):
                 ('future-head',('0','0','601'),None), ('invalid-snapshot',('0','599','1','0'),None),
                 ('invalid-continuity',('0','NaN'),None), ('impossible-continuity',('601','599','590'),None)]:
             scenario('workflow-'+name, wf, workflow(*args), expected)
+        for field, value in [('valid', '0x10'), ('timestamp_seconds', '100x10'),
+                             ('timestamp_seconds', '601x10'), ('valid', None),
+                             ('timestamp_seconds', None)]:
+            for age in ('0', '601'):
+                s = workflow(age)
+                key = 'withdrawal_processor_protocol_snapshot_'+field+labels[:-1]+',source="jobs"}'
+                if value is None:
+                    s.pop(key)
+                else:
+                    s[key] = value
+                scenario('retained-jobs-'+field+str(value)+age, wf, s, None)
         scenario('missing-workflow', wf, {}, None)
         wp = health.processor_query(c)
         ls = '{namespace="monitoring",statefulset="withdrawal-processor",job="kube-state-metrics",instance="ksm"}'
