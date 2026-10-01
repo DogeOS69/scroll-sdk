@@ -567,3 +567,10 @@ controller namespace. Set `dstack.enabled: false` to disable this integration. T
 even when dstack monitoring is disabled; unconnected panels show No data.
 See [the integration guide](../../examples/dstack-monitoring/README.md).
 This does not configure public status-page routing.
+
+## Bridge health metrics adapter
+
+The optional `bridgeHealth` adapter consumes core signing snapshot v1 through
+Prometheus, with explicit target completeness and freshness checks. It supplies
+read-only signing evidence and does not publish a global bridge status. See
+[configuration, contract and tests](BRIDGE_HEALTH_ADAPTER.md).

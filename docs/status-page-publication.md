@@ -268,5 +268,11 @@ pause local automatic delivery. Scheduled per-component suppression is available
 WF stalls are included in both deposit and withdrawal health. A fresh, online WP
 with overdue active work and no WF progress for `health.wfStallSeconds` (3600 by
 default) produces a public failure even when the corresponding business snapshot
-is invalid. An idle WF is not an outage. Both WF and business health must be known
+is invalid, provided the independent workflow evidence is still valid. The CLI
+uses core's persisted canonical-head observation time and process-local continuous
+unchanged duration, with fresh jobs evidence; it no longer needs one hour of a
+new Pod IP's Prometheus history. Restarted idle/recently progressing writers can
+be evaluated immediately. Old overdue work without recent progress remains unknown
+until continuity proves a stall. Upgrade core before regenerating these rules.
+An idle WF is not an outage. Both WF and business health must be known
 healthy to recover. See [the WF rule contract](status-page-health-rules.md#wf-停滞影响充值和提现).
