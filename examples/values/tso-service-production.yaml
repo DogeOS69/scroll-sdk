@@ -114,3 +114,14 @@ persistence:
 
 defaultProbes:
   enabled: false
+
+# Restrict the unauthenticated TSO API port to the pods that legitimately call
+# it. Replace the placeholder selectors with your own labels.
+networkPolicy:
+  enabled: true
+  allowFrom:
+    withdrawalProcessor:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: withdrawal-processor}}
+    signers:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: cubesigner-signer}}
+    monitoring: []   # e.g. a namespaceSelector for your Prometheus

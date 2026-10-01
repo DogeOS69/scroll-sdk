@@ -254,3 +254,16 @@ defaultProbes:
 # Database: the current binary uses SqliteConnection, not PostgreSQL.
 # Keep database_url (or DOGEOS_WITHDRAWAL_DATABASE_URL) on the /app/data PVC;
 # changing the URL cannot switch the binary to a PostgreSQL backend.
+
+# Restrict the unauthenticated API port (TSO callbacks, rotation routes,
+# metrics) to the pods that legitimately call it. Replace the placeholder
+# selectors with your own labels.
+networkPolicy:
+  enabled: true
+  allowFrom:
+    tso:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: tso-service}}
+    operators: []    # who may call /protocol-actions/*
+    monitoring: []   # e.g. a namespaceSelector for your Prometheus
+    proofCoordinator:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: proof-coordinator}}

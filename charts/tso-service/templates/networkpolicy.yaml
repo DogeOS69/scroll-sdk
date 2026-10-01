@@ -1,0 +1,31 @@
+{{- /*
+Ingress allow-list for the TSO API port. The TSO routes (/propose,
+/register-signer, /register-script-pubkey, /reject-signatures,
+/submit-*-signatures) carry no caller authentication by design; access control
+is this policy. /health, /status and /metrics share the same port, so any peer
+allowed here can reach every route. Selectors come from values only.
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $from := .Values.networkPolicy.allowFrom }}
+{{- $peers := concat
+      (required "networkPolicy.allowFrom.withdrawalProcessor must list the withdrawal-processor pods" $from.withdrawalProcessor)
+      (required "networkPolicy.allowFrom.signers must list the signer pods (signature callbacks)" $from.signers)
+      ($from.operators | default list)
+      ($from.monitoring | default list) }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "scroll.common.lib.chart.names.fullname" . }}
+  labels: {{- include "scroll.common.lib.metadata.allLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "scroll.common.lib.metadata.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: {{- toYaml $peers | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.port }}
+{{- end }}
