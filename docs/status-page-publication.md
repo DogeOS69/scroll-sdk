@@ -226,3 +226,37 @@ SCROLL_STATUS_CHART=../scroll-sdk/charts/scroll-monitor npx mocha 'test/utils/st
 The SDK workflow owns rule and evaluator tests; the CLI workflow tests parameter
 generation, provider bindings and the matching chart contract. These local checks do
 not assert live deployment or public incident acceptance for a particular network.
+
+### Failure isolation and monitoring loss
+
+Evaluation and publication use separate loops. A single round-robin sender performs
+bounded webhook requests outside the evidence/journal lock, and retries each
+component at most once per evaluation interval. Slow or failing provider requests
+cannot block fresh decisions or HTTP diagnostics. Durable pending intent is also
+the delivery-error signal after restart. If evidence reverses while an acknowledgement
+is uncertain, the event remains pending for reconciliation; the evaluator does not
+invent either a provider failure or a successful recovery.
+
+The CLI's `heartbeat.publicIncident` defaults to `true`. An independent Instatus
+Cron Monitor publishes a network-named **monitoring evidence** incident after
+missing heartbeats, and resolves it after fresh complete observations resume. It
+has no business component binding and does not notify page subscribers. The
+three-minute period plus three-minute grace bounds the stale-green warning window
+after the last successful heartbeat. The first successful ping must be verified
+at activation. `publicIncident: false` is an explicit internal-only policy and
+leaves public consumers unable to distinguish unknown from the last known status.
+Existing monitors are updated in place by `setup status-page --apply`.
+
+Deposit/withdrawal built-ins now require fresh supervision of the configured WP
+StatefulSet and fresh TSO readiness, in addition to queue/WF evidence. A confirmed
+zero Ready count or TSO not-ready state is `unavailable`; absent/stale/duplicate
+supervision or a failed scrape is `unknown`. Runtime defaults live in the chart;
+CLI health overrides may supply `withdrawalProcessorStatefulSet`,
+`kubeStateMetricsJobRegex`, `tsoJobRegex`, and `tsoExpectedTargets`.
+
+Coverage remains `configured_public_rules`, not complete bridge capability or
+end-to-end payment assurance. The rules cannot infer new-work signer quorum from
+registration counts or attribute all proof-family backlog to both bridge flows.
+Those require canonical capability/head attribution from the producer. Public
+incident severity remains the operator's fixed per-component template choice;
+it does not dynamically mirror internal `degraded` versus `unavailable`.

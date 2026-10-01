@@ -50,23 +50,27 @@ class RuntimeTests(unittest.TestCase):
         self.runtime = module.Delivery(self.config,self.dbpath)
     def tearDown(self):
         self.runtime.db.close(); self.server.shutdown(); self.server.server_close(); self.env.stop(); self.temp.cleanup()
+    def collect(self):
+        self.runtime.collect()
+        self.runtime.deliver_once()
+        self.runtime.deliver_once()  # heartbeat when no pending event remains
     def events(self, path):
         return [event for url,event in self.state['sent'] if url == path]
     def test_publication_and_recovery_work_without_grafana(self):
-        self.runtime.collect()
+        self.collect()
         first = self.events('/provider')[0]
         self.assertEqual(first['status'],'firing')
         self.assertEqual(first['alerts'][0]['labels']['environment'],'testnet')
         self.assertEqual(len(self.events('/heartbeat')),1) # Known fault is not monitoring loss.
         self.state['value'] = None
-        self.runtime.collect()
+        self.collect()
         self.assertEqual(len(self.events('/provider')),1)
         self.assertEqual(len(self.events('/heartbeat')),1)
         self.assertEqual(self.runtime.decisions['public-rpc']['status'],'unknown')
         self.runtime.db.close()
         self.runtime = module.Delivery(self.config,self.dbpath)
         self.state['value'] = 0
-        self.runtime.collect()
+        self.collect()
         recovered = self.events('/provider')[-1]
         self.assertEqual(recovered['status'],'resolved')
         self.assertEqual(recovered['groupKey'],first['groupKey'])
@@ -76,7 +80,7 @@ class RuntimeTests(unittest.TestCase):
         self.runtime.metrics()
         self.assertEqual(self.state['query_count'],before) # Metrics scrapes never re-evaluate.
     def test_unbound_observe_can_be_bound_later_without_replacing_journal(self):
-        self.runtime.collect()
+        self.collect()
         self.runtime.db.close()
         self.config['components']['deposits'].update(componentId='deposit-real-id',mode='automatic',webhookEnv='TEST_PROVIDER',rule={'expr':'fixture_health'})
         del self.config['components']['deposits']['missing']
@@ -85,13 +89,13 @@ class RuntimeTests(unittest.TestCase):
     def test_partial_builtin_fault_keeps_failure_but_stops_heartbeat(self):
         self.runtime.components['public-rpc']['rule'] = {'builtin': True}
         self.state['value'] = 2
-        self.runtime.collect()
+        self.collect()
         self.assertEqual(self.events('/provider')[0]['status'], 'firing')
         self.assertEqual(self.runtime.decisions['public-rpc']['observation'], 'partial')
         self.assertEqual(self.events('/heartbeat'), [])
     def test_custom_expression_cannot_use_internal_partial_code(self):
         self.state['value'] = 2
-        self.runtime.collect()
+        self.collect()
         self.assertEqual(self.runtime.decisions['public-rpc']['status'], 'unknown')
         self.assertEqual(self.events('/provider'), [])
     def test_shared_queries_are_deduplicated_and_delivery_error_stops_heartbeat(self):
@@ -100,7 +104,7 @@ class RuntimeTests(unittest.TestCase):
         def unavailable(*_):
             raise TimeoutError('not logged')
         self.runtime.send = unavailable
-        self.runtime.collect()
+        self.collect()
         self.assertEqual(self.state['query_count'],1)
         self.assertEqual(self.events('/heartbeat'),[])
         self.assertIn('scroll_status_delivery_error{component_key="public-rpc"} 1',self.runtime.metrics())

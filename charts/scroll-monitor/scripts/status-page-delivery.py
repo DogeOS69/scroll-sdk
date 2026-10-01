@@ -79,6 +79,10 @@ class Delivery:
         self.memory = {}
         self.send = send or request_json
         self.last_tick = 0
+        self.send_lock = threading.Lock()
+        self.next_attempt = {}
+        self.send_cursor = 0
+        self.last_heartbeat = 0
         self.windows = config.get("maintenanceWindows", [])
         for window in self.windows:
             if (not isinstance(window.get("start"), (int, float)) or
@@ -152,19 +156,79 @@ class Delivery:
                         continue
                     self.db.execute("UPDATE events SET pending=? WHERE key=?", (json.dumps(pending), key))
                     self.db.commit()  # persist intent BEFORE sending
-                try:
-                    self.send(os.environ[component["webhookEnv"]], pending)
-                except Exception:
-                    state["delivery_error"] = 1  # Never log URLs or response bodies.
-                    continue
-                self.db.execute("UPDATE events SET active=?, pending=NULL WHERE key=?",
-                                (json.dumps(pending) if value == 1 else None, key))
-                self.db.commit()
-                state["delivery_error"] = 0
             self.last_tick = now
 
+    def deliver_once(self, now=None):
+        """One bounded send at a time, outside the evidence/SQLite lock.
+
+        A separate worker calls this method; provider latency cannot delay
+        evaluation or HTTP diagnostics. Round-robin selection and per-component
+        retry deadlines prevent one failing webhook from starving the others.
+        Pending intent survives restart, including an uncertain acknowledgement.
+        """
+        now = time.time() if now is None else now
+        if not self.send_lock.acquire(blocking=False):
+            return
+        try:
+            with self.lock:
+                keys = list(self.components)
+                selected = None
+                for offset in range(len(keys)):
+                    index = (self.send_cursor + offset) % len(keys)
+                    key = keys[index]
+                    component, state = self.components[key], self.memory.get(key, {})
+                    row = self.db.execute("SELECT pending FROM events WHERE key=?", (key,)).fetchone()
+                    pending = json.loads(row[0]) if row and row[0] else None
+                    if (not pending or component.get("mode", "automatic") != "automatic"
+                            or state.get("maintenance") or any(key in w["components"] and w["start"] <= now < w["end"] for w in self.windows)
+                            or state.get("value") is None
+                            or not 0 <= now - state.get("last", 0) <= self.config["intervalSeconds"] * 2
+                            or now < self.next_attempt.get(key, 0)):
+                        continue
+                    if (pending["status"] == "firing") != bool(state["value"]):
+                        continue  # uncertain opposite event requires reconciliation
+                    delay = component["failureSeconds"] if state["value"] else component["recoverySeconds"]
+                    if now - state.get("since", now) < delay:
+                        continue
+                    selected = key, pending
+                    self.next_attempt[key] = now + self.config["intervalSeconds"]
+                    self.send_cursor = (index + 1) % len(keys)
+                    break
+            if selected:
+                key, pending = selected
+                try:
+                    self.send(os.environ[self.components[key]["webhookEnv"]], pending)
+                except Exception:
+                    return  # durable pending is the error, including after restart
+                with self.lock:
+                    # Only this worker sends; evidence collection never replaces
+                    # pending. Record the acknowledged event even if evidence
+                    # changed in flight, then require fresh recovery confirmation.
+                    self.db.execute("UPDATE events SET active=?, pending=NULL WHERE key=?",
+                                    (json.dumps(pending) if pending["status"] == "firing" else None, key))
+                    self.db.commit()
+            else:
+                with self.lock:
+                    monitored = [v for k, v in self.decisions.items()
+                                 if self.components[k].get("mode", "automatic") != "manual"
+                                 and v["monitoringRequired"]]
+                    pending = self.db.execute("SELECT 1 FROM events WHERE pending IS NOT NULL LIMIT 1").fetchone()
+                    heartbeat = (self.config.get("heartbeatEnabled") and monitored and not pending
+                                 and all(v["observation"] == "complete" for v in monitored)
+                                 and 0 <= now - self.last_tick <= self.config["intervalSeconds"] * 2
+                                 and now - self.last_heartbeat >= self.config["intervalSeconds"])
+                    if heartbeat:
+                        self.last_heartbeat = now
+                if heartbeat:
+                    try:
+                        self.send(os.environ["INSTATUS_MONITORING_HEARTBEAT_URL"], {"status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "monitoring-heartbeat", "environment": self.config["environment"]}}]})
+                    except Exception:
+                        pass  # Independent provider timer detects missed heartbeat.
+        finally:
+            self.send_lock.release()
+
     def collect(self):
-        # At most ten distinct requests for the built-ins; shared WF evidence is
+        # At most twelve distinct requests for the built-ins; shared WF evidence is
         # fetched once. No core DB access, no per-rule background workers.
         plan = {key: health.queries(self.config, key) for key in self.components}
         expressions = {expr for rules in plan.values() for expr in rules.values() if expr}
@@ -187,26 +251,16 @@ class Delivery:
             self.decisions = decisions
             self.tick({key: None if item["status"] == "unknown" else int(item["status"] != "operational")
                    for key, item in decisions.items()}, now)
-        # Heartbeat proves this evaluator completed a tick. Missing observations
-        # withhold it; known business failures do not pretend monitoring is dead.
-        monitored = [item for key, item in decisions.items()
-                     if self.components[key].get("mode", "automatic") != "manual"
-                     and (plan[key] or self.components[key].get("mode", "automatic") == "automatic")]
-        if self.config.get("heartbeatEnabled") and monitored and not any(s.get("delivery_error") for s in self.memory.values()) and all(item["observation"] == "complete" for item in monitored):
-            try:
-                self.send(os.environ["INSTATUS_MONITORING_HEARTBEAT_URL"], {"status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "monitoring-heartbeat", "environment": self.config["environment"]}}]})
-            except Exception:
-                pass  # Instatus independently expires its heartbeat; no false success.
-
     def metrics(self):
         with self.lock:
             lines = [f"scroll_status_delivery_last_tick_seconds {self.last_tick}"]
-            for key, state in self.memory.items():
+            for key in self.components:
+                state = self.memory.get(key, {})
                 labels = f'component_key="{key}"'
                 lines.append(f'scroll_status_delivery_observation_known{{{labels}}} {int(state.get("value") is not None)}')
-                lines.append(f'scroll_status_delivery_error{{{labels}}} {state.get("delivery_error", 0)}')
                 lines.append(f'scroll_status_delivery_maintenance{{{labels}}} {int(state.get("maintenance", False))}')
                 active, pending = self.db.execute("SELECT active, pending FROM events WHERE key=?", (key,)).fetchone() or (None, None)
+                lines.append(f'scroll_status_delivery_error{{{labels}}} {int(pending is not None)}')
                 lines.append(f'scroll_status_delivery_pending{{{labels}}} {int(pending is not None)}')
                 lines.append(f'scroll_status_delivery_incident_active{{{labels}}} {int(active is not None)}')
             identity = f'environment="{self.config["environment"]}",chain_id="{self.config["chainId"]}"'
@@ -249,7 +303,12 @@ def main():
         while True:
             delivery.collect()
             time.sleep(delivery.config["intervalSeconds"])
+    def sender():
+        while True:
+            delivery.deliver_once()
+            time.sleep(1)
     threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=sender, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", 9110), Handler)
     server.timeout = 10
     server.serve_forever()

@@ -29,6 +29,8 @@ class PolicyTests(unittest.TestCase):
                 ({'queue_deadline': 1, 'workflow_stalled': None}, 'degraded', 'partial'),
                 ({'queue_deadline': 2, 'workflow_stalled': 0}, 'degraded', 'partial'),
                 ({'workflow_stalled': 2, 'queue_deadline': 0}, 'unavailable', 'partial'),
+                ({'withdrawal_processor_unready': 1, 'queue_deadline': None}, 'unavailable', 'partial'),
+                ({'tso_unready': 1, 'queue_deadline': 0}, 'unavailable', 'complete'),
                 ({'queue_deadline': 0, 'workflow_stalled': None}, 'unknown', 'partial'),
                 ({'queue_deadline': 0, 'workflow_stalled': 0}, 'operational', 'complete')]:
             with self.subTest(facts=facts):
@@ -106,6 +108,31 @@ class PolicyTests(unittest.TestCase):
                 ('invalid-continuity',('0','NaN'),None), ('impossible-continuity',('601','599','590'),None)]:
             scenario('workflow-'+name, wf, workflow(*args), expected)
         scenario('missing-workflow', wf, {}, None)
+        wp = health.processor_query(c)
+        ls = '{namespace="monitoring",statefulset="withdrawal-processor",job="kube-state-metrics",instance="ksm"}'
+        supervisor = {name+ls: value for name,value in [
+            ('kube_statefulset_status_replicas_ready','1x10'), ('kube_statefulset_replicas','1x10'),
+            ('kube_statefulset_metadata_generation','2x10'), ('kube_statefulset_status_observed_generation','2x10')]}
+        ksm_up = 'up{job="kube-state-metrics",instance="ksm"}'
+        supervisor[ksm_up] = '1x10'
+        scenario('processor-ready',wp,supervisor,0)
+        scenario('processor-unready',wp,{**supervisor,'kube_statefulset_status_replicas_ready'+ls:'0x10'},1)
+        scenario('processor-missing',wp,{},None)
+        scenario('supervisor-down',wp,{**supervisor,ksm_up:'0x10'},None)
+        scenario('supervisor-wrong-exporter',wp,{k.replace('instance="ksm"','instance="other"') if k==ksm_up else k:v for k,v in supervisor.items()},None)
+        scenario('supervisor-stale',wp,{k:'1x4 _x6' for k in supervisor},None)
+        scenario('supervisor-generation-unobserved',wp,{**supervisor,'kube_statefulset_metadata_generation'+ls:'3x10'},None)
+        scenario('supervisor-duplicate',wp,{**supervisor,'kube_statefulset_status_replicas_ready'+ls.replace('ksm','duplicate'):'0x10'},None)
+        tq = health.tso_query(c)
+        ls = '{namespace="monitoring",job="tso-service",instance="tso"}'
+        tso = {name+ls:value for name,value in [('up','1x10'),('tso_service_ready','1x10'),
+            ('tso_service_readiness_snapshot_valid','1x10'),('tso_service_readiness_timestamp_seconds','600x10')]}
+        scenario('tso-ready',tq,tso,0)
+        scenario('tso-not-ready',tq,{**tso,'tso_service_ready'+ls:'0x10'},1)
+        for metric,value in [('up','0x10'),('tso_service_ready','2x10'),('tso_service_readiness_snapshot_valid','0x10'),
+                ('tso_service_readiness_timestamp_seconds','1x10'),('tso_service_readiness_timestamp_seconds','601x10')]:
+            scenario('tso-invalid-'+metric+value,tq,{**tso,metric+ls:value},None)
+        scenario('tso-missing',tq,{},None)
         def probes(a='0', b='0', stamp='600', official=False):
             prefix = 'scroll_status_node_sync' if official else 'scroll_status_probe'
             entries = [('collector',a)] if official else [('a',a),('b',b)]
