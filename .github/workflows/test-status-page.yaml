@@ -58,6 +58,6 @@ jobs:
       - name: Validate independent probes with a real browser
         env:
           STATUS_PROBE_BROWSER_TEST: '1'
-        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_status_page*.py' -v
+        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_*.py' -v
       - name: Lint independent probe chart
         run: helm lint --strict charts/status-page-probe
