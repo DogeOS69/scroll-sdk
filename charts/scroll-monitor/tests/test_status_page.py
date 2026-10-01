@@ -136,7 +136,7 @@ class StatusPageTests(unittest.TestCase):
         defaults = yaml.safe_load((CHART / "values.yaml").read_text())["statusPage"]
         self.assertFalse(defaults["enabled"])
         self.assertTrue(all(c["mode"] == "automatic" for c in defaults["publication"]["components"].values()))
-        self.assertEqual(defaults["publication"]["health"]["wfStallSeconds"], 3600)
+        self.assertEqual(defaults["publication"]["health"], {})
         for profile in [CHART / "values/production.yaml", CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"]:
             self.assertEqual(yaml.safe_load(profile.read_text())["statusPage"], defaults)
         result = self.render({})

@@ -1,0 +1,179 @@
+{
+  "uid": "dogeos-status-health",
+  "title": "DogeOS / Status-page health",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": [
+    "dogeos",
+    "status-page"
+  ],
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Latest evaluated state",
+      "description": "Current evaluator evidence, not provider incident state. Stale results disappear. Instatus uses confirmation windows and its reviewed per-component severity.",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(scroll_status_health == 1) and on (environment, chain_id, namespace, job, instance) (time() - scroll_status_health_evaluated_timestamp_seconds <= 60)",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Observation completeness",
+      "description": "1 = complete; 0 = missing evidence. Manual and unconfigured observe components are excluded.",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "scroll_status_health_observation_complete and (scroll_status_health_monitoring_required == 1)",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Public incident / pending delivery",
+      "description": "Durable journal state. Unknown health never clears an active incident.",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "scroll_status_delivery_incident_active or label_replace(scroll_status_delivery_pending, \"event_state\", \"pending\", \"component_key\", \".+\")",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Evaluation age and delivery errors",
+      "description": "Seconds since last evaluation. Internal alerts also cover unavailable evaluators and webhook errors.",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - scroll_status_health_evaluated_timestamp_seconds",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "scroll_status_delivery_error",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    }
+  ]
+}

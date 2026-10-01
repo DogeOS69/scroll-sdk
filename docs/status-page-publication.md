@@ -8,31 +8,18 @@ own eight components on the shared Instatus page. L2Scan is outside this feature
 ## Data flow and credentials
 
 ```text
-Existing Alloy public-entrypoint probes ──metrics──> chain Prometheus <── dogeos-core /metrics
-                                               ^
-                          official Node Sync collector (inside the chain cluster)
-                                               │
-                                               v
-                                         chain Grafana
-                                          │          │
-                                component alerts     heartbeat
-                                          │          │
-                                          v          v
-                                delivery verifier   Instatus Cron Monitor
-                                          │          │
-                                scoped webhooks      internal monitor alerts
-                                          v
-                                Instatus network components
+core + Alloy / optional external probes + Node Sync -> Prometheus
+Prometheus -> scroll-monitor evaluator + durable journal -> Instatus components / heartbeat
+Prometheus + evaluator result metrics -> Grafana -> internal notifications
 ```
 
-The delivery verifier is a small, single-replica workload in scroll-monitor. It
-exists because Grafana can resolve alerts during rule lifecycle changes, and the
-bundled Grafana 11.1.5 cannot be assumed to implement newer recovery-period fields.
-It checks the same Prometheus health expression, applies a recovery window, retains
-a SQLite delivery journal on a PVC, and sends a sanitized Grafana webhook payload.
-It holds **only component webhook URLs**. CLI `INSTATUS_API_KEY` manages Instatus
-resources and is never placed in values, a ConfigMap or a runtime Pod. The optional
-Cron heartbeat URL is a separate, narrowly scoped Secret held by Grafana.
+The single-replica evaluator ships with scroll-monitor. `status_page_health.py`
+owns rules and defaults; `status-page-delivery.py` runs evaluation and publication
+in one process. CLI generates deployment inputs and passes explicit policy overrides;
+it does not generate built-in health expressions. Grafana is not on the publication path.
+The evaluator retains the existing SQLite PVC and component identities. It holds
+component webhook URLs and the optional Cron heartbeat URL. The management API key
+stays in the CLI environment. See [architecture and migration](status-page-architecture.md).
 
 No provider needs access to internal Grafana, Prometheus, application databases or
 Kubernetes. The selected first-release path reuses Alloy inside the chain cluster
@@ -45,29 +32,27 @@ with private metric collection; its deployment is not required for Alloy mode.
 
 | Mode | Evaluation | Public delivery |
 | --- | --- | --- |
-| `manual` | Previously provisioned rules remain but are paused | Disabled for this component |
-| `observe` | Built-in or custom rule evaluates when required inputs exist | Internal observation receiver only |
-| `automatic` | Requires configured health inputs and an applied component binding | Verified failure and, when delivery is enabled, verified recovery |
+| `manual` | No evaluation | Disabled for this component |
+| `observe` | Built-in or custom rule evaluates when required inputs exist | Results available through evaluator metrics; no public publication |
+| `automatic` | Requires configured health inputs and an applied component binding | Verified failure and verified recovery; evaluator must be enabled |
 
 All production examples default to `automatic` with `rule.builtin: true`. Explicit `observe` remains an opt-out. Automatic generation rejects missing required inputs rather than downgrading publication. Missing
 configuration is reported explicitly; missing observations do not manufacture
 `vector(0)` health. CLI readiness is **configuration readiness, not live health**.
 Existing values without a publication block retain the legacy bootstrap path.
-Existing component configurations retain direct firing-only delivery unless
-`publication.delivery.enabled` is selected; new examples enable verified delivery.
-
-`observationContactPointName` must name a real internal Grafana receiver. Its
-`grafana-default-email` default does not configure SMTP or recipients. Public rules
-have direct notification settings and do not replace the global notification-policy
-tree. Legacy public rules/routes are preserved: retire any competing publisher
-before activating these component rules.
+New generation emits schema v3. Automatic components require `delivery.enabled`.
+`observationContactPointName` is retained as migration metadata; it no longer
+creates Grafana public rules. Internal notification policies remain operator-owned.
+The generated provisioning deletes exact old managed public rule/contact-point UIDs.
+Use the two-stage observe/automatic migration in the architecture guide to prevent
+old Grafana and new evaluator publishers overlapping during rollout.
 
 ## Built-in observations
 
 Every health expression yields exactly one unlabelled **0** (healthy), **1**
-(affected), or no series (unknown). The outer rule also rejects non-binary, NaN or
-multiple results. Missing observations and query errors notify the internal receiver;
-they never resolve a public incident.
+(affected), or no series (unknown). The evaluator also rejects non-binary, NaN or
+multiple results. Missing observations and query errors are exposed as unknown in evaluator metrics;
+they never resolve a public incident. Internal alerts consume these metrics.
 
 New examples select `probes.mode: alloy`: HTTP entrypoint availability and response
 patterns for Public RPC, Bridge and Blockscout, with coverage exposed in readiness
@@ -109,6 +94,13 @@ Business deadlines deliberately default to **0 = unconfigured**. There is no gue
 public SLA. The withdrawal deadline starts at protocol eligibility, not the initial
 user transaction; earlier batch/DA delays are observed by the other components.
 Jobs must select the actual withdrawal processor role, excluding proof-only workers.
+`publication.sourceNamespace` defaults to the Helm namespace. Expected WP/DA target
+counts default to one; set `health.withdrawalProcessorExpectedTargets` and
+`health.ethDaSubmitterExpectedTargets` to the actual expected counts (1..32).
+A vanished target cannot reduce the required healthy evidence. Policy defaults live
+in the chart script; `health: {}` passes no overrides. Unconfigured deadlines reject
+automatic built-ins. The guidance catalogue also describes rules not implemented
+here, including complete new-work signer quorum; current coverage is pipeline only.
 
 Production examples use `sequencingMode: auto` and `bridgeChecks: auto` with the
 selected sequencer and frontend runtime configuration files. These regenerate
@@ -168,21 +160,21 @@ Use `--webhook-component` and `--webhook-url-file` with private JSON `{integrati
 
 With `incidents.manageTemplates: true`, apply sends component-scoped creation and
 resolution templates using the published Instatus integration/template contracts.
-The default affected status is Degraded Performance; subscriber notifications default
-to false. `--plan` exposes the incident policy. These provider contracts are covered
+Each automatic component needs an explicitly reviewed `affectedStatus`; subscriber
+notifications default to false. Instatus severity comes from that fixed component template,
+not from dynamic management API writes by the evaluator. `--plan` exposes the incident policy. These provider contracts are covered
 by transport tests and a [Devnet acceptance run](status-page-devnet-acceptance-2026-09-28.md).
 Each new deployment still needs scope and delivery verification before public
 activation. Local validation does not create public incidents.
 
 ## Failure, recovery and delivery state
 
-Grafana's `for` and the verifier both require persistent failure evidence. The verifier
-only starts a new incident after a matching Grafana firing signal and its own continuous
-bad observations. The default recovery requirement is **10 minutes** of continuous
-fresh health. Unknown samples, query failures, excessive sampling gaps, clock rollback
-and process restart reset confirmation windows. Rule pause/delete/NoData resolution
-messages do not constitute recovery. Dynamic Grafana labels, annotations, internal
-URLs and raw error details are not forwarded in component notifications.
+The evaluator requires continuous fresh failure evidence (default 5 minutes) and
+continuous fresh recovery evidence (default 10 minutes). It polls Prometheus itself
+and accepts no Grafana firing/resolved signals. Unknown samples, query failures,
+sampling gaps, clock rollback and process restart reset confirmation windows.
+Independent known failure survives missing evidence for another rule; recovery
+requires every configured rule. Internal URLs and raw errors are not published.
 
 The PVC retains active and pending events; process restarts recheck the full window
 before resuming. Retries use the same payload, start time and component identity. This
@@ -192,25 +184,22 @@ pending and raises an internal delivery alert; an operator reconciles that incid
 An uncertain event is never blindly replaced by an opposite event. Back up the PVC;
 losing it requires reconciling existing incidents before enabling automatic delivery.
 
-Changing a component to manual/observe and deploying stops its verifier activity and
-switches/pauses the managed rule. Editing local YAML or metadata-only apply does not
-change a running Grafana. Receivers, bindings, journals and incidents are retained.
-Use manual mode before taking over an incident. UI silences alone do not remove an
-already accepted event from the verifier; component mode is the publication control.
+Deploying manual/observe stops public delivery; observe continues evaluation.
+Local YAML edits or CLI metadata-only apply do not change running Pods. Bindings,
+journals and incidents are retained. Use manual before operator takeover. A
+Grafana silence is not a publication control.
 
 ## Independent monitoring-loss detection
 
 `heartbeat.enabled: true` requires Instatus **monitor alert destination IDs** in
 `heartbeat.alertIds`. These are provider-side internal alert destinations, distinct
-from Grafana contact points and from public page subscribers. Grafana evaluates a
-Prometheus freshness query and requests a Cron Monitor heartbeat every minute; group scheduling may deliver every two minutes.
-Datasource errors/NoData stop the heartbeat. When verified delivery is active,
-the heartbeat also requires a fresh verifier tick and no delivery error. Instatus checks a 180-second period with
-180-second grace, independently of the chain cluster. It creates no extra public
-component or incident and does not claim that monitoring loss means chain downtime.
-The first delivered ping activates provider-side timing. Verify the selected internal
-notification destination and first ping during rollout. Disabling it and applying
-pauses the remote monitor; deploying pauses the retained Grafana rule.
+from Grafana contact points and public subscribers. The evaluator sends the heartbeat
+after each complete round, withholds it for incomplete configured evidence or delivery
+errors, and excludes manual/unconfigured observe components. Known business failures
+still send a heartbeat. Instatus checks a 180-second period plus 180-second grace and
+notifies internal destinations without creating public incidents. Verify the first
+ping and internal destination during rollout. Disabling and applying pauses the
+remote monitor; deploying disables local heartbeat sending.
 
 References: [Grafana webhook format](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/manage-contact-points/integrations/webhook-notifier/),
 [Instatus monitoring integrations](https://instatus.com/help/api/monitoring-integrations),
@@ -219,60 +208,21 @@ References: [Grafana webhook format](https://grafana.com/docs/grafana/latest/ale
 
 ## Reproducing local acceptance
 
-From scroll-sdk-cli, with the SDK checkout alongside it:
+From scroll-sdk:
 
 ```sh
-SCROLL_STATUS_RUNTIME_TEST=1 \
-SCROLL_STATUS_CHART=../scroll-sdk/charts/scroll-monitor \
-SCROLL_STATUS_GRAFANA_TEST=1 \
-npx mocha 'test/utils/status-page*.test.ts' 'test/commands/setup/status-page.test.ts'
+SCROLL_STATUS_RUNTIME_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests -p 'test_status_page*.py' -v
+python3 -m unittest discover -s charts/status-page-probe/tests -p 'test_*.py' -v
 ```
 
-The Grafana test runs the generated provisioning in Grafana 11.1.5 and uses local
-Prometheus API and provider fixtures. It verifies firing, NoData holding the active
-incident, an independent recovery window and stable sanitized event identity.
-PromQL cases use the real Prometheus 2.52 promtool. Neither test uses Instatus
-credentials. Python delivery/Helm tests live in `charts/scroll-monitor/tests`;
-independent probe tests live in `charts/status-page-probe/tests`.
+The first command uses Docker with Prometheus 2.52 promtool for real rule semantics.
+It also exercises publication/recovery with local HTTP fixtures, no Grafana or Instatus credentials.
+From scroll-sdk-cli with a matching SDK checkout:
 
-The SDK `Test status page` workflow runs chart/delivery tests and the real Chromium
-probe cases on relevant pull requests and pushes. The CLI `Status page acceptance`
-workflow enables all three runtime flags above against a pinned SDK commit, real
-Prometheus and Grafana. Update that SDK pin deliberately when changing the shared
-generation contract. CI uses local receiver/API fixtures and no Instatus credentials.
+```sh
+SCROLL_STATUS_CHART=../scroll-sdk/charts/scroll-monitor npx mocha 'test/utils/status-page*.test.ts' 'test/commands/setup/status-page.test.ts'
+```
 
-Core images must contain the merged fixes in [core #1312](https://github.com/DogeOS69/dogeos-core/pull/1312)
-(merge `c579df82ce2c8377ccde8001c91ad10d67f040c6`) and
-[core #1314](https://github.com/DogeOS69/dogeos-core/pull/1314)
-(merge `421806bbdb83b45b230d1f2359d62d1fc39e0387`), or equivalent later changes.
-Both merges were verified on 2026-09-28. These supply indexer-confirmation-aligned
-coverage, replay ages that survive unchanged canonical rewrites, and DA waiting
-ages that survive retries. **Merging #1304 is not a deployment prerequisite.**
-Verify the built image's source revision and live metric contract; a PR merge or
-CLI configuration-ready result does not prove that the running image has it.
-Performance follow-up is handled separately and is not evidence of live acceptance.
-
-The indexed deposit observation boundary and the deployed confirmation settings
-must be included when choosing the processing deadline. Old timestamps already
-overwritten by earlier images cannot be reconstructed automatically.
-
-## Delivery priorities
-
-The operator confirmed that the Mainnet/Testnet/Devnet groups already exist. Reuse
-them; group creation automation is not an outstanding delivery item. Maintenance
-window integration is deferred until after the probe deployment and live public
-failure/recovery acceptance. Until then, deploy a component in `manual` before
-operator-led maintenance or incident takeover; changing Instatus alone does not
-pause local automatic delivery. Scheduled per-component suppression is available through `publication.maintenanceWindows`; see [maintenance windows](status-page-maintenance.md). Publish the corresponding Instatus notice separately.
-
-WF stalls are included in both deposit and withdrawal health. A fresh, online WP
-with overdue active work and no WF progress for `health.wfStallSeconds` (3600 by
-default) produces a public failure even when the corresponding business snapshot
-is invalid, provided the independent workflow evidence is still valid. The CLI
-uses core's persisted canonical-head observation time and process-local continuous
-unchanged duration, with fresh jobs evidence; it no longer needs one hour of a
-new Pod IP's Prometheus history. Restarted idle/recently progressing writers can
-be evaluated immediately. Old overdue work without recent progress remains unknown
-until continuity proves a stall. Upgrade core before regenerating these rules.
-An idle WF is not an outage. Both WF and business health must be known
-healthy to recover. See [the WF rule contract](status-page-health-rules.md#wf-停滞影响充值和提现).
+The SDK workflow owns rule and evaluator tests; the CLI workflow tests parameter
+generation, provider bindings and the matching chart contract. These local checks do
+not assert live deployment or public incident acceptance for a particular network.

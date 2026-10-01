@@ -38,18 +38,16 @@ They are configurable under `monitoring.datasources` and
 
 ## Instatus status page
 
-Prometheus supplies metrics to Grafana; component rules send notifications through
-an optional delivery verifier to Instatus webhook URLs. Production examples enable
-verified recovery with a durable journal. No management API key or new public
-monitoring endpoint is needed at runtime.
-Instatus provides components, incident history, and uptime history; continuous
-numeric charts are outside the initial scope.
+Prometheus supplies core and probe facts to the chart's Python health evaluator.
+One process owns evaluation, confirmation windows and durable Instatus delivery;
+Grafana consumes metrics for visualization and internal alerts. Runtime policy lives
+in `scripts/status_page_health.py`, not in CLI-generated PromQL. Runtime credentials
+are scoped component/heartbeat webhooks; no Instatus management API key is needed.
 
-Both production profiles expose the `statusPage` inputs, defaulting to disabled
-with all components in observe mode. CLI generation creates component rules and
-Secret references without replacing the global notification policy. Configure public alert routing only after selecting the
-public components and reviewing the outbound payload. Infrastructure alerts can
-later use Instatus's separate native Prometheus/Alertmanager integration.
+Production profiles keep status-page automation disabled until configured. When
+enabled, components default to automatic, requiring reviewed inputs and bindings.
+CLI emits deployment parameters and exact cleanup of previous managed Grafana
+public publishers. See the two-stage migration in the architecture guide.
 See the [configuration and Secret inventory](../../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration)
 and [architecture](../../docs/status-page-architecture.md).
 
@@ -554,8 +552,8 @@ for reliable public automation. None of this requires exposing private monitorin
 Component publication generation is available through `statusPage.publication`.
 Each component defaults to automatic and may explicitly use manual or observe
 mode. See [the publication configuration guide](../../docs/status-page-publication.md)
-for the health-expression contract, private component bindings, direct Grafana
-routing, verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
+for the health-expression contract, private component bindings, evaluator publication,
+verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
 installing the default values.
 
 ## Dstack and GPU monitoring

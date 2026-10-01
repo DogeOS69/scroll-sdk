@@ -47,7 +47,8 @@ CLI 现有来源链：`spec.frontend.hosts.frontend` → `frontends-production.y
 
 1. 部署包含已合并 #1312、#1314（或等效后续修复）和 public queue 指标的 dogeos-core 镜像；
    不再要求合并 #1304。具体 merge revision 见 [组件发布配置](status-page-publication.md)。确认 WP 和 DA 实际 target
-   与 `health.*JobRegex` 匹配；proof-only WP 不属于业务队列 target。
+   与 `health.*JobRegex` 及 `publication.sourceNamespace` 匹配；填写期望 WP/DA target 数量，
+   proof-only WP 不属于业务队列 target。
 2. 确认充值、协议 eligible 提现、批次发布的 deadline，填写对应 `health` 参数。
    设置真实出块模式、块龄、延迟和采样新鲜度；未填写的业务 deadline 保持未配置。
 3. 选择 `probes.mode: alloy`，核实自动派生的公网 RPC、Bridge 和 Blockscout API 地址。
@@ -73,7 +74,8 @@ Helm values（包含已有 Alloy 的探测配置），观察真实指标及 miss
 选择已完成验收的组件改为 automatic，重新生成并 review/apply；创建组件独立集成与
 Secret。将 `secrets/status-page/<key>.secret.yaml`（及可选 heartbeat Secret）通过已有
 Secret 流程应用到 monitoring namespace，再部署监控。CLI apply 本身不部署 K8s。
-新配置默认使用 PVC 投递校验器；确认 StorageClass、单副本和私网连通性。
+新版配置使用单进程评估器和原 PVC；升级时先部署 observe，确认旧 Grafana
+公开规则已删除，再启用 automatic，避免两个发布者在滚动更新中重叠。确认 StorageClass、单副本和私网连通性。
 同页元数据按页面串行 apply，保留父组及其他网络组件。
 
 ## 5. 验收场景
@@ -94,7 +96,7 @@ Secret 流程应用到 monitoring namespace，再部署监控。CLI apply 本身
 | 监控/集群断开 | 心跳停止；Cron Monitor 在 grace 后通知内部目的地 |
 | 人工接管 | manual 部署后停止该组件自动投递；保留事件与私有收据 |
 
-本地已覆盖 Prometheus 表达式、CLI→Helm、真实 Grafana→校验器→本地 HTTP 接收端、
+本地已覆盖 Prometheus 表达式、CLI→Helm、Prometheus→评估器→本地 HTTP 接收端（不依赖 Grafana）、
 浏览器及数据库异常用例。真实 Instatus 模板、重复通知、恢复关联及订阅行为仍是
 首版供应商验收项。首次心跳需确认已成功到达并启动 provider 计时。
 计划维护与自动发布的联动优先级降低，最后处理；不作为首版部署的阻塞项。
