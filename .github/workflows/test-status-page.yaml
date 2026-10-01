@@ -44,15 +44,20 @@ jobs:
           pip install PyYAML==6.0.2 playwright==1.55.0 websocket-client==1.8.0
           playwright install --with-deps chromium
           helm dependency build charts/scroll-monitor
-      - name: Validate evaluator, metric adapters, alert migration and durable delivery
+      - name: Validate evaluator rules, component provisioning and durable delivery
         env:
           SCROLL_STATUS_RUNTIME_TEST: '1'
-        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_*.py' -v
+        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_status_page*.py' -v
+      - name: Validate core snapshot compatibility and Grafana migrations
+        env:
+          SCROLL_STATUS_RUNTIME_TEST: '1'
+          PYTHONPATH: charts/scroll-monitor/tests
+        run: python -m unittest test_snapshot_promql test_bridge_health_prometheus test_seed_grafana_alerts test_monitoring_templates -v
       - name: Validate DogeOS dashboard queries and panel wiring
         run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_dogeos_dashboards.py' -v
       - name: Validate independent probes with a real browser
         env:
           STATUS_PROBE_BROWSER_TEST: '1'
-        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_*.py' -v
+        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_status_page*.py' -v
       - name: Lint independent probe chart
         run: helm lint --strict charts/status-page-probe
