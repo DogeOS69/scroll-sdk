@@ -88,12 +88,21 @@ scroll-monitor 的 PodMonitor 发现与 ServiceMonitor 一致按 release namespa
 ## WF 停滞影响充值和提现
 
 充值与提现的内置规则同时检查 WF。`health.wfStallSeconds` 默认 3600 秒，
-要求相同 WP 实例在完整窗口内 WF 序号不变，且存在超过该时限的 queued、building、
-built、failed_retryable、bug、proposed_to_tso 或 awaiting_replay 工作。
-历史 completed / failed_terminal 行不参与；无待处理工作的空闲不算故障。
-样本必须新鲜、数值有效且采集目标在线；新实例历史不足时为 unknown。
+使用 core 的只读 `withdrawal_processor_public_workflow_*` 快照，以及 jobs 来源的
+有效性与时间戳，不再查询 Pod IP 的一小时 Prometheus `offset` 历史。
+存在超过时限的 queued、building、built、failed_retryable、bug、proposed_to_tso 或
+awaiting_replay 工作，且 core 连续观测同一 canonical WF 头超过时限，才确认停滞。
+历史 completed / failed_terminal 行不参与；空闲或任务尚未超时可立即判断 WF 正常。
+近期 canonical 头的首次观测时间由 replay 持久化，新进程也可使用这一正向进展证据。
+这不是 scrape 时间，重复读取不会刷新它。
 
-WF 明确停滞时，两项组件均输出 affected，即使业务 snapshot_valid=0 或业务快照缺失。
+连续停滞时间由 core 的单调时钟计算。读取失败、超过 45 秒的采集空档、头身份改变
+（包括同高度重组）、时钟倒退或进程重启都会重新开始计时。重启后，如果旧任务已经
+超时且没有近期进展证据，仍需等待连续观测；不得把重启前未观测的时间算成停滞。
+缺少新 workflow 指标的旧 core 为 unknown，部署时必须先升级 core，再重新生成 CLI 配置。
+
+WF 快照自身有效且明确停滞时，两项组件均输出 affected，即使单独的充值或提现
+队列快照无效。全局一致性检查失败会使 workflow 快照一并无效，不可借旧值发布故障。
 业务积压超时本身也可独立判为 affected。只有 WF 与业务快照都证明正常，才允许恢复；
 缺失指标不会以 0 替代。正常故障确认窗口 `failureFor`（默认 5m）及恢复窗口
 `recoveryFor`（默认 10m）继续适用，因此默认 WF 停滞需持续约 65 分钟后发布。

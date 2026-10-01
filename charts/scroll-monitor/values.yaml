@@ -136,6 +136,20 @@ statusPage:
   # [GENERATED] generated.webhookRequested prevents replacement if private state is lost.
   # Neither API key, webhook URL nor integration ID belongs in this YAML.
 
+# Read-only adapter for core signing metrics. Evidence only; no Status Page credentials.
+# Explicit inputs belong to scroll-sdk-cli configuration generation or reviewed overrides.
+bridgeHealth:
+  enabled: false
+  environment: ""  # Required: devnet, testnet or mainnet.
+  chainId: ""  # Required: L2 chain ID, not Dogecoin network.
+  sourceNamespace: ""  # Empty uses this Helm release's namespace.
+  tsoJob: tso-service  # Exact Prometheus job, never an all-network regex.
+  expectedTargets: 1  # All expected targets must supply the complete v1 contract.
+  intervalSeconds: 30
+  freshnessSeconds: 120
+  timeoutSeconds: 5
+  image: python:3.12.11-alpine3.22
+
 monitoring:
   datasources:
     prometheus:
