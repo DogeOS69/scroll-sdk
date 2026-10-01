@@ -63,8 +63,8 @@ groups:
       description: Role {{ $labels.role }} takes more than two minutes on average to complete its required input
         thresholds.
   - alert: TSOSigningQueueLarge
-    expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"})
-      > 100
+    previousExpr: "sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~\"proposed|collecting_signatures|collecting_p2pkh\"}) > 100"
+    expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"} and on (namespace, job, instance) __TSO_STATUS_VALID__) > 100
     for: 15m
     labels:
       severity: warning

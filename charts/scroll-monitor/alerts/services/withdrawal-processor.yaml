@@ -134,8 +134,8 @@ groups:
       summary: The enabled L2 proof pipeline has no recent successful pass.
       description: Check its worker loop and proof-control storage. Disabled pipelines are excluded.
   - alert: WFBuildQueueStalled
-    expr: withdrawal_processor_protocol_job_oldest_age_seconds{status=~"queued|building|built|failed_retryable|bug"}
-      > 1800
+    previousExpr: "withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} > 1800"
+    expr: "(withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} and on (namespace, job, instance) __WP_JOBS_VALID__) > 1800"
     for: 10m
     labels:
       severity: critical

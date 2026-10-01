@@ -39,13 +39,14 @@
         "y": 0
       },
       "id": 1,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, instance) (tso_core_registered_signers_count{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace, instance) ((tso_core_registered_signers_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{instance}} registered signers",
           "refId": "A",
           "instant": true,
@@ -159,13 +160,14 @@
         "y": 0
       },
       "id": 4,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, instance) (tso_core_registered_signers_by_role{namespace=~\"$namespace\",role=\"Attestation\"})",
+          "expr": "max by (namespace, instance) ((tso_core_registered_signers_by_role{namespace=~\"$namespace\",role=\"Attestation\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{instance}} attestation",
           "refId": "A",
           "instant": true,
@@ -194,13 +196,14 @@
         "y": 12
       },
       "id": 5,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, instance, role) (tso_core_registered_signers_by_role{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace, instance, role) ((tso_core_registered_signers_by_role{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{instance}} {{role}}",
           "refId": "A"
         }
@@ -227,13 +230,14 @@
         "y": 12
       },
       "id": 6,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, instance, status) (tso_core_transactions_by_status{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace, instance, status) ((tso_core_transactions_by_status{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_metrics_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "legendFormat": "{{namespace}} {{instance}} {{status}}",
           "refId": "A"
         }
@@ -266,14 +270,14 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace, instance, role, public_key) (tso_core_registered_signer_info{namespace=~\"$namespace\"} == 1)",
+          "expr": "max by (namespace, instance, role, public_key) ((tso_core_registered_signer_info{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))) == 1)",
           "legendFormat": "{{namespace}} {{instance}} {{role}} {{public_key}}",
           "refId": "A"
         }
       ],
       "title": "Registered Signer Info",
       "type": "timeseries",
-      "description": "Currently registered signers only. Old label pairs reset to zero in the service and are filtered out."
+      "description": "Currently registered signers only. Retired signer identities are omitted from the current snapshot. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data."
     }
   ],
   "refresh": "30s",

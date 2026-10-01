@@ -572,3 +572,21 @@ The optional `bridgeHealth` adapter consumes core signing snapshot v1 through
 Prometheus, with explicit target completeness and freshness checks. It supplies
 read-only signing evidence and does not publish a global bridge status. See
 [configuration, contract and tests](BRIDGE_HEALTH_ADAPTER.md).
+
+### Core PR #1358 compatibility
+
+Chart `0.1.41-dogeos` targets the core metrics contract at `7e3ee2877`.
+Cached WP/TSO facts are filtered by source validity and success time before use;
+removed historical totals and terminal inventory are no longer queried. See
+[DASHBOARD_REVIEW.md](DASHBOARD_REVIEW.md#pr-1358-snapshot-contract-2026-10-02)
+for the source mapping. The signing adapter still consumes schema v1 from
+Prometheus. No new URL, credential or scroll-sdk-cli parameter is needed.
+
+Run the semantic tests as well as the chart and Python checks:
+
+```sh
+SCROLL_STATUS_RUNTIME_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests
+python3 charts/scroll-monitor/tests/run-alert-tests.py
+python3 charts/scroll-monitor/tests/check_dstack_alerts.py
+helm lint charts/scroll-monitor
+```

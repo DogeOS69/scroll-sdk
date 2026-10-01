@@ -31,8 +31,8 @@ exporter configuration together.
 | --- | --- | --- |
 | Service Operations | Core service metrics, indexer metrics, kube-state-metrics, cAdvisor and Alloy logs | Time percentiles use histogram buckets. Namespace labels survive aggregation. Readiness preserves unhealthy instances. Indexer lag joins the corresponding namespace and compares against downloaded Dogecoin blocks, not headers. Loki queries accept the default All selection and respect the selected service; All services remains scoped to DogeOS workloads. |
 | Dogecoin Node | SDK `metrics-exporter` RPC mapping | The legacy metric named `mempool_bytes_total` is a current byte gauge; `mempool_size_bytes` actually contains transaction count. Panels use those actual meanings and do not take a rate of current mempool bytes. The string-valued RPC error field cannot serve as a numeric error counter. Its old panel is replaced with clearly labelled exporter scrape health, which does not establish RPC health. Network and memory units are explicit. |
-| TSO Service | `crates/tso_core/src/metrics.rs` and recording sites | Replicated inventory snapshots remain separate by namespace and instance instead of being summed into a duplicated total. Signer identity rows select active entries; old identity series reset to zero are excluded. |
-| Withdrawal Processor | `crates/withdrawal_processor/src/protocol_metrics.rs`, `latency_metrics.rs` and worker recording sites | Time quantiles use buckets. Removed two bootstrap height/index queries that have no emitted metric in the reviewed sources. Count, DOGE and duration series have separate units. The proof-age panel explicitly includes failed work items. |
+| TSO Service | `crates/tso_core/src/metrics.rs` and recording sites | Replicated inventory snapshots remain separate by namespace and instance instead of being summed into a duplicated total. Signer identity rows select active entries; retired identity labels are omitted. Registry and transaction inventories require independent fresh, valid source snapshots. |
+| Withdrawal Processor | `crates/withdrawal_processor/src/protocol_metrics.rs`, `latency_metrics.rs` and worker recording sites | Time quantiles use buckets. Removed two bootstrap height/index queries that have no emitted metric in the reviewed sources. Count, DOGE and duration series have separate units. Job and proof panels show only nonterminal work, including retryable failures. Historical flow totals and terminal-job inventory are removed. Canonical AdvanceL2 frontiers may regress after a reorg. |
 | L1 Interface | `crates/l1_interface/src/protocol_metrics.rs`, RPC, database and indexer recording sites | Time quantiles use buckets. Readiness and namespace aggregation preserve instance failures and network boundaries. Embedded indexer metrics retain the owning job filter. |
 | Ethereum DA Submitter | `crates/eth_da_submitter/src/metrics.rs` and service initialization | Time quantiles use buckets while size distributions follow their actual exporter configuration. Separate units distinguish queue counts, elapsed seconds, throughput and cost. Readiness does not use a global maximum that masks a failing replica. |
 | Fee Oracle | `crates/fee_oracle/src/monitoring/metrics.rs` | Time quantiles use buckets. The latest-status panel selects the active one-hot value rather than displaying historical status labels reset to zero. |
@@ -114,3 +114,41 @@ Proof Coordinator application telemetry stays `No data` until its new image is
 published and deployed. Missing business snapshots must not become healthy public
 status. Use Slack as the first internal notification acceptance target; leave
 SMTP disabled unless the operator explicitly configures it.
+
+## PR #1358 snapshot contract (2026-10-02)
+
+Reviewed against dogeos-core `7e3ee2877e3cd18eaa524473d6a14a83e659f29d`.
+Cached payload remains exported after a failed refresh, so scrape freshness alone
+cannot establish current health. Dashboard queries and inventory/queue alerts
+require `up == 1`, source validity, and a source success timestamp no more than
+120 seconds old and not in the future, joined on namespace, job and instance
+before aggregation. Invalid evidence creates a graph gap / No data; it is not
+converted into a healthy zero or used to assert a business outage.
+
+| Cached payload | Validity and success timestamp |
+| --- | --- |
+| WP nonterminal jobs | `protocol_snapshot_*{source="jobs"}` |
+| WP nonterminal proof work | `protocol_snapshot_*{source="proof_work"}` |
+| WP AdvanceL2 end-block frontiers | `protocol_snapshot_*{source="advance_l2"}` |
+| WP canonical replay state | `protocol_snapshot_*{source="replay"}` |
+| WP resolved L2 / DA heights | `protocol_snapshot_*{source="l2"}` |
+| TSO registered signers | `tso_core_registry_snapshot_valid`, `tso_core_registry_snapshot_timestamp_seconds` |
+| TSO transaction inventory | `tso_core_metrics_snapshot_valid`, `tso_core_observation_timestamp_seconds` |
+
+WP control names above have the `withdrawal_processor_` prefix and end in
+`valid` / `timestamp_seconds`. The `flows` source and cumulative WF/deposit/
+withdrawal database totals are no longer exported. Completed AdvanceL2 height
+comes from canonical replay, and other stages combine canonical and live work;
+none is an immutable historical high-water mark. Proof queue labels use
+`proof_family`, including retry-budget alerts and their descriptions.
+
+Collection failures are separate operator warnings. Existing Grafana rule UIDs,
+custom notification settings and operator pauses survive migration from the
+previous shipped expressions. These diagnostics do not drive public recovery:
+Status Page continues to use its own complete-evidence gates and persisted state,
+and unknown observations cannot close an existing public incident.
+
+Semantic regression tests evaluate the rendered alert expressions and actual
+dashboard queries in Prometheus, including retained payload with invalid, stale,
+missing or future controls and isolation across sources, instances and networks.
+The coordinator dashboard's WP namespace can differ from its own namespace.

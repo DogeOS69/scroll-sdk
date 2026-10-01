@@ -118,37 +118,43 @@ groups:
       description: Worker handler {{ $labels.handler }} averages more than five seconds. Inspect WP and artifact
         storage latency.
   - alert: ProofMaterializationQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status=~"pending|blocked|failed_retryable"}
-      > 1800
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} > 1800"
+    previousAnnotations:
+      description: "WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator dispatch, eager locators, and materializer capacity."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof materialization work is not being drained.
-      description: WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator
+      description: WP reports {{ $labels.proof_family }} materialization waiting more than 30 minutes. Check coordinator
         dispatch, eager locators, and materializer capacity.
   - alert: ProofVerificationQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status=~"pending|blocked|failed_retryable|remote_result_submitted"}
-      > 1800
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} > 1800"
+    previousAnnotations:
+      description: "WP reports {{ $labels.family }} verification work older than 30 minutes. Inspect verifier material, artifact readback, and coordinator import."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof verification or result import is delayed.
-      description: WP reports {{ $labels.family }} verification work older than 30 minutes. Inspect verifier material,
+      description: WP reports {{ $labels.proof_family }} verification work older than 30 minutes. Inspect verifier material,
         artifact readback, and coordinator import.
   - alert: ProofWorkerQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status=~"pending|blocked|failed_retryable"}
-      > 3600
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} > 3600"
+    previousAnnotations:
+      description: "Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family }}. Running long proofs are excluded."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 3600"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof work waits more than one hour for progress.
-      description: Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family
+      description: Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.proof_family
         }}. Running long proofs are excluded.
   - alert: ProofCoordinatorObserveDegraded
     expr: sum by (namespace, job, instance, family) (increase(proof_coordinator_terminal_proofs_degraded_under_observe_total[5m]))

@@ -4,7 +4,7 @@ tso_core_signing_snapshot_schema_version 1
 # HELP tso_core_signing_observer_start_timestamp_seconds Process-local observer identity; not chain epoch
 # TYPE tso_core_signing_observer_start_timestamp_seconds gauge
 tso_core_signing_observer_start_timestamp_seconds 900
-# HELP tso_core_signing_snapshot_valid Whether this scrape contains a complete bounded in-memory read
+# HELP tso_core_signing_snapshot_valid Whether the latest refresh completed a bounded in-memory read
 # TYPE tso_core_signing_snapshot_valid gauge
 tso_core_signing_snapshot_valid 1
 # HELP tso_core_signing_snapshot_error Current read failure, not business outage
@@ -25,17 +25,17 @@ tso_core_signing_active_transactions 2
 tso_core_signing_unclassified_transactions 0
 # HELP tso_core_signing_quorum_transactions Active transactions by per-input role quorum progress; pending is not online capability
 # TYPE tso_core_signing_quorum_transactions gauge
-# HELP tso_core_signing_waiting_transactions Classified active transactions whose per-input role thresholds are not satisfied
-# TYPE tso_core_signing_waiting_transactions gauge
-# HELP tso_core_signing_oldest_wait_seconds Oldest collection age of classified active transactions waiting for this role
-# TYPE tso_core_signing_oldest_wait_seconds gauge
 tso_core_signing_quorum_transactions{role="correctness",state="satisfied"} 1
 tso_core_signing_quorum_transactions{role="correctness",state="pending"} 1
 tso_core_signing_quorum_transactions{role="correctness",state="unreachable"} 0
-tso_core_signing_waiting_transactions{role="correctness"} 1
-tso_core_signing_oldest_wait_seconds{role="correctness"} 45
 tso_core_signing_quorum_transactions{role="attestation",state="satisfied"} 0
 tso_core_signing_quorum_transactions{role="attestation",state="pending"} 1
 tso_core_signing_quorum_transactions{role="attestation",state="unreachable"} 1
+# HELP tso_core_signing_waiting_transactions Classified active transactions whose per-input role thresholds are not satisfied
+# TYPE tso_core_signing_waiting_transactions gauge
+tso_core_signing_waiting_transactions{role="correctness"} 1
 tso_core_signing_waiting_transactions{role="attestation"} 2
+# HELP tso_core_signing_oldest_wait_seconds Oldest collection age of classified active transactions waiting for this role
+# TYPE tso_core_signing_oldest_wait_seconds gauge
+tso_core_signing_oldest_wait_seconds{role="correctness"} 45
 tso_core_signing_oldest_wait_seconds{role="attestation"} 90

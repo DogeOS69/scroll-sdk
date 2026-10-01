@@ -259,9 +259,10 @@ class SeedTests(unittest.TestCase):
         from test_monitoring_templates import grafana_rules, render
         sources = [rule for rule in grafana_rules(render()).values()
                    if "previousExpr" in rule and rule.get("datasourceType") != "loki"]
-        self.assertEqual({r["alert"] for r in sources}, {
+        self.assertTrue({
             "FeeOracleStale", "TSONoRegisteredSigners", "DogecoinIndexerLag",
-        })
+            "TSOSignerMetricMissing", "WFJobStalled", "ProofWorkRetryBudgetExhausted",
+        }.issubset({r["alert"] for r in sources}))
         for source in sources:
             with self.subTest(alert=source["alert"]):
                 client = MemoryGrafana()
@@ -269,7 +270,7 @@ class SeedTests(unittest.TestCase):
                 old = {**source, "expr": SEED.alternatives(source["previousExpr"])[0],
                        "annotations": {**source["annotations"], **{
                            key: SEED.alternatives(value)[0]
-                           for key, value in source["previousAnnotations"].items()}}}
+                           for key, value in source.get("previousAnnotations", {}).items()}}}
                 config["groups"][0]["rules"] = [old]
                 SEED.seed(client, config)
                 saved = client.group["rules"][0]

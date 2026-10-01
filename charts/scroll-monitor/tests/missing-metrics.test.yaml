@@ -17,10 +17,9 @@ tests:
         service: fee-oracle
       exp_annotations: &id002
         summary: Fee oracle freshness cannot be evaluated because its metric is missing.
-        description: Check whether fee-oracle is deployed, its ServiceMonitor is selected,
-          and its metrics endpoint exports the computation timestamp. Missing telemetry
-          does not establish a stale oracle value. Pause this rule if fee-oracle is
-          intentionally absent.
+        description: Check whether fee-oracle is deployed, its ServiceMonitor is selected, and its metrics endpoint exports
+          the computation timestamp. Missing telemetry does not establish a stale oracle value. Pause this rule if fee-oracle
+          is intentionally absent.
   - eval_time: 6m
     alertname: TSONoRegisteredSigners
     exp_alerts: []
@@ -30,11 +29,10 @@ tests:
     - exp_labels: &id003
         severity: warning
         service: tso-service
-      exp_annotations: &id004
-        summary: TSO signer count cannot be evaluated because its metric is missing.
-        description: Check the TSO ServiceMonitor, Prometheus target discovery, and
-          /metrics endpoint. Missing telemetry does not establish that there are no
-          registered signers.
+      exp_annotations:
+        summary: TSO signer count cannot be evaluated because its observation is unavailable.
+        description: Check registry snapshot validity, its success timestamp, the TSO ServiceMonitor, and target discovery.
+          Missing, invalid, or stale telemetry does not establish that there are no registered signers.
 - name: missing telemetry waits five minutes
   interval: 1m
   input_series: []
@@ -58,6 +56,12 @@ tests:
     values: 0+60000x30
   - series: tso_core_registered_signers_count
     values: 5+0x30
+  - series: up
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 25m
     alertname: FeeOracleStale
@@ -78,6 +82,12 @@ tests:
     values: 0+60000x30
   - series: tso_core_registered_signers_count
     values: 0+0x30
+  - series: up
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 6m
     alertname: FeeOracleStale
@@ -93,8 +103,7 @@ tests:
         service: tso-service
       exp_annotations:
         summary: TSO has no registered signers.
-        description: TSO reports fewer than one registered signer. Check signer registration
-          and connectivity.
+        description: TSO reports fewer than one registered signer. Check signer registration and connectivity.
   - eval_time: 6m
     alertname: TSOSignerMetricMissing
     exp_alerts: []
@@ -105,6 +114,12 @@ tests:
     values: 0+0x30
   - series: tso_core_registered_signers_count
     values: 5+0x30
+  - series: up
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 22m
     alertname: FeeOracleStale
@@ -114,8 +129,8 @@ tests:
         service: fee-oracle
       exp_annotations:
         summary: Fee oracle Ethereum DA oracle value has not updated recently.
-        description: The latest observed computed value is older than 15 minutes.
-          Check fee-oracle computation and upstream RPCs.
+        description: The latest observed computed value is older than 15 minutes. Check fee-oracle computation and upstream
+          RPCs.
   - eval_time: 22m
     alertname: FeeOracleMetricMissing
     exp_alerts: []
@@ -132,6 +147,12 @@ tests:
     values: 0+0x22 stale _x15
   - series: tso_core_registered_signers_count
     values: 0+0x22 stale _x15
+  - series: up
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 30m
     alertname: FeeOracleStale
@@ -148,7 +169,10 @@ tests:
     alertname: TSOSignerMetricMissing
     exp_alerts:
     - exp_labels: *id003
-      exp_annotations: *id004
+      exp_annotations:
+        summary: TSO signer count cannot be evaluated because its observation is unavailable.
+        description: Check registry snapshot validity, its success timestamp, the TSO ServiceMonitor, and target discovery.
+          Missing, invalid, or stale telemetry does not establish that there are no registered signers.
 - name: telemetry recovery clears missing warnings
   interval: 1m
   input_series:
@@ -156,6 +180,12 @@ tests:
     values: _x10 660000+60000x20
   - series: tso_core_registered_signers_count
     values: _x10 5+0x20
+  - series: up
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_valid
+    values: 1+0x200
+  - series: tso_core_registry_snapshot_timestamp_seconds
+    values: 0+60x200
   alert_rule_test:
   - eval_time: 15m
     alertname: FeeOracleStale

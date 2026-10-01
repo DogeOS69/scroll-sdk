@@ -107,14 +107,40 @@ class DogeosDashboardTests(unittest.TestCase):
         for name, panel_id, ref, unit in [
             ('eth-da-submitter', 8, 'D', 's'),
             ('eth-da-submitter', 14, 'A', 'ops'),
-            ('withdrawal-processor', 18, 'B', 'suffix:DOGE'),
-            ('withdrawal-processor', 19, 'B', 'suffix:DOGE'),
             ('withdrawal-processor', 36, 'B', 's'),
         ]:
             panel = next(p for p in walk(dict(dashboards())[name]['panels']) if p['id'] == panel_id)
             override = next(o for o in panel['fieldConfig']['overrides']
                             if o['matcher'] == {'id': 'byFrameRefID', 'options': ref})
             self.assertIn({'id': 'unit', 'value': unit}, override['properties'])
+
+    def test_retired_history_panels_and_terminal_queries_are_removed(self):
+        wp = dict(dashboards())['withdrawal-processor']
+        self.assertFalse({11, 17, 18, 19} & {p['id'] for p in walk(wp['panels'])})
+        for name, d in dashboards():
+            for panel in walk(d['panels']):
+                for target in panel.get('targets', []):
+                    expr = target.get('expr', '')
+                    self.assertNotRegex(expr, r'withdrawal_processor_protocol_(wf_event_count|deposit_count|deposit_amount_sats|withdrawal_count|withdrawal_amount_sats)')
+                    if 'withdrawal_processor_proof_work_' in expr:
+                        self.assertNotIn('failed_terminal', expr)
+
+    def test_cached_facts_require_source_success_time_before_aggregation(self):
+        for name, d in dashboards():
+            for panel in walk(d['panels']):
+                for target in panel.get('targets', []):
+                    expr = target.get('expr', '')
+                    if any(metric in expr for metric in ['withdrawal_processor_protocol_state_',
+                            'withdrawal_processor_protocol_job_', 'withdrawal_processor_proof_work_',
+                            'withdrawal_processor_advance_l2_l2_end_block',
+                            'tso_core_registered_', 'tso_core_transactions_by_status']):
+                        self.assertIn('snapshot_valid', expr, (name, panel['id']))
+                        self.assertIn('timestamp_seconds', expr)
+                        self.assertIn('time()', expr)
+                        self.assertIn('on (namespace, job, instance)', expr)
+                        self.assertIn('up{', expr)
+                        if 'withdrawal_processor_advance_l2_l2_end_block' in expr:
+                            self.assertIn('source="advance_l2"', expr)
 
     def test_native_dstack_gpu_labels_and_host_isolation(self):
         dashboard = dict(dashboards())['dstack']
