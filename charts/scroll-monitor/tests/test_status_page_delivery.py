@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -40,6 +41,7 @@ class DeliveryTests(unittest.TestCase):
     def tick(self, value, *times):
         for stamp in times:
             self.delivery.tick({'public-rpc': value}, stamp)
+            self.delivery.deliver_once(stamp)
 
     def fire(self):
         self.tick(1, 100, 110, 120)
@@ -107,6 +109,77 @@ class DeliveryTests(unittest.TestCase):
         self.delivery = self.open()
         self.tick(1, 160, 170, 180)
         self.assertEqual(self.sent[0], attempts[0])
+
+    def test_uncertain_event_remains_alerted_after_restart_and_health_reversal(self):
+        def uncertain(*_):
+            raise TimeoutError()
+        self.delivery.send = uncertain
+        self.tick(1, 100, 110, 120)
+        self.delivery.db.close()
+        self.delivery = self.open()
+        self.assertIn('scroll_status_delivery_error{component_key="public-rpc"} 1', self.delivery.metrics())
+        self.tick(0, 130, 140, 150, 160, 170)
+        self.assertEqual(self.sent, [])
+        self.assertIn('scroll_status_delivery_error{component_key="public-rpc"} 1', self.delivery.metrics())
+        self.assertIn('scroll_status_delivery_pending{component_key="public-rpc"} 1', self.delivery.metrics())
+
+    def test_slow_provider_does_not_block_evidence_or_scrapes_and_no_parallel_duplicate(self):
+        entered, release = threading.Event(), threading.Event()
+        def slow(url, event):
+            entered.set()
+            release.wait(3)
+            self.sent.append(event)
+        self.delivery.send = slow
+        for stamp in (100, 110, 120):
+            self.delivery.tick({'public-rpc': 1}, stamp)
+        worker = threading.Thread(target=lambda: self.delivery.deliver_once(120))
+        worker.start()
+        try:
+            self.assertTrue(entered.wait(1))
+            completed = threading.Event()
+            def read_and_update():
+                self.delivery.tick({'public-rpc': None}, 130)
+                self.delivery.metrics()
+                self.delivery.deliver_once(130)
+                completed.set()
+            reader = threading.Thread(target=read_and_update)
+            reader.start()
+            self.assertTrue(completed.wait(1), 'webhook holds evidence lock')
+            reader.join()
+        finally:
+            release.set()
+            worker.join()
+        self.assertEqual(len(self.sent), 1)
+        self.assertIn('scroll_status_delivery_incident_active{component_key="public-rpc"} 1', self.delivery.metrics())
+        self.assertEqual(self.delivery.last_tick, 130)
+
+    def test_sender_rechecks_maintenance_after_collection(self):
+        self.delivery.windows = [{'start': 121, 'end': 150, 'components': ['public-rpc']}]
+        for stamp in (100, 110, 120):
+            self.delivery.tick({'public-rpc': 1}, stamp)
+        self.delivery.deliver_once(121)
+        self.assertEqual(self.sent, [])
+
+    def test_failed_component_does_not_starve_another_pending_event(self):
+        import copy
+        self.delivery.db.close()
+        self.config['components']['deposits'] = copy.deepcopy(self.config['components']['public-rpc'])
+        self.config['components']['deposits']['componentId'] = 'deposits'
+        self.delivery = self.open()
+        attempts = []
+        def send(url, payload):
+            key = payload['alerts'][0]['labels']['component_key']
+            attempts.append(key)
+            if key == 'public-rpc':
+                raise TimeoutError()
+        self.delivery.send = send
+        for stamp in (100, 110, 120):
+            self.delivery.tick({'public-rpc': 1, 'deposits': 1}, stamp)
+        self.delivery.deliver_once(120)
+        self.delivery.deliver_once(121)
+        self.delivery.deliver_once(122)
+        self.assertEqual(attempts, ['public-rpc', 'deposits'])
+        self.assertIn('scroll_status_delivery_incident_active{component_key="deposits"} 1', self.delivery.metrics())
 
     def test_failures_need_continuous_evidence_without_any_grafana_signal(self):
         self.tick(1, 100, 110)

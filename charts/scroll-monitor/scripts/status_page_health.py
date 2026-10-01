@@ -11,6 +11,9 @@ import math
 
 DEFAULTS = {
     'withdrawalProcessorExpectedTargets': 1, 'ethDaSubmitterExpectedTargets': 1,
+    'tsoExpectedTargets': 1, 'tsoJobRegex': 'tso-service',
+    'kubeStateMetricsJobRegex': '.*kube-state-metrics.*',
+    'withdrawalProcessorStatefulSet': 'withdrawal-processor',
     'freshnessSeconds': 120, 'failureFor': '5m', 'recoveryFor': '10m',
     'depositDeadlineSeconds': 0, 'withdrawalDeadlineSeconds': 0,
     'batchPublicationDeadlineSeconds': 0, 'wfStallSeconds': 3600,
@@ -30,14 +33,14 @@ def policy(raw):
     for key, value in result.items():
         if key.endswith('For'):
             seconds(value)
-        elif key.endswith('JobRegex'):
+        elif key.endswith(('JobRegex', 'StatefulSet')):
             if not isinstance(value, str) or not value or len(value) > 256:
                 raise ValueError('invalid source selector')
         elif (type(value) not in (int, float) or not math.isfinite(value) or value < 0
               or (not key.endswith('DeadlineSeconds') and value == 0)
               or (key != 'maxRpcLatencySeconds' and value != int(value))):
             raise ValueError('invalid health threshold')
-    if any(result[key] > 32 for key in ('withdrawalProcessorExpectedTargets', 'ethDaSubmitterExpectedTargets')):
+    if any(result[key] > 32 for key in ('withdrawalProcessorExpectedTargets', 'ethDaSubmitterExpectedTargets', 'tsoExpectedTargets')):
         raise ValueError('at most 32 expected service targets')
     if result['minimumProbeLocations'] < 2:
         raise ValueError('independent probe locations required')
@@ -113,6 +116,44 @@ def workflow_query(config):
     return verdict(f'max({evidence})', complete)
 
 
+def processor_query(config):
+    """Supervisor evidence is independent of a failed application scrape.
+
+    Require one current, observed StatefulSet generation from a fresh healthy
+    kube-state-metrics target. Missing/duplicate/stale discovery is unknown.
+    """
+    h = config['health']
+    selector = ('{namespace=' + quoted(config['sourceNamespace']) + ',statefulset='
+                + quoted(h['withdrawalProcessorStatefulSet']) + ',job=~'
+                + quoted(h['kubeStateMetricsJobRegex']) + '}')
+    ready = 'kube_statefulset_status_replicas_ready' + selector
+    desired = 'kube_statefulset_replicas' + selector
+    generation = 'kube_statefulset_metadata_generation' + selector
+    observed = 'kube_statefulset_status_observed_generation' + selector
+    up = 'up{job=~' + quoted(h['kubeStateMetricsJobRegex']) + '}'
+    guards = [f'count({m}) == 1 and {fresh("min(timestamp(" + m + "))", h)}'
+              for m in (ready, desired, generation, observed)]
+    guards += [f'min({ready}) >= 0 and min({ready}) == floor(min({ready}))',
+               f'min({desired}) >= min({ready}) and min({desired}) < Inf',
+               f'min({generation}) == min({observed}) and min({generation}) >= 0',
+               f'count({ready} and on (job, instance) ({up} == 1)) == 1',
+               f'count({up}) == 1 and min({up}) == 1 and {fresh("min(timestamp(" + up + "))", h)}']
+    return f'(max({ready}) == bool 0) and (' + ') and ('.join(guards) + ')'
+
+
+def tso_query(config):
+    h = config['health']
+    selector = '{namespace=' + quoted(config['sourceNamespace']) + ',job=~' + quoted(h['tsoJobRegex']) + '}'
+    ready = 'tso_service_ready' + selector
+    valid = 'tso_service_readiness_snapshot_valid' + selector
+    stamp = 'tso_service_readiness_timestamp_seconds' + selector
+    labels = 'namespace, job, instance'
+    evidence = (f'((1 - ({ready} == 0 or {ready} == 1)) and on ({labels}) ({valid} == 1) '
+                f'and on ({labels}) {fresh(stamp, h)} and on ({labels}) (up{selector} == 1))')
+    complete = f'(count({evidence}) == {h["tsoExpectedTargets"]}) and (count(up{selector}) == {h["tsoExpectedTargets"]}) and (min(up{selector}) == 1)'
+    return verdict(f'max({evidence})', complete)
+
+
 def probe_query(config, key):
     identity = f'environment={quoted(config["environment"])},chain_id={quoted(config["chainId"])},component_key={quoted(key)}'
     health = config['health']
@@ -164,7 +205,8 @@ def queries(config, key):
     if not rule.get('builtin'):
         return {'custom': rule['expr']} if rule.get('expr') else {}
     if key in ('deposits', 'withdrawals'):
-        return {'queue_deadline': queue_query(config, key), 'workflow_stalled': workflow_query(config)}
+        return {'queue_deadline': queue_query(config, key), 'workflow_stalled': workflow_query(config),
+                'withdrawal_processor_unready': processor_query(config), 'tso_unready': tso_query(config)}
     if key == 'batch-publication':
         return {'queue_deadline': queue_query(config, key)}
     if config.get('probeMode') == 'alloy' and key in ('public-rpc', 'bridge-portal', 'block-explorer'):
@@ -180,7 +222,7 @@ def evaluate(samples):
     """
     failed = [rule for rule, value in samples.items() if value in (1, 2)]
     missing = [rule for rule, value in samples.items() if value is None]
-    status = ('unavailable' if 'workflow_stalled' in failed else 'degraded') if failed else ('operational' if samples and not missing else 'unknown')
+    status = ('unavailable' if set(failed) & {'workflow_stalled', 'withdrawal_processor_unready', 'tso_unready'} else 'degraded') if failed else ('operational' if samples and not missing else 'unknown')
     return {'status': status, 'observation': 'partial' if missing or not samples or 2 in samples.values() else 'complete',
             'reasons': failed or missing or ([] if samples else ['unconfigured']),
             'assurance': 'pipeline', 'coverage': 'configured_public_rules'}
