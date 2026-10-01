@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Durable, evidence-checked delivery of component-scoped Grafana notifications.
+"""Single-process health evaluation and durable status-page publication.
 
 No management API credentials, no inbound public endpoint, no provider state reads.
-Raw Grafana resolved notifications never resolve a public incident.
+Rules live beside this script. Grafana is not an input or publication gate.
 """
+import copy
 import datetime
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -16,6 +17,8 @@ import time
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import status_page_health as health
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -33,7 +36,7 @@ def request_json(url, payload=None):
         return json.loads(raw) if payload is None else None
 
 
-def observation(response, now, max_age):
+def observation(response, now, max_age, allow_partial=False):
     if response.get("status") != "success" or response.get("warnings"):
         return None
     data = response.get("data", {})
@@ -42,7 +45,7 @@ def observation(response, now, max_age):
         return None
     try:
         stamp, value = map(float, samples[0]["value"])
-        if value not in (0, 1) or not math.isfinite(stamp) or not 0 <= now - stamp <= max_age:
+        if value not in ((0, 1, 2) if allow_partial else (0, 1)) or not math.isfinite(stamp) or not 0 <= now - stamp <= max_age:
             return None
         return int(value)
     except (KeyError, ValueError, TypeError):
@@ -55,8 +58,20 @@ def iso(stamp):
 
 class Delivery:
     def __init__(self, config, database, send=None):
-        self.config = config
+        config = copy.deepcopy(config)
+        self.config = {**config, "health": health.policy(config.get("health", {}))}
         self.components = config["components"]
+        if (config["environment"] not in ("devnet", "testnet", "mainnet")
+                or not str(config["chainId"]).isdigit() or len(self.components) > len(health.COMPONENTS)
+                or self.components.keys() - set(health.COMPONENTS)):
+            raise ValueError("invalid health scope")
+        self.config.setdefault("intervalSeconds", 30)
+        self.decisions = {}
+        for component in self.components.values():
+            if "expr" in component and "rule" not in component:
+                component["rule"] = {"expr": component["expr"]}  # Read existing v2 journals/configs.
+            component.setdefault("failureSeconds", health.seconds(component.get("rule", {}).get("for", self.config["health"]["failureFor"])))
+            component.setdefault("recoverySeconds", health.seconds(self.config["health"]["recoveryFor"]))
         self.lock = threading.RLock()
         self.db = sqlite3.connect(database, check_same_thread=False)
         self.db.execute("PRAGMA synchronous=FULL")
@@ -76,27 +91,11 @@ class Delivery:
             row = self.db.execute("SELECT identity FROM events WHERE key=?", (key,)).fetchone()
             if row and row[0] != identity:
                 raise ValueError("delivery target changed: restore the original state and binding")
-            self.db.execute("INSERT OR IGNORE INTO events VALUES (?, ?, NULL, NULL)", (key, identity))
+            if component.get("mode", "automatic") == "automatic":
+                if not component["pageId"] or not component["componentId"]:
+                    raise ValueError("automatic publication requires a bound component")
+                self.db.execute("INSERT OR IGNORE INTO events VALUES (?, ?, NULL, NULL)", (key, identity))
         self.db.commit()
-
-    def notify(self, key, body, now):
-        # Never trust transport status as business recovery. No raw incident text,
-        # annotations, URLs or labels from Grafana are copied to the public payload.
-        component = self.components.get(key)
-        if component is None or body.get("status") != "firing":
-            return False
-        expected = {"component_key": key, "environment": self.config["environment"],
-                    "chain_id": self.config["chainId"], "managed_by": "scroll-sdk-status-page",
-                    "audience": "public-status"}
-        alerts = body.get("alerts")
-        if not isinstance(alerts, list) or len(alerts) != 1 or body.get("truncatedAlerts", 0):
-            return False
-        alert = alerts[0]
-        if not isinstance(alert, dict) or alert.get("status") != "firing" or any(alert.get("labels", {}).get(k) != v for k, v in expected.items()):
-            return False
-        with self.lock:
-            self.memory.setdefault(key, {})["armed"] = now
-        return True
 
     def payload(self, key, now, active=None):
         component = self.components[key]
@@ -107,7 +106,7 @@ class Delivery:
                   "component_key": key, "environment": self.config["environment"], "chain_id": self.config["chainId"]}
         start = active["alerts"][0]["startsAt"] if active else iso(now)
         return {"receiver": f"instatus-{key}", "status": status, "orgId": self.config["orgId"],
-                "alerts": [{"status": status, "labels": labels, "annotations": {}, "startsAt": start,
+                "alerts": [{"status": status, "labels": labels, "annotations": {"summary": ", ".join(self.decisions.get(key, {}).get("reasons", []))}, "startsAt": start,
                             "endsAt": iso(now) if active else "0001-01-01T00:00:00Z", "fingerprint": fingerprint}],
                 "groupLabels": labels, "commonLabels": labels, "commonAnnotations": {}, "externalURL": "",
                 "version": "1", "groupKey": identity, "truncatedAlerts": 0,
@@ -132,6 +131,8 @@ class Delivery:
                 if value is None or gap < 0 or gap > self.config["intervalSeconds"] * 2 or value != state.get("value"):
                     state["since"] = now
                 state.update(last=now, value=value)
+                if component.get("mode", "automatic") != "automatic":
+                    continue
                 active_raw, pending_raw = self.db.execute("SELECT active, pending FROM events WHERE key=?", (key,)).fetchone()
                 active = json.loads(active_raw) if active_raw else None
                 pending = json.loads(pending_raw) if pending_raw else None
@@ -143,7 +144,7 @@ class Delivery:
                 if pending and ((pending["status"] == "firing") != bool(value)):
                     continue
                 if pending is None:
-                    if value == 1 and active is None and 0 <= now - state.get("armed", -1e20) <= 18000:
+                    if value == 1 and active is None:
                         pending = self.payload(key, now)
                     elif value == 0 and active is not None:
                         pending = self.payload(key, now, active)
@@ -160,22 +161,42 @@ class Delivery:
                                 (json.dumps(pending) if value == 1 else None, key))
                 self.db.commit()
                 state["delivery_error"] = 0
-                if value == 0:
-                    state.pop("armed", None)
             self.last_tick = now
 
     def collect(self):
-        def query(item):
-            key, component = item
+        # At most ten distinct requests for the built-ins; shared WF evidence is
+        # fetched once. No core DB access, no per-rule background workers.
+        plan = {key: health.queries(self.config, key) for key in self.components}
+        expressions = {expr for rules in plan.values() for expr in rules.values() if expr}
+        def query(expr):
             try:
                 now = time.time()
-                url = self.config["prometheusUrl"].rstrip("/") + "/api/v1/query?" + urllib.parse.urlencode({"query": component["expr"], "time": now})
-                return key, observation(request_json(url), time.time(), self.config["intervalSeconds"] * 2)
+                url = self.config["prometheusUrl"].rstrip("/") + "/api/v1/query?" + urllib.parse.urlencode({"query": expr, "time": now, "timeout": "8s"})
+                return expr, observation(request_json(url), time.time(), self.config["intervalSeconds"] * 2, allow_partial=True)
             except Exception:
-                return key, None
+                return expr, None
         with ThreadPoolExecutor(max_workers=8) as workers:
-            samples = dict(workers.map(query, self.components.items()))
-        self.tick(samples, time.time())
+            results = dict(workers.map(query, expressions))
+        now = time.time()
+        decisions = {key: health.evaluate({rule: (None if rule == "custom" and results.get(expr) == 2 else results.get(expr))
+                                           for rule, expr in rules.items()})
+                     for key, rules in plan.items()}
+        for key, item in decisions.items():
+            item["monitoringRequired"] = bool(plan[key]) or self.components[key].get("mode", "automatic") == "automatic"
+        with self.lock:
+            self.decisions = decisions
+            self.tick({key: None if item["status"] == "unknown" else int(item["status"] != "operational")
+                   for key, item in decisions.items()}, now)
+        # Heartbeat proves this evaluator completed a tick. Missing observations
+        # withhold it; known business failures do not pretend monitoring is dead.
+        monitored = [item for key, item in decisions.items()
+                     if self.components[key].get("mode", "automatic") != "manual"
+                     and (plan[key] or self.components[key].get("mode", "automatic") == "automatic")]
+        if self.config.get("heartbeatEnabled") and monitored and not any(s.get("delivery_error") for s in self.memory.values()) and all(item["observation"] == "complete" for item in monitored):
+            try:
+                self.send(os.environ["INSTATUS_MONITORING_HEARTBEAT_URL"], {"status": "firing", "alerts": [{"status": "firing", "labels": {"alertname": "monitoring-heartbeat", "environment": self.config["environment"]}}]})
+            except Exception:
+                pass  # Instatus independently expires its heartbeat; no false success.
 
     def metrics(self):
         with self.lock:
@@ -185,9 +206,16 @@ class Delivery:
                 lines.append(f'scroll_status_delivery_observation_known{{{labels}}} {int(state.get("value") is not None)}')
                 lines.append(f'scroll_status_delivery_error{{{labels}}} {state.get("delivery_error", 0)}')
                 lines.append(f'scroll_status_delivery_maintenance{{{labels}}} {int(state.get("maintenance", False))}')
-                active, pending = self.db.execute("SELECT active, pending FROM events WHERE key=?", (key,)).fetchone()
+                active, pending = self.db.execute("SELECT active, pending FROM events WHERE key=?", (key,)).fetchone() or (None, None)
                 lines.append(f'scroll_status_delivery_pending{{{labels}}} {int(pending is not None)}')
                 lines.append(f'scroll_status_delivery_incident_active{{{labels}}} {int(active is not None)}')
+            identity = f'environment="{self.config["environment"]}",chain_id="{self.config["chainId"]}"'
+            lines.append(f"scroll_status_health_evaluated_timestamp_seconds{{{identity}}} {self.last_tick}")
+            for key, decision in self.decisions.items():
+                lines.append(f'scroll_status_health_monitoring_required{{{identity},component_key="{key}"}} {int(decision["monitoringRequired"])}')
+                for status in ("operational", "degraded", "unavailable", "unknown"):
+                    lines.append(f'scroll_status_health{{{identity},component_key="{key}",status="{status}"}} {int(decision["status"] == status)}')
+                lines.append(f'scroll_status_health_observation_complete{{{identity},component_key="{key}"}} {int(decision["observation"] == "complete")}')
             return "\n".join(lines) + "\n"
 
 
@@ -202,34 +230,25 @@ def main():
         def do_GET(self):
             if self.path == "/metrics":
                 body, code = delivery.metrics().encode(), 200
+            elif self.path == "/health":
+                with delivery.lock:
+                    body = json.dumps({"environment": config["environment"], "chainId": config["chainId"],
+                        "evaluatedAt": delivery.last_tick, "validUntil": delivery.last_tick + 2 * delivery.config["intervalSeconds"],
+                        "components": delivery.decisions}).encode()
+                code = 200 if delivery.last_tick > 0 and 0 <= time.time() - delivery.last_tick <= 2 * delivery.config["intervalSeconds"] else 503
             elif self.path == "/healthz":
                 body, code = b"ok\n", 200 if 0 <= time.time() - delivery.last_tick < 120 else 503
             else:
                 body, code = b"not found\n", 404
             self.send_response(code)
-            self.send_header("Content-Type", "text/plain; version=0.0.4")
+            self.send_header("Content-Type", "application/json" if self.path == "/health" else "text/plain; version=0.0.4")
             self.end_headers()
             self.wfile.write(body)
-
-        def do_POST(self):
-            try:
-                length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 65536 or not self.path.startswith("/notify/"):
-                    raise ValueError("invalid request")
-                body = json.loads(self.rfile.read(length))
-                if not isinstance(body, dict):
-                    raise ValueError("invalid body")
-                delivery.notify(self.path.removeprefix("/notify/"), body, time.time())
-                code = 202
-            except (ValueError, TypeError, AttributeError):
-                code = 400
-            self.send_response(code)
-            self.end_headers()
 
     def worker():
         while True:
             delivery.collect()
-            time.sleep(config["intervalSeconds"])
+            time.sleep(delivery.config["intervalSeconds"])
     threading.Thread(target=worker, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", 9110), Handler)
     server.timeout = 10

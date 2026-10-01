@@ -1,0 +1,25 @@
+groups:
+  - name: scroll.status-observation
+    interval: 30s
+    rules:
+      - alert: StatusEvaluatorUnavailable
+        expr: absent(up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"}) or (up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 0) or (time() - scroll_status_delivery_last_tick_seconds{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} > 120)
+        for: 3m
+        labels: {severity: warning, service: scroll-status-health, audience: internal}
+        annotations:
+          summary: Status-page evaluation has stopped or cannot be scraped.
+          description: Inspect the evaluator and Prometheus. Monitoring loss is not evidence of chain downtime; do not resolve public incidents from this alert.
+      - alert: StatusEvidenceIncomplete
+        expr: (scroll_status_health_observation_complete{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 0) and (scroll_status_health_monitoring_required{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 1)
+        for: 5m
+        labels: {severity: warning, service: scroll-status-health, audience: internal}
+        annotations:
+          summary: A configured status component lacks complete health evidence.
+          description: Check fresh source snapshots, target inventory and evaluator reasons. Existing public incidents are retained until complete recovery evidence returns.
+      - alert: StatusDeliveryNeedsReconciliation
+        expr: scroll_status_delivery_error{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 1
+        for: 2m
+        labels: {severity: warning, service: scroll-status-health, audience: internal}
+        annotations:
+          summary: A status-page webhook has not been acknowledged.
+          description: Preserve the delivery PVC and pending event identity. Check the provider before manually resolving or replacing an uncertain event.

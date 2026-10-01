@@ -5,7 +5,7 @@
 {{- $status := .Values.statusPage }}
 {{- $generated := $status.generated | default dict }}
 {{- $catalog := $status.catalog | default dict }}
-{{- if or (not (has (int ($generated.version | default 0)) (list 1 2))) (empty $catalog.components) }}
+{{- if or (not (has (int ($generated.version | default 0)) (list 1 2 3))) (empty $catalog.components) }}
 {{- fail "statusPage.enabled requires generated configuration: run scrollsdk setup status-page or setup prep-charts first" }}
 {{- end }}
 {{- if or (ne $status.environment $generated.environment) (ne $status.environment $catalog.environment) }}
@@ -15,10 +15,10 @@
 {{- if or (not (hasKey $groups $status.environment)) (ne ($catalog.groupName | default "") (get $groups $status.environment)) }}
 {{- fail "statusPage requires a matching shared-page network group; regenerate with scrollsdk setup status-page" }}
 {{- end }}
-{{- if not .Values.grafana.enabled }}
+{{- if and (lt (int $generated.version) 3) (not .Values.grafana.enabled) }}
 {{- fail "statusPage requires bundled Grafana" }}
 {{- end }}
-{{- if eq (int $generated.version) 2 }}
+{{- if ge (int $generated.version) 2 }}
 {{- $publication := $generated.componentPublication | default dict }}
 {{- $provisioning := get (.Values.grafana.alerting | default dict) "instatus-component-publication.yaml" | default dict }}
 {{- if or (empty $publication) (ne (toJson $publication.inputs) (toJson $status.publication)) (ne (toJson $publication.provisioning) (toJson $provisioning)) }}
@@ -48,7 +48,7 @@
 {{- if ne ($generated.heartbeatBoundPageId | default "") $status.instatus.pageId }}
 {{- fail "statusPage heartbeat requires an applied Cron Monitor binding" }}
 {{- end }}
-{{- if ne (toJson (get ($.Values.grafana.envValueFrom | default dict) "INSTATUS_MONITORING_HEARTBEAT_URL")) (toJson (get $publication.envs "INSTATUS_MONITORING_HEARTBEAT_URL")) }}
+{{- if and (lt (int $generated.version) 3) (ne (toJson (get ($.Values.grafana.envValueFrom | default dict) "INSTATUS_MONITORING_HEARTBEAT_URL")) (toJson (get $publication.envs "INSTATUS_MONITORING_HEARTBEAT_URL"))) }}
 {{- fail "statusPage heartbeat Secret reference changed; regenerate" }}
 {{- end }}
 {{- end }}
@@ -83,10 +83,10 @@ metadata:
     app.kubernetes.io/name: scroll-monitor
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  # Deployment metadata only. Grafana uses its native alerting provisioning file.
+  # Deployment metadata only. The evaluator owns health decisions.
   # This ConfigMap performs no outbound calls and contains no credentials.
   catalog.json: {{ $catalog | toJson | quote }}
-{{- if eq (int $generated.version) 2 }}
+{{- if ge (int $generated.version) 2 }}
   publication.json: {{ $generated.componentPublication.readiness | toJson | quote }}
 {{- end }}
 {{- end }}

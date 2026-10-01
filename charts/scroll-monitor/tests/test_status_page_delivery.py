@@ -1,11 +1,13 @@
 import importlib.util
 import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/status-page-delivery.py'
+sys.path.insert(0, str(SCRIPT.parent))
 spec = importlib.util.spec_from_file_location('status_delivery', SCRIPT)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -40,13 +42,11 @@ class DeliveryTests(unittest.TestCase):
             self.delivery.tick({'public-rpc': value}, stamp)
 
     def fire(self):
-        self.delivery.notify('public-rpc', self.firing, 100)
         self.tick(1, 100, 110, 120)
         self.assertEqual([event['status'] for event in self.sent], ['firing'])
 
     def test_maintenance_blocks_failure_and_requires_a_new_complete_window(self):
         self.delivery.windows = [{'start': 110, 'end': 150, 'components': ['public-rpc']}]
-        self.delivery.notify('public-rpc', self.firing, 100)
         self.tick(1, 100, 110, 120, 130, 140)
         self.assertEqual(self.sent, [])
         self.assertIn('scroll_status_delivery_maintenance{component_key="public-rpc"} 1', self.delivery.metrics())
@@ -72,7 +72,6 @@ class DeliveryTests(unittest.TestCase):
 
     def test_unknown_lifecycle_and_short_recovery_cannot_resolve(self):
         self.fire()
-        self.assertFalse(self.delivery.notify('public-rpc', {'status': 'resolved'}, 125))
         self.tick(None, 130, 140, 150)
         self.tick(0, 160, 170)
         self.tick(None, 180)
@@ -99,7 +98,6 @@ class DeliveryTests(unittest.TestCase):
             attempts.append(payload)
             raise TimeoutError('credential must never be logged')
         self.delivery.send = failing
-        self.delivery.notify('public-rpc', self.firing, 100)
         self.tick(1, 100, 110, 120, 130)
         self.assertEqual(attempts[0], attempts[1])
         self.tick(None, 140, 150)
@@ -110,10 +108,10 @@ class DeliveryTests(unittest.TestCase):
         self.tick(1, 160, 170, 180)
         self.assertEqual(self.sent[0], attempts[0])
 
-    def test_failures_need_grafana_signal_and_continuous_evidence(self):
-        self.tick(1, 100, 110, 120)
+    def test_failures_need_continuous_evidence_without_any_grafana_signal(self):
+        self.tick(1, 100, 110)
         self.assertEqual(self.sent, [])
-        self.delivery.notify('public-rpc', self.firing, 125)
+        self.tick(None, 120)
         self.tick(1, 200, 210)
         self.assertEqual(self.sent, [])
         self.tick(1, 220)
@@ -132,12 +130,9 @@ class DeliveryTests(unittest.TestCase):
         partial['warnings'] = ['partial response']
         self.assertIsNone(module.observation(partial, 110, 20))
 
-    def test_cross_network_and_multiple_alerts_cannot_arm(self):
-        self.firing['alerts'][0]['labels']['environment'] = 'mainnet'
-        self.assertFalse(self.delivery.notify('public-rpc', self.firing, 100))
-        self.firing['alerts'].append(self.firing['alerts'][0])
-        self.assertFalse(self.delivery.notify('public-rpc', self.firing, 100))
-        self.tick(1, 100, 110, 120)
+    def test_observe_mode_never_publishes(self):
+        self.delivery.components['public-rpc']['mode'] = 'observe'
+        self.tick(1, 100, 110, 120, 130)
         self.assertEqual(self.sent, [])
 
     def test_rebinding_existing_journal_is_rejected(self):

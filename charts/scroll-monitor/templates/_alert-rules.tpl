@@ -27,6 +27,11 @@
 {{- end -}}
 {{- $metric := printf "indexer_dogecoin_last_synced_block{job=~%s}" (.Values.dogecoinIndexerAlerts.jobRegex | quote) -}}
 {{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
+{{- if and .Values.statusPage.enabled (ge (int ((.Values.statusPage.generated | default dict).version | default 0)) 3) ((.Values.statusPage.publication | default dict).delivery | default dict).enabled -}}
+{{- $statusService := printf "%s-status-delivery" .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}
+{{- $groups = concat $groups $statusAlerts.groups -}}
+{{- end -}}
 {{- if .Values.businessAlerts.enabled -}}
 {{- $business := .Files.Get "alerts/business.yaml" | replace "__JOB_MAX_AGE__" (toString .Values.businessAlerts.jobMaxAgeSeconds) | replace "__PROOF_STUCK_FOR__" .Values.businessAlerts.proofStuckFor | replace "__RECOVERY_FOR__" .Values.businessAlerts.recoveryFor | replace "__SIGNER_FAILURE_FOR__" .Values.businessAlerts.signerFailureFor | replace "__PUBLICATION_DEADLINE__" (toString .Values.businessAlerts.publicationDeadlineSeconds) | fromYaml -}}
 {{- $groups = concat $groups $business.groups -}}

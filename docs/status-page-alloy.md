@@ -20,7 +20,7 @@ existing Alloy -> public DNS / public ingress -> RPC, Bridge, Blockscout
        |
        | probe metrics, existing private remote-write connection
        v
-existing Prometheus -> existing Grafana -> delivery verifier -> Instatus
+existing Prometheus -> scroll-monitor evaluator/publisher -> Instatus
                               |
                               +-> Instatus Cron heartbeat -> internal operators
 ```
@@ -119,11 +119,11 @@ Every configured check must have exactly one fresh `probe_success` sample and on
 fresh successful exporter scrape (`up=1`). A failed request yields `probe_success=0`
 and affected evidence. Missing, duplicate, invalid, stale or old-revision samples
 yield unknown, never recovery. All endpoints must recover before a component can
-begin its recovery window. The existing delivery verifier rechecks this expression.
+begin its recovery window. The scroll-monitor script owns the rule and confirmation windows.
 
 The heartbeat requires fresh complete Alloy telemetry. A legitimate target failure
 still sends heartbeats; loss of Alloy, its scrape/remote-write path, Prometheus,
-Grafana or the configured delivery verifier stops them. Instatus's existing Cron
+or the evaluator stops them. Grafana is not a heartbeat dependency. Instatus's existing Cron
 monitor reports missed heartbeats to internal destinations. It does not declare
 every public component down and does not infer a public recovery.
 

@@ -1,6 +1,6 @@
 {{- if .Values.alloy.enabled }}
 {{- $generatedStatus := .Values.statusPage.generated | default dict }}
-{{- $statusProbes := and .Values.statusPage.enabled (eq (int ($generatedStatus.version | default 0)) 2) (eq ((.Values.statusPage.publication.probes | default dict).mode | default "external") "alloy") }}
+{{- $statusProbes := and .Values.statusPage.enabled (has (int ($generatedStatus.version | default 0)) (list 2 3)) (eq ((.Values.statusPage.publication.probes | default dict).mode | default "external") "alloy") }}
 {{- $namespaces := .Values.alloy.logs.namespaces -}}
 {{- if not $namespaces -}}
   {{- $namespaces = list .Release.Namespace -}}

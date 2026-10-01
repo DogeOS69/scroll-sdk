@@ -125,7 +125,7 @@ def observe(config, client, now=None):
     if quantity(rpc(ref, ref_source, "eth_chainId", [])) != int(config["chainId"]):
         raise Unknown("reference_wrong_chain")
     head = block(rpc(ref, ref_source, "eth_getBlockByNumber", ["latest", False]))
-    if not 0 <= clock() - head[1] <= config["maxBlockAgeSeconds"]:
+    if not 0 <= clock() - head[1] <= config.get("maxBlockAgeSeconds", 120):
         raise Unknown("reference_stale")
     results = []
     for source, pods in zip(sources[1:], snapshots[1:]):
@@ -150,14 +150,14 @@ def observe(config, client, now=None):
             if not mismatch and canonical[1] != compared[1]:
                 raise Unknown("invalid_block_time")
             lag = max(0, head[1] - canonical[1])
-            affected = mismatch or lag > config["maxNodeLagSeconds"]
+            affected = mismatch or lag > config.get("maxNodeLagSeconds", 120)
             results.append((source["role"], pod["name"], int(affected), "hash_mismatch" if mismatch else "lag" if affected else "healthy"))
     # Fence the entire round against reference reorgs and changes to membership.
     if block(rpc(ref, ref_source, "eth_getBlockByNumber", [hex(head[0]), False]), head[0]) != head:
         raise Unknown("reference_reorg")
     if [client.discover(source) for source in sources] != snapshots:
         raise Unknown("population_changed")
-    if not 0 <= clock() - head[1] <= config["maxBlockAgeSeconds"]:
+    if not 0 <= clock() - head[1] <= config.get("maxBlockAgeSeconds", 120):
         raise Unknown("reference_stale")
     if not results:
         raise Unknown("no_followers")
@@ -183,7 +183,7 @@ def sequencing(config, client, now=None):
     age = (time.time() if now is None else now) - head[1]
     if age < 0:
         raise Unknown("future_block_time")
-    return int(age > config["maxBlockAgeSeconds"])
+    return int(age > config.get("maxBlockAgeSeconds", 120))
 
 
 def metrics(config, results, observed, reason="unknown", sequence=None):

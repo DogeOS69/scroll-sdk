@@ -176,7 +176,7 @@ class Probe:
                     history.popleft()
                 if len(history) >= 10:
                     p95 = sorted(v for _, v in history)[math.ceil(len(history) * .95) - 1]
-                    rpc_failed |= p95 > config['maxRpcLatencySeconds']
+                    rpc_failed |= p95 > config.get('maxRpcLatencySeconds', 2)
             except TargetFailure:
                 rpc_failed = True
             except Exception:
@@ -185,7 +185,7 @@ class Probe:
             results['public-rpc'] = int(rpc_failed)
         if len(heads) == len(config['rpcUrls']) and heads:
             if config.get('sequencingMode') == 'continuous':
-                results['sequencing'] = int(now - max(h['timestamp'] for h in heads) > config['maxBlockAgeSeconds'])
+                results['sequencing'] = int(now - max(h['timestamp'] for h in heads) > config.get('maxBlockAgeSeconds', 120))
             references = [h for h in heads if h['url'].startswith(('http:', 'https:'))]
             if references:
                 reference = max(references, key=lambda h: h['height'])
@@ -234,7 +234,7 @@ class Probe:
                 raise Unknown() from exc
             need(isinstance(canonical, dict) and canonical.get('hash', '').lower() == latest.get('hash', '').lower())
             timestamp = quantity(canonical.get('timestamp'))
-            need(reference['timestamp'] - timestamp <= self.config['maxIndexLagSeconds'])
+            need(reference['timestamp'] - timestamp <= self.config.get('maxIndexLagSeconds', 120))
 
     def node_sync(self, reference):
         url = self.config.get('nodeRpcUrl')
@@ -251,7 +251,7 @@ class Probe:
         except TargetFailure as exc:
             raise Unknown() from exc
         need(isinstance(canonical, dict) and canonical.get('hash', '').lower() == node['hash'])
-        need(reference['timestamp'] - node['timestamp'] <= self.config['maxNodeLagSeconds'])
+        need(reference['timestamp'] - node['timestamp'] <= self.config.get('maxNodeLagSeconds', 120))
         for check in checks:
             check_json(check)
 

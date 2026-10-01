@@ -1,6 +1,6 @@
 {{- $status := .Values.statusPage }}
 {{- $probes := (($status.publication | default dict).probes | default dict) }}
-{{- if and $status.enabled (eq (int (($status.generated | default dict).version | default 0)) 2) (eq ($probes.mode | default "external") "alloy") }}
+{{- if and $status.enabled (has (int (($status.generated | default dict).version | default 0)) (list 2 3)) (eq ($probes.mode | default "external") "alloy") }}
 {{- $generated := $status.generated | default dict }}
 {{- $config := $generated.alloyProbes | default dict }}
 {{- if or (empty $config.targets) (empty $config.modules) (ne (toJson $config) (toJson (($generated.componentPublication | default dict).alloyProbes))) }}
