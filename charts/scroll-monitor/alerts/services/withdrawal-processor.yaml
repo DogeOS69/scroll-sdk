@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: withdrawal-processor
     annotations:
-      summary: A withdrawal-processor metrics target cannot be scraped.
+      summary: Metrics target for withdrawal-processor cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: WithdrawalProcessorPodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: withdrawal-processor
     annotations:
-      summary: A withdrawal-processor pod is not ready.
+      summary: withdrawal-processor pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: WFFundingDataCorrupt
@@ -112,7 +112,7 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: A stale TSO handoff blocks dispatch.
-      description: The oldest blocking handoff is {{ $value }} seconds old. Check recovery enablement, TSO state,
+      description: The oldest blocking handoff has waited {{ $value | humanizeDuration }}. Check recovery enablement, TSO state,
         and callback delivery.
   - alert: WFL2ProofPipelineFailing
     expr: withdrawal_processor_l2_proof_pipeline_consecutive_failures > 0
@@ -142,7 +142,7 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: A WF job is stuck before successful TSO handoff.
-      description: Oldest {{ $labels.action_kind }} job in {{ $labels.status }} is {{ $value }} seconds old. Inspect
+      description: Oldest {{ $labels.action_kind }} job in {{ $labels.status }} has waited {{ $value | humanizeDuration }}. Inspect
         funding, proof gates, and scheduler errors.
   - alert: WFProtocolMetricsReadFailure
     expr: sum by (namespace, job, instance) (increase(withdrawal_processor_protocol_metrics_scrape_errors_total[5m]))
@@ -152,7 +152,7 @@ groups:
       severity: warning
       service: withdrawal-processor
     annotations:
-      summary: WP protocol metrics cannot read their source state.
+      summary: Withdrawal processor protocol metrics cannot read their source state.
       description: Other gauges may be stale. Check database access and metrics refresh errors.
   - alert: WFDatabasePoolSlow
     expr: sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_sum[10m]))
@@ -164,6 +164,6 @@ groups:
       severity: warning
       service: withdrawal-processor
     annotations:
-      summary: withdrawal-processor mean operation latency exceeds 1 seconds.
+      summary: Withdrawal processor database checkout averages more than 1 second.
       description: Database checkout averages more than one second with at least five observations in ten minutes.
         Check pool saturation and long transactions.

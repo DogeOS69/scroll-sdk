@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: tso-service
     annotations:
-      summary: A tso-service metrics target cannot be scraped.
+      summary: Metrics target for tso-service cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: TsoServicePodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: tso-service
     annotations:
-      summary: A tso-service pod is not ready.
+      summary: tso-service pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: TSOSigningCycleSlow
@@ -33,7 +33,7 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 120 seconds.
+      summary: TSO signing cycles average more than two minutes.
       description: Completed signing cycles average more than two minutes. Check signer response paths and quorum
         latency.
   - alert: TSOSignerResponseSlow
@@ -46,7 +46,7 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 60 seconds.
+      summary: A TSO signer takes more than one minute on average to respond.
       description: Signer {{ $labels.signer_pubkey }} responses average more than one minute. Check network and
         signer backend latency.
   - alert: TSORoleQuorumSlow
@@ -59,9 +59,9 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 120 seconds.
+      summary: TSO {{ $labels.role }} quorum takes more than two minutes on average.
       description: Role {{ $labels.role }} takes more than two minutes on average to complete its required input
-        thresholds.
+        thresholds. Check readiness and response latency of this role's signers.
   - alert: TSOSigningQueueLarge
     previousExpr: "sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~\"proposed|collecting_signatures|collecting_p2pkh\"}) > 100"
     expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"} and on (namespace, job, instance) __TSO_STATUS_VALID__) > 100

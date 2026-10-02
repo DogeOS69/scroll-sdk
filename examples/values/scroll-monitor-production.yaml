@@ -168,6 +168,10 @@ grafana:
   #             settings:
   #               url: $GRAFANA_SLACK_WEBHOOK_URL
   #               recipient: ''  # Fill the internal Slack channel manually.
+  #               # Shared format seeded by scroll-monitor. The {{` `}} escape stops this
+  #               # chart's tpl from executing Grafana's template call at install time.
+  #               title: '{{`{{ template "scroll-monitor.slack.title" . }}`}}'
+  #               text: '{{`{{ template "scroll-monitor.slack.text" . }}`}}'
   # Optional Instatus native webhook; no custom publisher or management API key.
   # Create the referenced Secret in Grafana's namespace with the URL generated
   # by CLI --apply --create-webhook or Instatus > Apps > Grafana. Never inline the URL.

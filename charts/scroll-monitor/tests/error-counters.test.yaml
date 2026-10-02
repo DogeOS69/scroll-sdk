@@ -15,8 +15,8 @@ tests:
         severity: critical
         service: eth-da-submitter
       exp_annotations:
-        summary: Eth DA submitter failure counters increased in the last 10 minutes.
-        description: Combined failure increase is 10.
+        summary: Ethereum DA submitter is reporting failures.
+        description: 10 submission, cycle, lifecycle, or L2 reorg failure(s) were recorded in the last 10 minutes. Check the submitter logs for the failing stage, then its Ethereum RPC and signer responses.
 - name: EthDASubmitterFailures-no-error
   interval: 1m
   input_series:
@@ -39,8 +39,8 @@ tests:
         severity: warning
         service: fee-oracle
       exp_annotations:
-        summary: Fee oracle error counters increased in the last 10 minutes.
-        description: Combined failure increase is 10.
+        summary: Fee oracle is reporting errors.
+        description: 10 update, computation, or chain RPC error(s) were recorded in the last 10 minutes. Check fee-oracle logs for the failing stage and its RPC endpoints.
 - name: FeeOracleErrors-no-error
   interval: 1m
   input_series:
