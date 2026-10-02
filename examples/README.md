@@ -38,9 +38,81 @@ secret references; never copy credentials or generated proof identities.
 If the CLI/compiler owns the field, repair its source/template and regenerate
 the local values, then update the example's input/wiring or instructions rather
 than keeping a second hand-maintained generated configuration. Keep intentional
-environment differences explicit (for example, DA MAX_OPEN_L2_TIME is 3000s
-in the example while this devnet uses 300s). Validate Helm rendering and the
+environment differences explicit (for example, a shorter DA MAX_OPEN_L2_TIME
+for a development network than the 2h production target). Validate Helm rendering and the
 native config, record manual steps in the CLI handbook, and commit each fix.
+
+## Fee parameters selected on 2026-09-29
+
+The production examples apply the targets from `dogeos-fee-20260929.md`.
+These are launch targets; use a rollup-node release with the matching fee
+constants from the start of a fresh mainnet deployment.
+
+| Setting | Target | Example / authority |
+| --- | --- | --- |
+| Block interval / payload build window | 2000 / 1400 ms | `values/l2-reth-sequencer-production.yaml` |
+| Empty blocks / fee recipient | enabled / `0x5300000000000000000000000000000000000005` | Sequencer values; CLI derives recipient from `contracts.overrides.L2_TX_FEE_VAULT` |
+| Builder / genesis gas limit | 30,000,000 | Reth values set the builder; `genesis.GAS_LIMIT` sets the genesis header |
+| L2 base fee overhead | 420,000,000,000 wei | `contracts.L2_BASE_FEE_OVERHEAD`, applied during L2 contract initialization |
+| RPC `--gpo.maxprice` | 420,000,000,000,000 wei | Internal and public RPC `reth.extraArgs` |
+| Commit / blob scalar | 600,000,000 / 7,400,000,000 | `config.toml.example` (scaled by 10^9: 0.6 / 7.4) |
+| Penalty factor | 10,000 | `config.toml.example` |
+| Ethereum priority fee | 100,000,000 wei | Submitter and fee-oracle values |
+| DA batch | `auto`, 2h, 512 blocks/chunk, 64 chunks/batch | Submitter values |
+| DA chunk limits | 30,000,001 gas; 122,880 uncompressed bytes | Submitter values |
+| DA publish | target/max 6 blobs; batch wait/liveness delay 1h | Submitter values; fee-oracle target also 6 |
+| Fee-oracle writes | `live` | Fee-oracle values |
+| Withdrawal fee rate | 1,000,000 sat/kvB | `withdrawal-processor/WithdrawalProcessor.toml` |
+
+For a fresh chain, copy `config.toml.example` to the deployment's `config.toml`.
+`scrollsdk setup gen-l2-artifacts` passes that file to the contracts image;
+`GenerateGenesis` reads it to produce genesis. The contracts repository's
+`docker/templates/config.toml` carries the same initial fee parameters.
+
+- **Gas limit:** `genesis.GAS_LIMIT = 30000000` is written into the genesis
+  header. The builder value remains a separate runtime setting and matches it.
+- **Oracle storage:** `contracts.COMMIT_SCALAR`, `BLOB_SCALAR` and
+  `PENALTY_FACTOR` are written directly into genesis storage at the oracle
+  predeploy. Initial contract deployment uses the same inputs and sets the
+  penalty factor before the scalars.
+- **L2 overhead:** `contracts.L2_BASE_FEE_OVERHEAD = 420000000000` is applied by
+  `DeployScroll.initializeL2SystemConfig()` during initial L2 deployment, before
+  ownership transfer and public launch. L2SystemConfig is a subsequently
+  deployed proxy, not a predeploy populated by `GenerateGenesis`. The initial
+  header value `genesis.BASE_FEE_PER_GAS` remains a separate bootstrap input;
+  it also feeds the synthetic L1 interface and does not set the L2 floor.
+
+These new gas-limit and overhead inputs require **rebuilt gen-configs and deploy
+images containing the corresponding scroll-contracts changes**. The rc.2 pins in
+the existing release configuration below predate these inputs; select the new
+release for mainnet. Merely adding keys while using an older image will not
+activate them. Check the generated genesis gas limit and the initialized
+`L2SystemConfig.baseFeeOverhead` before launch.
+
+**Node constants remain a separate release requirement:** D48 / E10 and a
+420,000 gwei cap require a compatible dogeos-reth/rollup-node binary. The source
+document marks D48 and the cap as proposed; E10 is decided. Both
+`MAX_L2_BASE_FEE` and `DOGEOS_MAXIMUM_BASE_FEE` must be `420000000000000`, with
+Feynman `BaseFeeParams::new(48, 10)`. Neither genesis input nor RPC
+`--gpo.maxprice` changes these compiled constants. Do not change zk guest pins
+for this parameter update.
+
+For an existing network, apply the submitter's gas-per-chunk limit **before**
+raising the builder gas limit, upgrade every validating node **before** setting
+420 gwei overhead, and lower the overhead to at most 10 gwei **before** rolling
+back to an old node binary.
+
+`scrollsdk setup prep-charts` preserves template-owned batch/publish/fee policies,
+Reth timing/gas settings and `reth.extraArgs`; it fills deployment facts such as
+RPC URLs, signer references and the fee-vault recipient. Keep these policies in
+`values/` when using the normal example-based flow. The optional
+`generate-from-spec --with-values` / `--values-only` path regenerates files from
+DeploymentSpec and does not merge existing values. Keep using the full production
+templates for runtime policy. In particular, `max_open_l2_time` and
+`max_uncompressed_chunk_bytes_size` belong only in the submitter values; the CLI
+does not model or generate them. Legacy spec fields can still supply explicit
+overrides, but the CLI does not fill missing batch, publish or minimum-priority-fee
+policy with its own defaults.
 
 ## Core release configuration
 
