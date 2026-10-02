@@ -19,17 +19,28 @@ SPEC.loader.exec_module(SEED)
 class MemoryGrafana:
     """Model Grafana 11's distinct rule-create and group-update semantics."""
 
+    TEMPLATES = "/api/v1/provisioning/templates/"
+
     def __init__(self):
         self.folder = None
         self.group = None
+        self.templates = {}
         self.writes = []
 
     def request(self, method, path, body=None, allow_missing=False):
         if method == "GET":
+            if path.startswith(self.TEMPLATES):
+                name = path.removeprefix(self.TEMPLATES)
+                return copy.deepcopy(self.templates.get(name))
             result = self.folder if path.startswith("/api/folders/") else self.group
             return copy.deepcopy(result)
         self.writes.append((method, path, copy.deepcopy(body)))
-        if path == "/api/folders":
+        if path.startswith(self.TEMPLATES):
+            assert method == "PUT"
+            name = path.removeprefix(self.TEMPLATES)
+            # Grafana 11 trims surrounding whitespace before storing templates.
+            self.templates[name] = {"name": name, "template": body["template"].strip()}
+        elif path == "/api/folders":
             self.folder = copy.deepcopy(body)
         elif path == "/api/v1/provisioning/alert-rules":
             assert method == "POST"
@@ -411,6 +422,58 @@ class SeedTests(unittest.TestCase):
         self.assertNotIn("updated", result)
         self.assertEqual(result["data"][0]["model"]["expr"],
                          self.config["groups"][0]["rules"][0]["expr"])
+
+
+class NotificationTemplateSeedTests(unittest.TestCase):
+    PATH = "/api/v1/provisioning/templates/scroll-monitor"
+
+    def setUp(self):
+        self.client = MemoryGrafana()
+        self.config = {"folderUID": "test-alerts", "folderTitle": "Test alerts", "groups": [],
+                       "notificationTemplate": {"name": "scroll-monitor",
+                                                "template": '{{ define "a" }}one{{ end }}\n'}}
+
+    def seed(self):
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config)
+        return output.getvalue()
+
+    def stored(self):
+        return self.client.templates["scroll-monitor"]["template"]
+
+    def template_writes(self):
+        return [write for write in self.client.writes if write[1] == self.PATH]
+
+    def test_creates_marked_template_once(self):
+        self.seed()
+        self.assertTrue(self.stored().endswith('{{ define "a" }}one{{ end }}'))
+        self.assertRegex(self.stored(), SEED.TEMPLATE_MARKER)
+        self.seed()
+        self.assertEqual(len(self.template_writes()), 1)
+
+    def test_upgrade_replaces_untouched_shipped_template(self):
+        self.seed()
+        self.config["notificationTemplate"]["template"] = '{{ define "a" }}two{{ end }}'
+        self.assertIn("update", self.seed())
+        self.assertTrue(self.stored().endswith("two{{ end }}"))
+
+    def test_ui_edit_and_unmanaged_template_are_preserved(self):
+        for existing in ("{{ define \"a\" }}operator{{ end }}", None):
+            with self.subTest(unmanaged=existing is not None):
+                self.client = MemoryGrafana()
+                self.config["notificationTemplate"]["template"] = '{{ define "a" }}one{{ end }}'
+                if existing is None:
+                    self.seed()
+                    existing = self.stored().replace("one", "operator")
+                self.client.templates["scroll-monitor"] = {"name": "scroll-monitor", "template": existing}
+                self.config["notificationTemplate"]["template"] = '{{ define "a" }}two{{ end }}'
+                self.assertIn("DRIFT", self.seed())
+                self.assertEqual(self.stored(), existing)
+
+    def test_dry_run_does_not_write_template(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            SEED.seed(self.client, self.config, dry_run=True)
+        self.assertEqual(self.template_writes(), [])
 
 
 if __name__ == "__main__":

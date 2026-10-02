@@ -305,7 +305,9 @@ See [AWS control-plane metrics](https://docs.aws.amazon.com/eks/latest/userguide
 
 ## Infrastructure notification routing
 
-Grafana contact points apply to Grafana-managed application rules. The bundled
+Grafana contact points apply to Grafana-managed application rules. For the
+shared Slack message format and alert wording rules, see
+[alert notifications](../docs/alert-notifications.md). The bundled
 Prometheus infrastructure rules use the bundled Alertmanager, whose upstream
 default receiver is `null`. Chart installation does not invent a notification
 destination. Helm NOTES flags this configuration; production installations that

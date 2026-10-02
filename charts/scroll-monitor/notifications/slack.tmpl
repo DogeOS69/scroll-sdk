@@ -1,0 +1,34 @@
+{{ define "scroll-monitor.slack.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+{{- with .CommonLabels.severity }} {{ . | toUpper }}{{ end }}__ENVIRONMENT__ ·
+{{- if .CommonLabels.alertname }} {{ .CommonLabels.alertname }}{{ else }} {{ len .Alerts }} alerts{{ end }}
+{{- if .CommonLabels.service }} · {{ .CommonLabels.service }}{{ else if .CommonLabels.job }} · {{ .CommonLabels.job }}{{ end }}
+{{- end }}
+
+{{ define "scroll-monitor.slack.text" -}}
+{{ if .Alerts.Firing -}}
+*Firing ({{ len .Alerts.Firing }})*
+{{ range $index, $alert := .Alerts.Firing }}{{ if lt $index 10 }}{{ template "scroll-monitor.slack.alert" $alert }}{{ end }}{{ end -}}
+{{ if gt (len .Alerts.Firing) 10 }}_Showing 10 of {{ len .Alerts.Firing }} firing alerts; open Grafana for the rest._
+{{ end -}}
+{{ end -}}
+{{ if .Alerts.Resolved -}}
+*Resolved ({{ len .Alerts.Resolved }})*
+{{ range $index, $alert := .Alerts.Resolved }}{{ if lt $index 10 }}{{ template "scroll-monitor.slack.alert" $alert }}{{ end }}{{ end -}}
+{{ if gt (len .Alerts.Resolved) 10 }}_Showing 10 of {{ len .Alerts.Resolved }} resolved alerts._
+{{ end -}}
+{{ end -}}
+{{- end }}
+
+{{ define "scroll-monitor.slack.alert" -}}
+*{{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}*
+{{ with .Annotations.description }}{{ . }}
+{{ end -}}
+`{{ .Labels.alertname }}{{ range (.Labels.Remove (stringSlice "alertname" "severity" "managed_by" "grafana_folder")).SortedPairs }} {{ .Name }}={{ .Value }}{{ end }}`
+{{ if eq .Status "firing" }}Since {{ .StartsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ else }}Resolved {{ .EndsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ end }}
+{{- with .GeneratorURL }} · <{{ . }}|Rule>{{ end }}
+{{- if eq .Status "firing" }}{{ with .SilenceURL }} · <{{ . }}|Silence>{{ end }}{{ end }}
+{{- with .DashboardURL }} · <{{ . }}|Dashboard>{{ end }}
+{{- with .PanelURL }} · <{{ . }}|Panel>{{ end }}
+
+{{ end }}

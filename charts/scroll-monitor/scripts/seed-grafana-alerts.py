@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from urllib.error import HTTPError, URLError
@@ -15,6 +16,7 @@ from urllib.request import Request, urlopen
 
 
 BASELINE = "__scroll_monitor_last_applied__"
+TEMPLATE_MARKER = re.compile(r"\{\{/\* scroll-monitor managed template sha256=([0-9a-f]{64}) \*/\}\}\n")
 
 
 def fingerprint(value):
@@ -247,12 +249,45 @@ def migrate_expression(existing, source, desired):
     return updated
 
 
+def managed_template(body):
+    # Grafana trims stored templates, so hash exactly what it will return.
+    body = body.strip()
+    digest = hashlib.sha256(body.encode()).hexdigest()
+    return f"{{{{/* scroll-monitor managed template sha256={digest} */}}}}\n{body}"
+
+
+def seed_template(client, spec, dry_run=False):
+    """Create or upgrade the shipped template; preserve UI or unmanaged edits."""
+    name = spec["name"]
+    path = f"/api/v1/provisioning/templates/{quote(name, safe='')}"
+    desired = managed_template(spec["template"])
+    existing = client.request("GET", path, allow_missing=True)
+    if existing is not None:
+        current = existing.get("template", "")
+        if current == desired:
+            print(f"Preserved notification template {name}", flush=True)
+            return
+        marker = TEMPLATE_MARKER.match(current)
+        body = current[marker.end():] if marker else ""
+        if not marker or hashlib.sha256(body.encode()).hexdigest() != marker.group(1):
+            print(f"DRIFT notification template {name}: preserved UI or unmanaged content", flush=True)
+            return
+    action = "update" if existing is not None else "create"
+    if dry_run:
+        print(f"PLAN notification template {name}: {action}", flush=True)
+        return
+    client.request("PUT", path, {"template": desired})
+    print(f"Seeded notification template {name}: {action}", flush=True)
+
+
 def seed(client, config, dry_run=False):
     folder = quote(config["folderUID"], safe="")
     if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None and not dry_run:
         client.request("POST", "/api/folders", {
             "uid": config["folderUID"], "title": config["folderTitle"],
         })
+    if config.get("notificationTemplate"):
+        seed_template(client, config["notificationTemplate"], dry_run)
     for group in config["groups"]:
         path = f'/api/v1/provisioning/folder/{folder}/rule-groups/{quote(group["name"], safe="")}'
         existing = client.request("GET", path, allow_missing=True)

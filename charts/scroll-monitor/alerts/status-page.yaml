@@ -14,8 +14,8 @@ groups:
         for: 5m
         labels: {severity: warning, service: scroll-status-health, audience: internal}
         annotations:
-          summary: A configured status component lacks complete health evidence.
-          description: Check fresh source snapshots, target inventory and evaluator reasons. Existing public incidents are retained until complete recovery evidence returns.
+          summary: Status component {{ $labels.component_key }} lacks complete health evidence.
+          description: The evaluator cannot fully observe {{ $labels.component_key }}. Check fresh source snapshots, target inventory and evaluator reasons. Existing public incidents are retained until complete recovery evidence returns.
       - alert: StatusDeliveryNeedsReconciliation
         expr: scroll_status_delivery_error{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 1
         for: 2m

@@ -9,7 +9,7 @@ groups:
           service: withdrawal-processor
         annotations:
           summary: Fee wallet UTXO balance is below __MIN_DOGE__ DOGE.
-          description: 'Job {{ $labels.job }} has {{ $value }} DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct WP reservations. Replenish the fee wallet and check pending WF funding.'
+          description: 'Job {{ $labels.job }} has {{ $value | printf "%.2f" }} DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct withdrawal-processor reservations. Replenish the fee wallet and check pending WF funding.'
       - alert: FeeWalletBalanceMetricMissing
         expr: absent(fee_wallet_total_unredeemed_utxo_amount{job=~"__JOB_REGEX__"})
         for: 10m

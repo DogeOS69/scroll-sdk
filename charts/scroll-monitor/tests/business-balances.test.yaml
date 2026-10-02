@@ -18,7 +18,7 @@ tests:
         service: fee-oracle
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 2.5 ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.
+        description: Address 0xabc on chain 1234 has 2.5000 ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
         summary: Fee oracle account balance is below 5 ETH.
 - name: fee-oracle-equal
   interval: 1m
@@ -54,7 +54,7 @@ tests:
         service: fee-oracle
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 0 ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.
+        description: Address 0xabc on chain 1234 has 0.0000 ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
         summary: Fee oracle account balance is below 5 ETH.
 - name: fee-oracle-rpc-failure-not-low-balance
   interval: 1m
@@ -81,7 +81,7 @@ tests:
         service: eth-da-submitter
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 0.05 ETH. Replenish funds for blob publication and transaction replacement.
+        description: Address 0xabc on chain 1234 has 0.0500 ETH. Blob publication stops when it cannot pay fees. Replenish funds for blob publication and transaction replacement.
         summary: Ethereum DA submitter account balance is below 0.1 ETH.
 - name: eth-da-submitter-equal
   interval: 1m
@@ -117,7 +117,7 @@ tests:
         service: eth-da-submitter
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 0 ETH. Replenish funds for blob publication and transaction replacement.
+        description: Address 0xabc on chain 1234 has 0.0000 ETH. Blob publication stops when it cannot pay fees. Replenish funds for blob publication and transaction replacement.
         summary: Ethereum DA submitter account balance is below 0.1 ETH.
 - name: eth-da-submitter-rpc-failure-not-low-balance
   interval: 1m
@@ -233,7 +233,7 @@ tests:
         service: withdrawal-processor
         severity: critical
       exp_annotations:
-        description: Job withdrawal-processor has 99 DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct WP reservations. Replenish the fee wallet and check pending WF funding.
+        description: Job withdrawal-processor has 99.00 DOGE in canonical unredeemed fee-wallet UTXOs. This total does not deduct withdrawal-processor reservations. Replenish the fee wallet and check pending WF funding.
         summary: Fee wallet UTXO balance is below 100 DOGE.
 - name: fee-wallet-equal
   interval: 1m
@@ -292,8 +292,7 @@ tests:
         service: tso-service
         severity: critical
       exp_annotations:
-        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and
-          policy thresholds.
+        description: Registered Correctness signers are below the configured requirement of 2. Check signer registration and policy thresholds.
         summary: TSO Correctness signer quorum is unavailable.
 - name: quorum-count-2
   interval: 1m
@@ -361,8 +360,7 @@ tests:
         service: tso-service
         severity: critical
       exp_annotations:
-        description: Signing work has remained pending without a completed cycle. Check whether every bridge input can reach
-          its required quorum.
+        description: TSO has had pending transactions for 15 minutes without completing a signing cycle. Check whether every bridge input can reach its required quorum, starting with signer readiness.
         summary: TSO has pending transactions but no completed signing cycle.
 - name: tso-completing
   interval: 1m
@@ -445,7 +443,7 @@ tests:
         severity: critical
         proof_family: scroll_batch
       exp_annotations:
-        description: 1 stuck items in proof family scroll_batch. Check workers, proof inputs, and durable work status.
+        description: 1 item(s) in proof family scroll_batch exceeded their retry ceiling in job app. Check proof workers, proof inputs, and durable work status.
         summary: Proof work exceeded the retry-attempt ceiling.
 - name: proof-terminal-0
   interval: 1m
@@ -471,7 +469,7 @@ tests:
         service: withdrawal-processor
         severity: critical
       exp_annotations:
-        description: 1 attached terminal ranges were observed in the latest pass. Inspect current work rather than historical terminal rows.
+        description: Job app observed 1 attached terminal range(s) in the latest pipeline pass. Inspect current work rather than historical terminal rows.
         summary: The active L2 proof pipeline has terminal ranges.
 - name: replay-stopped-0
   interval: 1m
@@ -498,7 +496,7 @@ tests:
         service: l1-interface
         severity: critical
       exp_annotations:
-        description: Inspect l1_interface_protocol_replay_stop_reason_active and replay evidence for instance host:3000.
+        description: L1 Interface instance host:3000 has stopped protocol replay, so new Dogecoin bridge events are not processed. Check the active stop reason (l1_interface_protocol_replay_stop_reason_active) and the replay logs.
         summary: L1 Interface protocol replay has stopped.
 - name: recovery-stuck-0
   interval: 1m

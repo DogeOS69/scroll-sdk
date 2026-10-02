@@ -8,6 +8,13 @@
 {{- $groups = concat $groups $logGroups }}
 {{- end }}
 {{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups "pauseRules" (include "scroll-monitor.pauseRules" . | fromYaml) }}
+{{- with .Values.grafanaAlerting.notificationTemplate }}
+{{- if .enabled }}
+{{- $environment := .environment | default $.Values.statusPage.environment }}
+{{- $template := $.Files.Get "notifications/slack.tmpl" | replace "__ENVIRONMENT__" (ternary (printf " · %s" $environment) "" (ne $environment "")) }}
+{{- $_ := set $config "notificationTemplate" (dict "name" .name "template" $template) }}
+{{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

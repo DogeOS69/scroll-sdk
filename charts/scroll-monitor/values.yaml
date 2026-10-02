@@ -263,6 +263,14 @@ grafanaAlerting:
   pauseRules: {}
   folderUID: scroll-monitor-alerts
   folderTitle: Scroll Monitor Alerts
+  # Shared Slack message format. In the Slack contact point (Grafana UI), set
+  # Title '{{ template "scroll-monitor.slack.title" . }}' and Text Body
+  # '{{ template "scroll-monitor.slack.text" . }}'; for grafana.alerting values
+  # use the escaped example in values/production.yaml. UI edits are preserved.
+  notificationTemplate:
+    enabled: true
+    name: scroll-monitor
+    environment: ""  # Shown in titles; empty uses statusPage.environment.
   logs:
     # Error/fatal/panic levels or plain error/panic prefixes in the last 5m.
     # Excludes the retired rollup explorer and its exporter module.

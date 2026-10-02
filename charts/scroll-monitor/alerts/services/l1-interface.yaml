@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: l1-interface
     annotations:
-      summary: A l1-interface metrics target cannot be scraped.
+      summary: Metrics target for l1-interface cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: L1InterfacePodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: l1-interface
     annotations:
-      summary: A l1-interface pod is not ready.
+      summary: l1-interface pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: L1InterfaceReplayLagging
@@ -43,7 +43,7 @@ groups:
       severity: critical
       service: l1-interface
     annotations:
-      summary: The configured L1 replay read model remains unready.
+      summary: L1 Interface replay read model remains unready.
       description: Inspect replay stop reasons, staleness, and regression episodes. Service startup readiness alone
         does not establish replay readiness.
   - alert: L1InterfaceReplayTerminalFault
@@ -53,7 +53,7 @@ groups:
       severity: critical
       service: l1-interface
     annotations:
-      summary: L1 replay committed a terminal validation fault.
+      summary: L1 Interface replay committed a terminal validation fault.
       description: Inspect the terminal reason and canonical witness. This differs from normal confirmation waiting.
   - alert: L1InterfaceSyntheticIndexIntegrityViolation
     expr: sum by (namespace, job, instance) (increase(l1_interface_synthetic_tx_index_integrity_violations_total[5m]))
@@ -62,7 +62,7 @@ groups:
       severity: critical
       service: l1-interface
     annotations:
-      summary: The synthetic transaction index violated an integrity check.
+      summary: L1 Interface synthetic transaction index violated an integrity check.
       description: Inspect replay event-plane data and transaction index consistency.
   - alert: L1InterfaceIndexerFailures
     expr: sum by (namespace, job, instance) (increase(l1_interface_indexer_sync_results_total{status="error"}[5m]))
@@ -116,6 +116,6 @@ groups:
       severity: warning
       service: l1-interface
     annotations:
-      summary: l1-interface mean operation latency exceeds 2 seconds.
+      summary: L1 Interface RPC method {{ $labels.method }} averages more than 2 seconds.
       description: RPC method {{ $labels.method }} averages more than two seconds. Check database and replay read-model
         performance.

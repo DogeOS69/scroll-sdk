@@ -52,7 +52,7 @@ jobs:
         env:
           SCROLL_STATUS_RUNTIME_TEST: '1'
           PYTHONPATH: charts/scroll-monitor/tests
-        run: python -m unittest test_snapshot_promql test_bridge_health_prometheus test_seed_grafana_alerts test_monitoring_templates -v
+        run: python -m unittest test_snapshot_promql test_bridge_health_prometheus test_seed_grafana_alerts test_monitoring_templates test_alert_notifications -v
       - name: Validate DogeOS dashboard queries and panel wiring
         run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_dogeos_dashboards.py' -v
       - name: Validate independent probes with a real browser
