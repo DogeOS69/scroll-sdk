@@ -63,6 +63,11 @@ service:
         port: 7788
         targetPort: 7788
         protocol: TCP
+      # Dedicated scrape port; also set [prover_api].metrics_bind_addr to
+      # 0.0.0.0:<port> so the coordinator serves /metrics there.
+      metrics:
+        enabled: false
+        port: 9101
 
 defaultProbes: &default_probes
   enabled: true

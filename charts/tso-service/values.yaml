@@ -19,6 +19,11 @@ service:
       http:
         enabled: true
         port: 3000
+      # Dedicated scrape port. Also set METRICS_PORT to the same value in env
+      # so the application serves /metrics there and stops serving it on http.
+      metrics:
+        enabled: false
+        port: 9100
 
 defaultProbes: &default_probes
   enabled: true
@@ -72,3 +77,23 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
+
+# Ingress NetworkPolicy for the TSO API port. The TSO routes are unauthenticated
+# by design (see the dogeos-core tso_service README, "Trust boundary"); this
+# policy is the access control. Disabled by default so an upgrade cannot cut
+# signer callbacks or metrics scraping before the selectors below are set.
+# Enable it in every deployment that runs on a NetworkPolicy-enforcing CNI.
+# All lists hold NetworkPolicyPeer entries (podSelector / namespaceSelector).
+# withdrawalProcessor and signers are required when enabled. With
+# metricsPort = 0 (default) /metrics shares the API port, so every listed peer,
+# monitoring included, reaches every route. Set metricsPort to the dedicated
+# scrape port (METRICS_PORT) and monitoring is allowed on that port only.
+networkPolicy:
+  enabled: false
+  port: 3000
+  metricsPort: 0
+  allowFrom:
+    withdrawalProcessor: []   # e.g. [{podSelector: {matchLabels: {app.kubernetes.io/name: <wp>}}}]
+    signers: []               # signer pods that post signature callbacks
+    operators: []             # optional: operator tooling / ad-hoc port-forward source
+    monitoring: []            # optional: Prometheus, scrapes /metrics

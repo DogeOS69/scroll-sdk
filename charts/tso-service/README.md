@@ -23,6 +23,13 @@ Kubernetes: `>=1.22.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| networkPolicy.allowFrom.monitoring | list | `[]` | Peers allowed to scrape /metrics (shared port) |
+| networkPolicy.allowFrom.operators | list | `[]` | Optional operator peers |
+| networkPolicy.allowFrom.signers | list | `[]` | Signer pods posting callbacks (required when enabled) |
+| networkPolicy.allowFrom.withdrawalProcessor | list | `[]` | Withdrawal-processor pods (required when enabled) |
+| networkPolicy.enabled | bool | `false` | Render an ingress NetworkPolicy for the unauthenticated API port |
+| networkPolicy.metricsPort | int | `0` | Dedicated scrape port (METRICS_PORT); non-zero allows monitoring on that port only |
+| networkPolicy.port | int | `3000` | API port |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
 | controller.type | string | `"statefulset"` |  |

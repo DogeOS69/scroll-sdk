@@ -36,6 +36,14 @@ service:
         port: 7788
         targetPort: 7788
         protocol: TCP
+      # Optional dedicated scrape port. Enable it together with
+      # [prover_api].metrics_bind_addr = "0.0.0.0:9101" in the coordinator
+      # config, then point a ServiceMonitor endpoint at port: metrics.
+      metrics:
+        enabled: false
+        port: 9101
+        targetPort: 9101
+        protocol: TCP
 
 probes:
   liveness:

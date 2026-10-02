@@ -51,6 +51,14 @@ new CPU limit. See the [Kubernetes Downward API documentation](https://kubernete
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| networkPolicy.allowFrom.monitoring | list | `[]` | Peers allowed to scrape /metrics (shared port) |
+| networkPolicy.allowFrom.operators | list | `[]` | Peers allowed to call the rotation routes |
+| networkPolicy.allowFrom.proofCoordinator | list | `[]` | Proof-coordinator pods; opens proofWorkPort when non-empty |
+| networkPolicy.allowFrom.tso | list | `[]` | tso-service pods (required when enabled) |
+| networkPolicy.apiPort | int | `3000` | API port |
+| networkPolicy.enabled | bool | `false` | Render an ingress NetworkPolicy for the unauthenticated API port |
+| networkPolicy.metricsPort | int | `0` | Dedicated scrape port (metrics_port); non-zero allows monitoring on that port only |
+| networkPolicy.proofWorkPort | int | `9300` | Proof-work listener port |
 | controller.replicas | int | `1` |  |
 | controller.strategy | string | `"RollingUpdate"` |  |
 | controller.type | string | `"statefulset"` |  |

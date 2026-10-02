@@ -1,0 +1,39 @@
+{{- /*
+Ingress allow-list for the TSO API port. The TSO routes (/propose,
+/register-signer, /register-script-pubkey, /reject-signatures,
+/submit-*-signatures) carry no caller authentication by design; access control
+is this policy. /health and /status share the API port. /metrics shares it too
+unless networkPolicy.metricsPort names a dedicated scrape port (METRICS_PORT),
+in which case monitoring is allowed on that port only. Selectors come from
+values only.
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $from := .Values.networkPolicy.allowFrom }}
+{{- $peers := concat
+      (required "networkPolicy.allowFrom.withdrawalProcessor must list the withdrawal-processor pods" $from.withdrawalProcessor)
+      (required "networkPolicy.allowFrom.signers must list the signer pods (signature callbacks)" $from.signers)
+      ($from.operators | default list)
+      (ternary (list) ($from.monitoring | default list) (gt (int .Values.networkPolicy.metricsPort) 0)) }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "scroll.common.lib.chart.names.fullname" . }}
+  labels: {{- include "scroll.common.lib.metadata.allLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "scroll.common.lib.metadata.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: {{- toYaml $peers | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.port }}
+    {{- if and (gt (int .Values.networkPolicy.metricsPort) 0) $from.monitoring }}
+    - from: {{- toYaml $from.monitoring | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.metricsPort }}
+    {{- end }}
+{{- end }}

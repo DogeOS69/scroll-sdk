@@ -39,6 +39,11 @@ service:
         port: 9300
         targetPort: 9300
         protocol: TCP
+      metrics:
+        enabled: true
+        port: 9100
+        targetPort: 9100
+        protocol: TCP
 
 probes:
   startup:
@@ -106,6 +111,9 @@ serviceAccount:
   annotations: {}
 
 env:
+  # Dedicated scrape port: /metrics is served here only, never on api_port.
+  - name: DOGEOS_WITHDRAWAL_METRICS_PORT
+    value: "9100"
   # CLI-owned atomic proof activation projection. Default posture is disabled;
   # setup prep-charts replaces the proof-system entries together.
   # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
@@ -240,7 +248,7 @@ serviceMonitor:
   main:
     enabled: true
     endpoints:
-      - port: http
+      - port: metrics
         scheme: http
         path: /metrics
         interval: 1m
@@ -254,3 +262,17 @@ defaultProbes:
 # Database: the current binary uses SqliteConnection, not PostgreSQL.
 # Keep database_url (or DOGEOS_WITHDRAWAL_DATABASE_URL) on the /app/data PVC;
 # changing the URL cannot switch the binary to a PostgreSQL backend.
+
+# Restrict the unauthenticated API port (TSO callbacks, rotation routes,
+# metrics) to the pods that legitimately call it. Replace the placeholder
+# selectors with your own labels.
+networkPolicy:
+  enabled: true
+  metricsPort: 9100   # monitoring is allowed on this port only
+  allowFrom:
+    tso:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: tso-service}}
+    operators: []    # who may call /protocol-actions/*
+    monitoring: []   # e.g. a namespaceSelector for your Prometheus (metrics port only)
+    proofCoordinator:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: proof-coordinator}}
