@@ -19,6 +19,11 @@ service:
       http:
         enabled: true
         port: 3000
+      # Dedicated scrape port. Also set DOGEOS_CUBESIGNER_SIGNER_METRICS_PORT to
+      # the same value so /metrics is served there and not on http (/sign).
+      metrics:
+        enabled: false
+        port: 9100
 
 defaultProbes: &default_probes
   enabled: true

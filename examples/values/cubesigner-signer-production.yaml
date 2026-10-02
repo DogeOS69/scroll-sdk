@@ -20,6 +20,11 @@ service:
         port: 3000
         targetPort: 3000
         protocol: TCP
+      metrics:
+        enabled: true
+        port: 9100
+        targetPort: 9100
+        protocol: TCP
 
 # Keep the production health contract self-contained. These values override
 # chart defaults so operators do not need to inspect a chart version to know
@@ -67,6 +72,9 @@ env:
     value: "testnet"
   - name: "NETWORK"
     value: "testnet"
+  # Dedicated scrape port: /metrics is served here only, never with /sign.
+  - name: "DOGEOS_CUBESIGNER_SIGNER_METRICS_PORT"
+    value: "9100"
   - name: "DOGEOS_CUBESIGNER_SIGNER_TSO_URL"
     value: "http://tso-service:3000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PROTOCOL_CONTEXT_JSON"
@@ -184,6 +192,6 @@ serviceMonitor:
       release: scroll-sdk
     serviceName: '{{ include "scroll.common.lib.chart.names.fullname" $ }}'
     endpoints:
-      - port: http
+      - port: metrics
         interval: 10s
         scrapeTimeout: 5s

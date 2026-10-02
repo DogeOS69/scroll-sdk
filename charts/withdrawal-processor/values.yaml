@@ -19,6 +19,12 @@ service:
       http:
         enabled: true
         port: 3000
+      # Dedicated scrape port. Also set metrics_port (or
+      # DOGEOS_WITHDRAWAL_METRICS_PORT) to the same value so the application
+      # serves /metrics there and stops serving it on http.
+      metrics:
+        enabled: false
+        port: 9100
     annotations: {}
 
 probes:
@@ -90,14 +96,16 @@ serviceMonitor:
 # an upgrade cannot cut TSO callbacks or metrics scraping before the selectors
 # below are set. Enable it in every deployment that runs on a
 # NetworkPolicy-enforcing CNI. All lists hold NetworkPolicyPeer entries
-# (podSelector / namespaceSelector). Callbacks, rotation routes, health and
-# /metrics share apiPort, so every peer listed for it reaches every route.
+# (podSelector / namespaceSelector). Callbacks, rotation routes and health share
+# apiPort, and so does /metrics unless metricsPort names a dedicated scrape port
+# (metrics_port), in which case monitoring is allowed on that port only.
 # proofCoordinator opens proofWorkPort (bearer-token auth is enforced by the
 # application there); leave it empty to keep that port closed.
 networkPolicy:
   enabled: false
   apiPort: 3000
   proofWorkPort: 9300
+  metricsPort: 0
   allowFrom:
     tso: []                   # required when enabled: tso-service pods
     operators: []             # optional: who may call the rotation routes

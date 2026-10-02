@@ -12,6 +12,7 @@ service:
     enabled: true
     ports:
       http: {enabled: true, port: 3000, targetPort: 3000, protocol: TCP}
+      metrics: {enabled: true, port: 9100, targetPort: 9100, protocol: TCP}
 
 # The current TSO binary exposes /health, not a separate /ready endpoint.
 probes:
@@ -46,6 +47,9 @@ probes:
 env:
   - name: PORT
     value: "3000"
+  # Dedicated scrape port: /metrics is served here only, never on PORT.
+  - name: METRICS_PORT
+    value: "9100"
   - name: DOGE_NETWORK
     value: "testnet"
   - name: WITHDRAWAL_PROCESSOR_URL
@@ -100,7 +104,7 @@ serviceMonitor:
   main:
     enabled: true
     endpoints:
-      - {port: http, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
+      - {port: metrics, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
 
 persistence:
   journal:
@@ -119,9 +123,10 @@ defaultProbes:
 # it. Replace the placeholder selectors with your own labels.
 networkPolicy:
   enabled: true
+  metricsPort: 9100   # monitoring is allowed on this port only
   allowFrom:
     withdrawalProcessor:
       - podSelector: {matchLabels: {app.kubernetes.io/name: withdrawal-processor}}
     signers:
       - podSelector: {matchLabels: {app.kubernetes.io/name: cubesigner-signer}}
-    monitoring: []   # e.g. a namespaceSelector for your Prometheus
+    monitoring: []   # e.g. a namespaceSelector for your Prometheus (metrics port only)

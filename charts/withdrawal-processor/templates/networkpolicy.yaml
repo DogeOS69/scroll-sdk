@@ -1,9 +1,11 @@
 {{- /*
 Ingress allow-list for the withdrawal-processor. The API port serves the TSO
 callbacks (/submit-finalized-tx, /tso-failure, /register-tso), the operator
-rotation routes (/protocol-actions/*), health and /metrics. These carry no
-caller authentication by design; access control is this policy. Because they
-share one port, any peer allowed on it can reach every route. The proof-work
+rotation routes (/protocol-actions/*) and health. These carry no caller
+authentication by design; access control is this policy. They share one port,
+so any peer allowed on it can reach every route. /metrics shares it too unless
+networkPolicy.metricsPort names a dedicated scrape port (metrics_port), in which
+case monitoring is allowed on that port only. The proof-work
 port is a separate listener with its own bearer-token auth; it is only opened
 when a proof-coordinator selector is supplied. Selectors come from values only.
 */ -}}
@@ -12,7 +14,7 @@ when a proof-coordinator selector is supplied. Selectors come from values only.
 {{- $apiPeers := concat
       (required "networkPolicy.allowFrom.tso must list the tso-service pods (callbacks)" $from.tso)
       ($from.operators | default list)
-      ($from.monitoring | default list) }}
+      (ternary (list) ($from.monitoring | default list) (gt (int .Values.networkPolicy.metricsPort) 0)) }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -29,6 +31,12 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.networkPolicy.apiPort }}
+    {{- if and (gt (int .Values.networkPolicy.metricsPort) 0) $from.monitoring }}
+    - from: {{- toYaml $from.monitoring | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.metricsPort }}
+    {{- end }}
     {{- with $from.proofCoordinator }}
     - from: {{- toYaml . | nindent 8 }}
       ports:
