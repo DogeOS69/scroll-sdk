@@ -1,0 +1,21 @@
+TSO metrics are collected by scroll-monitor by default. Disable the supplemental
+monitor only when another chart already owns it or TSO is intentionally absent.
+
+Grafana application contact points do not receive the bundled Prometheus alerts
+automatically. Configure kube-prometheus-stack.alertmanager.config (or an existing
+Alertmanager Secret) for infrastructure notifications. Set
+infrastructureAlerts.requireReceiver=true to validate the inline default receiver.
+{{- $stack := index .Values "kube-prometheus-stack" }}
+{{- if and $stack.enabled $stack.alertmanager.enabled }}
+{{- if $stack.alertmanager.alertmanagerSpec.useExistingSecret }}
+The Alertmanager configuration comes from an existing Secret. Verify its routes
+and receivers separately; an offline Helm render cannot validate Secret contents.
+{{- else if eq $stack.alertmanager.config.route.receiver "null" }}
+WARNING: infrastructure alerts still default to the null receiver. They are
+visible in Prometheus/Alertmanager but this route sends no notifications.
+{{- end }}
+{{- end }}
+
+The Grafana seeder preserves UI edits and logs DRIFT for conflicting values.
+Explicit grafanaAlerting.pauseRules entries also apply to existing managed rules.
+See examples/scroll-monitor-configuration.md for upgrade and preview instructions.

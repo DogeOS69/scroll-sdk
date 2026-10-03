@@ -24,6 +24,19 @@
 # never also inject its bearer_token environment override when using the file.
 # Figment gives ENV precedence over TOML for emergency overrides.
 
+# beta.5a fulfills pending withdrawals on every WF kind unconditionally.
+# Do not add the removed parity switch: unknown fields fail startup.
+# max_withdrawal_outputs_per_tx reserves AdvanceL1 output space and paces
+# AdvanceL1/rotation fulfillment; AdvanceL2 is bounded by transaction size.
+# Mainnet uses 60 Dogecoin confirmations; strict L1 validation requires >=50.
+# Testnet/shadowfork operators may explicitly choose a smaller depth.
+
+# beta.5c reads Ethereum finality from the RPC safe/finalized block tags.
+# Do not add ethereum_da.min_finality or inbox_worker.safe_depth/finalized_depth,
+# including equivalent environment overrides: these removed keys fail startup.
+# ingest_depth controls scanning; it is not a substitute for Ethereum finality.
+# See ../core-beta5c-configuration.md for the in-place upgrade checklist.
+
 # BEGIN scrollsdk managed deployment configuration
 # Required for ordinary deposit admission and L1 frontier advancement.
 advance_l1_builder_v2 = true
@@ -41,7 +54,6 @@ dogecoin_rpc_url = "http://dogecoin:22555"
 fee_rate_sat_per_kvb = 1000000
 initial_bridge_redeem_script_hex = "<TODO>"
 leaf_verification_required = false
-max_deposits_per_advance_l1 = 32
 max_withdrawal_outputs_per_tx = 256
 network_str = "<TODO>"
 protocol_context_json = "/app/protocol_context.json"
@@ -52,10 +64,9 @@ rotate_sequencer_signer_v2 = true
 strict_l1_validation = false
 strict_l2_validation = false
 tso_url = "http://tso-service:3000"
-wf_withdrawal_parity_v1 = true
 
 [dogecoin_indexer]
-confirmations = 6
+confirmations = 60
 poll_interval_ms = 1000
 start_height = 0
 
@@ -76,18 +87,16 @@ artifact_metadata_sqlite_path = "/app/data/eth-da-artifact-metadata.sqlite"
 artifact_store_root = "/app/data/eth-da-blob-artifacts"
 indexer_sqlite_path = "/app/data/eth-da-indexer.sqlite"
 l1_rpc_url = "<TODO>"
-min_finality = "finalized"
 
 [ethereum_da.inbox_worker]
 cursor_id = "eth_da_inbox"
 enabled = true
+# Required even when disabled; prep-charts derives this from the submitter signer.
 expected_batchers = []
-finalized_depth = 64
 ingest_depth = 1
 max_blocks_per_cycle = 64
 poll_interval_ms = 6000
 rollback_lookback = 128
-safe_depth = 32
 start_block = 0
 status_poll_interval_ms = 5000
 writer_id = "withdrawal-processor"

@@ -1,0 +1,13 @@
+# Deploy this chart separately in at least two INDEPENDENT locations, outside the
+# chain cluster. Build Dockerfile and supply your registry image; no credential.
+enabled: false  # Set true in an external probe deployment.
+image: ''
+location: ''  # e.g. us-east; each location must have exactly one reporter.
+overrides: {}  # Per-location nodeRpcUrl, e.g. http://independent-canary:8545.
+config: {}  # GENERATED: statusPage.generated.probeConfig from setup status-page.
+serviceMonitor:
+  enabled: false  # Enable only if this external location has its own Prometheus.
+  labels: {}
+resources:
+  requests: {cpu: 100m, memory: 512Mi}
+  limits: {cpu: '1', memory: 1Gi}

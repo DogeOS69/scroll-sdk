@@ -1,4 +1,7 @@
 import copy
+import contextlib
+import io
+import json
 import importlib.util
 from pathlib import Path
 import unittest
@@ -16,17 +19,28 @@ SPEC.loader.exec_module(SEED)
 class MemoryGrafana:
     """Model Grafana 11's distinct rule-create and group-update semantics."""
 
+    TEMPLATES = "/api/v1/provisioning/templates/"
+
     def __init__(self):
         self.folder = None
         self.group = None
+        self.templates = {}
         self.writes = []
 
     def request(self, method, path, body=None, allow_missing=False):
         if method == "GET":
+            if path.startswith(self.TEMPLATES):
+                name = path.removeprefix(self.TEMPLATES)
+                return copy.deepcopy(self.templates.get(name))
             result = self.folder if path.startswith("/api/folders/") else self.group
             return copy.deepcopy(result)
         self.writes.append((method, path, copy.deepcopy(body)))
-        if path == "/api/folders":
+        if path.startswith(self.TEMPLATES):
+            assert method == "PUT"
+            name = path.removeprefix(self.TEMPLATES)
+            # Grafana 11 trims surrounding whitespace before storing templates.
+            self.templates[name] = {"name": name, "template": body["template"].strip()}
+        elif path == "/api/folders":
             self.folder = copy.deepcopy(body)
         elif path == "/api/v1/provisioning/alert-rules":
             assert method == "POST"
@@ -78,6 +92,78 @@ class SeedTests(unittest.TestCase):
         self.client.writes.clear()
         SEED.seed(self.client, self.config)
         self.assertEqual(self.client.writes, [])
+
+    def test_values_update_untouched_query_and_for_preserving_ui_pause_and_routing(self):
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        saved["isPaused"] = True
+        saved["notification_settings"] = {"receiver": "operator-contact"}
+        source = self.config["groups"][0]["rules"][0]
+        source.update(expr="max(ready) < 0.8", **{"for": "7m"})
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
+        self.assertEqual(saved["for"], "7m")
+        self.assertTrue(saved["isPaused"])
+        self.assertEqual(saved["notification_settings"], {"receiver": "operator-contact"})
+        baseline = json.loads(saved["annotations"][SEED.BASELINE])
+        self.assertEqual(baseline["queryA"], SEED.fingerprint(SEED.managed_fields(saved)["queryA"]))
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_ui_query_edit_is_preserved_and_reported_when_values_change(self):
+        SEED.seed(self.client, self.config)
+        self.client.group["rules"][0]["data"][0]["model"]["expr"] = "ready < 0.3"
+        self.config["groups"][0]["rules"][0]["expr"] = "ready < 0.7"
+        self.client.writes.clear()
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config)
+        self.assertIn("DRIFT NotReady", output.getvalue())
+        self.assertEqual(self.client.group["rules"][0]["data"][0]["model"]["expr"], "ready < 0.3")
+        self.assertEqual(self.client.writes, [])
+
+    def test_first_upgrade_adopts_matching_legacy_fields_but_not_unknown_differences(self):
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        saved["annotations"].pop(SEED.BASELINE)
+        saved["for"] = "19m"
+        SEED.seed(self.client, self.config)
+        baseline = json.loads(self.client.group["rules"][0]["annotations"][SEED.BASELINE])
+        self.assertIn("queryA", baseline)
+        self.assertNotIn("for", baseline)
+        self.config["groups"][0]["rules"][0].update(expr="ready < 0.8", **{"for": "6m"})
+        SEED.seed(self.client, self.config)
+        saved = self.client.group["rules"][0]
+        self.assertEqual(saved["data"][0]["model"]["expr"], "ready < 0.8")
+        self.assertEqual(saved["for"], "19m")
+
+    def test_explicit_pause_overrides_existing_rule_and_removal_restores_ui_control(self):
+        SEED.seed(self.client, self.config)
+        self.config["pauseRules"] = {"NotReady": True}
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+        self.config["pauseRules"]["NotReady"] = False
+        SEED.seed(self.client, self.config)
+        self.assertFalse(self.client.group["rules"][0]["isPaused"])
+        self.config.pop("pauseRules")
+        self.client.group["rules"][0]["isPaused"] = True
+        SEED.seed(self.client, self.config)
+        self.assertTrue(self.client.group["rules"][0]["isPaused"])
+
+    def test_dry_run_never_writes_new_folder_rules_or_existing_changes(self):
+        SEED.seed(self.client, self.config, dry_run=True)
+        self.assertEqual(self.client.writes, [])
+        SEED.seed(self.client, self.config)
+        before = copy.deepcopy(self.client.group)
+        self.client.writes.clear()
+        self.config["groups"][0]["rules"][0]["expr"] = "ready < 0.7"
+        self.config["pauseRules"] = {"NotReady": True}
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config, dry_run=True)
+        self.assertIn("PLAN dogeos.metrics: 0 new, 1 updates", output.getvalue())
+        self.assertEqual(self.client.writes, [])
+        self.assertEqual(self.client.group, before)
 
     def test_paused_rule_can_be_resumed_and_is_not_repaused_on_upgrade(self):
         self.config["groups"][0]["rules"][0]["isPaused"] = True
@@ -184,9 +270,10 @@ class SeedTests(unittest.TestCase):
         from test_monitoring_templates import grafana_rules, render
         sources = [rule for rule in grafana_rules(render()).values()
                    if "previousExpr" in rule and rule.get("datasourceType") != "loki"]
-        self.assertEqual({r["alert"] for r in sources}, {
+        self.assertTrue({
             "FeeOracleStale", "TSONoRegisteredSigners", "DogecoinIndexerLag",
-        })
+            "TSOSignerMetricMissing", "WFJobStalled", "ProofWorkRetryBudgetExhausted",
+        }.issubset({r["alert"] for r in sources}))
         for source in sources:
             with self.subTest(alert=source["alert"]):
                 client = MemoryGrafana()
@@ -194,7 +281,7 @@ class SeedTests(unittest.TestCase):
                 old = {**source, "expr": SEED.alternatives(source["previousExpr"])[0],
                        "annotations": {**source["annotations"], **{
                            key: SEED.alternatives(value)[0]
-                           for key, value in source["previousAnnotations"].items()}}}
+                           for key, value in source.get("previousAnnotations", {}).items()}}}
                 config["groups"][0]["rules"] = [old]
                 SEED.seed(client, config)
                 saved = client.group["rules"][0]
@@ -210,6 +297,10 @@ class SeedTests(unittest.TestCase):
                 expected = copy.deepcopy(original)
                 expected["data"][0]["model"]["expr"] = source["expr"]
                 expected["annotations"]["description"] = source["annotations"]["description"].replace("$value", "$values.A.Value")
+                baseline = json.loads(expected["annotations"][SEED.BASELINE])
+                for field in ("queryA", "annotation:description"):
+                    baseline[field] = SEED.fingerprint(SEED.managed_fields(expected)[field])
+                expected["annotations"][SEED.BASELINE] = json.dumps(baseline, sort_keys=True)
                 self.assertEqual(client.group["rules"][0], expected)
                 self.assertEqual(client.group["interval"], 120)
                 self.assertEqual(len(client.writes), 1)
@@ -239,7 +330,8 @@ class SeedTests(unittest.TestCase):
                     self.assertEqual(saved["uid"], uid)
                     self.assertEqual(saved["for"], "0s")
                     self.assertEqual(saved["data"][0]["model"]["expr"], source["expr"])
-                    self.assertEqual(saved["annotations"], source["annotations"])
+                    self.assertEqual({k: v for k, v in saved["annotations"].items()
+                                      if k != SEED.BASELINE}, source["annotations"])
                     self.assertEqual(len(client.writes), 1)
                     client.writes.clear()
                     SEED.seed(client, config)
@@ -330,6 +422,58 @@ class SeedTests(unittest.TestCase):
         self.assertNotIn("updated", result)
         self.assertEqual(result["data"][0]["model"]["expr"],
                          self.config["groups"][0]["rules"][0]["expr"])
+
+
+class NotificationTemplateSeedTests(unittest.TestCase):
+    PATH = "/api/v1/provisioning/templates/scroll-monitor"
+
+    def setUp(self):
+        self.client = MemoryGrafana()
+        self.config = {"folderUID": "test-alerts", "folderTitle": "Test alerts", "groups": [],
+                       "notificationTemplate": {"name": "scroll-monitor",
+                                                "template": '{{ define "a" }}one{{ end }}\n'}}
+
+    def seed(self):
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            SEED.seed(self.client, self.config)
+        return output.getvalue()
+
+    def stored(self):
+        return self.client.templates["scroll-monitor"]["template"]
+
+    def template_writes(self):
+        return [write for write in self.client.writes if write[1] == self.PATH]
+
+    def test_creates_marked_template_once(self):
+        self.seed()
+        self.assertTrue(self.stored().endswith('{{ define "a" }}one{{ end }}'))
+        self.assertRegex(self.stored(), SEED.TEMPLATE_MARKER)
+        self.seed()
+        self.assertEqual(len(self.template_writes()), 1)
+
+    def test_upgrade_replaces_untouched_shipped_template(self):
+        self.seed()
+        self.config["notificationTemplate"]["template"] = '{{ define "a" }}two{{ end }}'
+        self.assertIn("update", self.seed())
+        self.assertTrue(self.stored().endswith("two{{ end }}"))
+
+    def test_ui_edit_and_unmanaged_template_are_preserved(self):
+        for existing in ("{{ define \"a\" }}operator{{ end }}", None):
+            with self.subTest(unmanaged=existing is not None):
+                self.client = MemoryGrafana()
+                self.config["notificationTemplate"]["template"] = '{{ define "a" }}one{{ end }}'
+                if existing is None:
+                    self.seed()
+                    existing = self.stored().replace("one", "operator")
+                self.client.templates["scroll-monitor"] = {"name": "scroll-monitor", "template": existing}
+                self.config["notificationTemplate"]["template"] = '{{ define "a" }}two{{ end }}'
+                self.assertIn("DRIFT", self.seed())
+                self.assertEqual(self.stored(), existing)
+
+    def test_dry_run_does_not_write_template(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            SEED.seed(self.client, self.config, dry_run=True)
+        self.assertEqual(self.template_writes(), [])
 
 
 if __name__ == "__main__":

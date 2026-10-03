@@ -17,7 +17,7 @@ groups:
       service: eth-da-submitter
     annotations:
       summary: Ethereum DA reorg crossed a safety boundary.
-      description: A finalized L2 batch was orphaned or the configured reorg depth was exceeded. Inspect the canonical chain and recovery state.
+      description: Job {{ $labels.job }} orphaned a finalized L2 batch or exceeded the configured reorg depth in the last 5 minutes. Inspect the canonical Ethereum chain and the submitter's reorg recovery state.
   - alert: AdvanceL1DeadAtHead
     expr: sum by (namespace, job, error_class) (increase(withdrawal_processor_advance_l1_dead_at_head_total[5m])) > 0
     labels:
@@ -25,7 +25,7 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: A terminal AdvanceL1 job blocks the WF queue.
-      description: The queue head cannot advance and can starve AdvanceL2. Investigate the terminal error and its proof work.
+      description: Job {{ $labels.job }} has a terminal AdvanceL1 job ({{ $labels.error_class }}) at the WF queue head. The queue cannot advance and AdvanceL2 can starve. Inspect the terminal error and its proof work.
   - alert: AdvanceL1TerminalProofChild
     expr: sum by (namespace, job, phase, failure_class) (increase(withdrawal_processor_advance_l1_built_terminal_child_total[5m])) > 0
     labels:
@@ -33,16 +33,19 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: An AdvanceL1 parent is blocked by a terminal proof child.
-      description: Inspect the {{ $labels.phase }} proof child and failure class {{ $labels.failure_class }}.
+      description: Job {{ $labels.job }} has an AdvanceL1 parent whose {{ $labels.phase }} proof child failed terminally ({{ $labels.failure_class }}). The parent cannot proceed until the child is repaired. Inspect the proof child's error and inputs.
   - alert: ProofWorkRetryBudgetExhausted
-    expr: max by (namespace, job, family) (withdrawal_processor_proof_work_stuck_item_count) > 0
+    previousExpr: "max by (namespace, job, family) (withdrawal_processor_proof_work_stuck_item_count) > 0"
+    previousAnnotations:
+      description: "{{ $value }} stuck items in proof family {{ $labels.family }}. Check workers, proof inputs, and durable work status."
+    expr: max by (namespace, job, instance, proof_family) (withdrawal_processor_proof_work_stuck_item_count and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 0
     for: __PROOF_STUCK_FOR__
     labels:
       severity: critical
       service: withdrawal-processor
     annotations:
       summary: Proof work exceeded the retry-attempt ceiling.
-      description: '{{ $value }} stuck items in proof family {{ $labels.family }}. Check workers, proof inputs, and durable work status.'
+      description: '{{ $value | printf "%.0f" }} item(s) in proof family {{ $labels.proof_family }} exceeded their retry ceiling in job {{ $labels.job }}. Check proof workers, proof inputs, and durable work status.'
   - alert: L2ProofRangeTerminal
     expr: max by (namespace, job) (withdrawal_processor_l2_proof_pipeline_terminal_ranges) > 0
     for: __PROOF_STUCK_FOR__
@@ -51,16 +54,17 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: The active L2 proof pipeline has terminal ranges.
-      description: '{{ $value }} attached terminal ranges were observed in the latest pass. Inspect current work rather than historical terminal rows.'
+      description: 'Job {{ $labels.job }} observed {{ $value | printf "%.0f" }} attached terminal range(s) in the latest pipeline pass. Inspect current work rather than historical terminal rows.'
   - alert: WFJobStalled
-    expr: max by (namespace, job, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~"proposed_to_tso|awaiting_replay"}) > __JOB_MAX_AGE__
+    previousExpr: "max by (namespace, job, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"proposed_to_tso|awaiting_replay\"}) > __JOB_MAX_AGE__"
+    expr: max by (namespace, job, instance, status, action_kind) (withdrawal_processor_protocol_job_oldest_age_seconds{status=~"proposed_to_tso|awaiting_replay"} and on (namespace, job, instance) __WP_JOBS_VALID__) > __JOB_MAX_AGE__
     for: 5m
     labels:
       severity: critical
       service: withdrawal-processor
     annotations:
       summary: A WF job is waiting too long for signing or replay.
-      description: Oldest {{ $labels.action_kind }} job in {{ $labels.status }} is {{ $value }} seconds old. Check TSO callbacks, broadcast, and replay.
+      description: The oldest {{ $labels.action_kind }} job in {{ $labels.status }} has waited {{ $value | humanizeDuration }} in job {{ $labels.job }}. Check TSO callbacks, Dogecoin broadcast, and replay.
   - alert: TSOSignerCommunicationFailures
     expr: sum by (namespace, job, event_type) (increase(tso_core_signer_transaction_events_total{event_type=~"response_timeout|dispatch_failed|rejected"}[5m])) > 0
     for: __SIGNER_FAILURE_FOR__
@@ -69,16 +73,17 @@ groups:
       service: tso-service
     annotations:
       summary: TSO signer communication or quorum collection is failing.
-      description: Signer event {{ $labels.event_type }} is recurring. Inspect required roles, signer readiness, and responses.
+      description: TSO job {{ $labels.job }} keeps recording signer {{ $labels.event_type }} events, so bridge transactions may not reach quorum. Inspect required roles, signer readiness, and signer responses.
   - alert: TSOSigningProgressStalled
-    expr: sum by (namespace, job) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"}) > 0 and ((sum by (namespace, job) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job) (tso_core_transactions_by_status) * 0)) == 0)
+    previousExpr: "sum by (namespace, job) (tso_core_transactions_by_status{status=~\"proposed|collecting_signatures|collecting_p2pkh\"}) > 0 and ((sum by (namespace, job) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job) (tso_core_transactions_by_status) * 0)) == 0)"
+    expr: (sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"}) > 0 and ((sum by (namespace, job, instance) (increase(tso_core_signing_cycle_latency_seconds_count[15m])) or (sum by (namespace, job, instance) (tso_core_transactions_by_status) * 0)) == 0)) and on (namespace, job, instance) __TSO_STATUS_VALID__
     for: 15m
     labels:
       severity: critical
       service: tso-service
     annotations:
       summary: TSO has pending transactions but no completed signing cycle.
-      description: Signing work has remained pending without a completed cycle. Check whether every bridge input can reach its required quorum.
+      description: TSO has had pending transactions for 15 minutes without completing a signing cycle. Check whether every bridge input can reach its required quorum, starting with signer readiness.
   - alert: ProtocolReplayStopped
     expr: l1_interface_protocol_replay_stopped == 1
     for: 2m
@@ -87,7 +92,7 @@ groups:
       service: l1-interface
     annotations:
       summary: L1 Interface protocol replay has stopped.
-      description: Inspect l1_interface_protocol_replay_stop_reason_active and replay evidence for instance {{ $labels.instance }}.
+      description: L1 Interface instance {{ $labels.instance }} has stopped protocol replay, so new Dogecoin bridge events are not processed. Check the active stop reason (l1_interface_protocol_replay_stop_reason_active) and the replay logs.
   - alert: ProtocolReorgRecoveryStalled
     expr: max by (namespace, job) ({__name__=~"l1_interface_protocol_replay_active_regression_episode|eth_da_submitter_l2_reorg_recovery_active"}) == 1
     for: __RECOVERY_FOR__
@@ -111,7 +116,7 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: An external TSO proposal requires reconciliation.
-      description: Inspect the named TSO job and reconcile its state before expecting stale WF work to drain.
+      description: Job {{ $labels.job }} reported an external TSO proposal that needs reconciliation. Identify the TSO job in the withdrawal-processor logs and reconcile its state; stale WF work does not drain until then.
   - alert: WFStaleSpecsPendingSweep
     expr: max by (namespace, job) (withdrawal_processor_stale_specs_pending_sweep) > 0
     for: 5m
@@ -120,7 +125,7 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: Stale WF specifications are not draining.
-      description: Stale specifications remain across dispatch ticks. Check external proposal reconciliation and replay cleanup.
+      description: Job {{ $labels.job }} has kept stale WF specifications across dispatch ticks for 5 minutes. Check external proposal reconciliation and replay cleanup.
   - alert: AttestationSignerNotReady
     expr: attestation_signer_ready == 0
     for: 2m
@@ -129,7 +134,7 @@ groups:
       service: attestation-signer
     annotations:
       summary: An attestation signer is not ready.
-      description: Instance {{ $labels.instance }} is unready. Check backend availability, namespace, and policy mode.
+      description: Attestation signer {{ $labels.instance }} has been unready for 2 minutes. Bridge transactions need enough ready attestation signers to reach quorum. Check its signing backend, namespace, and policy mode.
   - alert: CubeSignerNotReady
     expr: min by (job, instance) ({__name__=~"cubesigner_signer_ready|cubesigner_signer_production_policy_ready"}) == 0
     for: 2m
@@ -138,7 +143,7 @@ groups:
       service: cubesigner-signer
     annotations:
       summary: CubeSigner readiness or production policy is blocked.
-      description: Instance {{ $labels.instance }} cannot sign with the required policy posture.
+      description: CubeSigner gateway {{ $labels.instance }} has been unable to sign with the required policy for 2 minutes. Check the CubeSigner session, the attached signing policy, and the gateway logs.
   - alert: AttestationSignerTerminalFailure
     expr: sum by (job, instance, kind) (increase(attestation_signer_worker_failures_total{terminal="true"}[5m])) > 0
     labels:
@@ -146,7 +151,7 @@ groups:
       service: attestation-signer
     annotations:
       summary: An attestation signer worker has terminal failures.
-      description: Instance {{ $labels.instance }} reported terminal worker failure {{ $labels.kind }}.
+      description: Attestation signer {{ $labels.instance }} reported a terminal {{ $labels.kind }} worker failure that is not retried. Check the signer logs and its backend.
   - alert: AttestationSignerSigningFailures
     expr: sum by (job, instance, result) (increase(attestation_signer_signing_attempts_total{result!="success"}[5m])) > 0
     for: __SIGNER_FAILURE_FOR__
@@ -155,7 +160,7 @@ groups:
       service: attestation-signer
     annotations:
       summary: Attestation signing attempts keep failing.
-      description: Instance {{ $labels.instance }} reports signing result {{ $labels.result }}.
+      description: Attestation signer {{ $labels.instance }} keeps returning signing result {{ $labels.result }}. Check the signer backend, key access, and rejected requests in the signer logs.
   - alert: AttestationSignerCallbackFailures
     expr: sum by (job, instance, path, result) (increase(attestation_signer_tso_callbacks_total{result=~"failure|exhausted"}[5m])) > 0
     for: __SIGNER_FAILURE_FOR__
@@ -164,7 +169,7 @@ groups:
       service: attestation-signer
     annotations:
       summary: An attestation signer cannot deliver TSO callbacks.
-      description: Instance {{ $labels.instance }} callback {{ $labels.path }} has result {{ $labels.result }}.
+      description: Attestation signer {{ $labels.instance }} callback {{ $labels.path }} keeps ending with {{ $labels.result }}, so TSO does not receive these signatures. Check network reachability from the signer to TSO and the TSO callback endpoint.
   - alert: EthDAPublicationFeeBlocked
     expr: max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) (increase({__name__=~"eth_da_publish_(liveness_blocked|replacement_fee_cap_blocked)_total"}[5m])) > 0
     for: 5m
@@ -183,3 +188,21 @@ groups:
     annotations:
       summary: Ethereum DA canonicality observations remain abnormal.
       description: Stage {{ $labels.stage }} repeatedly reports {{ $labels.kind }}. Check provider consistency and reorg recovery.
+  - alert: TSOTransactionObservationUnavailable
+    expr: (max by (namespace, job, instance) (tso_core_transactions_by_status) or on (namespace, job, instance) up{job=~".*tso-service.*"}) unless on (namespace, job, instance) __TSO_STATUS_VALID__
+    for: 5m
+    labels:
+      severity: warning
+      service: tso-service
+    annotations:
+      summary: TSO transaction observation is unavailable.
+      description: The transaction snapshot from TSO instance {{ $labels.instance }} is invalid, stale, or cannot be scraped. Check the TSO metrics target and logs. Retained counts do not establish current signing progress or recovery.
+  - alert: WPProtocolObservationUnavailable
+    expr: withdrawal_processor_protocol_snapshot_valid unless on (namespace, job, instance, source) (withdrawal_processor_protocol_snapshot_valid == 1 and on (namespace, job, instance, source) (withdrawal_processor_protocol_snapshot_timestamp_seconds <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds < 120) and on (namespace, job, instance) (up == 1))
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Withdrawal processor protocol observation is unavailable.
+      description: Snapshot source {{ $labels.source }} on {{ $labels.instance }} is invalid, stale, or cannot be scraped. Check the withdrawal-processor metrics target and database access. Retained values do not establish current health or recovery.

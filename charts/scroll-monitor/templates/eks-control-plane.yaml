@@ -1,0 +1,57 @@
+{{- if .Values.eksControlPlane.enabled }}
+{{- $stack := index .Subcharts "kube-prometheus-stack" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-eks-control-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    release: {{ .Release.Name }}
+spec:
+  namespaceSelector:
+    matchNames: [default]
+  selector:
+    matchLabels:
+      component: apiserver
+      provider: kubernetes
+  endpoints:
+    {{- range $component, $path := dict "kube-scheduler" "ksh" "kube-controller-manager" "kcm" }}
+    - port: https
+      scheme: https
+      path: /apis/metrics.eks.amazonaws.com/v1/{{ $path }}/container/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes.default.svc
+      relabelings:
+        - targetLabel: job
+          replacement: {{ $component }}
+    {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-eks-metrics
+rules:
+  - apiGroups: [metrics.eks.amazonaws.com]
+    resources: [ksh/metrics, kcm/metrics]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-eks-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-eks-metrics
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kube-prometheus-stack.prometheus.serviceAccountName" $stack }}
+    namespace: {{ include "kube-prometheus-stack.namespace" $stack }}
+{{- end }}

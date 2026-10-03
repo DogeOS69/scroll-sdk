@@ -33,9 +33,11 @@ resources:
     memory: "1Gi"
     cpu: "1000m"
 
+# scroll-monitor owns the default TSO metrics scrape. Enable this only when
+# its additionalServiceMonitors.tso entry is disabled.
 serviceMonitor:
   main:
-    enabled: true
+    enabled: false
 
 defaultProbes:
   enabled: false

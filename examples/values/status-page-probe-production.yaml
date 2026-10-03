@@ -1,0 +1,10 @@
+# Run at each independent observation site, outside the monitored chain cluster.
+# CLI --probe-values regenerates config while preserving the operator fields here.
+enabled: true
+image: "" # Operator: build/push charts/status-page-probe/Dockerfile, then pin that image.
+location: "" # Operator: distinct DNS label for the actual site, e.g. us-east.
+overrides: {} # Optional: nodeRpcUrl overrides the generated canary address at this site.
+serviceMonitor:
+  enabled: false # Enable for site-local Prometheus/federation; direct private scrape also works.
+  labels: {}
+config: {} # CLI-generated chain identity, endpoints, semantic checks and health thresholds.

@@ -1,0 +1,92 @@
+{{- if and (not .Values.statusPage.enabled) .Values.statusPage.generated }}
+{{- fail "statusPage was generated: remove its Grafana contact point and generated configuration before disabling" }}
+{{- end }}
+{{- if .Values.statusPage.enabled }}
+{{- $status := .Values.statusPage }}
+{{- $generated := $status.generated | default dict }}
+{{- $catalog := $status.catalog | default dict }}
+{{- if or (not (has (int ($generated.version | default 0)) (list 1 2 3))) (empty $catalog.components) }}
+{{- fail "statusPage.enabled requires generated configuration: run scrollsdk setup status-page or setup prep-charts first" }}
+{{- end }}
+{{- if or (ne $status.environment $generated.environment) (ne $status.environment $catalog.environment) }}
+{{- fail "statusPage environment differs from the generated catalog; regenerate for this deployment" }}
+{{- end }}
+{{- $groups := dict "mainnet" "Mainnet" "testnet" "Testnet" "devnet" "Devnet" }}
+{{- if or (not (hasKey $groups $status.environment)) (ne ($catalog.groupName | default "") (get $groups $status.environment)) }}
+{{- fail "statusPage requires a matching shared-page network group; regenerate with scrollsdk setup status-page" }}
+{{- end }}
+{{- if and (lt (int $generated.version) 3) (not .Values.grafana.enabled) }}
+{{- fail "statusPage requires bundled Grafana" }}
+{{- end }}
+{{- if ge (int $generated.version) 2 }}
+{{- $publication := $generated.componentPublication | default dict }}
+{{- $provisioning := get (.Values.grafana.alerting | default dict) "instatus-component-publication.yaml" | default dict }}
+{{- if or (empty $publication) (ne (toJson $publication.inputs) (toJson $status.publication)) (ne (toJson $publication.provisioning) (toJson $provisioning)) }}
+{{- fail "statusPage component publication changed; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- if or (ne (int $publication.orgId) (int $status.grafana.orgId)) (ne $publication.datasourceUid .Values.monitoring.datasources.prometheus.uid) }}
+{{- fail "statusPage Grafana organization or datasource changed; regenerate" }}
+{{- end }}
+{{- if $publication.probeScrape }}
+{{- $jobs := ((index .Values "kube-prometheus-stack").prometheus.prometheusSpec.additionalScrapeConfigs | default list) }}
+{{- $managedJobs := list }}
+{{- range $job := $jobs }}
+{{- if eq $job.job_name "status-page-external-probes" }}{{- $managedJobs = append $managedJobs $job }}{{- end }}
+{{- end }}
+{{- if or (ne (len $managedJobs) 1) (ne (toJson (first $managedJobs)) (toJson $publication.probeScrape)) }}
+{{- fail "statusPage external probe scrape targets changed; regenerate" }}
+{{- end }}
+{{- end }}
+{{- if not (($status.publication.delivery | default dict).enabled | default false) }}
+{{- range $name, $env := $publication.envs }}
+{{- if ne (toJson (get ($.Values.grafana.envValueFrom | default dict) $name)) (toJson $env) }}
+{{- fail "statusPage component Secret reference changed; regenerate" }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if ($status.publication.heartbeat | default dict).enabled }}
+{{- if ne ($generated.heartbeatBoundPageId | default "") $status.instatus.pageId }}
+{{- fail "statusPage heartbeat requires an applied Cron Monitor binding" }}
+{{- end }}
+{{- if and (lt (int $generated.version) 3) (ne (toJson (get ($.Values.grafana.envValueFrom | default dict) "INSTATUS_MONITORING_HEARTBEAT_URL")) (toJson (get $publication.envs "INSTATUS_MONITORING_HEARTBEAT_URL"))) }}
+{{- fail "statusPage heartbeat Secret reference changed; regenerate" }}
+{{- end }}
+{{- end }}
+{{- range $key, $component := $status.publication.components }}
+{{- if eq $component.mode "automatic" }}
+{{- $binding := get ($generated.componentBindings | default dict) $key | default dict }}
+{{- if or (empty $binding.componentId) (ne ($binding.pageId | default "") $status.instatus.pageId) (ne ($binding.componentId | default "") (get $status.instatus.componentIds $key | default "")) }}
+{{- fail (printf "statusPage automatic component %s requires its own applied webhook binding; run setup status-page --apply --create-webhook" $key) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- $env := get (.Values.grafana.envValueFrom | default dict) "INSTATUS_GRAFANA_WEBHOOK_URL" | default dict }}
+{{- $provisioning := get (.Values.grafana.alerting | default dict) "instatus-contact-points.yaml" | default dict }}
+{{- if or (ne (toJson $env) (toJson $generated.env)) (ne (toJson $provisioning) (toJson $generated.provisioning)) }}
+{{- fail "statusPage native Grafana configuration differs from generation; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- if ne (toJson $env.secretKeyRef) (toJson $status.grafana.webhookSecretRef) }}
+{{- fail "statusPage Secret reference changed; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- $point := first $provisioning.contactPoints }}
+{{- $receiver := first $point.receivers }}
+{{- if or (ne (int $point.orgId) (int $status.grafana.orgId)) (ne $point.name $status.grafana.contactPointName) (ne $receiver.uid $status.grafana.receiverUid) }}
+{{- fail "statusPage Grafana identity changed; rerun scrollsdk setup status-page" }}
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-status-page" .Release.Name | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/name: scroll-monitor
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  # Deployment metadata only. The evaluator owns health decisions.
+  # This ConfigMap performs no outbound calls and contains no credentials.
+  catalog.json: {{ $catalog | toJson | quote }}
+{{- if ge (int $generated.version) 2 }}
+  publication.json: {{ $generated.componentPublication.readiness | toJson | quote }}
+{{- end }}
+{{- end }}

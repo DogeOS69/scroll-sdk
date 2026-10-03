@@ -26,10 +26,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
     - exp_labels:
         service: embedded-dogecoin-indexer
         severity: warning
@@ -37,11 +35,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer withdrawal-processor has been unchanged
-          for 2 minutes.
-        description: Job withdrawal-processor instance pod-a:9000 has reported an
-          unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer
-          processing and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in withdrawal-processor has not advanced for 2 minutes.
+        description: Job withdrawal-processor instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: advancing heights with arbitrary confirmation gaps stay healthy
   interval: 30s
   input_series:
@@ -75,10 +70,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: healthy job does not hide stalled job
   interval: 30s
   input_series:
@@ -97,11 +90,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer withdrawal-processor has been unchanged
-          for 2 minutes.
-        description: Job withdrawal-processor instance pod-a:9000 has reported an
-          unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer
-          processing and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in withdrawal-processor has not advanced for 2 minutes.
+        description: Job withdrawal-processor instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: healthy replica does not hide stalled replica
   interval: 30s
   input_series:
@@ -120,10 +110,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: namespaces evaluated separately
   interval: 30s
   input_series:
@@ -142,10 +130,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: new series needs two minutes of history
   interval: 30s
   input_series:
@@ -168,10 +154,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: stale metric cannot be reported as stalled
   interval: 30s
   input_series:
@@ -225,10 +209,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: progress clears a fired alert immediately
   interval: 30s
   input_series:
@@ -245,10 +227,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
   - eval_time: 150s
     alertname: DogecoinIndexerLag
     exp_alerts: []
@@ -274,10 +254,8 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
 - name: value changing away and back is not unchanged
   interval: 30s
   input_series:
@@ -297,7 +275,5 @@ tests:
         namespace: monitoring
         instance: pod-a:9000
       exp_annotations:
-        summary: Embedded Dogecoin indexer l1-interface has been unchanged for 2 minutes.
-        description: Job l1-interface instance pod-a:9000 has reported an unchanged
-          indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing
-          and Dogecoin RPC availability.
+        summary: Embedded Dogecoin indexer in l1-interface has not advanced for 2 minutes.
+        description: Job l1-interface instance pod-a:9000 has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.

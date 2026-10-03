@@ -5,7 +5,7 @@ eagerMaterializer:
   config: ""
 image:
   repository: dogeos69/eager-materializer
-  tag: v0.3.0-beta.4e
+  tag: v0.3.0-beta.5c
 persistence:
   data:
     size: 5Gi
@@ -33,3 +33,15 @@ serviceAccount:
   #   eks.amazonaws.com/role-arn: "<TODO_INSTANCE_PREFIX_SCOPED_ROLE_ARN>"
   # Grant prefix-scoped List/Get/Put only; align the IAM trust subject with
   # this ServiceAccount/namespace. No DeleteObject or KMS permission is needed.
+
+# Native /metrics is served on the same private HTTP listener as /ready.
+# The application chart owns this monitor; do not add a duplicate in scroll-monitor.
+# Requires Prometheus Operator CRDs; disable only when using another scrape owner.
+serviceMonitor:
+  main:
+    enabled: true
+    endpoints:
+      - port: http
+        path: /metrics
+        interval: 30s
+        scrapeTimeout: 10s

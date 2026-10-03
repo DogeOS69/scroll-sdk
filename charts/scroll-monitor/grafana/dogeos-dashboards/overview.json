@@ -78,7 +78,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Runtime scope\n\nThis dashboard tracks the DogeOS application services plus all Scroll L2 Reth workloads:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n- `l2-reth-sequencer-0/1`\n- `l2-reth-bootnode-0/1`\n- `l2-reth-rpc` and `l2-reth-rpc-public`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, proof coordinator, ETH DA submitter, CubeSigner signer, fee oracle, external Attestation Signers, and Scroll L2 Reth.\n\n**Exporter-backed:** Dogecoin.\n\nDedicated DogeOS dashboards provide application-level drill-down for Attestation Signer, Proof Coordinator, and CubeSigner Signer. Proof queue metrics remain owned by Withdrawal Processor. Use the dedicated `reth` folder for rollup-node application metrics and node-to-node comparison.",
+        "content": "### Runtime scope\n\nThis dashboard tracks the DogeOS application services plus all Scroll L2 Reth workloads:\n\n- `tso-service`\n- `withdrawal-processor`\n- `l1-interface`\n- `proof-coordinator`\n- `eth-da-submitter`\n- `cubesigner-signer`\n- `fee-oracle-0`\n- `dogecoin`\n- `l2-reth-sequencer-0/1`\n- `l2-reth-bootnode-0/1`\n- `l2-reth-rpc` and `l2-reth-rpc-public`\n\n**Native Prometheus:** TSO, withdrawal processor, L1 interface, ETH DA submitter, CubeSigner signer, fee oracle, external Attestation Signers, and Scroll L2 Reth.\n\n**Exporter-backed:** Dogecoin.\n\nDedicated dashboards cover Attestation Signer and CubeSigner application metrics. Proof Coordinator currently has Kubernetes runtime observations and WP-owned queues; its reviewed source has no production /metrics endpoint. Proof queue metrics remain owned by Withdrawal Processor. Use the dedicated `reth` folder for rollup-node application metrics and node-to-node comparison.",
         "mode": "markdown"
       },
       "title": "Coverage and metric ownership",
@@ -96,7 +96,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -143,9 +143,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(count by (pod) (kube_pod_info{namespace=~\"$namespace\",pod=~\"$pod\"}))",
-          "legendFormat": "pods",
-          "refId": "A"
+          "expr": "count by (namespace) (count by (namespace, pod) (kube_pod_info{namespace=~\"$namespace\",pod=~\"$pod\"}))",
+          "legendFormat": "{{namespace}} pods",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Pods Discovered",
@@ -163,7 +165,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -210,9 +212,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(count by (pod) (kube_pod_info{namespace=~\"$namespace\",pod=~\"$pod\"})) - sum(max by (pod) (kube_pod_status_ready{namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"}))",
-          "legendFormat": "not ready",
-          "refId": "A"
+          "expr": "count by (namespace) (count by (namespace, pod) (kube_pod_info{namespace=~\"$namespace\",pod=~\"$pod\"})) - sum by (namespace) (max by (namespace, pod) (kube_pod_status_ready{namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"}))",
+          "legendFormat": "{{namespace}} not ready",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Pods Not Ready",
@@ -230,7 +234,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -281,9 +285,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\",pod=~\"$pod\"}[24h]))",
-          "legendFormat": "restarts",
-          "refId": "A"
+          "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\",pod=~\"$pod\"}[24h]))",
+          "legendFormat": "{{namespace}} restarts",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Container Restarts (24h)",
@@ -301,7 +307,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -352,8 +358,8 @@
             "type": "loki",
             "uid": "${loki}"
           },
-          "expr": "sum(count_over_time({namespace=~\"$namespace\",pod=~\"$pod\"} |~ \"(?i)(error|fatal|panic)\" [15m]))",
-          "legendFormat": "lines",
+          "expr": "sum by (namespace) (count_over_time({namespace=~\"$namespace\",pod=~\"$pod\",service=~\"$service\"} |~ \"(?i)(error|fatal|panic)\" [15m]))",
+          "legendFormat": "{{namespace}} lines",
           "refId": "A",
           "queryType": "range"
         }
@@ -411,7 +417,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -443,8 +450,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (pod) (kube_pod_status_ready{namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"})",
-          "legendFormat": "{{pod}}",
+          "expr": "max by (namespace, pod) (kube_pod_status_ready{namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"})",
+          "legendFormat": "{{namespace}} {{pod}}",
           "refId": "A"
         }
       ],
@@ -501,7 +508,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -533,8 +541,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "min by (service, instance) (up{namespace=~\"$namespace\",service=~\"$service\"})",
-          "legendFormat": "{{service}} · {{instance}}",
+          "expr": "min by (namespace, service, instance) (up{namespace=~\"$namespace\",service=~\"$service\"})",
+          "legendFormat": "{{namespace}} {{service}} \u00b7 {{instance}}",
           "refId": "A"
         }
       ],
@@ -591,7 +599,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -610,7 +618,8 @@
               }
             ]
           },
-          "unit": "cores"
+          "unit": "cores",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -641,8 +650,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval]))",
-          "legendFormat": "{{pod}}",
+          "expr": "sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{pod}}",
           "refId": "A"
         }
       ],
@@ -681,7 +690,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -700,7 +709,8 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "bytes",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -731,8 +741,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"})",
-          "legendFormat": "{{pod}}",
+          "expr": "sum by (namespace, pod) (container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"})",
+          "legendFormat": "{{namespace}} {{pod}}",
           "refId": "A"
         }
       ],
@@ -771,7 +781,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -790,7 +800,8 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percent",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -821,8 +832,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "100 * sum by (pod) (rate(container_cpu_cfs_throttled_periods_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval])) / clamp_min(sum by (pod) (rate(container_cpu_cfs_periods_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval])), 0.001)",
-          "legendFormat": "{{pod}}",
+          "expr": "100 * sum by (namespace, pod) (rate(container_cpu_cfs_throttled_periods_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval])) / clamp_min(sum by (namespace, pod) (rate(container_cpu_cfs_periods_total{namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",image!=\"\"}[$__rate_interval])), 0.001)",
+          "legendFormat": "{{namespace}} {{pod}}",
           "refId": "A"
         }
       ],
@@ -861,7 +872,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -880,7 +891,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -911,8 +923,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (pod, container) (increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
-          "legendFormat": "{{pod}} · {{container}}",
+          "expr": "sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{pod}} \u00b7 {{container}}",
           "refId": "A"
         }
       ],
@@ -951,7 +963,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -970,7 +982,8 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "Bps",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1001,8 +1014,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (pod) (rate(container_network_receive_bytes_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
-          "legendFormat": "RX · {{pod}}",
+          "expr": "sum by (namespace, pod) (rate(container_network_receive_bytes_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} RX \u00b7 {{pod}}",
           "refId": "A"
         },
         {
@@ -1010,8 +1023,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (pod) (rate(container_network_transmit_bytes_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
-          "legendFormat": "TX · {{pod}}",
+          "expr": "sum by (namespace, pod) (rate(container_network_transmit_bytes_total{namespace=~\"$namespace\",pod=~\"$pod\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} TX \u00b7 {{pod}}",
           "refId": "B"
         }
       ],
@@ -1050,7 +1063,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1069,7 +1082,8 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percent",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1101,7 +1115,7 @@
             "uid": "${datasource}"
           },
           "expr": "100 * kubelet_volume_stats_used_bytes{namespace=~\"$namespace\"} / clamp_min(kubelet_volume_stats_capacity_bytes{namespace=~\"$namespace\"}, 1)",
-          "legendFormat": "{{persistentvolumeclaim}}",
+          "legendFormat": "{{namespace}} {{persistentvolumeclaim}}",
           "refId": "A"
         }
       ],
@@ -1131,7 +1145,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Native readiness gauge.",
+      "description": "One value per scraped instance; a ready replica does not hide an unready replica. A missing series remains No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1154,7 +1168,7 @@
               "type": "value"
             }
           ],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1201,9 +1215,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_service_ready{namespace=~\"$namespace\"})",
-          "legendFormat": "ready",
-          "refId": "A"
+          "expr": "min by (namespace, instance) (l1_interface_service_ready{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} ready {{instance}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "L1 Interface Ready",
@@ -1214,7 +1230,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Native readiness gauge.",
+      "description": "One value per scraped instance; a ready replica does not hide an unready replica. A missing series remains No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1237,7 +1253,7 @@
               "type": "value"
             }
           ],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1284,9 +1300,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_ready{namespace=~\"$namespace\"})",
-          "legendFormat": "ready",
-          "refId": "A"
+          "expr": "min by (namespace, instance) (eth_da_submitter_ready{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} ready {{instance}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "ETH DA Submitter Ready",
@@ -1297,14 +1315,14 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Current registered signer count.",
+      "description": "Current registered signer count. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1351,9 +1369,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(tso_core_registered_signers_count{namespace=~\"$namespace\"})",
-          "legendFormat": "signers",
-          "refId": "A"
+          "expr": "max by (namespace) ((tso_core_registered_signers_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} signers",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "TSO Registered Signers",
@@ -1371,7 +1391,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1422,9 +1442,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures{namespace=~\"$namespace\"})",
-          "legendFormat": "failures",
-          "refId": "A"
+          "expr": "max by (namespace) (withdrawal_processor_eth_da_inbox_worker_consecutive_failures{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} failures",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Withdrawal Inbox Failures",
@@ -1442,7 +1464,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1493,9 +1515,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"}) / 1000",
-          "legendFormat": "age",
-          "refId": "A"
+          "expr": "time() - max by (namespace) ((fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"} > 0)) / 1000",
+          "legendFormat": "{{namespace}} age",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Fee Oracle Loop Age",
@@ -1513,7 +1537,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "N/A",
+          "noValue": "No data",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1564,9 +1588,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(dogecoin_peer_connections_total{namespace=~\"$namespace\"})",
-          "legendFormat": "peers",
-          "refId": "A"
+          "expr": "max by (namespace) (dogecoin_peer_connections_total{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} peers",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Dogecoin Peers",
@@ -1595,7 +1621,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Dogecoin block heights from the node through embedded indexers to protocol-confirmed state.",
+      "description": "Dogecoin block heights from the node through embedded indexers to protocol-confirmed state. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1622,7 +1648,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1641,7 +1667,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1672,8 +1699,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(dogecoin_chain_block_height{namespace=~\"$namespace\"})",
-          "legendFormat": "node chain tip",
+          "expr": "max by (namespace) (dogecoin_chain_block_height{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} node chain tip",
           "refId": "A"
         },
         {
@@ -1681,8 +1708,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (job) (indexer_dogecoin_last_synced_block{namespace=~\"$namespace\"})",
-          "legendFormat": "{{job}} · indexer",
+          "expr": "max by (namespace, job) (indexer_dogecoin_last_synced_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} {{job}} \u00b7 indexer",
           "refId": "B"
         },
         {
@@ -1690,8 +1717,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"})",
-          "legendFormat": "l1-interface · confirmed",
+          "expr": "max by (namespace) (l1_interface_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1-interface \u00b7 confirmed",
           "refId": "C"
         },
         {
@@ -1699,8 +1726,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawal-processor · confirmed",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_dogecoin_confirmed_block_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} withdrawal-processor \u00b7 confirmed",
           "refId": "D"
         }
       ],
@@ -1712,7 +1739,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "L2 batch index across proposal, Ethereum settlement, discovery, and protocol-state consumers.",
+      "description": "L2 batch index across proposal, Ethereum settlement, discovery, and protocol-state consumers. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1739,7 +1766,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1758,7 +1785,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1789,8 +1817,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · proposed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 proposed",
           "refId": "A"
         },
         {
@@ -1798,8 +1826,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · submitted",
+          "expr": "max by (namespace) (eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 submitted",
           "refId": "B"
         },
         {
@@ -1807,8 +1835,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · confirmed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 confirmed",
           "refId": "C"
         },
         {
@@ -1816,8 +1844,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · finalized",
+          "expr": "max by (namespace) (eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 finalized",
           "refId": "D"
         },
         {
@@ -1825,8 +1853,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "WP · indexed",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_latest_da_batch_height{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 indexed",
           "refId": "E"
         },
         {
@@ -1834,8 +1862,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "L1I · protocol",
+          "expr": "max by (namespace) (l1_interface_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} L1I \u00b7 protocol",
           "refId": "F"
         },
         {
@@ -1843,8 +1871,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "WP · protocol",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_l2_batch_height{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 protocol",
           "refId": "G"
         }
       ],
@@ -1856,7 +1884,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Selected comparable L2 ending-block frontiers from DA settlement through durable AdvanceL2 processing, replay validation, and withdrawal fulfillment. Use the service dashboards for every intermediate stage.",
+      "description": "Selected comparable L2 ending-block frontiers from DA settlement through durable AdvanceL2 processing, replay validation, and withdrawal fulfillment. Use the service dashboards for every intermediate stage. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. WP completed progress is canonical replay; other WP stages extend it with live jobs. A reorg can move these frontiers backward.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1883,7 +1911,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1902,7 +1930,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1933,8 +1962,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · submitted",
+          "expr": "max by (namespace) (eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 submitted",
           "refId": "A"
         },
         {
@@ -1942,8 +1971,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · confirmed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 confirmed",
           "refId": "B"
         },
         {
@@ -1951,8 +1980,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "DA · finalized",
+          "expr": "max by (namespace) (eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} DA \u00b7 finalized",
           "refId": "C"
         },
         {
@@ -1960,8 +1989,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"completed\"})",
-          "legendFormat": "WP · completed",
+          "expr": "max by (namespace) ((withdrawal_processor_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"completed\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"advance_l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"advance_l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"advance_l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 completed",
           "refId": "D"
         },
         {
@@ -1969,8 +1998,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"validated\"})",
-          "legendFormat": "L1I · validated",
+          "expr": "max by (namespace) (l1_interface_advance_l2_l2_end_block{namespace=~\"$namespace\",stage=\"validated\"})",
+          "legendFormat": "{{namespace}} L1I \u00b7 validated",
           "refId": "E"
         },
         {
@@ -1978,8 +2007,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawals · fulfilled through",
+          "expr": "max by (namespace) ((withdrawal_processor_withdrawal_fulfilled_through_l2_block{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} withdrawals \u00b7 fulfilled through",
           "refId": "F"
         },
         {
@@ -1987,8 +2016,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawals · oldest unfulfilled",
+          "expr": "max by (namespace) ((withdrawal_processor_withdrawal_oldest_unfulfilled_l2_block{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"l2\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"l2\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} withdrawals \u00b7 oldest unfulfilled",
           "refId": "G"
         }
       ],
@@ -2000,7 +2029,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Canonical WF transaction number across state and replay read models.",
+      "description": "Canonical WF transaction number across state and replay read models. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2027,7 +2056,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2046,7 +2075,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2077,8 +2107,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
-          "legendFormat": "l1-interface · state",
+          "expr": "max by (namespace) (l1_interface_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1-interface \u00b7 state",
           "refId": "A"
         },
         {
@@ -2086,8 +2116,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_replay_validated_up_to{namespace=~\"$namespace\"})",
-          "legendFormat": "l1-interface · replay validated",
+          "expr": "max by (namespace) (l1_interface_protocol_replay_validated_up_to{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1-interface \u00b7 replay validated",
           "refId": "B"
         },
         {
@@ -2095,8 +2125,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawal-processor · state",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_wf_tx_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} withdrawal-processor \u00b7 state",
           "refId": "C"
         },
         {
@@ -2104,8 +2134,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"})",
-          "legendFormat": "withdrawal-processor · replay",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_replay_wf_tx_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} withdrawal-processor \u00b7 replay",
           "refId": "D"
         }
       ],
@@ -2117,7 +2147,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Deposit queue discovery and relayed cursors across the two protocol consumers.",
+      "description": "Deposit queue discovery and relayed cursors across the two protocol consumers. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2144,7 +2174,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2163,7 +2193,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2194,8 +2225,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_deposit_queue_next_index{namespace=~\"$namespace\"})",
-          "legendFormat": "deposit · discovered next",
+          "expr": "max by (namespace) (l1_interface_protocol_deposit_queue_next_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} deposit \u00b7 discovered next",
           "refId": "A"
         },
         {
@@ -2203,8 +2234,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
-          "legendFormat": "deposit · l1-interface relayed",
+          "expr": "max by (namespace) (l1_interface_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} deposit \u00b7 l1-interface relayed",
           "refId": "B"
         },
         {
@@ -2212,8 +2243,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"})",
-          "legendFormat": "deposit · withdrawal-processor relayed",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_relayed_deposit_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} deposit \u00b7 withdrawal-processor relayed",
           "refId": "C"
         }
       ],
@@ -2225,7 +2256,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and the backlog is their difference.",
+      "description": "Canonical withdrawal queue cursors. The acknowledged cursor comes from AdvanceL2, the fulfilled cursor is the replay-confirmed contiguous prefix, and the backlog is their difference. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2252,7 +2283,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2271,7 +2302,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2302,8 +2334,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(l1_interface_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "L1I · acknowledged next",
+          "expr": "max by (namespace) (l1_interface_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} L1I \u00b7 acknowledged next",
           "refId": "A"
         },
         {
@@ -2311,8 +2343,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "WP · acknowledged next",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_withdraw_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 acknowledged next",
           "refId": "B"
         },
         {
@@ -2320,8 +2352,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"})",
-          "legendFormat": "WP · fulfilled next",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_next_fulfilled_withdraw_index{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 fulfilled next",
           "refId": "C"
         },
         {
@@ -2329,8 +2361,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"})",
-          "legendFormat": "WP · unfulfilled backlog",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_state_unfulfilled_withdrawal_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} WP \u00b7 unfulfilled backlog",
           "refId": "D"
         }
       ],
@@ -2369,7 +2401,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2388,7 +2420,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2419,8 +2452,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
-          "legendFormat": "ready backlog",
+          "expr": "max by (namespace) (eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} ready backlog",
           "refId": "A"
         },
         {
@@ -2428,8 +2461,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
-          "legendFormat": "pending transactions",
+          "expr": "max by (namespace) (eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} pending transactions",
           "refId": "B"
         },
         {
@@ -2437,8 +2470,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_pending_tx_pressure{namespace=~\"$namespace\"})",
-          "legendFormat": "pending pressure",
+          "expr": "max by (namespace) (eth_da_publish_pending_tx_pressure{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} pending pressure",
           "refId": "C"
         }
       ],
@@ -2450,7 +2483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Durable proof work queue observed at the Withdrawal Processor authority boundary. Proof Coordinator now has native operational metrics in its dedicated dashboard, but does not duplicate queue ownership.",
+      "description": "Durable proof work queue observed at the Withdrawal Processor authority boundary. Proof Coordinator now has native operational metrics in its dedicated dashboard, but does not duplicate queue ownership. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2477,7 +2510,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2496,7 +2529,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2527,8 +2561,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_item_count{namespace=~\"$namespace\"})",
-          "legendFormat": "{{proof_family}} · {{phase}} · {{status}}",
+          "expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_item_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{proof_family}} \u00b7 {{phase}} \u00b7 {{status}}",
           "refId": "A"
         }
       ],
@@ -2540,7 +2574,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Age of the oldest active or failed proof work by stage.",
+      "description": "Age of the oldest active or failed proof work by stage. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data. Proof gauges cover non-terminal work only; omitted terminal history is not zero failures.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2567,7 +2601,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2586,7 +2620,8 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2617,12 +2652,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (proof_family, phase, status) (withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable|failed_terminal\"})",
-          "legendFormat": "{{proof_family}} · {{phase}} · {{status}}",
+          "expr": "max by (namespace, proof_family, phase, status) ((withdrawal_processor_proof_work_oldest_age_seconds{namespace=~\"$namespace\",status=~\"pending|leased|running|remote_result_submitted|blocked|failed_retryable\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"proof_work\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"proof_work\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{proof_family}} \u00b7 {{phase}} \u00b7 {{status}}",
           "refId": "A"
         }
       ],
-      "title": "Oldest Active Proof Work",
+      "title": "Oldest Non-terminal Proof Work",
       "type": "timeseries"
     },
     {
@@ -2630,7 +2665,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Current TSO in-memory transactions.",
+      "description": "Current TSO in-memory transactions. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2657,7 +2692,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2676,7 +2711,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2707,8 +2743,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (status) (tso_core_transactions_by_status{namespace=~\"$namespace\"})",
-          "legendFormat": "{{status}}",
+          "expr": "sum by (namespace, status) ((tso_core_transactions_by_status{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_metrics_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{status}}",
           "refId": "A"
         }
       ],
@@ -2747,7 +2783,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2766,7 +2802,8 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "suffix:DOGE",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2797,8 +2834,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (job) (fee_wallet_total_unredeemed_utxo_amount{namespace=~\"$namespace\"}) / 1e8",
-          "legendFormat": "{{job}}",
+          "expr": "max by (namespace, job) (fee_wallet_total_unredeemed_utxo_amount{namespace=~\"$namespace\"}) / 1e8",
+          "legendFormat": "{{namespace}} {{job}}",
           "refId": "A"
         }
       ],
@@ -2837,7 +2874,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2856,7 +2893,8 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -2887,8 +2925,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_oldest_ready_age_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "oldest ready",
+          "expr": "max by (namespace) (eth_da_publish_oldest_ready_age_seconds{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} oldest ready",
           "refId": "A"
         },
         {
@@ -2896,8 +2934,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "inbox observation age",
+          "expr": "time() - max by (namespace) ((withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds{namespace=~\"$namespace\"} > 0))",
+          "legendFormat": "{{namespace}} inbox observation age",
           "refId": "B"
         }
       ],
@@ -2927,7 +2965,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Dogecoin node header height minus each embedded indexer's last synced block.",
+      "description": "Downloaded Dogecoin block height minus each embedded indexer height, matched within its namespace. Header height alone does not establish that the node has downloaded the blocks.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2954,7 +2992,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2973,7 +3011,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -3004,8 +3043,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "clamp_min(scalar(max(dogecoin_synced_headers_total{namespace=~\"$namespace\"})) - max by (job) (indexer_dogecoin_last_synced_block{namespace=~\"$namespace\"}), 0)",
-          "legendFormat": "{{job}}",
+          "expr": "clamp_min(-max by (namespace, job) (indexer_dogecoin_last_synced_block{namespace=~\"$namespace\"}) + on (namespace) group_left max by (namespace) (dogecoin_chain_block_height{namespace=~\"$namespace\"}), 0)",
+          "legendFormat": "{{namespace}} {{job}}",
           "refId": "A"
         }
       ],
@@ -3044,7 +3083,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -3063,7 +3102,8 @@
               }
             ]
           },
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -3094,8 +3134,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (job) (rate(indexer_dogecoin_processed_tx_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "transactions · {{job}}",
+          "expr": "sum by (namespace, job) (rate(indexer_dogecoin_processed_tx_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} transactions \u00b7 {{job}}",
           "refId": "A"
         },
         {
@@ -3103,8 +3143,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (job) (rate(indexer_dogecoin_stored_deposit_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "deposits · {{job}}",
+          "expr": "sum by (namespace, job) (rate(indexer_dogecoin_stored_deposit_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} deposits \u00b7 {{job}}",
           "refId": "B"
         },
         {
@@ -3112,8 +3152,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (job) (rate(indexer_dogecoin_stored_utxo_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "UTXOs · {{job}}",
+          "expr": "sum by (namespace, job) (rate(indexer_dogecoin_stored_utxo_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} UTXOs \u00b7 {{job}}",
           "refId": "C"
         }
       ],
@@ -3152,7 +3192,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -3171,7 +3211,8 @@
               }
             ]
           },
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -3202,8 +3243,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (job, error_type) (rate(indexer_dogecoin_errors_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{job}} · {{error_type}}",
+          "expr": "sum by (namespace, job, error_type) (rate(indexer_dogecoin_errors_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{job}} \u00b7 {{error_type}}",
           "refId": "A"
         }
       ],
@@ -3215,7 +3256,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "p99 Dogecoin RPC latency emitted by each embedded indexer.",
+      "description": "Percentiles computed from per-bucket counter rates exported by the service. Empty buckets mean no observations; they do not imply zero latency.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3242,7 +3283,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -3261,7 +3302,8 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -3292,8 +3334,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (job, method) (indexer_dogecoin_rpc_call_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "{{job}} · {{method}}",
+          "expr": "histogram_quantile(0.99, sum by (namespace, le, job, method) (rate(indexer_dogecoin_rpc_call_duration_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} {{job}} \u00b7 {{method}}",
           "refId": "A"
         }
       ],
@@ -3350,7 +3392,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -3369,7 +3411,8 @@
               }
             ]
           },
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -3400,8 +3443,8 @@
             "type": "loki",
             "uid": "${loki}"
           },
-          "expr": "sum by (service) (rate({namespace=~\"$namespace\",pod=~\"$pod\"} |~ \"(?i)(error|fatal|panic)\" [$__interval]))",
-          "legendFormat": "{{service}}",
+          "expr": "sum by (namespace, service) (rate({namespace=~\"$namespace\",pod=~\"$pod\",service=~\"$service\"} |~ \"(?i)(error|fatal|panic)\" [$__interval]))",
+          "legendFormat": "{{namespace}} {{service}}",
           "refId": "A",
           "queryType": "range"
         }
@@ -3438,14 +3481,19 @@
             "type": "loki",
             "uid": "${loki}"
           },
-          "expr": "{namespace=~\"$namespace\",pod=~\"$pod\"} |~ \"(?i)(warn|error|fatal|panic)\"",
-          "legendFormat": "",
+          "expr": "{namespace=~\"$namespace\",pod=~\"$pod\",service=~\"$service\"} |~ \"(?i)(warn|error|fatal|panic)\"",
+          "legendFormat": "{{namespace}} ",
           "refId": "A",
           "queryType": "range"
         }
       ],
       "title": "Recent Warning and Error Logs",
-      "type": "logs"
+      "type": "logs",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No data"
+        }
+      }
     }
   ],
   "refresh": "30s",
@@ -3492,7 +3540,7 @@
         "type": "datasource"
       },
       {
-        "allValue": ".*",
+        "allValue": ".+",
         "current": {
           "selected": true,
           "text": "All",
@@ -3519,7 +3567,7 @@
         "type": "query"
       },
       {
-        "allValue": ".*",
+        "allValue": "tso-service|withdrawal-processor|l1-interface|proof-coordinator|eth-da-submitter|cubesigner-signer(-[0-9]+)?|fee-oracle(-[0-9]+)?|dogecoin|l2-reth-(sequencer|bootnode)-[0-9]+|l2-reth-rpc(-public)?",
         "current": {
           "selected": true,
           "text": "All",
@@ -3592,6 +3640,6 @@
   "timezone": "browser",
   "title": "DogeOS Service Operations",
   "uid": "dogeos-overview",
-  "version": 7,
+  "version": 8,
   "weekStart": ""
 }

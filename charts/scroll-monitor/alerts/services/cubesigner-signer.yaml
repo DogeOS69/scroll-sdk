@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: cubesigner-signer
     annotations:
-      summary: A cubesigner-signer metrics target cannot be scraped.
+      summary: Metrics target for cubesigner-signer cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: CubesignerSignerPodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: cubesigner-signer
     annotations:
-      summary: A cubesigner-signer pod is not ready.
+      summary: cubesigner-signer pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: CubeSignerSigningAttemptsFail
@@ -123,5 +123,5 @@ groups:
       severity: warning
       service: cubesigner-signer
     annotations:
-      summary: cubesigner-signer mean operation latency exceeds 30 seconds.
+      summary: CubeSigner signing attempts average more than 30 seconds.
       description: Signing attempts average more than 30 seconds. Check Cubist API latency, MFA, and policy execution.

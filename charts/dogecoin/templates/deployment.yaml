@@ -7,18 +7,23 @@ metadata:
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0  # No extra pods during update
-      maxUnavailable: 1  # Allow one pod to be down
+    type: Recreate
   selector:
     matchLabels:
       {{- include "dogecoin.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configMap.yaml") . | sha256sum }}
+        {{- if not .Values.externalSecrets }}
+        checksum/rpc-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- else }}
+        checksum/external-secret-spec: {{ toJson .Values.externalSecrets | sha256sum }}
+        {{- end }}
       labels:
         {{- include "dogecoin.selectorLabels" . | nindent 8 }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -63,6 +68,9 @@ spec:
                 command:
                   - /dogecoin/bin/dogecoin-cli
                   - -conf=/tmp/dogecoin.conf
+                  - -rpcconnect=127.0.0.1
+                  - {{ printf "-rpcport=%v" .Values.service.rpcPort | quote }}
+                  - -rpcclienttimeout=5
                   - stop
           volumeMounts:
             - name: config-volume
@@ -93,18 +101,20 @@ spec:
             - name: zmq-hashblock
               containerPort: {{ .Values.service.zmqHashBlockPort }}
               protocol: TCP
+          startupProbe:
+            {{- toYaml .Values.probes.startup | nindent 12 }}
+            exec:
+              command:
+                {{- include "dogecoin.rpcProbeCommand" . | nindent 16 }}
           livenessProbe:
-            initialDelaySeconds: 300
-            periodSeconds: 60
-            timeoutSeconds: 30
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
             tcpSocket:
               port: rpc
           readinessProbe:
-            initialDelaySeconds: 180
-            periodSeconds: 30
-            timeoutSeconds: 10
-            tcpSocket:
-              port: rpc
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+            exec:
+              command:
+                {{- include "dogecoin.rpcProbeCommand" . | nindent 16 }}
       volumes:
         - name: config-volume
           configMap:

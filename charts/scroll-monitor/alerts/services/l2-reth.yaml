@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: l2-reth
     annotations:
-      summary: A l2-reth metrics target cannot be scraped.
+      summary: Metrics target for l2-reth cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: L2RethPodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: l2-reth
     annotations:
-      summary: A l2-reth pod is not ready.
+      summary: l2-reth pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: L2RethNoPeers
@@ -63,7 +63,7 @@ groups:
       severity: critical
       service: l2-reth
     annotations:
-      summary: Reth rejected a payload or forkchoice update.
+      summary: L2 Reth rejected a payload or forkchoice update.
       description: Inspect engine validation errors and canonical data before replaying the affected payload.
   - alert: L2RethDownloaderErrors
     expr: sum by (namespace, job, instance) (increase({__name__=~"reth_downloaders_(headers|bodies)_(timeout|unexpected|validation)_errors",job=~".*l2-reth.*"}[5m]))
@@ -73,7 +73,7 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: Reth block downloads keep failing.
+      summary: L2 Reth block downloads keep failing.
       description: Check peer health, network transport, and block validation errors.
   - alert: L2RethRPCErrors
     expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_failed_total{job=~".*l2-reth.*"}[10m]))
@@ -98,7 +98,7 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: l2-reth mean operation latency exceeds 2 seconds.
+      summary: L2 Reth RPC calls average more than 2 seconds.
       description: L2 RPC calls average more than two seconds. Inspect expensive methods and CPU, storage, and database
         contention.
   - alert: L2RethBlobStoreFailure
@@ -108,7 +108,7 @@ groups:
       severity: critical
       service: l2-reth
     annotations:
-      summary: Reth transaction-pool blob storage operations failed.
+      summary: L2 Reth transaction-pool blob storage operations failed.
       description: Check disk space, filesystem health, and blobstore errors.
   - alert: L2RethTransactionQueueLarge
     expr: reth_transaction_pool_queued_pool_transactions{job=~".*l2-reth.*"} > 1000
@@ -117,7 +117,7 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: The Reth queued transaction pool exceeds 1000 transactions.
+      summary: L2 Reth queued transaction pool exceeds 1000 transactions.
       description: Check nonce gaps, gas prices, account balances, and admission pressure. Calibrate against normal
         traffic.
   - alert: L2RethL1ReorgObserved
@@ -126,6 +126,6 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: The L2 derivation watcher observed an L1 reorg.
+      summary: L2 Reth derivation watcher observed an L1 reorg.
       description: Inspect watcher reorg depth and canonical recovery. Expected shallow reorganizations may not
         warrant paging.

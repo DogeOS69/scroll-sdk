@@ -19,10 +19,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
   - eval_time: 90m
     alertname: ProtocolStateWFTxNumberStalled
     exp_alerts:
@@ -31,10 +29,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
 - name: ProtocolStateWFTxNumberStalled-growing
   interval: 1m
   input_series:
@@ -61,10 +57,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
   - eval_time: 61m
     alertname: ProtocolStateWFTxNumberStalled
     exp_alerts: []
@@ -85,10 +79,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
   - eval_time: 90m
     alertname: ProtocolStateWFTxNumberStalled
     exp_alerts:
@@ -97,10 +89,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
 - name: ProtocolStateWFTxNumberStalled-recent-growth
   interval: 1m
   input_series:
@@ -121,10 +111,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
 - name: ProtocolStateWFTxNumberStalled-absent
   interval: 1m
   input_series:
@@ -167,10 +155,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Protocol State WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
 - name: ProtocolStateWFTxNumberStalled-l1-interface
   interval: 1m
   input_series:
@@ -187,10 +173,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol State WF Tx Number has not increased for 60 minutes.
-        description: Job l1-interface in namespace monitoring has made no Protocol
-          State WF Tx Number progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+        description: Job l1-interface in namespace monitoring has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job's Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.
 - name: ReplayHeadWFTxNumberStalled-flat-zero
   interval: 1m
   input_series:
@@ -208,10 +192,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
   - eval_time: 90m
     alertname: ReplayHeadWFTxNumberStalled
     exp_alerts:
@@ -220,10 +202,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
 - name: ReplayHeadWFTxNumberStalled-growing
   interval: 1m
   input_series:
@@ -250,10 +230,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
   - eval_time: 61m
     alertname: ReplayHeadWFTxNumberStalled
     exp_alerts: []
@@ -274,10 +252,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
   - eval_time: 90m
     alertname: ReplayHeadWFTxNumberStalled
     exp_alerts:
@@ -286,10 +262,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
 - name: ReplayHeadWFTxNumberStalled-recent-growth
   interval: 1m
   input_series:
@@ -310,10 +284,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
 - name: ReplayHeadWFTxNumberStalled-absent
   interval: 1m
   input_series:
@@ -356,10 +328,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Replay Head WF Tx Number has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          Replay Head WF Tx Number progress for 60 minutes. Check the service and
-          its upstream dependencies.
+        summary: Withdrawal processor replay head has not advanced for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.
 - name: L2BatchHeightStalled-flat-zero
   interval: 1m
   input_series:
@@ -377,10 +347,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
   - eval_time: 90m
     alertname: L2BatchHeightStalled
     exp_alerts:
@@ -389,10 +357,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-growing
   interval: 1m
   input_series:
@@ -419,10 +385,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
   - eval_time: 61m
     alertname: L2BatchHeightStalled
     exp_alerts: []
@@ -443,10 +407,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
   - eval_time: 90m
     alertname: L2BatchHeightStalled
     exp_alerts:
@@ -455,10 +417,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-recent-growth
   interval: 1m
   input_series:
@@ -479,10 +439,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-absent
   interval: 1m
   input_series:
@@ -525,10 +483,8 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has made no
-          L2 Batch Height progress for 60 minutes. Check the service and its upstream
-          dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-l1-interface
   interval: 1m
   input_series:
@@ -545,6 +501,5 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: L2 Batch Height has not increased for 60 minutes.
-        description: Job l1-interface in namespace monitoring has made no L2 Batch
-          Height progress for 60 minutes. Check the service and its upstream dependencies.
+        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+        description: Job l1-interface in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.

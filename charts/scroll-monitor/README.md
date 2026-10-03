@@ -36,6 +36,21 @@ The default service endpoints assume every component is in the same namespace.
 They are configurable under `monitoring.datasources` and
 `alloy`.
 
+## Instatus status page
+
+Prometheus supplies core and probe facts to the chart's Python health evaluator.
+One process owns evaluation, confirmation windows and durable Instatus delivery;
+Grafana consumes metrics for visualization and internal alerts. Runtime policy lives
+in `scripts/status_page_health.py`, not in CLI-generated PromQL. Runtime credentials
+are scoped component/heartbeat webhooks; no Instatus management API key is needed.
+
+Production profiles keep status-page automation disabled until configured. When
+enabled, components default to automatic, requiring reviewed inputs and bindings.
+CLI emits deployment parameters and exact cleanup of previous managed Grafana
+public publishers. See the two-stage migration in the architecture guide.
+See the [configuration and Secret inventory](../../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration)
+and [architecture](../../docs/status-page-architecture.md).
+
 ## Dashboard and alert assets
 
 Dashboard ConfigMaps are controlled by `dashboards.bundled.enabled` and are
@@ -107,9 +122,12 @@ to use Prometheus/Alertmanager and are not editable Grafana rules.
    `managed_by = scroll-monitor` and select `scroll-ops`, or change the default
    policy's contact point if it should receive all Grafana alerts.
 
-The chart does not provision contact points or notification policies, so they
-remain editable and Helm upgrades preserve them. Creating a contact point alone
-does not route application alerts to it; complete step 4. Existing external
+By default, the chart does not provision contact points or notification policies,
+so UI-created resources remain editable and Helm upgrades preserve them. The
+optional Instatus file configuration above makes only that contact point
+file-managed and read-only in the UI; it does not provision notification policies.
+Creating a contact point alone does not route application alerts to it; complete
+step 4. Existing external
 Alertmanager receivers are not copied to Grafana automatically.
 
 Grafana OSS needs an SMTP transport before it can send email. Configure the
@@ -383,7 +401,7 @@ production stack:
 
 | Dashboard coverage | Services | Source |
 | --- | --- | --- |
-| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `proof-coordinator`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
+| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
 | External native application metrics | `attestation-signer` | Operator-managed Prometheus scrape target |
 | Exporter-backed application metrics | `dogecoin` | Prometheus metrics exporter |
 | Runtime health and logs | All Kubernetes workloads | kube-state-metrics, cAdvisor, and Loki |
@@ -393,7 +411,8 @@ Dedicated dashboards cover `attestation-signer`, `proof-coordinator`, and
 `withdrawal-processor`, which owns and exports the durable work-item gauges;
 the coordinator dashboard does not manufacture a second queue authority.
 
-The three dashboards select application metrics through Prometheus `job` and
+The signer dashboards and the coordinator's optional application panels select
+application metrics through Prometheus `job` and
 `instance` labels instead of Kubernetes-only labels. This lets the same panels
 work for in-cluster ServiceMonitors and for Attestation Signers on external EC2
 hosts. External scrape targets are deliberately not configured by this chart:
@@ -421,14 +440,25 @@ those host addresses to this chart. After Prometheus reloads successfully, the
 Attestation Signer dashboard discovers the job and all three `instance` values
 and shows their individual `up` status.
 
-The Attestation Signer exports latency and payload-size observations as
-Prometheus summaries. Its dashboard reads the exported `quantile` series
-directly and preserves the `instance` label because summary quantiles cannot be
-aggregated across signers. The `_sum / _count` series remain available for
-average calculations. The CubeSigner and coordinator dashboards use their own
-native metric types. The dashboards also expose bounded request, worker,
-signing, callback, replay, and policy outcome counters as rates so throughput
-and failure-volume changes remain visible.
+The current dogeos-core metrics initializer exports Rust time histograms ending
+in `_seconds` or `_latency_ms` as Prometheus buckets. Latency panels use
+`histogram_quantile()` over bucket rates, with seconds and milliseconds kept in
+their original units. Non-time distributions still need their exporter checked:
+DA batch sizes use per-instance summary quantiles; Attestation Signer artifact
+sizes use summaries in the current baseline and buckets in
+[dogeos-core #1007](https://github.com/DogeOS69/dogeos-core/pull/1007). The artifact
+size panel supports both without combining summary quantiles across instances.
+
+The extended Attestation Signer queue/freshness panels and Proof Coordinator
+application panels require #1007 and an image exposing its metrics. They remain
+in clearly labelled collapsed rows. The coordinator's always-visible panels use
+Kubernetes runtime state and WP-owned queues; Pod readiness is not claim-plane
+readiness. Request-lifetime and work-attempt panels describe their different
+timing boundaries explicitly.
+
+See [the dashboard source review](DASHBOARD_REVIEW.md) for the per-dashboard
+findings, source revisions, verification and remaining rollout requirements.
+Service metric exposition examples belong in dogeos-core, not this repository.
 The CubeSigner dashboard follows the metric contract merged in dogeos-core
 #1009: it shows proof-fallback signs, policy denials, live policy evaluations,
 the observed policy rule identity, and the two integrity counters that must
@@ -470,9 +500,9 @@ monitoring-specific labels or version bumps in application charts.
 An absent ServiceMonitor produces no `up` series at all; changing the Prometheus
 selector cannot create a missing monitor. When an application's chart does not
 provide one, `additionalServiceMonitors` can supply a monitor owned by this chart.
-The bundled TSO entry is disabled by default to avoid duplicating a monitor
-already managed by the application. For a deployment with a `tso-service`
-Service on the named `http` port and no TSO monitor, merge this into its values:
+The bundled TSO entry is enabled by default because the TSO chart does not
+create its own monitor. Disable this supplemental entry when TSO is intentionally
+absent or another owner already scrapes it. The default is:
 
 ```yaml
 additionalServiceMonitors:
@@ -497,3 +527,66 @@ Alloy limits pod-log discovery to the release namespace by default. Set
 The chart does not install an ingress controller or a dynamic volume
 provisioner. The configured Grafana ingress requires nginx, and persistent
 components require a usable StorageClass.
+
+## Public health rules and collection coverage
+
+See [the public status health design](../../docs/status-page-health-rules.md) for
+the eight implemented component contracts, configurable failure/recovery windows,
+missing-data handling, source inventory, and activation tests. Existing internal alert rules are not
+implicitly suitable for public status or automatic recovery.
+
+PodMonitor discovery now follows ServiceMonitor discovery: Helm instance labels
+in the release namespace. This includes Blockscout's existing frontend
+`/node-api/metrics` PodMonitor, which has no `release=scroll-monitor` label.
+The eager-materializer production example enables its application-owned
+ServiceMonitor; no supplemental duplicate is added here. These collection fixes
+provide telemetry, not an end-to-end proof of user-facing availability.
+
+The inspected proof-coordinator application revision has no production metrics
+endpoint. Keep its diagnostic rules paused until a supporting application image
+and scrape target exist; a ServiceMonitor cannot add an application endpoint.
+External public RPC/browser probes and monitor-loss detection remain prerequisites
+for reliable public automation. None of this requires exposing private monitoring.
+
+
+Component publication generation is available through `statusPage.publication`.
+Each component defaults to automatic and may explicitly use manual or observe
+mode. See [the publication configuration guide](../../docs/status-page-publication.md)
+for the health-expression contract, private component bindings, evaluator publication,
+verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
+installing the default values.
+
+## Dstack and GPU monitoring
+
+Internal controller alerts, controller logs and ServiceMonitor discovery in
+`dstack-system` are enabled by default. Apply the CLI-generated
+`scroll-monitor-dstack.yaml` after production values to select a different
+controller namespace. Set `dstack.enabled: false` to disable this integration. The Dstack/GPU dashboard is included with bundled dashboards,
+even when dstack monitoring is disabled; unconnected panels show No data.
+See [the integration guide](../../examples/dstack-monitoring/README.md).
+This does not configure public status-page routing.
+
+## Bridge health metrics adapter
+
+The optional `bridgeHealth` adapter consumes core signing snapshot v1 through
+Prometheus, with explicit target completeness and freshness checks. It supplies
+read-only signing evidence and does not publish a global bridge status. See
+[configuration, contract and tests](BRIDGE_HEALTH_ADAPTER.md).
+
+### Core PR #1358 compatibility
+
+Chart `0.1.41-dogeos` targets the core metrics contract at `7e3ee2877`.
+Cached WP/TSO facts are filtered by source validity and success time before use;
+removed historical totals and terminal inventory are no longer queried. See
+[DASHBOARD_REVIEW.md](DASHBOARD_REVIEW.md#pr-1358-snapshot-contract-2026-10-02)
+for the source mapping. The signing adapter still consumes schema v1 from
+Prometheus. No new URL, credential or scroll-sdk-cli parameter is needed.
+
+Run the semantic tests as well as the chart and Python checks:
+
+```sh
+SCROLL_STATUS_RUNTIME_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests
+python3 charts/scroll-monitor/tests/run-alert-tests.py
+python3 charts/scroll-monitor/tests/check_dstack_alerts.py
+helm lint charts/scroll-monitor
+```

@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: A proof-coordinator metrics target cannot be scraped.
+      summary: Metrics target for proof-coordinator cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: ProofCoordinatorPodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: A proof-coordinator pod is not ready.
+      summary: proof-coordinator pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: ProofCoordinatorNotReady
@@ -31,7 +31,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: Proof Coordinator cannot admit worker claims.
+      summary: Proof coordinator cannot admit worker claims.
       description: Inspect claim_gate_state, WP connectivity, authorization, and upload capability issuance.
   - alert: ProofCoordinatorTerminalClaimFault
     expr: proof_coordinator_claim_gate_state{state="terminal_wp_fault"} == 1
@@ -39,7 +39,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: Proof Coordinator latched a terminal WP claim fault.
+      summary: Proof coordinator latched a terminal withdrawal-processor claim fault.
       description: Repair the WP contract or authentication fault, then restart the coordinator as required by the
         claim latch.
   - alert: ProofCoordinatorUploadIssuanceFailing
@@ -50,7 +50,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: Proof Coordinator cannot issue upload capabilities.
+      summary: Proof coordinator cannot issue upload capabilities.
       description: Check artifact transport credentials, presigning, and claim-gate cooldown.
   - alert: ProofCoordinatorRunLoopFailing
     expr: proof_coordinator_run_loop_consecutive_failures > 0
@@ -59,7 +59,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: The coordinator proof-work loop keeps failing.
+      summary: Proof coordinator work loop keeps failing.
       description: Inspect classified run-loop errors, WP authentication, and materializer backends.
   - alert: ProofCoordinatorRunLoopStale
     expr: time() - proof_coordinator_run_loop_last_success_timestamp_seconds > 900
@@ -68,7 +68,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: The coordinator has no successful or idle tick in 15 minutes.
+      summary: Proof coordinator has had no successful or idle tick for 15 minutes.
       description: Check blocked materialize/verify operations and WP connectivity; calibrate this timeout for legitimate
         long-running proof work.
   - alert: ProofCoordinatorWorkerFencesRecurring
@@ -79,7 +79,7 @@ groups:
       severity: warning
       service: proof-coordinator
     annotations:
-      summary: Workers repeatedly lose their proof leases.
+      summary: Proof workers repeatedly lose their leases.
       description: Handler {{ $labels.handler }} is rejecting stale lease fences. Check worker heartbeats, lease
         duration, and duplicate worker execution.
   - alert: ProofCoordinatorWorkerAPIErrors
@@ -91,7 +91,7 @@ groups:
       severity: warning
       service: proof-coordinator
     annotations:
-      summary: Worker API server errors exceed 5 percent.
+      summary: Proof coordinator worker API errors exceed 5 percent.
       description: Handler {{ $labels.handler }} has at least 20 requests in ten minutes. Check WP, artifact storage,
         and coordinator errors; expected 409 lease fences are excluded.
   - alert: ProofCoordinatorWorkerAuthorizationFailures
@@ -102,7 +102,7 @@ groups:
       severity: critical
       service: proof-coordinator
     annotations:
-      summary: Worker authentication or authorization is failing.
+      summary: Proof worker authentication or authorization is failing.
       description: Check worker bearer tokens and coordinator authorization configuration.
   - alert: ProofCoordinatorWorkerAPISlow
     expr: sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_sum[10m]))
@@ -114,41 +114,47 @@ groups:
       severity: warning
       service: proof-coordinator
     annotations:
-      summary: proof-coordinator mean operation latency exceeds 5 seconds.
+      summary: Proof coordinator worker API {{ $labels.handler }} averages more than 5 seconds.
       description: Worker handler {{ $labels.handler }} averages more than five seconds. Inspect WP and artifact
         storage latency.
   - alert: ProofMaterializationQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="materialize",status=~"pending|blocked|failed_retryable"}
-      > 1800
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} > 1800"
+    previousAnnotations:
+      description: "WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator dispatch, eager locators, and materializer capacity."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof materialization work is not being drained.
-      description: WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator
+      description: WP reports {{ $labels.proof_family }} materialization waiting more than 30 minutes. Check coordinator
         dispatch, eager locators, and materializer capacity.
   - alert: ProofVerificationQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="verify",status=~"pending|blocked|failed_retryable|remote_result_submitted"}
-      > 1800
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} > 1800"
+    previousAnnotations:
+      description: "WP reports {{ $labels.family }} verification work older than 30 minutes. Inspect verifier material, artifact readback, and coordinator import."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof verification or result import is delayed.
-      description: WP reports {{ $labels.family }} verification work older than 30 minutes. Inspect verifier material,
+      description: WP reports {{ $labels.proof_family }} verification work older than 30 minutes. Inspect verifier material,
         artifact readback, and coordinator import.
   - alert: ProofWorkerQueueStalled
-    expr: withdrawal_processor_proof_work_oldest_age_seconds{phase="prove",status=~"pending|blocked|failed_retryable"}
-      > 3600
+    previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} > 3600"
+    previousAnnotations:
+      description: "Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family }}. Running long proofs are excluded."
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 3600"
     for: 10m
     labels:
       severity: critical
       service: proof-coordinator
     annotations:
       summary: Proof work waits more than one hour for progress.
-      description: Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family
+      description: Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.proof_family
         }}. Running long proofs are excluded.
   - alert: ProofCoordinatorObserveDegraded
     expr: sum by (namespace, job, instance, family) (increase(proof_coordinator_terminal_proofs_degraded_under_observe_total[5m]))
@@ -166,7 +172,7 @@ groups:
       severity: warning
       service: proof-coordinator
     annotations:
-      summary: An eager artifact locator failed validation.
+      summary: Proof coordinator rejected an eager artifact locator.
       description: Check locator integrity, config identity, and the bounded {{ $labels.check }} failure. Invalid
         locators force subprocess materialization.
   - alert: ProofCoordinatorEagerLocatorConflict
@@ -175,5 +181,5 @@ groups:
       severity: warning
       service: proof-coordinator
     annotations:
-      summary: Eager locator publication found conflicting bytes.
+      summary: Proof coordinator found conflicting bytes for an eager locator.
       description: The receipt remains authoritative. Investigate producer consistency and competing locator writes.

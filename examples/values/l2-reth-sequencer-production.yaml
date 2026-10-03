@@ -38,7 +38,7 @@ reth:
   l1LivenessCheckInterval: "3600"
   blobS3Url: ""
   trustedPeers: "<TODO>"
-  builderGasLimit: "10000000"
+  builderGasLimit: "30000000"
   engineSyncAtStartup: "true"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
@@ -82,12 +82,12 @@ reth:
     enabled: true
     autoStart: true
     allowEmptyBlocks: true
-    blockTimeMs: "3000"
-    payloadBuildingDurationMs: "800"
+    blockTimeMs: "2000"
+    payloadBuildingDurationMs: "1400"
     # DogeOS L1 Interface finalizes WF-backed synthetic blocks. Do not require
     # two additional WF transitions before including already-finalized deposits.
     l1InclusionMode: finalized:0
-    feeRecipient: "<TODO>"
+    feeRecipient: "0x5300000000000000000000000000000000000005"
 
   rpc:
     trustedOnly: false

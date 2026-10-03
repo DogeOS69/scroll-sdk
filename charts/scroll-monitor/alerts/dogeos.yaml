@@ -9,8 +9,8 @@ groups:
           severity: critical
           service: eth-da-submitter
         annotations:
-          summary: Eth DA submitter readiness is below 1.
-          description: Eth DA submitter is not reporting a ready state.
+          summary: Ethereum DA submitter is not ready.
+          description: No eth-da-submitter instance has reported ready for 2 minutes, or its readiness metric is missing. L2 batch publication to Ethereum depends on this service. Check the Pod logs, Ethereum RPC, signer backend, and metrics target.
 
       - alert: EthDAPublishBacklogStalled
         expr: max(eth_da_publish_ready_backlog > 0 and eth_da_publish_oldest_ready_age_seconds > 3600) > 0
@@ -19,8 +19,8 @@ groups:
           severity: critical
           service: eth-da-submitter
         annotations:
-          summary: Eth DA has pending publish rows older than one hour.
-          description: Check eth_da_publish_ready_backlog and eth_da_publish_oldest_ready_age_seconds.
+          summary: Ethereum DA publication backlog is older than one hour.
+          description: 'The oldest of {{ $value | printf "%.0f" }} ready but unpublished row(s) has waited more than one hour. Check the submitter logs, Ethereum fee limits, account balance, and RPC errors.'
 
       - alert: EthDASubmitterFailures
         # Error counters are created lazily. Summing one selector avoids an
@@ -30,8 +30,8 @@ groups:
           severity: critical
           service: eth-da-submitter
         annotations:
-          summary: Eth DA submitter failure counters increased in the last 10 minutes.
-          description: Combined failure increase is {{ $value }}.
+          summary: Ethereum DA submitter is reporting failures.
+          description: '{{ $value | printf "%.0f" }} submission, cycle, lifecycle, or L2 reorg failure(s) were recorded in the last 10 minutes. Check the submitter logs for the failing stage, then its Ethereum RPC and signer responses.'
 
       - alert: WithdrawalInboxWorkerFailures
         expr: max(withdrawal_processor_eth_da_inbox_worker_consecutive_failures) > 0
@@ -40,8 +40,8 @@ groups:
           severity: critical
           service: withdrawal-processor
         annotations:
-          summary: Withdrawal processor Ethereum DA inbox worker has consecutive failures.
-          description: Maximum consecutive failure count is {{ $value }}.
+          summary: Withdrawal processor cannot read the Ethereum DA inbox.
+          description: 'The inbox worker has failed {{ $value | printf "%.0f" }} consecutive time(s). New L2 batch data is not ingested until it recovers. Check the withdrawal-processor logs and its Ethereum RPC.'
 
       - alert: WithdrawalInboxWorkerStale
         expr: (time() - max(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds) > 900) or absent(withdrawal_processor_eth_da_inbox_worker_last_observed_timestamp_seconds)
@@ -50,8 +50,8 @@ groups:
           severity: warning
           service: withdrawal-processor
         annotations:
-          summary: Withdrawal processor has not observed an Ethereum DA inbox update recently.
-          description: The last observation is stale or the metric is absent.
+          summary: Withdrawal processor has not observed the Ethereum DA inbox for 15 minutes.
+          description: The inbox worker's last observation is older than 15 minutes, or its metric is missing. Check that withdrawal-processor is running, then its inbox worker logs and Ethereum RPC.
 
       - alert: L1InterfaceNotReady
         expr: max(l1_interface_service_ready) < 1 or absent(l1_interface_service_ready)
@@ -60,8 +60,8 @@ groups:
           severity: critical
           service: l1-interface
         annotations:
-          summary: Dogecoin L1 interface readiness is below 1.
-          description: The L1 interface is not ready or is not exporting its readiness metric.
+          summary: L1 Interface is not ready.
+          description: No l1-interface instance has reported ready for 2 minutes, or its readiness metric is missing. Check the Pod logs, Dogecoin RPC, database, and protocol replay status.
 
       - alert: FeeOracleStale
         previousExpr: (time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms / 1000) > 900) or absent(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms)
@@ -71,8 +71,8 @@ groups:
           severity: critical
           service: fee-oracle
         annotations:
-          summary: Fee oracle Ethereum DA oracle value has not updated recently.
-          description: The latest observed computed value is older than 15 minutes. Check fee-oracle computation and upstream RPCs.
+          summary: Fee oracle value has not been updated for 15 minutes.
+          description: The latest Ethereum DA oracle value was computed more than 15 minutes ago, so L2 fees may not reflect current DA costs. Check fee-oracle logs, its Ethereum and price-feed RPCs, and the update transaction signer.
         previousAnnotations:
           description: The latest computed value is stale or the metric is absent.
 
@@ -92,31 +92,37 @@ groups:
           severity: warning
           service: fee-oracle
         annotations:
-          summary: Fee oracle error counters increased in the last 10 minutes.
-          description: Combined failure increase is {{ $value }}.
+          summary: Fee oracle is reporting errors.
+          description: '{{ $value | printf "%.0f" }} update, computation, or chain RPC error(s) were recorded in the last 10 minutes. Check fee-oracle logs for the failing stage and its RPC endpoints.'
 
       - alert: TSONoRegisteredSigners
-        previousExpr: sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
-        expr: sum(tso_core_registered_signers_count) < 1
+        previousExpr:
+          - sum(tso_core_registered_signers_count) < 1 or absent(tso_core_registered_signers_count)
+          - sum(tso_core_registered_signers_count) < 1
+        expr: max by (namespace, job, instance) (tso_core_registered_signers_count and on (namespace, job, instance) __TSO_REGISTRY_VALID__) < 1
         for: 5m
         labels:
           severity: critical
           service: tso-service
         annotations:
           summary: TSO has no registered signers.
-          description: TSO reports fewer than one registered signer. Check signer registration and connectivity.
+          description: TSO reports zero registered signers in a valid registry snapshot, so no bridge transaction can be signed. Check signer registration, signer connectivity to TSO, and TSO logs.
         previousAnnotations:
           description: TSO reports fewer than one registered signer or the metric is absent.
 
       - alert: TSOSignerMetricMissing
-        expr: absent(tso_core_registered_signers_count)
+        previousExpr: "absent(tso_core_registered_signers_count)"
+        previousAnnotations:
+          summary: "TSO signer count cannot be evaluated because its metric is missing."
+          description: "Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers."
+        expr: absent(tso_core_registered_signers_count) or ((tso_core_registered_signers_count or on (namespace, job, instance) up{job=~".*tso-service.*"}) unless on (namespace, job, instance) __TSO_REGISTRY_VALID__)
         for: 5m
         labels:
           severity: warning
           service: tso-service
         annotations:
-          summary: TSO signer count cannot be evaluated because its metric is missing.
-          description: Check the TSO ServiceMonitor, Prometheus target discovery, and /metrics endpoint. Missing telemetry does not establish that there are no registered signers.
+          summary: TSO signer count cannot be evaluated because its observation is unavailable.
+          description: Check registry snapshot validity, its success timestamp, the TSO ServiceMonitor, and target discovery. Missing, invalid, or stale telemetry does not establish that there are no registered signers.
 
       # Keep the alert name for the existing Grafana UID. The rolling window
       # includes a comparison with its left boundary and requires real samples.
@@ -136,8 +142,8 @@ groups:
           severity: warning
           service: embedded-dogecoin-indexer
         annotations:
-          summary: Embedded Dogecoin indexer {{ $labels.job }} has been unchanged for 2 minutes.
-          description: Job {{ $labels.job }} instance {{ $labels.instance }} has reported an unchanged indexer_dogecoin_last_synced_block for 2 minutes. Check indexer processing and Dogecoin RPC availability.
+          summary: Embedded Dogecoin indexer in {{ $labels.job }} has not advanced for 2 minutes.
+          description: Job {{ $labels.job }} instance {{ $labels.instance }} has reported the same last synced Dogecoin block for 2 minutes. Check the indexer logs and Dogecoin RPC availability.
         previousAnnotations:
           summary:
             - Embedded Dogecoin indexer {{ $labels.job }} is more than 12 headers behind the node.
@@ -161,8 +167,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: Protocol State WF Tx Number has not increased for 60 minutes.
-          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no Protocol State WF Tx Number progress for 60 minutes. Check the service and its upstream dependencies.'
+          summary: Protocol state has not recorded a new WF transaction for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not observed a new WF transaction in protocol state for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check this job''s Dogecoin indexing and protocol replay; if both are current, check withdrawal-processor WF jobs, TSO signing, and broadcast.'
 
       # Compare gauges at one-minute intervals. A decrease is not progress.
       # Require an hour of history and a currently present series; do not add
@@ -179,8 +185,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: Replay Head WF Tx Number has not increased for 60 minutes.
-          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no Replay Head WF Tx Number progress for 60 minutes. Check the service and its upstream dependencies.'
+          summary: Withdrawal processor replay head has not advanced for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.'
 
       # Compare gauges at one-minute intervals. A decrease is not progress.
       # Require an hour of history and a currently present series; do not add
@@ -197,5 +203,5 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: L2 Batch Height has not increased for 60 minutes.
-          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has made no L2 Batch Height progress for 60 minutes. Check the service and its upstream dependencies.'
+          summary: Protocol state has not recorded a new L2 batch for 60 minutes.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.'

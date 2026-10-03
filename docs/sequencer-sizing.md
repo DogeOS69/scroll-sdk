@@ -38,6 +38,11 @@ I/O performance.
 
 ## Suggested values overlay
 
+The measured 10M / 3s / 800ms settings below are the September 16 test
+baseline. Production examples now use the [September 29 fee targets](../examples/README.md#fee-parameters-selected-on-2026-09-29):
+30M / 2s / 1400ms. Do not copy the historical block settings over those targets;
+this test does not establish capacity at the new parameters.
+
 Apply this **partial overlay** to an otherwise complete, deployment-specific
 [sequencer production values file](../examples/values/l2-reth-sequencer-production.yaml).
 It does not supply the image pin, chain identity, genesis, signer, peers, or

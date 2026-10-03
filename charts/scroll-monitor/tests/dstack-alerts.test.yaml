@@ -1,0 +1,105 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 30s
+tests:
+- name: controller scaled to zero does not signal failure
+  interval: 30s
+  input_series:
+  - series: kube_deployment_spec_replicas{namespace="dstack-system",deployment="dstack-controller"}
+    values: 0+0x20
+  - series: kube_deployment_status_replicas_available{namespace="dstack-system",deployment="dstack-controller"}
+    values: 0+0x20
+  - series: up{dstack_namespace="dstack-system",dstack_controller="dstack-controller",dstack_source="native"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: DstackControllerUnavailable
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: DstackMetricsUnavailable
+    exp_alerts: []
+- name: missing native endpoint with expected running controller
+  interval: 30s
+  input_series:
+  - series: kube_deployment_spec_replicas{namespace="dstack-system",deployment="dstack-controller"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 3m
+    alertname: DstackMetricsUnavailable
+    exp_alerts:
+    - exp_labels:
+        service: dstack-controller
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_source: native
+- name: cached GPU readings cannot establish or alert on host health
+  interval: 30s
+  input_series:
+  - series: up{dstack_namespace="dstack-system",dstack_controller="dstack-controller",dstack_source="native"}
+    values: 1+0x20
+  - series: kube_deployment_spec_replicas{namespace="dstack-system",deployment="dstack-controller"}
+    values: 1+0x20
+  - series: DCGM_FI_DEV_GPU_TEMP{dstack_namespace="dstack-system",dstack_controller="dstack-controller",dstack_source="native"}
+    values: 95+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: DstackMetricsUnavailable
+    exp_alerts: []
+  - eval_time: 6m
+    alertname: DstackHostTelemetryUnavailable
+    exp_alerts:
+    - exp_labels:
+        service: dstack-gpu-host
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_host: gpu-01
+    - exp_labels:
+        service: dstack-gpu-host
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_host: gpu-02
+- name: fresh host is excluded while another expected host remains absent
+  interval: 30s
+  input_series:
+  - series: node_time_seconds{dstack_namespace="dstack-system",dstack_controller="dstack-controller",dstack_host="gpu-01"}
+    values: 0+30x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: DstackHostTelemetryUnavailable
+    exp_alerts:
+    - exp_labels:
+        service: dstack-gpu-host
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_host: gpu-02
+- name: stale host samples cannot keep telemetry healthy
+  interval: 30s
+  input_series:
+  - series: node_time_seconds{dstack_namespace="dstack-system",dstack_controller="dstack-controller",dstack_host="gpu-01"}
+    values: 0+0x30
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: DstackHostTelemetryUnavailable
+    exp_alerts:
+    - exp_labels:
+        service: dstack-gpu-host
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_host: gpu-01
+    - exp_labels:
+        service: dstack-gpu-host
+        severity: warning
+        visibility: internal
+        dstack_namespace: dstack-system
+        dstack_controller: dstack-controller
+        dstack_host: gpu-02

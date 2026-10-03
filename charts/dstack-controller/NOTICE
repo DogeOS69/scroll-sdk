@@ -1,0 +1,11 @@
+DogeOS dstack-controller chart
+
+Deployment structure informed by the Nebius dstack chart:
+https://github.com/nebius/nebius-k8s-applications/tree/33d14191284544d986a60e2ff56f0de690d597d6/dstack/chart
+Copyright 2024 Nebius B.V. Licensed under Apache License 2.0 (LICENSE).
+
+DogeOS changes: provider-neutral Secret references, pinned image, full server
+state persistence, Recreate/single-controller lifecycle, external PostgreSQL,
+optional ingress, schema validation and offline tests. No Nebius backend or
+Marketplace configuration is installed. This chart is maintained by DogeOS,
+not by Nebius or the dstack project.

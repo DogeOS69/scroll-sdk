@@ -10,7 +10,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: A eth-da-submitter metrics target cannot be scraped.
+      summary: Metrics target for eth-da-submitter cannot be scraped.
       description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
         and network policy. A removed target requires the Kubernetes workload alerts.
   - alert: EthDaSubmitterPodNotReady
@@ -21,7 +21,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: A eth-da-submitter pod is not ready.
+      summary: eth-da-submitter pod {{ $labels.pod }} is not ready.
       description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
         Job pods are excluded.
   - alert: EthDAQueueValidationIncomplete
@@ -31,7 +31,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA L2 queue-state validation has not completed.
+      summary: Ethereum DA L2 queue-state validation has not completed.
       description: Inspect startup queue validation, durable chain evidence, and reorg recovery.
   - alert: EthDAParkedReplays
     expr: eth_da_publish_parked_replays > 0
@@ -40,7 +40,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA replay or replacement rows remain parked.
+      summary: Ethereum DA replay or replacement rows remain parked.
       description: Inspect receipts, external nonce drift, and repair requirements. Parked rows may require operator
         reconciliation.
   - alert: EthDAReplaySafetyBudgetExhausted
@@ -50,7 +50,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA automatic replay exhausted its safety budget.
+      summary: Ethereum DA automatic replay exhausted its safety budget.
       description: Inspect the bounded broadcast outcome and durable transaction state before manual repair.
   - alert: EthDASigningFailure
     expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_sign(_failures|er_startup_failures)_total|eth_da_publish_signing_policy_rejections_total"}[5m]))
@@ -59,7 +59,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA transaction signing failed or was rejected by policy.
+      summary: Ethereum DA transaction signing failed or was rejected by policy.
       description: Check signer backend availability, KMS authorization, expected address, and transaction policy.
   - alert: EthDAReplacementFailure
     expr: sum by (namespace, job, instance) (increase(eth_da_publish_replacement_failures_total[5m])) > 0
@@ -68,7 +68,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA replacement transactions keep failing.
+      summary: Ethereum DA replacement transactions keep failing.
       description: Inspect fee replacement rules, nonce ownership, and provider responses. Fee-cap blocks have a
         separate existing rule.
   - alert: EthDAFeeSampleUnavailable
@@ -79,7 +79,7 @@ groups:
       severity: warning
       service: eth-da-submitter
     annotations:
-      summary: DA cannot obtain a fee sample while publication work is ready.
+      summary: Ethereum DA cannot obtain a fee sample while publication work is ready.
       description: Check the Ethereum RPC and blob fee sampling path.
   - alert: EthDAWindowBudgetBlocked
     expr: sum by (namespace, job, instance) (increase(eth_da_publish_window_budget_deferrals_total[5m])) > 0
@@ -88,7 +88,7 @@ groups:
       severity: warning
       service: eth-da-submitter
     annotations:
-      summary: The publication window budget repeatedly defers DA work.
+      summary: Ethereum DA publication window budget repeatedly defers work.
       description: Review the configured blob budget, available window capacity, and publication deadlines.
   - alert: EthDABatchDataInvalid
     expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_(chunk_created_at_corrupt|chunk_compressed_data_compatibility_breaches|batch_compressed_data_compatibility_breaches|first_block_exceeds_limit|first_chunk_exceeds_limit)_total"}[5m]))
@@ -97,7 +97,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA batch construction encountered corrupt or unpublishable data.
+      summary: Ethereum DA batch construction encountered corrupt or unpublishable data.
       description: Inspect chunk timestamps, codec compatibility, and single-item size limits. Ordinary batch prefix
         shrinking is excluded.
   - alert: EthDALifecycleCorrelationFailure
@@ -107,7 +107,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: DA lifecycle events cannot be correlated to durable submissions.
+      summary: Ethereum DA lifecycle events cannot be correlated to durable submissions.
       description: Inspect transaction identifiers, lifecycle callbacks, and persisted submission rows.
   - alert: EthDABlobUploadRetryExhausted
     expr: eth_da_submitter_blob_upload_retry_exhausted_rows > 0
@@ -116,7 +116,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: Blob archive uploads exhausted their retry budget.
+      summary: Ethereum DA blob archive uploads exhausted their retry budget.
       description: Repair archive connectivity or credentials, then reconcile the failed upload rows.
   - alert: EthDABlobArchiveConflict
     expr: eth_da_submitter_blob_upload_conflict_rows > 0
@@ -124,7 +124,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: Blob archive rows are in a terminal conflict state.
+      summary: Ethereum DA blob archive rows are in a terminal conflict state.
       description: Compare archive object integrity with the canonical blob and winning upload attempt.
   - alert: EthDABlobArchiveMalformedState
     expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_blob_upload_(malformed_rows|recovery_missing_attempts|conflict_races)_total"}[5m]))
@@ -133,7 +133,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: Blob archive recovery found malformed or inconsistent durable state.
+      summary: Ethereum DA blob archive recovery found malformed or inconsistent durable state.
       description: Inspect quarantined rows, missing winning attempts, and conflicting upload claims.
   - alert: EthDABlobUploadFailures
     expr: sum by (namespace, job, instance) (increase(eth_da_submitter_blob_upload_failures_total[5m])) > 0
@@ -142,7 +142,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: Archive upload writer failures persist.
+      summary: Ethereum DA blob archive upload failures persist.
       description: Inspect S3 responses, permissions, object integrity, and retry backlog.
   - alert: EthDAArchiveTaskFatal
     expr: eth_da_submitter_blob_upload_task_fatal == 1
@@ -151,7 +151,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: The blob uploader is in fatal restart backoff.
+      summary: Ethereum DA blob uploader is in fatal restart backoff.
       description: Inspect fatal uploader errors or panics and verify archive durability.
   - alert: EthDASegmentationSidecarFatal
     expr: eth_da_submitter_segmentation_sidecar_task_fatal == 1
@@ -159,7 +159,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: The chunk-segmentation sidecar publisher hit a fatal condition.
+      summary: Ethereum DA chunk-segmentation sidecar publisher hit a fatal condition.
       description: Inspect sidecar publication and durable chunk data.
   - alert: EthDAArchiveAnonymousWriteAllowed
     expr: sum by (namespace, job, instance) (increase(eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome="allowed_success"}[5m]))
@@ -168,7 +168,7 @@ groups:
       severity: critical
       service: eth-da-submitter
     annotations:
-      summary: The archive accepted an anonymous S3 write probe.
+      summary: Ethereum DA blob archive accepted an anonymous S3 write probe.
       description: Remove public write access and verify the configured archive policy.
   - alert: EthDAArchiveWriteProbeInconclusive
     expr: sum by (namespace, job, instance) (increase(eth_da_submitter_blob_upload_anonymous_write_probe_total{outcome!~"denied|allowed_success"}[5m]))
@@ -177,6 +177,6 @@ groups:
       severity: warning
       service: eth-da-submitter
     annotations:
-      summary: The archive write-permission probe did not confirm denial.
+      summary: Ethereum DA blob archive write-permission probe did not confirm denial.
       description: Inspect probe configuration, network, and credentials. An inconclusive result is not proof of
         public write access.

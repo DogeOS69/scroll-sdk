@@ -1,0 +1,99 @@
+{{- if .Values.enabled }}
+{{- range $key, $_ := .Values.overrides }}
+{{- if ne $key "nodeRpcUrl" }}{{ fail "Only nodeRpcUrl may be overridden per probe location" }}{{- end }}
+{{- end }}
+{{- $config := mergeOverwrite (deepCopy .Values.config) (.Values.overrides | default dict) }}
+{{- if or (empty .Values.image) (empty .Values.location) (empty .Values.config.chainId) }}
+{{- fail "status-page-probe requires image, independent location and CLI-generated config" }}
+{{- end }}
+{{- if not (regexMatch "^[a-z0-9][a-z0-9-]{0,62}$" .Values.location) }}
+{{- fail "probe location must be a DNS label" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+  probe.json: {{ $config | toJson | quote }}
+  probe.py: |
+{{ .Files.Get "scripts/probe.py" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: status-page-probe, app.kubernetes.io/instance: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: status-page-probe, app.kubernetes.io/instance: {{ .Release.Name }}}
+      annotations:
+        checksum/config: {{ $config | toJson | sha256sum }}
+        checksum/script: {{ .Files.Get "scripts/probe.py" | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: probe
+          image: {{ .Values.image | quote }}
+          command: [python3, /config/probe.py]
+          env:
+            - {name: PROBE_LOCATION, value: {{ .Values.location | quote }}}
+          ports: [{name: metrics, containerPort: 9111}]
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 30
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 180
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: shm, mountPath: /dev/shm}
+      volumes:
+        - name: config
+          configMap: {name: {{ .Release.Name }}}
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels: {app.kubernetes.io/name: status-page-probe, app.kubernetes.io/instance: {{ .Release.Name }}}
+spec:
+  selector: {app.kubernetes.io/name: status-page-probe, app.kubernetes.io/instance: {{ .Release.Name }}}
+  ports: [{name: metrics, port: 9111, targetPort: metrics}]
+{{- if .Values.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}
+  {{- with .Values.serviceMonitor.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: status-page-probe, app.kubernetes.io/instance: {{ .Release.Name }}}
+  endpoints: [{port: metrics, interval: 30s, scrapeTimeout: 10s}]
+{{- end }}
+
+{{- end }}
