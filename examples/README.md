@@ -117,8 +117,8 @@ policy with its own defaults.
 ## Core release configuration
 
 The core service examples target **v0.3.0-beta.5c**, with contracts
-**deploy-dogeos-v0.3.0-rc.2** and CLI genesis generator
-**gen-configs-dogeos-v0.3.0-rc.2**. Upgrading **beta.5b to beta.5c** preserves
+**deploy-dogeos-v0.3.0-rc.3** and CLI genesis generator
+**gen-configs-dogeos-v0.3.0-rc.3**. Upgrading **beta.5b to beta.5c** preserves
 the existing databases and proof identities after removing the retired WP
 finality fields and updating image/build pins. Follow the
 [beta.5c configuration and upgrade checklist](core-beta5c-configuration.md).
