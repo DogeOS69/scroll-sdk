@@ -102,7 +102,7 @@ configMaps:
       # 2026-09-29 fee targets: strictly greater than the 30M block gas limit.
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "30000001"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_BLOCKS_PER_CHUNK: "512"
-      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_CHUNK_BYTES_SIZE: "122880"
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_CHUNK_BYTES_SIZE: "123011"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_PAYLOAD_BYTES_SIZE: "4194304"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_BYTES_SIZE: "131072"
       # Optional encoded/effective batch sealing target. When omitted, the
@@ -180,7 +180,7 @@ persistence:
     type: pvc
     mountPath: /app/data
     accessMode: ReadWriteOnce
-    size: 10Gi
+    size: 100Gi
     retain: true
   genesis:
     enabled: true
@@ -208,8 +208,8 @@ resources:
     memory: "256Mi"
     cpu: "200m"
   limits:
-    memory: "1Gi"
-    cpu: "1000m"
+    memory: "2Gi"
+    cpu: "2"
 
 serviceMonitor:
   main:
