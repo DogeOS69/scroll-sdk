@@ -7,6 +7,54 @@
 {{- end }}
 {{- end }}
 {{- $stack := index .Values "kube-prometheus-stack" }}
+{{- range $section := list "diskAlerts" "resourceAlerts" "businessPodAlerts" }}
+{{- $settings := index $.Values $section }}
+{{- if not (kindIs "bool" $settings.enabled) }}
+{{- fail (printf "%s.enabled must be a boolean" $section) }}
+{{- end }}
+{{- if $settings.enabled }}
+{{- range $key, $value := $settings }}
+{{- if hasSuffix "Percent" $key }}
+{{- if or (not (regexMatch "^([0-9]+)(\\.[0-9]+)?$" (toString $value))) (le (float64 $value) 0.0) (gt (float64 $value) 100.0) }}
+{{- fail (printf "%s.%s must be greater than 0 and at most 100" $section $key) }}
+{{- end }}
+{{- end }}
+{{- if hasSuffix "For" $key }}
+{{- if not (regexMatch "^[1-9][0-9]*[smh]$" (toString $value)) }}
+{{- fail (printf "%s.%s must be a positive duration (s, m or h)" $section $key) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.diskAlerts.enabled }}
+{{- $d := .Values.diskAlerts }}
+{{- if or (ge (float64 $d.usagePercent) (float64 $d.criticalUsagePercent)) (ge (float64 $d.inodeWarningPercent) (float64 $d.inodeCriticalPercent)) }}
+{{- fail "diskAlerts warning thresholds must be below critical thresholds" }}
+{{- end }}
+{{- if or (not (regexMatch "^[1-9][0-9]*$" (toString $d.predictionWarningHours))) (not (regexMatch "^[1-9][0-9]*$" (toString $d.predictionCriticalHours))) (le (int $d.predictionWarningHours) (int $d.predictionCriticalHours)) }}
+{{- fail "diskAlerts prediction hours must be positive integers with warning greater than critical" }}
+{{- end }}
+{{- end }}
+{{- if .Values.resourceAlerts.enabled }}
+{{- $r := .Values.resourceAlerts }}
+{{- if or (ge (float64 $r.nodeMemoryWarningPercent) (float64 $r.nodeMemoryCriticalPercent)) (ge (float64 $r.containerMemoryWarningPercent) (float64 $r.containerMemoryCriticalPercent)) }}
+{{- fail "resourceAlerts memory warning thresholds must be below critical thresholds" }}
+{{- end }}
+{{- end }}
+{{- if or .Values.businessPodAlerts.enabled .Values.resourceAlerts.enabled }}
+{{- if empty .Values.businessPodAlerts.podNameRegex }}
+{{- fail "businessPodAlerts.podNameRegex must select the business pods" }}
+{{- end }}
+{{- if or (not $stack.enabled) (not $stack.kubeStateMetrics.enabled) }}
+{{- fail "businessPodAlerts/resourceAlerts requires kube-prometheus-stack and kubeStateMetrics enabled" }}
+{{- end }}
+{{- end }}
+{{- if .Values.businessPodAlerts.enabled }}
+{{- if or (empty .Values.businessPodAlerts.workloadNameRegex) (not (regexMatch "^[1-9][0-9]*$" (toString .Values.businessPodAlerts.restartThreshold))) }}
+{{- fail "businessPodAlerts requires workloadNameRegex and a positive integer restartThreshold" }}
+{{- end }}
+{{- end }}
 {{- if .Values.eksControlPlane.enabled }}
 {{- if or (not $stack.enabled) (not $stack.prometheus.enabled) }}
 {{- fail "eksControlPlane requires the bundled Prometheus" }}

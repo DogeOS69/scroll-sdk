@@ -37,6 +37,17 @@
 {{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}
 {{- $groups = concat $groups $statusAlerts.groups -}}
 {{- end -}}
+{{- $selector := printf "namespace=%s, pod=~%s, pod!~%s" (.Release.Namespace | quote) (.Values.businessPodAlerts.podNameRegex | quote) (.Values.businessPodAlerts.excludePodNameRegex | quote) -}}
+{{- range $section, $file := dict "diskAlerts" "disks" "resourceAlerts" "resources" "businessPodAlerts" "business-pods" -}}
+{{- $settings := index $.Values $section -}}
+{{- if $settings.enabled -}}
+{{- $source := $.Files.Get (printf "alerts/%s.yaml" $file) | replace "__NAMESPACE__" ($.Release.Namespace | quote) | replace "__POD_SELECTOR__" $selector | replace "__DISK_EXCLUDE_MOUNT__" ($.Values.diskAlerts.excludeMountpointRegex | quote) | replace "__WORKLOAD_REGEX__" ($.Values.businessPodAlerts.workloadNameRegex | quote) -}}
+{{- range $key, $value := $settings -}}
+{{- $source = replace (printf "__%s.%s__" $section $key) (toString $value) $source -}}
+{{- end -}}
+{{- $groups = concat $groups ($source | fromYaml).groups -}}
+{{- end -}}
+{{- end -}}
 {{- if .Values.businessAlerts.enabled -}}
 {{- $business := .Files.Get "alerts/business.yaml" | replace "__JOB_MAX_AGE__" (toString .Values.businessAlerts.jobMaxAgeSeconds) | replace "__PROOF_STUCK_FOR__" .Values.businessAlerts.proofStuckFor | replace "__RECOVERY_FOR__" .Values.businessAlerts.recoveryFor | replace "__SIGNER_FAILURE_FOR__" .Values.businessAlerts.signerFailureFor | replace "__PUBLICATION_DEADLINE__" (toString .Values.businessAlerts.publicationDeadlineSeconds) | fromYaml -}}
 {{- $groups = concat $groups $business.groups -}}

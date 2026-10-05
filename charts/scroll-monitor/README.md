@@ -72,6 +72,133 @@ Changes to bundled defaults apply to new rules; existing rules remain UI-owned.
 Known shipped query defects can carry an exact-expression migration. These
 migrate only matching managed rules; customized queries remain untouched.
 
+### Workload and resource alert policy (enabled by default)
+
+The chart supplies 35 active workload/resource rules in three configuration sections,
+independently of the paused service diagnostic catalog. They use `alert_scope` for
+routing and `alert_category` for classification. These are starting thresholds for
+this deployment, not universal SLOs; tune them against workload baselines and the
+time needed to recover or expand capacity.
+
+| Category | Warning | Critical |
+| --- | --- | --- |
+| `pod-health` | Any observed restart/abnormal exit/failed non-Job pod; three restarts in 10m; crash-loop evidence with continuously unready pod for 5m; other unready pods for 10m | Controller availability rules below |
+| `availability` | Deployment, StatefulSet or DaemonSet has some ready replicas but fewer than desired for 10m | Desired replicas >0 and no available/ready replicas for 2m |
+| `job-health` | Job condition Failed=true, without an extra pending period | Classify business-critical job outcomes separately |
+| `disk-capacity` | Node filesystem/PVC usage >=80% for 5m; or predicted exhaustion in 4–24h for 30m | Usage >=95% for 5m; or predicted exhaustion in <4h for 5m |
+| `disk-inodes` | Inodes >=90% used for 5m | Inodes >=95% used for 5m |
+| `disk-health` | — | Persistent node filesystem read-only for 2m |
+| `memory` | Node unavailable memory >=90%, container working set/limit >=85%, for 10m | Either ratio >=95% for 5m |
+| `cpu` | Node or container CPU >=90%, or container throttled periods >=25%, for 15m | Use service availability, latency and backlog to identify urgent impact |
+| `node-pressure` | — | Kubernetes MemoryPressure or DiskPressure for 2m |
+
+Warning and critical bands for the same utilization/forecast metric are mutually
+exclusive. A transition starts the new severity's pending period. Capacity and
+forecast checks can both fire; notification grouping combines their symptoms.
+Pod failures and memory/CPU pressure can also be related; grouping does not infer
+root cause or inhibit alerts across different categories.
+
+#### Scope and prerequisites
+
+- `businessPodAlerts`: Pod health in the release namespace, including init containers.
+  `podNameRegex` and `excludePodNameRegex` select pods. Controller and final Job
+  checks independently use `workloadNameRegex` within the same namespace. Desired
+  replicas of zero are excluded. Jobs are excluded from individual pod-failure
+  rules; their terminal Failed condition is monitored instead of failed attempts.
+  Pod readiness checks exclude terminating pods. Disruptive controller rollouts
+  may still cause availability alerts; use an appropriate maintenance mute.
+- `diskAlerts`: Node filesystems throughout the collected cluster and PVCs only in
+  the release namespace. `excludeMountpointRegex` excludes intentionally read-only
+  or unmanaged node mounts; it does not filter PVCs. Memory/pseudo filesystems and
+  zero capacities are excluded. Read-only filesystems use their own fault rule.
+- `resourceAlerts`: Node memory, CPU and pressure throughout the collected cluster;
+  business containers in the release namespace use the pod selectors above.
+  Container resource ratios cover regular application/sidecar containers with
+  positive limits; absent/zero limits are excluded. Init-container failure remains
+  covered by pod-health rules, but init-container limit ratios are not included.
+
+Node metrics require node-exporter, container utilization requires kubelet cAdvisor,
+and workload/limit/pressure metrics require kube-state-metrics. The bundled stack
+collects these by default. These rules do not depend on kube-prometheus recording
+rules, so Grafana and Prometheus fallback use the same expressions.
+
+Node memory uses `1 - MemAvailable / MemTotal`, allowing for reclaimable cache.
+Container memory uses working set divided by **that container's limit**, not its
+request and not the node's total memory. This is a headroom heuristic, not an exact
+OOM predictor; recent OOM exits are additionally covered by pod-health rules.
+Container CPU uses a five-minute CPU rate divided by its CPU limit. CPU throttling
+is the fraction of scheduling periods with throttling, not percent CPU time lost.
+High CPU alone is warning-level, since batch/proof/sync work can legitimately
+saturate CPU. Scrape replicas are deduplicated before container/limit joins.
+
+Node disk usage is `100 * (size - available) / size`, including reserved space
+unavailable to applications. PVC usage is `100 * used / capacity`. Compute each
+kubelet ratio before taking the maximum per PVC to avoid double-counting mounts.
+Forecasts use current available bytes divided by the negative six-hour slope;
+they require declining free space, <40% available, a sample six hours ago, at
+least 60 samples in the window, and unchanged capacity throughout that window.
+Expansion suppresses forecasts until a stable history returns. Static capacity
+alerts clear as soon as the reported ratio falls below the threshold.
+
+PVC capacity/inode/forecast coverage requires mounted filesystem volumes and a
+storage driver exposing the respective kubelet volume statistics. Raw block
+volumes, unmounted disks and unsupported metrics need storage-specific collectors.
+Missing metrics do not mean healthy storage and do not fire capacity rules; retain
+collector/target-health monitoring. External dstack GPU hosts retain their own
+optional host rules and configured thresholds.
+
+Single observed restarts/abnormal exits remain warning notifications even after
+recovery, with a ten-minute observation window. Successful process exits followed
+by a restart count as restarts. Crash-loop alerts also require current unready
+status for the pending period, so a recovered pod does not trigger a delayed
+crash-loop alert just because a historical event remains in the lookback window.
+These are incident alerts, not a durable event stream: scrapes may miss very short
+lived pods and multiple failures may be grouped into one incident.
+
+#### Grafana Slack routing
+
+Both production profiles set `businessPodAlerts.contactPoint`,
+`diskAlerts.contactPoint` and `resourceAlerts.contactPoint` to `slack-alerts`.
+Create that existing Slack contact in Grafana first, or configure the name of
+your existing contact. The seed Job validates every referenced Slack contact
+before writing rules; webhook credentials are not stored in values.
+
+The seed Job adds three narrowly scoped notification-policy branches, matching
+`managed_by=scroll-monitor` and a folder/scope-specific `scroll_monitor_route`
+label attached only to these new rules. It reads and preserves the existing root
+and all unrelated branches; previously created branches and UI edits are preserved
+on later upgrades. The seeder account needs notification-policy read/write access.
+Grafana 11 per-rule notification settings require grouping by alert name, so these
+rules use policy routing to group by category, severity and resource identity. For example, restart and abnormal-exit symptoms for the same pod
+UID share a group. Different PVCs, workloads and container resources remain
+separate. Warnings wait 30s to collect related symptoms; critical groups add no
+initial grouping delay. Group updates are spaced 5m apart and ongoing incidents
+repeat every 4h. Severity is part of the group key so a critical incident does not
+wait behind a warning's group interval. The shared Slack template displays all
+included alert summaries and their resource labels.
+
+Actual detection also waits for scraping and rule evaluation (normally 1m), plus
+the pending period above. Existing Grafana routing, labels and pause state remain
+UI-owned on upgrades; existing rules need their category/severity/routing updated
+in the UI if created with a previous policy. Rules with an older direct contact
+need to switch to policy routing and carry the matching `scroll_monitor_route`
+label to use the new grouped policy. Untouched chart-managed expressions
+and pending periods reconcile using the seeder's stored baseline. An empty contact
+point (chart defaults) inherits Grafana policies. These scoped routes are independent
+of the infrastructure Alertmanager's default null receiver. With Grafana alerting
+disabled, configure Prometheus/Alertmanager notification receivers separately.
+If both systems notify overlapping infrastructure alerts, choose one notification
+owner or configure appropriate suppression to avoid duplicate incidents.
+
+Offline tests verify expression behavior and routing configuration, not live Slack
+delivery. Validate delivery in the deployed Grafana; mutes and contact failures
+still apply. No automatic escalation from warning to a paging system is implied
+by a severity label alone.
+
+References: [node-exporter defaults](https://github.com/prometheus/node_exporter/blob/master/docs/node-mixin/config.libsonnet),
+[Kubernetes resource limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/),
+[Job metrics](https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/job-metrics.md).
+
 ### Extended service diagnostics (paused by default)
 
 `serviceAlerts.enabled: true` imports 107 additional rules for

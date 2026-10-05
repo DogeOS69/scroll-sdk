@@ -22,12 +22,20 @@ class MemoryGrafana:
     TEMPLATES = "/api/v1/provisioning/templates/"
 
     def __init__(self):
+        self.policies = {"receiver": "default", "routes": []}
         self.folder = None
         self.group = None
         self.templates = {}
         self.writes = []
 
     def request(self, method, path, body=None, allow_missing=False):
+        if path == "/api/v1/provisioning/policies":
+            if method == "GET":
+                return copy.deepcopy(self.policies)
+            assert method == "PUT"
+            self.writes.append((method, path, copy.deepcopy(body)))
+            self.policies = copy.deepcopy(body)
+            return None
         if method == "GET":
             if path.startswith(self.TEMPLATES):
                 name = path.removeprefix(self.TEMPLATES)

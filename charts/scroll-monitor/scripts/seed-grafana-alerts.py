@@ -140,6 +140,65 @@ class Grafana:
         raise RuntimeError(f"Grafana {method} {path} unavailable after retries")
 
 
+def notification_route_id(config, scope):
+    identity = f'{config["folderUID"]}/{scope}'
+    return "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:24]
+
+
+def notification_routes(config):
+    routes = {}
+    for scope, key, identity in (
+        ("business-pods", "businessPodContactPoint", ["namespace", "pod", "uid", "deployment", "statefulset", "daemonset", "job_name"]),
+        ("disks", "diskContactPoint", ["cluster", "namespace", "persistentvolumeclaim", "instance", "device", "mountpoint"]),
+        ("resources", "resourceContactPoint", ["cluster", "node", "instance", "namespace", "pod", "container"]),
+    ):
+        if not config.get(key):
+            continue
+        routes[scope] = {
+            "receiver": config[key],
+            "object_matchers": [["managed_by", "=", "scroll-monitor"],
+                                ["scroll_monitor_route", "=", notification_route_id(config, scope)]],
+            "group_by": ["grafana_folder", "alert_category", "severity", *identity],
+            "group_wait": "30s", "group_interval": "5m", "repeat_interval": "4h",
+            "continue": False,
+            "routes": [{"receiver": config[key], "object_matchers": [["severity", "=", "critical"]],
+                        "group_wait": "0s", "continue": False}],
+        }
+    return routes
+
+
+def seed_notification_policies(client, config, dry_run=False):
+    """Add scoped policy branches once; preserve all existing and UI-edited routes."""
+    desired = notification_routes(config)
+    if not desired:
+        return
+    path = "/api/v1/provisioning/policies"
+    current = client.request("GET", path)
+    if not isinstance(current, dict) or not current.get("receiver"):
+        raise RuntimeError("Cannot read existing Grafana notification policy tree; refusing to replace it")
+    updated = copy.deepcopy(current)
+    existing = updated.get("routes", [])
+    def contains_route(route, marker):
+        if marker in route.get("object_matchers", []):
+            return True
+        return any(contains_route(child, marker) for child in route.get("routes", []))
+    added = []
+    for scope, route in desired.items():
+        marker = ["scroll_monitor_route", "=", notification_route_id(config, scope)]
+        if contains_route(updated, marker):
+            continue  # Policy changes after first creation remain UI-owned.
+        added.append(route)
+    if not added:
+        return
+    # Match only our route identity before broader policies; preserve their order.
+    updated["routes"] = added + existing
+    if dry_run:
+        print(f"PLAN notification policies: add {len(added)} scoped branches", flush=True)
+        return
+    client.request("PUT", path, updated)
+    print(f"Seeded notification policies: {len(added)} scoped branches", flush=True)
+
+
 def alert_rule(source, config, group):
     identity = f'{config["folderUID"]}/{group}/{source["alert"]}'
     uid = "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
@@ -209,6 +268,11 @@ def alert_rule(source, config, group):
             },
         ],
     }
+    scope = source.get("labels", {}).get("alert_scope")
+    if scope in notification_routes(config):
+        # Grafana 11 per-rule routing requires alertname in group_by. Use a
+        # narrowly matched policy branch so related rules can share a group.
+        rule["labels"]["scroll_monitor_route"] = notification_route_id(config, scope)
     rule["annotations"][BASELINE] = json.dumps(
         {key: fingerprint(value) for key, value in managed_fields(rule).items()}, sort_keys=True)
     return rule
@@ -281,6 +345,18 @@ def seed_template(client, spec, dry_run=False):
 
 
 def seed(client, config, dry_run=False):
+    contact_points = {config[key] for key in ("businessPodContactPoint", "diskContactPoint", "resourceContactPoint") if config.get(key)}
+    if contact_points:
+        receivers = client.request("GET", "/api/v1/provisioning/contact-points")
+        for contact_point in sorted(contact_points):
+            if not any(r.get("name") == contact_point and r.get("type") == "slack"
+                       for r in (receivers or [])):
+                raise RuntimeError(
+                    f"Pod/disk/resource alerts require an existing Grafana Slack contact point named {contact_point!r}. "
+                    "Create it in Grafana or set businessPodAlerts.contactPoint/diskAlerts.contactPoint/resourceAlerts.contactPoint "
+                    "to the existing Slack contact name."
+                )
+    seed_notification_policies(client, config, dry_run=dry_run)
     folder = quote(config["folderUID"], safe="")
     if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None and not dry_run:
         client.request("POST", "/api/folders", {

@@ -1,7 +1,7 @@
 {{ define "scroll-monitor.slack.title" -}}
 [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
 {{- with .CommonLabels.severity }} {{ . | toUpper }}{{ end }}__ENVIRONMENT__ ·
-{{- if .CommonLabels.alertname }} {{ .CommonLabels.alertname }}{{ else }} {{ len .Alerts }} alerts{{ end }}
+{{- if .CommonLabels.alert_category }} {{ .CommonLabels.alert_category }}{{ else if .CommonLabels.alertname }} {{ .CommonLabels.alertname }}{{ else }} {{ len .Alerts }} alerts{{ end }}
 {{- if .CommonLabels.service }} · {{ .CommonLabels.service }}{{ else if .CommonLabels.job }} · {{ .CommonLabels.job }}{{ end }}
 {{- end }}
 
@@ -24,7 +24,7 @@
 *{{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}*
 {{ with .Annotations.description }}{{ . }}
 {{ end -}}
-`{{ .Labels.alertname }}{{ range (.Labels.Remove (stringSlice "alertname" "severity" "managed_by" "grafana_folder")).SortedPairs }} {{ .Name }}={{ .Value }}{{ end }}`
+`{{ .Labels.alertname }}{{ range (.Labels.Remove (stringSlice "alertname" "severity" "managed_by" "grafana_folder" "scroll_monitor_route")).SortedPairs }} {{ .Name }}={{ .Value }}{{ end }}`
 {{ if eq .Status "firing" }}Since {{ .StartsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ else }}Resolved {{ .EndsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ end }}
 {{- with .GeneratorURL }} · <{{ . }}|Rule>{{ end }}
 {{- if eq .Status "firing" }}{{ with .SilenceURL }} · <{{ . }}|Silence>{{ end }}{{ end }}

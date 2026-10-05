@@ -66,6 +66,7 @@ class SlackTemplateTests(unittest.TestCase):
             self.assertIn(f'{{{{ define "{name}" -}}}}', template["template"])
         self.assertIn(" · testnet ·", template["template"])
         self.assertNotIn("__ENVIRONMENT__", template["template"])
+        self.assertIn(".CommonLabels.alert_category", template["template"])
 
     def test_template_can_be_disabled(self):
         config = self.seed_config("--set", "grafanaAlerting.notificationTemplate.enabled=false")

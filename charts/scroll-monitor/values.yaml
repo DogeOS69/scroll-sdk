@@ -310,9 +310,57 @@ additionalServiceMonitors:
         interval: 30s
         scrapeTimeout: 10s
 
-# Extended per-service diagnostics are created in Grafana but start paused.
-# Existing Grafana rules retain their UI pause state on every upgrade.
-# Prometheus fallback omits these rules while paused=true.
+diskAlerts:
+  # Node filesystems cluster-wide; PVCs only in the release namespace.
+  enabled: true
+  # Exclude intentionally read-only or otherwise unmanaged mount paths.
+  excludeMountpointRegex: ""
+  usagePercent: 80
+  criticalUsagePercent: 95
+  warningFor: 5m
+  criticalFor: 5m
+  inodeWarningPercent: 90
+  inodeCriticalPercent: 95
+  # Forecasts require six hours of history, <40% free space and no capacity change.
+  predictionWarningHours: 24
+  predictionCriticalHours: 4
+  predictionWarningFor: 30m
+  predictionCriticalFor: 5m
+  contactPoint: ""
+
+resourceAlerts:
+  # Node metrics cluster-wide; containers use businessPodAlerts pod selectors.
+  enabled: true
+  nodeMemoryWarningPercent: 90
+  nodeMemoryCriticalPercent: 95
+  containerMemoryWarningPercent: 85
+  containerMemoryCriticalPercent: 95
+  memoryWarningFor: 10m
+  memoryCriticalFor: 5m
+  cpuWarningPercent: 90
+  cpuThrottlingPercent: 25
+  cpuFor: 15m
+  pressureFor: 2m
+  contactPoint: ""
+
+businessPodAlerts:
+  enabled: true
+  # Pod/container health and resource rules select pods in the release namespace.
+  podNameRegex: ".*"
+  excludePodNameRegex: ""
+  # Controller and final Job alerts select workload names independently.
+  workloadNameRegex: ".*"
+  restartThreshold: 3
+  crashLoopFor: 5m
+  notReadyFor: 10m
+  unavailableFor: 2m
+  degradedFor: 10m
+  # Single restarts remain warning notifications; Job attempts are excluded.
+  # Existing Grafana Slack contact name; empty inherits notification policies.
+  # New rules group by category/resource/severity; UI routing is preserved.
+  contactPoint: ""
+
+# Extended service diagnostics remain paused until individually reviewed.
 serviceAlerts:
   enabled: true
   paused: true

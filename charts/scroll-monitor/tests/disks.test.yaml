@@ -1,0 +1,295 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: node fires exactly at 80 percent after five minutes
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 20x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: node below 80 remains healthy
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 20.1x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node above 80 fires
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 10x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: node cleanup resolves alert
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 10x5 30x5
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node read only volume excluded
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 1x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node pseudo filesystems excluded
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
+    values: '0x10'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
+    values: '0x10'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node zero capacity excluded
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node capacity without available is not full
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: separate node filesystems remain separate alerts
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 10x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 20x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 2
+- name: PVC fires exactly at 80 percent after five minutes
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 80x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: PVC below 80 remains healthy
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 79.9x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC zero capacity excluded
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 90x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC expansion resolves alert
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 80x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x5 200x5
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC multiple kubelets yield one alert at highest ratio
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 85x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-b:10250"}
+    values: 170x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-b:10250"}
+    values: 200x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: PVC ratio calculated before aggregation
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 70x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-b:10250"}
+    values: 140x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-b:10250"}
+    values: 200x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC another namespace excluded
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="other",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 99x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="other",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: separate PVCs remain separate alerts
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 80x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a:10250"}
+    values: 100x10
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="logs",instance="node-a:10250"}
+    values: 90x10
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="logs",instance="node-a:10250"}
+    values: 100x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 2
+- name: missing volume stats are not full
+  interval: 1m
+  input_series: []
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0

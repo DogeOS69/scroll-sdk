@@ -1,0 +1,239 @@
+groups:
+- name: dogeos.disks
+  interval: 1m
+  rules:
+  - alert: NodeDiskUsageHigh
+    expr: |
+      ((max by (cluster, node, instance, device, mountpoint) (
+        (
+          100 * (
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            - node_filesystem_avail_bytes{job="node-exporter"}
+          ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+        )
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) >= __diskAlerts.usagePercent__) < __diskAlerts.criticalUsagePercent__
+    for: __diskAlerts.warningFor__
+    labels:
+      severity: warning
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk capacity needs attention.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+        {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+        Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
+        Plan cleanup or expansion before writes fail.
+  - alert: NodeDiskUsageHighCritical
+    expr: |
+      (max by (cluster, node, instance, device, mountpoint) (
+        (
+          100 * (
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            - node_filesystem_avail_bytes{job="node-exporter"}
+          ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+        )
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) >= __diskAlerts.criticalUsagePercent__
+    for: __diskAlerts.criticalFor__
+    labels:
+      severity: critical
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk capacity is critically low.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+        {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+        Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
+        Plan cleanup or expansion before writes fail.
+  - alert: PVCUsageHigh
+    expr: |
+      ((max by (cluster, namespace, persistentvolumeclaim) (
+        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}
+        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0)
+      )) >= __diskAlerts.usagePercent__) < __diskAlerts.criticalUsagePercent__
+    for: __diskAlerts.warningFor__
+    labels:
+      severity: warning
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: PVC disk capacity needs attention.
+      description: PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is {{ $value | printf "%.1f"
+        }}% used according to kubelet volume statistics. Clean up application data or expand the volume and filesystem.
+        Multiple kubelet reports are combined into one alert per claim using the highest reported usage ratio. Plan
+        cleanup or expansion before writes fail.
+  - alert: PVCUsageHighCritical
+    expr: |
+      (max by (cluster, namespace, persistentvolumeclaim) (
+        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}
+        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0)
+      )) >= __diskAlerts.criticalUsagePercent__
+    for: __diskAlerts.criticalFor__
+    labels:
+      severity: critical
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: PVC disk capacity is critically low.
+      description: PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is {{ $value | printf "%.1f"
+        }}% used according to kubelet volume statistics. Clean up application data or expand the volume and filesystem.
+        Multiple kubelet reports are combined into one alert per claim using the highest reported usage ratio. Plan
+        cleanup or expansion before writes fail.
+  - alert: NodeDiskFillingUp
+    expr: |
+      ((min by (cluster, node, instance, device, mountpoint) (
+        (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / -deriv(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]))
+        and (deriv(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) < 0)
+        and (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / (node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} > 0) < 0.4)
+        and (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} offset 6h)
+        and (count_over_time(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) >= 60)
+        and (changes(node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) == 0)
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) < __diskAlerts.predictionWarningHours__ * 3600) >= __diskAlerts.predictionCriticalHours__ * 3600
+    for: __diskAlerts.predictionWarningFor__
+    labels:
+      severity: warning
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk is predicted to run out of space.
+      description: Available space is below 40%; the six-hour consumption trend predicts exhaustion in {{ $value
+        | humanizeDuration }}. Check growth and expand or clean up. Forecasts are suppressed during capacity changes
+        and require six hours of history.
+  - alert: NodeDiskFillingUpCritical
+    expr: |
+      (min by (cluster, node, instance, device, mountpoint) (
+        (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / -deriv(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]))
+        and (deriv(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) < 0)
+        and (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / (node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} > 0) < 0.4)
+        and (node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} offset 6h)
+        and (count_over_time(node_filesystem_avail_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) >= 60)
+        and (changes(node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}[6h]) == 0)
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) < __diskAlerts.predictionCriticalHours__ * 3600
+    for: __diskAlerts.predictionCriticalFor__
+    labels:
+      severity: critical
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk is predicted to run out of space (critical).
+      description: Available space is below 40%; the six-hour consumption trend predicts exhaustion in {{ $value
+        | humanizeDuration }}. Check growth and expand or clean up. Forecasts are suppressed during capacity changes
+        and require six hours of history.
+  - alert: NodeDiskInodesHigh
+    expr: |
+      ((max by (cluster, node, instance, device, mountpoint) ((100 * (1 - node_filesystem_files_free{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / (node_filesystem_files{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} > 0))) and (node_filesystem_readonly{job="node-exporter"} == 0))) >= __diskAlerts.inodeWarningPercent__) < __diskAlerts.inodeCriticalPercent__
+    for: __diskAlerts.warningFor__
+    labels:
+      severity: warning
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-inodes
+    annotations:
+      summary: Node filesystem inodes are running low.
+      description: Inodes are {{ $value | printf "%.1f" }}% used. Check small-file accumulation; free bytes alone
+        do not prevent inode exhaustion.
+  - alert: NodeDiskInodesHighCritical
+    expr: |
+      (max by (cluster, node, instance, device, mountpoint) ((100 * (1 - node_filesystem_files_free{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} / (node_filesystem_files{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} > 0))) and (node_filesystem_readonly{job="node-exporter"} == 0))) >= __diskAlerts.inodeCriticalPercent__
+    for: __diskAlerts.criticalFor__
+    labels:
+      severity: critical
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-inodes
+    annotations:
+      summary: Node filesystem inodes are running low (critical).
+      description: Inodes are {{ $value | printf "%.1f" }}% used. Check small-file accumulation; free bytes alone
+        do not prevent inode exhaustion.
+  - alert: PVCFillingUp
+    expr: |
+      ((min by (cluster, namespace, persistentvolumeclaim) (
+        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]))
+        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) < 0)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0) < 0.4)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} offset 6h)
+        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) >= 60)
+        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) == 0)
+
+      )) < __diskAlerts.predictionWarningHours__ * 3600) >= __diskAlerts.predictionCriticalHours__ * 3600
+    for: __diskAlerts.predictionWarningFor__
+    labels:
+      severity: warning
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: PVC disk is predicted to run out of space.
+      description: Available space is below 40%; the six-hour consumption trend predicts exhaustion in {{ $value
+        | humanizeDuration }}. Check growth and expand or clean up. Forecasts are suppressed during capacity changes
+        and require six hours of history.
+  - alert: PVCFillingUpCritical
+    expr: |
+      (min by (cluster, namespace, persistentvolumeclaim) (
+        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]))
+        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) < 0)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0) < 0.4)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} offset 6h)
+        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) >= 60)
+        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) == 0)
+
+      )) < __diskAlerts.predictionCriticalHours__ * 3600
+    for: __diskAlerts.predictionCriticalFor__
+    labels:
+      severity: critical
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: PVC disk is predicted to run out of space (critical).
+      description: Available space is below 40%; the six-hour consumption trend predicts exhaustion in {{ $value
+        | humanizeDuration }}. Check growth and expand or clean up. Forecasts are suppressed during capacity changes
+        and require six hours of history.
+  - alert: PVCInodesHigh
+    expr: |
+      ((max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0))) )) >= __diskAlerts.inodeWarningPercent__) < __diskAlerts.inodeCriticalPercent__
+    for: __diskAlerts.warningFor__
+    labels:
+      severity: warning
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-inodes
+    annotations:
+      summary: PVC filesystem inodes are running low.
+      description: Inodes are {{ $value | printf "%.1f" }}% used. Check small-file accumulation; free bytes alone
+        do not prevent inode exhaustion.
+  - alert: PVCInodesHighCritical
+    expr: |
+      (max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0))) )) >= __diskAlerts.inodeCriticalPercent__
+    for: __diskAlerts.criticalFor__
+    labels:
+      severity: critical
+      service: persistent-storage
+      alert_scope: disks
+      alert_category: disk-inodes
+    annotations:
+      summary: PVC filesystem inodes are running low (critical).
+      description: Inodes are {{ $value | printf "%.1f" }}% used. Check small-file accumulation; free bytes alone
+        do not prevent inode exhaustion.
+  - alert: NodeFilesystemReadOnly
+    expr: |
+      max by (cluster, node, instance, device, mountpoint) ((node_filesystem_readonly{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"} == 1))
+    for: 2m
+    labels:
+      severity: critical
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-health
+    annotations:
+      summary: Node filesystem is read-only.
+      description: A persistent filesystem is read-only. Inspect kernel and storage errors. Exclude deliberately
+        read-only mounts using diskAlerts.excludeMountpointRegex.

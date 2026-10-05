@@ -8,6 +8,15 @@
 {{- $groups = concat $groups $logGroups }}
 {{- end }}
 {{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups "pauseRules" (include "scroll-monitor.pauseRules" . | fromYaml) }}
+{{- if and .Values.businessPodAlerts.enabled .Values.businessPodAlerts.contactPoint }}
+{{- $_ := set $config "businessPodContactPoint" .Values.businessPodAlerts.contactPoint }}
+{{- end }}
+{{- if and .Values.diskAlerts.enabled .Values.diskAlerts.contactPoint }}
+{{- $_ := set $config "diskContactPoint" .Values.diskAlerts.contactPoint }}
+{{- end }}
+{{- if and .Values.resourceAlerts.enabled .Values.resourceAlerts.contactPoint }}
+{{- $_ := set $config "resourceContactPoint" .Values.resourceAlerts.contactPoint }}
+{{- end }}
 {{- with .Values.grafanaAlerting.notificationTemplate }}
 {{- if .enabled }}
 {{- $environment := .environment | default $.Values.statusPage.environment }}

@@ -1,0 +1,271 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: one restart alerts immediately and expires after recovery
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 0x4 1x20
+  - &id001
+    series: kube_pod_created{namespace="monitoring",pod="worker-0",uid="pod-1"}
+    values: -3600x25
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: old historical restarts do not alert
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 3x20
+  - *id001
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: new pod first scraped after restart is detected
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 1x20
+  - series: kube_pod_created{namespace="monitoring",pod="worker-0",uid="pod-1"}
+    values: '0x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 11m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: init container restart is detected
+  interval: 1m
+  input_series:
+  - series: kube_pod_init_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="init"}
+    values: 0 1x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: normal replacement pod starts at zero
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="old",container="app"}
+    values: 5x3 stale
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="new",container="app"}
+    values: _ _ _ _ 0x20
+  - series: kube_pod_created{namespace="monitoring",pod="worker-0",uid="old"}
+    values: -3600x3 stale
+  - series: kube_pod_created{namespace="monitoring",pod="worker-0",uid="new"}
+    values: _ _ _ _ 240x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: counter reset alone is not a new restart
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 3x4 0x20
+  - *id001
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: another namespace does not alert
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="other",pod="worker-0",uid="pod-1",container="app"}
+    values: 0 1x20
+  - series: kube_pod_status_phase{namespace="other",pod="worker-0",uid="pod-1",phase="Failed"}
+    values: 1x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: multiple failed pods are separate alert instances
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 0 1x20
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-1",uid="pod-2",container="app"}
+    values: 0 1x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 2
+- name: observed crash survives pod deletion long enough to notify
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 0 1 stale
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 3m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: recent OOM is detected even after recovery
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_last_terminated_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="app",reason="OOMKilled"}
+    values: 1x20
+  - series: kube_pod_container_status_last_terminated_timestamp{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: 60x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 12m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: historical OOM is not a fresh failure
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_last_terminated_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="app",reason="OOMKilled"}
+    values: 1x20
+  - series: kube_pod_container_status_last_terminated_timestamp{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: -3600x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: init error without restart is detected
+  interval: 1m
+  input_series:
+  - series: kube_pod_init_container_status_terminated_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="init",reason="Error"}
+    values: 1 0x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 11m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: normal Job and init completion do not alert
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_phase{namespace="monitoring",pod="worker-0",uid="pod-1",phase="Succeeded"}
+    values: 1x20
+  - series: kube_pod_container_status_terminated_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="app",reason="Completed"}
+    values: 1x20
+  - series: kube_pod_init_container_status_terminated_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="init",reason="Completed"}
+    values: 1x20
+  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="pod-1",container="app"}
+    values: '0x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: CrashLoopBackOff alerts without waiting fifteen minutes
+  interval: 1m
+  input_series:
+  - series: kube_pod_container_status_waiting_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="app",reason="CrashLoopBackOff"}
+    values: 1x20
+  - series: kube_pod_init_container_status_waiting_reason{namespace="monitoring",pod="worker-0",uid="pod-1",container="init",reason="CrashLoopBackOff"}
+    values: 1x20
+  - series: kube_pod_status_ready{namespace="monitoring",pod="worker-0",uid="pod-1",condition="true"}
+    values: '0x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodCrashLooping",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 2
+- name: failed Job attempt is excluded until Job reaches terminal failure
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_phase{namespace="monitoring",pod="worker-0",uid="pod-1",phase="Failed"}
+    values: 1x20
+  - series: kube_pod_owner{namespace="monitoring",pod="worker-0",uid="pod-1",owner_kind="Job",owner_is_controller="true"}
+    values: 1x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodFailed",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: missing telemetry is not interpreted as a crash
+  interval: 1m
+  input_series: []
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodContainerRestarted",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodContainerFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodCrashLooping",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="BusinessPodFailed",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0

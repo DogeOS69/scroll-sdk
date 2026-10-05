@@ -1,0 +1,125 @@
+groups:
+- name: dogeos.resources
+  interval: 1m
+  rules:
+  - alert: NodeMemoryUsageHigh
+    expr: |
+      ((max by (cluster, instance) (100 * (1 - node_memory_MemAvailable_bytes{job="node-exporter"} / (node_memory_MemTotal_bytes{job="node-exporter"} > 0)))) >= __resourceAlerts.nodeMemoryWarningPercent__) < __resourceAlerts.nodeMemoryCriticalPercent__
+    for: __resourceAlerts.memoryWarningFor__
+    labels:
+      severity: warning
+      service: node-resources
+      alert_scope: resources
+      alert_category: memory
+    annotations:
+      summary: Node memory headroom is low.
+      description: Usage is {{ $value | printf "%.1f" }}%. Node usage is based on MemAvailable; container usage
+        is working set divided by its own memory limit. Inspect growth, OOM events and limits; working set is not
+        an exact OOM predictor.
+  - alert: NodeMemoryUsageHighCritical
+    expr: |
+      (max by (cluster, instance) (100 * (1 - node_memory_MemAvailable_bytes{job="node-exporter"} / (node_memory_MemTotal_bytes{job="node-exporter"} > 0)))) >= __resourceAlerts.nodeMemoryCriticalPercent__
+    for: __resourceAlerts.memoryCriticalFor__
+    labels:
+      severity: critical
+      service: node-resources
+      alert_scope: resources
+      alert_category: memory
+    annotations:
+      summary: Node memory headroom is low (critical).
+      description: Usage is {{ $value | printf "%.1f" }}%. Node usage is based on MemAvailable; container usage
+        is working set divided by its own memory limit. Inspect growth, OOM events and limits; working set is not
+        an exact OOM predictor.
+  - alert: ContainerMemoryUsageHigh
+    expr: |
+      ((100 * max by (cluster, namespace, pod, container) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}) / on (cluster, namespace, pod, container) (max by (cluster, namespace, pod, container) (kube_pod_container_resource_limits{__POD_SELECTOR__, resource="memory", unit="byte"}) > 0)) >= __resourceAlerts.containerMemoryWarningPercent__) < __resourceAlerts.containerMemoryCriticalPercent__
+    for: __resourceAlerts.memoryWarningFor__
+    labels:
+      severity: warning
+      service: container-resources
+      alert_scope: resources
+      alert_category: memory
+    annotations:
+      summary: Container memory headroom is low.
+      description: Usage is {{ $value | printf "%.1f" }}%. Node usage is based on MemAvailable; container usage
+        is working set divided by its own memory limit. Inspect growth, OOM events and limits; working set is not
+        an exact OOM predictor.
+  - alert: ContainerMemoryUsageHighCritical
+    expr: |
+      (100 * max by (cluster, namespace, pod, container) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}) / on (cluster, namespace, pod, container) (max by (cluster, namespace, pod, container) (kube_pod_container_resource_limits{__POD_SELECTOR__, resource="memory", unit="byte"}) > 0)) >= __resourceAlerts.containerMemoryCriticalPercent__
+    for: __resourceAlerts.memoryCriticalFor__
+    labels:
+      severity: critical
+      service: container-resources
+      alert_scope: resources
+      alert_category: memory
+    annotations:
+      summary: Container memory headroom is low (critical).
+      description: Usage is {{ $value | printf "%.1f" }}%. Node usage is based on MemAvailable; container usage
+        is working set divided by its own memory limit. Inspect growth, OOM events and limits; working set is not
+        an exact OOM predictor.
+  - alert: NodeCPUUsageHigh
+    expr: |
+      (100 * (1 - avg by (cluster, instance) (rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[5m])))) >= __resourceAlerts.cpuWarningPercent__
+    for: __resourceAlerts.cpuFor__
+    labels:
+      severity: warning
+      service: node-resources
+      alert_scope: resources
+      alert_category: cpu
+    annotations:
+      summary: Node CPU usage remains high.
+      description: CPU usage is {{ $value | printf "%.1f" }}%. Inspect latency, backlog and capacity. High utilization
+        alone does not prove an outage; batch work may legitimately saturate CPU.
+  - alert: ContainerCPUUsageHigh
+    expr: |
+      (100 * max by (cluster, namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) / on (cluster, namespace, pod, container) (max by (cluster, namespace, pod, container) (kube_pod_container_resource_limits{__POD_SELECTOR__, resource="cpu", unit="core"}) > 0)) >= __resourceAlerts.cpuWarningPercent__
+    for: __resourceAlerts.cpuFor__
+    labels:
+      severity: warning
+      service: container-resources
+      alert_scope: resources
+      alert_category: cpu
+    annotations:
+      summary: Container CPU usage remains high.
+      description: CPU usage is {{ $value | printf "%.1f" }}%. Inspect latency, backlog and capacity. High utilization
+        alone does not prove an outage; batch work may legitimately saturate CPU.
+  - alert: ContainerCPUThrottlingHigh
+    expr: |
+      100 * max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) / (max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) > 0) >= __resourceAlerts.cpuThrottlingPercent__
+    for: __resourceAlerts.cpuFor__
+    labels:
+      severity: warning
+      service: container-resources
+      alert_scope: resources
+      alert_category: cpu
+    annotations:
+      summary: Container CPU is repeatedly throttled.
+      description: '{{ $value | printf "%.1f" }}% of scheduling periods experienced throttling; this is not percent
+        CPU time lost. Check the CPU limit and correlate with latency or processing backlog.'
+  - alert: NodeMemoryPressure
+    expr: |
+      max by (cluster, node) (kube_node_status_condition{condition="MemoryPressure", status="true"}) == 1
+    for: __resourceAlerts.pressureFor__
+    labels:
+      severity: critical
+      service: node-resources
+      alert_scope: resources
+      alert_category: node-pressure
+    annotations:
+      summary: Kubernetes node reports memory pressure.
+      description: Kubelet reports resource pressure and may evict pods. Inspect node conditions, events and affected
+        workloads immediately.
+  - alert: NodeDiskPressure
+    expr: |
+      max by (cluster, node) (kube_node_status_condition{condition="DiskPressure", status="true"}) == 1
+    for: __resourceAlerts.pressureFor__
+    labels:
+      severity: critical
+      service: node-resources
+      alert_scope: resources
+      alert_category: node-pressure
+    annotations:
+      summary: Kubernetes node reports disk pressure.
+      description: Kubelet reports resource pressure and may evict pods. Inspect node conditions, events and affected
+        workloads immediately.
