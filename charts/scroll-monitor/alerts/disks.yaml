@@ -51,8 +51,8 @@ groups:
   - alert: PVCUsageHigh
     expr: |
       ((max by (cluster, namespace, persistentvolumeclaim) (
-        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}
-        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0)
+        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics"}
+        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"} > 0)
       )) >= __diskAlerts.usagePercent__) < __diskAlerts.criticalUsagePercent__
     for: __diskAlerts.warningFor__
     labels:
@@ -69,8 +69,8 @@ groups:
   - alert: PVCUsageHighCritical
     expr: |
       (max by (cluster, namespace, persistentvolumeclaim) (
-        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}
-        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0)
+        100 * kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics"}
+        / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"} > 0)
       )) >= __diskAlerts.criticalUsagePercent__
     for: __diskAlerts.criticalFor__
     labels:
@@ -157,12 +157,12 @@ groups:
   - alert: PVCFillingUp
     expr: |
       ((min by (cluster, namespace, persistentvolumeclaim) (
-        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]))
-        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) < 0)
-        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0) < 0.4)
-        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} offset 6h)
-        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) >= 60)
-        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) == 0)
+        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]))
+        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]) < 0)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"} > 0) < 0.4)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} offset 6h)
+        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]) >= 60)
+        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"}[6h]) == 0)
 
       )) < __diskAlerts.predictionWarningHours__ * 3600) >= __diskAlerts.predictionCriticalHours__ * 3600
     for: __diskAlerts.predictionWarningFor__
@@ -179,12 +179,12 @@ groups:
   - alert: PVCFillingUpCritical
     expr: |
       (min by (cluster, namespace, persistentvolumeclaim) (
-        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]))
-        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) < 0)
-        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0) < 0.4)
-        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} offset 6h)
-        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) >= 60)
-        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__}[6h]) == 0)
+        (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} / -deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]))
+        and (deriv(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]) < 0)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} / (kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"} > 0) < 0.4)
+        and (kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"} offset 6h)
+        and (count_over_time(kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics"}[6h]) >= 60)
+        and (changes(kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics"}[6h]) == 0)
 
       )) < __diskAlerts.predictionCriticalHours__ * 3600
     for: __diskAlerts.predictionCriticalFor__
@@ -200,7 +200,7 @@ groups:
         and require six hours of history.
   - alert: PVCInodesHigh
     expr: |
-      ((max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0))) )) >= __diskAlerts.inodeWarningPercent__) < __diskAlerts.inodeCriticalPercent__
+      ((max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics"} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics"} > 0))) )) >= __diskAlerts.inodeWarningPercent__) < __diskAlerts.inodeCriticalPercent__
     for: __diskAlerts.warningFor__
     labels:
       severity: warning
@@ -213,7 +213,7 @@ groups:
         do not prevent inode exhaustion.
   - alert: PVCInodesHighCritical
     expr: |
-      (max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics", namespace=__NAMESPACE__} > 0))) )) >= __diskAlerts.inodeCriticalPercent__
+      (max by (cluster, namespace, persistentvolumeclaim) ((100 * (1 - kubelet_volume_stats_inodes_free{job="kubelet", metrics_path="/metrics"} / (kubelet_volume_stats_inodes{job="kubelet", metrics_path="/metrics"} > 0))) )) >= __diskAlerts.inodeCriticalPercent__
     for: __diskAlerts.criticalFor__
     labels:
       severity: critical
@@ -237,3 +237,19 @@ groups:
       summary: Node filesystem is read-only.
       description: A persistent filesystem is read-only. Inspect kernel and storage errors. Exclude deliberately
         read-only mounts using diskAlerts.excludeMountpointRegex.
+  - alert: PVCInodesFillingUp
+    expr: |
+      (kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics"} / kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics"} < 0.15)
+      and (kubelet_volume_stats_inodes_used{job="kubelet",metrics_path="/metrics"} > 0)
+      and (predict_linear(kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0)
+      unless on (cluster, namespace, persistentvolumeclaim) (kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1)
+      unless on (cluster, namespace, persistentvolumeclaim) (kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1)
+    for: 1h
+    labels:
+      severity: warning
+      service: kubernetes-storage
+      alert_scope: disks
+      alert_category: disk-inodes
+    annotations:
+      summary: PVC inodes may run out within four days.
+      description: PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has less than 15 percent free inodes and a declining six-hour trend. Inspect small-file growth and retention.

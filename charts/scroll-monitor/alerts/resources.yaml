@@ -86,7 +86,7 @@ groups:
         alone does not prove an outage; batch work may legitimately saturate CPU.
   - alert: ContainerCPUThrottlingHigh
     expr: |
-      100 * max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) / (max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) > 0) >= __resourceAlerts.cpuThrottlingPercent__
+      100 * max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[5m])) / (max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[5m])) > 0) >= __resourceAlerts.cpuThrottlingPercent__
     for: __resourceAlerts.cpuFor__
     labels:
       severity: warning

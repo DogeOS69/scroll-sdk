@@ -1,0 +1,452 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: EthDASubmitterFailures with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_submission_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_cycle_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_lifecycle_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_l2_reorg_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDASubmitterFailures",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDASubmitterFailures with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_submission_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_cycle_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_lifecycle_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_l2_reorg_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDASubmitterFailures",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: FeeOracleErrors with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: fee_oracle_updates_failed_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: fee_oracle_errors_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: fee_oracle_chain_rpc_errors_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="FeeOracleErrors",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: FeeOracleErrors with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: fee_oracle_updates_failed_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: fee_oracle_errors_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: fee_oracle_chain_rpc_errors_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="FeeOracleErrors",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAReorgSafetyBoundaryViolated with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_reorg_orphaned_finalized_batches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_l2_reorg_depth_exceeds_bound_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDAReorgSafetyBoundaryViolated",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDAReorgSafetyBoundaryViolated with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_l2_reorg_orphaned_finalized_batches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_l2_reorg_depth_exceeds_bound_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDAReorgSafetyBoundaryViolated",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDAPublicationFeeBlocked with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_publish_replacement_fee_cap_blocked_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_publish_ready_backlog{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 1x30
+  - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 7200x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDAPublicationFeeBlocked",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDAPublicationFeeBlocked with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_publish_replacement_fee_cap_blocked_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  - series: eth_da_publish_ready_backlog{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 1x30
+  - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 7200x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDAPublicationFeeBlocked",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDASigningFailure with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_sign_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_signer_startup_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_publish_signing_policy_rejections_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDASigningFailure",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDASigningFailure with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_sign_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_signer_startup_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_publish_signing_policy_rejections_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDASigningFailure",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABatchDataInvalid with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_chunk_created_at_corrupt_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_chunk_compressed_data_compatibility_breaches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_batch_compressed_data_compatibility_breaches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_first_block_exceeds_limit_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_first_chunk_exceeds_limit_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDABatchDataInvalid",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDABatchDataInvalid with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_chunk_created_at_corrupt_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_chunk_compressed_data_compatibility_breaches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_batch_compressed_data_compatibility_breaches_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_first_block_exceeds_limit_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_first_chunk_exceeds_limit_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDABatchDataInvalid",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: EthDABlobArchiveMalformedState with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_malformed_rows_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_blob_upload_recovery_missing_attempts_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_blob_upload_conflict_races_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDABlobArchiveMalformedState",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: EthDABlobArchiveMalformedState with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: eth_da_submitter_blob_upload_malformed_rows_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_blob_upload_recovery_missing_attempts_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: eth_da_submitter_blob_upload_conflict_races_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="EthDABlobArchiveMalformedState",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethPayloadValidationFailed with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: reth_consensus_engine_beacon_new_payload_invalid{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_new_payload_error{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_forkchoice_updated_invalid{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_forkchoice_updated_error{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethPayloadValidationFailed",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: L2RethPayloadValidationFailed with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: reth_consensus_engine_beacon_new_payload_invalid{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_new_payload_error{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_forkchoice_updated_invalid{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_consensus_engine_beacon_forkchoice_updated_error{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethPayloadValidationFailed",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethDownloaderErrors with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: reth_downloaders_headers_timeout_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_headers_unexpected_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_headers_validation_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_timeout_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_unexpected_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_validation_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethDownloaderErrors",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: L2RethDownloaderErrors with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: reth_downloaders_headers_timeout_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_headers_unexpected_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_headers_validation_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_timeout_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_unexpected_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_downloaders_bodies_validation_errors{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethDownloaderErrors",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: L2RethBlobStoreFailure with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_blobstore_failed_inserts{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_transaction_pool_blobstore_failed_deletes{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethBlobStoreFailure",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: L2RethBlobStoreFailure with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: reth_transaction_pool_blobstore_failed_inserts{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: reth_transaction_pool_blobstore_failed_deletes{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethBlobStoreFailure",alertstate="firing"}) or
+      vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFProofGateInvariantViolation with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_envelope_enrichment_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_local_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_scroll_batch_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_witness_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFProofGateInvariantViolation",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: WFProofGateInvariantViolation with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_envelope_enrichment_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_local_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_scroll_batch_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_witness_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="invariant_error"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFProofGateInvariantViolation",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFProofRuntimeUnavailable with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_envelope_enrichment_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_local_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_scroll_batch_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_witness_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFProofRuntimeUnavailable",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: WFProofRuntimeUnavailable with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_bridge_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_envelope_enrichment_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_local_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_scroll_batch_gate_checks_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 100x30
+  - series: withdrawal_processor_bridge_witness_runtime_total{namespace="monitoring",job="l2-reth",instance="one",outcome="backend_unavailable"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFProofRuntimeUnavailable",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: WFTSOHandoffRecoveryFailures with simultaneous flat historical counters
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: withdrawal_processor_tso_handoff_recovery_age_probe_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFTSOHandoffRecoveryFailures",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: WFTSOHandoffRecoveryFailures with simultaneous counters and one increasing
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_tso_handoff_recovery_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 100x30
+  - series: withdrawal_processor_tso_handoff_recovery_age_probe_failures_total{namespace="monitoring",job="l2-reth",instance="one"}
+    values: 0+1x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="WFTSOHandoffRecoveryFailures",alertstate="firing"})
+      or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1

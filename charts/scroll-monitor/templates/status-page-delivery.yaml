@@ -22,6 +22,8 @@ data:
 {{ .Files.Get "scripts/status-page-delivery.py" | indent 4 }}
   status_page_health.py: |
 {{ .Files.Get "scripts/status_page_health.py" | indent 4 }}
+  l2-batch-progress.json: |
+{{ include "scroll-monitor.l2BatchProgress" . | indent 4 }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -53,7 +55,7 @@ spec:
       labels: {app.kubernetes.io/name: scroll-status-delivery, app.kubernetes.io/instance: {{ .Release.Name }}}
       annotations:
         checksum/config: {{ $runtime | toJson | sha256sum }}
-        checksum/script: {{ printf "%s%s" (.Files.Get "scripts/status-page-delivery.py") (.Files.Get "scripts/status_page_health.py") | sha256sum }}
+        checksum/script: {{ printf "%s%s%s" (.Files.Get "scripts/status-page-delivery.py") (.Files.Get "scripts/status_page_health.py") (include "scroll-monitor.l2BatchProgress" .) | sha256sum }}
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -72,8 +74,7 @@ spec:
             readOnlyRootFilesystem: true
             capabilities: {drop: [ALL]}
           resources:
-            requests: {cpu: 25m, memory: 64Mi}
-            limits: {cpu: 250m, memory: 256Mi}
+{{ toYaml $status.publication.delivery.resources | indent 12 }}
           env:
             {{- range $key, $component := $config.components }}
             {{- if eq ($component.mode | default "automatic") "automatic" }}

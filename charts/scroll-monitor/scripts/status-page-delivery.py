@@ -228,7 +228,7 @@ class Delivery:
             self.send_lock.release()
 
     def collect(self):
-        # At most twelve distinct requests for the built-ins; shared WF evidence is
+        # Shared workflow and readiness evidence is
         # fetched once. No core DB access, no per-rule background workers.
         plan = {key: health.queries(self.config, key) for key in self.components}
         expressions = {expr for rules in plan.values() for expr in rules.values() if expr}

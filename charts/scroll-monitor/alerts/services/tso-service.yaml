@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.tso-service
   interval: 1m
   rules:
-  - alert: TsoServiceMetricsTargetDown
-    expr: up{job=~".*tso-service.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: tso-service
-    annotations:
-      summary: Metrics target for tso-service cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: TsoServicePodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*tso-service.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: tso-service
-    annotations:
-      summary: tso-service pod {{ $labels.pod }} is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: TSOSigningCycleSlow
     expr: sum by (namespace, job, instance) (rate(tso_core_signing_cycle_latency_seconds_sum[10m])) / sum by (namespace,
       job, instance) (rate(tso_core_signing_cycle_latency_seconds_count[10m])) > 120 and sum by (namespace, job,

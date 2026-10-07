@@ -16,7 +16,7 @@ class ResourceAlertTests(unittest.TestCase):
             self.assertFalse(rule.get('isPaused', False))
             self.assertIn(rule['labels']['alert_category'], ('memory', 'cpu', 'node-pressure'))
             self.assertNotIn('__', rule['expr'])
-            if name.startswith('Container'):
+            if name.startswith('Container') and name != 'ContainerCPUThrottlingHigh':
                 self.assertIn('namespace="monitoring"', rule['expr'])
             else:
                 self.assertNotIn('namespace="monitoring"', rule['expr'])
@@ -38,7 +38,7 @@ class ResourceAlertTests(unittest.TestCase):
         self.assertIn('>= 85', rules['NodeCPUUsageHigh']['expr'])
         self.assertEqual(rules['NodeMemoryUsageHighCritical']['for'], '3m')
         self.assertIn('pod=~"worker-.*"', rules['ContainerCPUUsageHigh']['expr'])
-        self.assertIn('deployment=~"worker.*"', rules['BusinessDeploymentUnavailable']['expr'])
+        self.assertNotIn('deployment=~"worker.*"', rules['BusinessDeploymentUnavailable']['expr'])
         self.assertIn('mountpoint!~"/readonly"', rules['NodeFilesystemReadOnly']['expr'])
 
     def test_invalid_threshold_order_and_durations_fail(self):
@@ -50,7 +50,7 @@ class ResourceAlertTests(unittest.TestCase):
                    'diskAlerts.inodeWarningPercent=95',
                    'diskAlerts.predictionCriticalHours=24',
                    'diskAlerts.predictionWarningHours=abc',
-                   'businessPodAlerts.restartThreshold=0',
+                   'businessPodAlerts.workloadNameRegex=',
                    'businessPodAlerts.crashLoopFor=bad']
         for option in options:
             with self.subTest(option=option):

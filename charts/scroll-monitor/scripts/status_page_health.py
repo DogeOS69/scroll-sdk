@@ -8,6 +8,10 @@ or end-to-end payment. See dogeos-core/docs/engineering/bridge-health-evaluator.
 """
 import json
 import math
+from pathlib import Path
+
+# The same progress expression and duration render L2BatchHeightStalled.
+L2_PROGRESS = json.loads(Path(__file__).with_name('l2-batch-progress.json').read_text())
 
 DEFAULTS = {
     'withdrawalProcessorExpectedTargets': 1, 'ethDaSubmitterExpectedTargets': 1,
@@ -116,6 +120,53 @@ def workflow_query(config):
     return verdict(f'max({evidence})', complete)
 
 
+def l2_progress_query(config):
+    """AdvanceL1 cannot prove that published L2 batches are being adopted.
+
+    Use the alert's stable namespace/job identity across Pod IP changes. Current
+    and window-start evidence must be valid. Gaps inside an otherwise stalled
+    window make a confirmed fault partial, never healthy. A new service without
+    window-start evidence remains unknown. Rollback is not forward progress.
+    """
+    h = config['health']
+    selector, targets, labels = source(config, 'withdrawals'), 'namespace, job, instance', 'namespace, job'
+    window = f'{L2_PROGRESS["windowSeconds"]}s'
+    head = 'withdrawal_processor_protocol_state_l2_batch_height' + selector
+    latest = 'withdrawal_processor_protocol_latest_da_batch_height' + selector
+
+    def evidence(offset=''):
+        suffix = f' offset {offset}' if offset else ''
+        now = f'(time() - {L2_PROGRESS["windowSeconds"]})' if offset else 'time()'
+        height, da = head + suffix, latest + suffix
+        guards = [f'({m} >= 0 and {m} < Inf and {m} == floor({m}))' for m in (height, da)]
+        guards.append(f'(up{selector}{suffix} == 1)')
+        for origin in ('replay', 'l2'):
+            scoped = selector[:-1] + ',source=' + quoted(origin) + '}'
+            stamp = 'withdrawal_processor_protocol_snapshot_timestamp_seconds' + scoped + suffix
+            guards += [f'(withdrawal_processor_protocol_snapshot_valid{scoped}{suffix} == 1)',
+                       f'({now} - {stamp} >= 0 and {now} - {stamp} <= {h["freshnessSeconds"]})']
+        return f'({height} and on ({targets}) ' + f' and on ({targets}) '.join(guards) + ')'
+
+    current, past = evidence(), f'max by ({labels}) ({evidence(window)})'
+    pending = f'(min by ({labels}) (({latest} > bool on ({targets}) {head}) and on ({targets}) {current}))'
+    history = f'({pending})[{window}:1m]'
+    progress = (L2_PROGRESS['expr'].replace('__SELECTOR__', head)
+                .replace('__LABELS__', labels).replace('__WINDOW__', window))
+    # The offset anchor prevents a newly discovered target from claiming the
+    # full duration between minute-aligned subquery points.
+    stalled = (f'(({progress}) == 0) + 1'
+               f' and on ({labels}) (min_over_time({history}) == 1)'
+               f' and on ({labels}) {past}'
+               f' and on ({labels}) (min by ({labels}) ({latest} offset {window} > bool on ({targets}) {head} offset {window}) == 1)')
+    healthy = (f'({pending} == 0) or on ({labels}) (min_over_time({history}) == 0)'
+               f' or on ({labels}) ((({progress}) > 0) and on ({labels}) (max by ({labels}) ({current}) > {past}))')
+    state = f'((({stalled}) or on ({labels}) (({healthy}) * 0)) and on ({labels}) {current})'
+    complete = (f'(count({current}) == count(up{selector})) and (min(up{selector}) == 1)'
+                f' and (count(up{selector}) == {h["withdrawalProcessorExpectedTargets"]})'
+                f' and ((min(count_over_time({history})) == scalar(count_over_time((vector(1))[{window}:1m]))) or (max({state}) == 0))')
+    return verdict(f'max({state})', complete)
+
+
 def processor_query(config):
     """Supervisor evidence is independent of a failed application scrape.
 
@@ -206,7 +257,8 @@ def queries(config, key):
         return {'custom': rule['expr']} if rule.get('expr') else {}
     if key in ('deposits', 'withdrawals'):
         return {'queue_deadline': queue_query(config, key), 'workflow_stalled': workflow_query(config),
-                'withdrawal_processor_unready': processor_query(config), 'tso_unready': tso_query(config)}
+                'withdrawal_processor_unready': processor_query(config), 'tso_unready': tso_query(config),
+                **({'l2_progress_stalled': l2_progress_query(config)} if key == 'withdrawals' else {})}
     if key == 'batch-publication':
         return {'queue_deadline': queue_query(config, key)}
     if config.get('probeMode') == 'alloy' and key in ('public-rpc', 'bridge-portal', 'block-explorer'):
@@ -222,7 +274,7 @@ def evaluate(samples):
     """
     failed = [rule for rule, value in samples.items() if value in (1, 2)]
     missing = [rule for rule, value in samples.items() if value is None]
-    status = ('unavailable' if set(failed) & {'workflow_stalled', 'withdrawal_processor_unready', 'tso_unready'} else 'degraded') if failed else ('operational' if samples and not missing else 'unknown')
+    status = ('unavailable' if set(failed) & {'workflow_stalled', 'l2_progress_stalled', 'withdrawal_processor_unready', 'tso_unready'} else 'degraded') if failed else ('operational' if samples and not missing else 'unknown')
     return {'status': status, 'observation': 'partial' if missing or not samples or 2 in samples.values() else 'complete',
             'reasons': failed or missing or ([] if samples else ['unconfigured']),
             'assurance': 'pipeline', 'coverage': 'configured_public_rules'}

@@ -8,11 +8,18 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+
+import yaml
 
 
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
 import status_page_health as health
+
+# Helm supplies this field in the mounted shared definition. Local fixtures use
+# the chart's default instead of maintaining another hard-coded runtime default.
+health.L2_PROGRESS['windowSeconds'] = yaml.safe_load((SCRIPTS.parent / 'values.yaml').read_text())['businessAlerts']['l2BatchStallSeconds']
 
 
 def config():
@@ -31,6 +38,9 @@ class PolicyTests(unittest.TestCase):
                 ({'workflow_stalled': 2, 'queue_deadline': 0}, 'unavailable', 'partial'),
                 ({'withdrawal_processor_unready': 1, 'queue_deadline': None}, 'unavailable', 'partial'),
                 ({'tso_unready': 1, 'queue_deadline': 0}, 'unavailable', 'complete'),
+                ({'l2_progress_stalled': 1, 'workflow_stalled': 0, 'queue_deadline': 0}, 'unavailable', 'complete'),
+                ({'l2_progress_stalled': 2, 'workflow_stalled': 0}, 'unavailable', 'partial'),
+                ({'l2_progress_stalled': None, 'queue_deadline': 0}, 'unknown', 'partial'),
                 ({'queue_deadline': 0, 'workflow_stalled': None}, 'unknown', 'partial'),
                 ({'queue_deadline': 0, 'workflow_stalled': 0}, 'operational', 'complete')]:
             with self.subTest(facts=facts):
@@ -46,6 +56,7 @@ class PolicyTests(unittest.TestCase):
                 health.policy(value)
         self.assertEqual(health.seconds('12m'), 720)
         self.assertEqual(health.policy({})['depositDeadlineSeconds'], 0)
+        self.assertEqual(health.L2_PROGRESS['windowSeconds'], 7500)
 
     def test_modes_and_unconfigured_rules(self):
         c = config()
@@ -56,6 +67,83 @@ class PolicyTests(unittest.TestCase):
         c['health']['depositDeadlineSeconds'] = 0
         self.assertEqual(health.queue_query(c, 'deposits'), '')
         self.assertIn('namespace="monitoring"', health.workflow_query(c))
+        self.assertIn('l2_progress_stalled', health.queries(c, 'withdrawals'))
+        self.assertNotIn('l2_progress_stalled', health.queries(config(), 'deposits'))
+
+    @unittest.skipUnless(os.environ.get('SCROLL_STATUS_RUNTIME_TEST') == '1', 'requires Docker/promtool')
+    def test_l2_adoption_with_real_prometheus(self):
+        labels = '{namespace="monitoring",job="withdrawal-processor",instance="writer"}'
+        head = 'withdrawal_processor_protocol_state_l2_batch_height' + labels
+        latest = 'withdrawal_processor_protocol_latest_da_batch_height' + labels
+        base = {'up'+labels: '1x130', head: '137x130', latest: '346x130'}
+        for source in ('l2', 'replay'):
+            scoped = labels[:-1] + ',source="'+source+'"}'
+            base['withdrawal_processor_protocol_snapshot_valid'+scoped] = '1x130'
+            base['withdrawal_processor_protocol_snapshot_timestamp_seconds'+scoped] = '0+60x130'
+        tests = []
+        def scenario(name, series, expected, at='125m', cfg=None, window_seconds=None):
+            with patch.dict(health.L2_PROGRESS, windowSeconds=window_seconds or health.L2_PROGRESS['windowSeconds']):
+                expr = health.l2_progress_query(cfg or config())
+            tests.append({'name': name, 'interval': '1m',
+                'input_series': [{'series': k, 'values': v} for k, v in series.items()],
+                'promql_expr_test': [{'expr': expr+'\n# '+name, 'eval_time': at,
+                    'exp_samples': [] if expected is None else [{'labels': '{}', 'value': expected}]}]})
+        scenario('l2-stalled-125m-even-with-empty-withdrawal-queue', base, 1)
+        scenario('l2-not-yet-125m', base, None, '124m')
+        scenario('l2-custom-600s-before-deadline', base, None, '9m', window_seconds=600)
+        scenario('l2-custom-600s-at-deadline', base, 1, '10m', window_seconds=600)
+        scenario('l2-custom-1800s-at-deadline', base, 1, '30m', window_seconds=1800)
+        scenario('l2-non-minute-evaluation', base, 1, '125m30s')
+        scenario('l2-idle', {**base, latest: '137x130'}, 0)
+        scenario('l2-new-da-after-idle', {**base, latest: '137x120 346x9'}, 0)
+        scenario('l2-new-target-insufficient-history', {
+            k: '_x10 ' + ('600+60x120' if 'timestamp_seconds' in k else v)
+            for k,v in base.items()}, None)
+        scenario('l2-forward-progress', {**base, head: '137x120 138x9'}, 0)
+        scenario('l2-rollback-is-not-recovery', {**base, head: '137x120 136x9'}, 1)
+        scenario('l2-missing', {}, None)
+        scenario('l2-wrong-namespace', {k.replace('monitoring','another'): v for k,v in base.items()}, None)
+        scenario('l2-wrong-job', {k.replace('withdrawal-processor','proof-worker'): v for k,v in base.items()}, None)
+        scenario('l2-down', {**base, 'up'+labels: '0x130'}, None)
+        scenario('l2-invalid-height', {**base, head: '-1x130'}, None)
+        scenario('l2-fractional-height', {**base, head: '137.5x130'}, None)
+        for source in ('replay', 'l2'):
+            scoped = labels[:-1] + ',source="'+source+'"}'
+            valid = 'withdrawal_processor_protocol_snapshot_valid'+scoped
+            stamp = 'withdrawal_processor_protocol_snapshot_timestamp_seconds'+scoped
+            for name, metric, values in [('invalid', valid, '0x130'), ('stale', stamp, '0x130'),
+                    ('future', stamp, '1+60x130'), ('gap', valid, '1x60 0 1x68'),
+                    ('missing', valid, None)]:
+                series = dict(base)
+                if values is None: del series[metric]
+                else: series[metric] = values
+                scenario('l2-'+source+'-'+name, series, 2 if name == 'gap' else None)
+        replaced = {}
+        for k,v in base.items():
+            replaced[k] = ('0+60x119' if 'timestamp_seconds' in k else v.split('x')[0]+'x119') + ' stale'
+            replaced[k.replace('writer', 'replacement')] = '_x120 ' + ('7200+60x10' if 'timestamp_seconds' in k else v.split('x')[0]+'x10')
+        scenario('l2-pod-ip-change-preserves-service-history', replaced, 1)
+        interrupted = {k: v.replace('_x120 ', '_x121 ') for k,v in replaced.items()}
+        # The replacement timestamp must match the later first observation.
+        interrupted = {k: v.replace('7200+60x10', '7260+60x9') for k,v in interrupted.items()}
+        scenario('l2-pod-ip-change-with-gap-is-partial-failure', interrupted, 2)
+        recovered = {**interrupted, head.replace('writer', 'replacement'): '_x121 149x9'}
+        scenario('l2-forward-progress-after-pod-replacement-proves-recovery', recovered, 0)
+        rolled_back = {**base, head: '137x118 149x1 137x9'}
+        scenario('l2-forward-then-rollback-does-not-prove-recovery', rolled_back, None)
+        partial = {**base, 'up'+labels.replace('writer','missing'): '1x130'}
+        scenario('l2-confirmed-failure-partial-coverage', partial, 2)
+        scenario('l2-idle-partial-cannot-recover', {**partial, latest: '137x130'}, None)
+        extra = copy.deepcopy(config()); extra['health']['withdrawalProcessorExpectedTargets'] = 2
+        scenario('l2-vanished-target-still-failure', base, 2, cfg=extra)
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, 'rules.json').write_text(json.dumps({'rule_files': [], 'evaluation_interval': '1m', 'tests': tests}))
+            result = subprocess.run(['docker', 'run', '--rm', '--user', str(os.getuid()), '--entrypoint', 'promtool',
+                '-v', directory+':/fixtures:ro', 'prom/prometheus:v2.52.0', 'test', 'rules', '/fixtures/rules.json'],
+                text=True, capture_output=True, timeout=180)
+            detail = '\n'.join(line.rsplit('# ', 1)[-1] if line.lstrip().startswith('expr:') else line
+                               for line in (result.stdout+result.stderr).splitlines())
+            self.assertEqual(result.returncode, 0, detail)
 
     @unittest.skipUnless(os.environ.get('SCROLL_STATUS_RUNTIME_TEST') == '1', 'requires Docker/promtool')
     def test_real_prometheus_evidence(self):

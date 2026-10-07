@@ -11,7 +11,8 @@ groups:
       summary: CubeSigner policy and signed PSBT transaction IDs disagree.
       description: Instance {{ $labels.instance }} reported a transaction-view mismatch. This integrity counter must remain zero. Investigate the policy and gateway before further signing.
   - alert: EthDAReorgSafetyBoundaryViolated
-    expr: sum by (namespace, job) (increase({__name__=~"eth_da_submitter_l2_reorg_(orphaned_finalized_batches|depth_exceeds_bound)_total"}[5m])) > 0
+    expr: sum by (namespace, job) ((label_replace(increase(eth_da_submitter_l2_reorg_orphaned_finalized_batches_total[5m]), "error_counter", "eth_da_submitter_l2_reorg_orphaned_finalized_batches_total", "", "")
+      or label_replace(increase(eth_da_submitter_l2_reorg_depth_exceeds_bound_total[5m]), "error_counter", "eth_da_submitter_l2_reorg_depth_exceeds_bound_total", "", ""))) > 0
     labels:
       severity: critical
       service: eth-da-submitter
@@ -171,7 +172,8 @@ groups:
       summary: An attestation signer cannot deliver TSO callbacks.
       description: Attestation signer {{ $labels.instance }} callback {{ $labels.path }} keeps ending with {{ $labels.result }}, so TSO does not receive these signatures. Check network reachability from the signer to TSO and the TSO callback endpoint.
   - alert: EthDAPublicationFeeBlocked
-    expr: max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) (increase({__name__=~"eth_da_publish_(liveness_blocked|replacement_fee_cap_blocked)_total"}[5m])) > 0
+    expr: max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) ((label_replace(increase(eth_da_publish_liveness_blocked_total[5m]), "error_counter", "eth_da_publish_liveness_blocked_total", "", "")
+      or label_replace(increase(eth_da_publish_replacement_fee_cap_blocked_total[5m]), "error_counter", "eth_da_publish_replacement_fee_cap_blocked_total", "", ""))) > 0
     for: 5m
     labels:
       severity: warning

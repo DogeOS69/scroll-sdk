@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.eth-da-submitter
   interval: 1m
   rules:
-  - alert: EthDaSubmitterMetricsTargetDown
-    expr: up{job=~".*eth-da-submitter.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: eth-da-submitter
-    annotations:
-      summary: Metrics target for eth-da-submitter cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: EthDaSubmitterPodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*eth-da-submitter.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: eth-da-submitter
-    annotations:
-      summary: eth-da-submitter pod {{ $labels.pod }} is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: EthDAQueueValidationIncomplete
     expr: eth_da_submitter_l2_queue_state_validation_complete == 0
     for: 15m
@@ -53,7 +32,9 @@ groups:
       summary: Ethereum DA automatic replay exhausted its safety budget.
       description: Inspect the bounded broadcast outcome and durable transaction state before manual repair.
   - alert: EthDASigningFailure
-    expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_sign(_failures|er_startup_failures)_total|eth_da_publish_signing_policy_rejections_total"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(eth_da_submitter_sign_failures_total[5m]), "error_counter", "eth_da_submitter_sign_failures_total", "", "")
+      or label_replace(increase(eth_da_submitter_signer_startup_failures_total[5m]), "error_counter", "eth_da_submitter_signer_startup_failures_total", "", "")
+      or label_replace(increase(eth_da_publish_signing_policy_rejections_total[5m]), "error_counter", "eth_da_publish_signing_policy_rejections_total", "", "")))
       > 0
     labels:
       severity: critical
@@ -91,7 +72,11 @@ groups:
       summary: Ethereum DA publication window budget repeatedly defers work.
       description: Review the configured blob budget, available window capacity, and publication deadlines.
   - alert: EthDABatchDataInvalid
-    expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_(chunk_created_at_corrupt|chunk_compressed_data_compatibility_breaches|batch_compressed_data_compatibility_breaches|first_block_exceeds_limit|first_chunk_exceeds_limit)_total"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(eth_da_submitter_chunk_created_at_corrupt_total[5m]), "error_counter", "eth_da_submitter_chunk_created_at_corrupt_total", "", "")
+      or label_replace(increase(eth_da_submitter_chunk_compressed_data_compatibility_breaches_total[5m]), "error_counter", "eth_da_submitter_chunk_compressed_data_compatibility_breaches_total", "", "")
+      or label_replace(increase(eth_da_submitter_batch_compressed_data_compatibility_breaches_total[5m]), "error_counter", "eth_da_submitter_batch_compressed_data_compatibility_breaches_total", "", "")
+      or label_replace(increase(eth_da_submitter_first_block_exceeds_limit_total[5m]), "error_counter", "eth_da_submitter_first_block_exceeds_limit_total", "", "")
+      or label_replace(increase(eth_da_submitter_first_chunk_exceeds_limit_total[5m]), "error_counter", "eth_da_submitter_first_chunk_exceeds_limit_total", "", "")))
       > 0
     labels:
       severity: critical
@@ -127,7 +112,9 @@ groups:
       summary: Ethereum DA blob archive rows are in a terminal conflict state.
       description: Compare archive object integrity with the canonical blob and winning upload attempt.
   - alert: EthDABlobArchiveMalformedState
-    expr: sum by (namespace, job, instance) (increase({__name__=~"eth_da_submitter_blob_upload_(malformed_rows|recovery_missing_attempts|conflict_races)_total"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(eth_da_submitter_blob_upload_malformed_rows_total[5m]), "error_counter", "eth_da_submitter_blob_upload_malformed_rows_total", "", "")
+      or label_replace(increase(eth_da_submitter_blob_upload_recovery_missing_attempts_total[5m]), "error_counter", "eth_da_submitter_blob_upload_recovery_missing_attempts_total", "", "")
+      or label_replace(increase(eth_da_submitter_blob_upload_conflict_races_total[5m]), "error_counter", "eth_da_submitter_blob_upload_conflict_races_total", "", "")))
       > 0
     labels:
       severity: critical

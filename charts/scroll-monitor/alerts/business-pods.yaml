@@ -52,9 +52,9 @@ groups:
         limits. Normal Completed exits are excluded.
   - alert: BusinessPodCrashLooping
     expr: |
-      (max by (namespace, pod, uid, container) (max_over_time({__name__=~"kube_pod_(init_)?container_status_waiting_reason", __POD_SELECTOR__, reason="CrashLoopBackOff"}[5m])) == 1
-      and on (namespace, pod, uid) (kube_pod_status_ready{__POD_SELECTOR__, condition="true"} == 0))
-      unless on (namespace, pod, uid) (kube_pod_owner{__POD_SELECTOR__, owner_kind="Job", owner_is_controller="true"} == 1)
+      (max by (namespace, pod, uid, container) (max_over_time({__name__=~"kube_pod_(init_)?container_status_waiting_reason", reason="CrashLoopBackOff"}[5m])) == 1
+      and on (namespace, pod, uid) (kube_pod_status_ready{condition="true"} == 0))
+      unless on (namespace, pod, uid) (kube_pod_owner{owner_kind="Job", owner_is_controller="true"} == 1)
     for: __businessPodAlerts.crashLoopFor__
     labels:
       severity: warning
@@ -82,26 +82,12 @@ groups:
       description: Pod {{ $labels.namespace }}/{{ $labels.pod }} was observed in Failed phase during the last 10
         minutes, excluding Job pods; final Job failure is monitored separately. Inspect pod events, termination
         status, and node health. Successfully completed Jobs are excluded.
-  - alert: BusinessPodRepeatedRestarts
-    expr: |
-      max by (namespace, pod, uid, container) (increase({__name__=~"kube_pod_(init_)?container_status_restarts_total", __POD_SELECTOR__}[10m])) >= __businessPodAlerts.restartThreshold__
-      unless on (namespace, pod, uid) (kube_pod_owner{__POD_SELECTOR__, owner_kind="Job", owner_is_controller="true"} == 1)
-    for: 0s
-    labels:
-      severity: warning
-      service: kubernetes-workloads
-      alert_scope: business-pods
-      alert_category: pod-health
-    annotations:
-      summary: Container is repeatedly restarting.
-      description: Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} repeatedly restarted
-        in ten minutes. Inspect previous logs and OOM/probe failures.
   - alert: BusinessPodNotReady
     expr: |
-      (max by (namespace, pod, uid) (kube_pod_status_ready{__POD_SELECTOR__, condition="true"}) == 0)
-      and on (namespace, pod, uid) (max by (namespace, pod, uid) (kube_pod_status_phase{__POD_SELECTOR__, phase=~"Pending|Running|Unknown"}) == 1)
-      unless on (namespace, pod, uid) (kube_pod_owner{__POD_SELECTOR__, owner_kind="Job", owner_is_controller="true"} == 1)
-      unless on (namespace, pod, uid) kube_pod_deletion_timestamp{__POD_SELECTOR__}
+      (max by (namespace, pod, uid) (kube_pod_status_ready{condition="true"}) == 0)
+      and on (namespace, pod, uid) (max by (namespace, pod, uid) (kube_pod_status_phase{phase="Running"}) == 1)
+      unless on (namespace, pod, uid) (kube_pod_owner{owner_kind="Job", owner_is_controller="true"} == 1)
+      unless on (namespace, pod, uid) kube_pod_deletion_timestamp{}
     for: __businessPodAlerts.notReadyFor__
     labels:
       severity: warning
@@ -110,14 +96,14 @@ groups:
       alert_category: pod-health
     annotations:
       summary: Business pod remains unready.
-      description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has not become ready. Check scheduling, image pulls,
-        init containers and probes. Terminating pods and Jobs are excluded.
+      description: Pod {{ $labels.namespace }}/{{ $labels.pod }} is running but has not become ready. Check
+        init containers and probes. Terminating pods and Jobs are excluded. Pending, Unknown and Failed phases are handled by KubePodNotReady.
 - name: dogeos.availability
   interval: 1m
   rules:
   - alert: BusinessDeploymentReplicasDegraded
     expr: |
-      (max by (namespace, deployment) (kube_deployment_status_replicas_available{namespace=__NAMESPACE__, deployment=~__WORKLOAD_REGEX__}) > 0) < (max by (namespace, deployment) (kube_deployment_spec_replicas{namespace=__NAMESPACE__, deployment=~__WORKLOAD_REGEX__}))
+      (max by (namespace, deployment) (kube_deployment_status_replicas_available{}) > 0) < (max by (namespace, deployment) (kube_deployment_spec_replicas{}))
     for: __businessPodAlerts.degradedFor__
     labels:
       severity: warning
@@ -130,7 +116,7 @@ groups:
         Availability alerts may fire during a disruptive rollout; use a maintenance mute when appropriate.
   - alert: BusinessDeploymentUnavailable
     expr: |
-      (max by (namespace, deployment) (kube_deployment_status_replicas_available{namespace=__NAMESPACE__, deployment=~__WORKLOAD_REGEX__}) == 0) and (max by (namespace, deployment) (kube_deployment_spec_replicas{namespace=__NAMESPACE__, deployment=~__WORKLOAD_REGEX__}) > 0)
+      (max by (namespace, deployment) (kube_deployment_status_replicas_available{}) == 0) and (max by (namespace, deployment) (kube_deployment_spec_replicas{}) > 0)
     for: __businessPodAlerts.unavailableFor__
     labels:
       severity: critical
@@ -143,7 +129,7 @@ groups:
         Availability alerts may fire during a disruptive rollout; use a maintenance mute when appropriate.
   - alert: BusinessStatefulSetReplicasDegraded
     expr: |
-      (max by (namespace, statefulset) (kube_statefulset_status_replicas_ready{namespace=__NAMESPACE__, statefulset=~__WORKLOAD_REGEX__}) > 0) < (max by (namespace, statefulset) (kube_statefulset_replicas{namespace=__NAMESPACE__, statefulset=~__WORKLOAD_REGEX__}))
+      (max by (namespace, statefulset) (kube_statefulset_status_replicas_ready{}) > 0) < (max by (namespace, statefulset) (kube_statefulset_replicas{}))
     for: __businessPodAlerts.degradedFor__
     labels:
       severity: warning
@@ -156,7 +142,7 @@ groups:
         Availability alerts may fire during a disruptive rollout; use a maintenance mute when appropriate.
   - alert: BusinessStatefulSetUnavailable
     expr: |
-      (max by (namespace, statefulset) (kube_statefulset_status_replicas_ready{namespace=__NAMESPACE__, statefulset=~__WORKLOAD_REGEX__}) == 0) and (max by (namespace, statefulset) (kube_statefulset_replicas{namespace=__NAMESPACE__, statefulset=~__WORKLOAD_REGEX__}) > 0)
+      (max by (namespace, statefulset) (kube_statefulset_status_replicas_ready{}) == 0) and (max by (namespace, statefulset) (kube_statefulset_replicas{}) > 0)
     for: __businessPodAlerts.unavailableFor__
     labels:
       severity: critical
@@ -195,7 +181,7 @@ groups:
         Availability alerts may fire during a disruptive rollout; use a maintenance mute when appropriate.
   - alert: BusinessJobFailed
     expr: |
-      max by (namespace, job_name) (kube_job_failed{namespace=__NAMESPACE__, job_name=~__WORKLOAD_REGEX__, condition="true"}) == 1
+      max by (namespace, job_name) (kube_job_failed{condition="true"}) == 1
     for: 0s
     labels:
       severity: warning

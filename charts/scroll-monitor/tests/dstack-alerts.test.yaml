@@ -13,9 +13,6 @@ tests:
     values: 0+0x20
   alert_rule_test:
   - eval_time: 5m
-    alertname: DstackControllerUnavailable
-    exp_alerts: []
-  - eval_time: 5m
     alertname: DstackMetricsUnavailable
     exp_alerts: []
 - name: missing native endpoint with expected running controller

@@ -18,14 +18,15 @@ class PodAlertTests(unittest.TestCase):
             self.assertFalse(rule.get("isPaused", False))
             self.assertEqual(rule["for"], "5m" if name == "BusinessPodCrashLooping" else "0s")
             self.assertEqual(rule["labels"]["severity"], "warning")
-            self.assertIn('namespace="monitoring"', rule["expr"])
+            if name != 'BusinessPodCrashLooping':
+                self.assertIn('namespace="monitoring"', rule["expr"])
             self.assertNotIn("__POD_SELECTOR__", rule["expr"])
 
     def test_can_disable_or_narrow_pods(self):
         self.assertFalse(NAMES & grafana_rules(render("--set", "businessPodAlerts.enabled=false")).keys())
         rules = grafana_rules(render("--set-string", "businessPodAlerts.podNameRegex=worker-.*",
                                      "--set-string", "businessPodAlerts.excludePodNameRegex=worker-test-.*"))
-        for name in NAMES:
+        for name in NAMES - {"BusinessPodCrashLooping"}:
             self.assertIn('pod=~"worker-.*"', rules[name]["expr"])
             self.assertIn('pod!~"worker-test-.*"', rules[name]["expr"])
 

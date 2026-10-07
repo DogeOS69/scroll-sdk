@@ -3,35 +3,35 @@ rule_files:
 - rules.yaml
 evaluation_interval: 1m
 tests:
-- name: WithdrawalProcessorMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="withdrawal-processor",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="WithdrawalProcessorMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: WithdrawalProcessorMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="withdrawal-processor",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="WithdrawalProcessorMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: WithdrawalProcessor unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="withdrawal-processor-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="withdrawal-processor-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="withdrawal-processor-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="withdrawal-processor-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="WithdrawalProcessorPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -39,43 +39,43 @@ tests:
 - name: WithdrawalProcessor completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="withdrawal-processor-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="withdrawal-processor-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="withdrawal-processor-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="withdrawal-processor-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="WithdrawalProcessorPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: TsoServiceMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="tso-service",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="TsoServiceMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: TsoServiceMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="tso-service",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="TsoServiceMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: TsoService unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="tso-service-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="tso-service-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="tso-service-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="tso-service-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="TsoServicePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -83,43 +83,43 @@ tests:
 - name: TsoService completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="tso-service-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="tso-service-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="tso-service-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="tso-service-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="TsoServicePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: ProofCoordinatorMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="proof-coordinator",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="ProofCoordinatorMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: ProofCoordinatorMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="proof-coordinator",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="ProofCoordinatorMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: ProofCoordinator unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="proof-coordinator-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="proof-coordinator-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="proof-coordinator-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="proof-coordinator-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="ProofCoordinatorPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -127,43 +127,43 @@ tests:
 - name: ProofCoordinator completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="proof-coordinator-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="proof-coordinator-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="proof-coordinator-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="proof-coordinator-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="ProofCoordinatorPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: L2RethMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="l2-reth",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L2RethMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: L2RethMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="l2-reth",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L2RethMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: L2Reth unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="l2-reth-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l2-reth-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="l2-reth-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="l2-reth-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L2RethPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -171,43 +171,43 @@ tests:
 - name: L2Reth completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="l2-reth-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l2-reth-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="l2-reth-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="l2-reth-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L2RethPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: L1InterfaceMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="l1-interface",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L1InterfaceMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: L1InterfaceMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="l1-interface",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L1InterfaceMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: L1Interface unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l1-interface-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="l1-interface-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -215,43 +215,43 @@ tests:
 - name: L1Interface completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l1-interface-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="l1-interface-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: EthDaSubmitterMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="eth-da-submitter",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="EthDaSubmitterMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: EthDaSubmitterMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="eth-da-submitter",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="EthDaSubmitterMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: EthDaSubmitter unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="eth-da-submitter-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="eth-da-submitter-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="eth-da-submitter-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="eth-da-submitter-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="EthDaSubmitterPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -259,43 +259,43 @@ tests:
 - name: EthDaSubmitter completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="eth-da-submitter-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="eth-da-submitter-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="eth-da-submitter-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="eth-da-submitter-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="EthDaSubmitterPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: CubesignerSignerMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="cubesigner-signer",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="CubesignerSignerMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: CubesignerSignerMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="cubesigner-signer",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="CubesignerSignerMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: CubesignerSigner unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="cubesigner-signer-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="cubesigner-signer-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="cubesigner-signer-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="cubesigner-signer-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="CubesignerSignerPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -303,43 +303,43 @@ tests:
 - name: CubesignerSigner completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="cubesigner-signer-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="cubesigner-signer-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="cubesigner-signer-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="cubesigner-signer-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="CubesignerSignerPodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
-- name: FeeOracleMetricsTargetDown fires
+- name: MetricsTargetDown fires
   interval: 1m
   input_series:
   - series: up{job="fee-oracle",instance="bad"}
     values: '0x60'
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="FeeOracleMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
       value: 1
-- name: FeeOracleMetricsTargetDown stays healthy
+- name: MetricsTargetDown stays healthy
   interval: 1m
   input_series:
   - series: up{job="fee-oracle",instance="bad"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="FeeOracleMetricsTargetDown",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="MetricsTargetDown",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: FeeOracle unready running pod
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="fee-oracle-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="fee-oracle-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="fee-oracle-abc",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="fee-oracle-abc",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="FeeOraclePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'
@@ -347,12 +347,12 @@ tests:
 - name: FeeOracle completed pod excluded
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="fee-oracle-abc",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="fee-oracle-abc",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="fee-oracle-abc",phase="Succeeded"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="fee-oracle-abc",phase="Succeeded"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="FeeOraclePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
 - name: WFFundingDataCorrupt sees events
@@ -2495,14 +2495,14 @@ tests:
 - name: Healthy L1 replica cannot hide a failed replica
   interval: 1m
   input_series:
-  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-good",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l1-interface-good",condition="true"}
     values: 1x60
-  - series: kube_pod_status_ready{namespace="n",pod="l1-interface-bad",condition="true"}
+  - series: kube_pod_status_ready{namespace="monitoring",pod="l1-interface-bad",condition="true"}
     values: '0x60'
-  - series: kube_pod_status_phase{namespace="n",pod="l1-interface-bad",phase="Running"}
+  - series: kube_pod_status_phase{namespace="monitoring",pod="l1-interface-bad",phase="Running"}
     values: 1x60
   promql_expr_test:
-  - expr: sum(ALERTS{alertname="L1InterfacePodNotReady",alertstate="firing"})
+  - expr: sum(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
     eval_time: 45m
     exp_samples:
     - labels: '{}'

@@ -21,7 +21,15 @@
 {{- if ge (int $generated.version) 2 }}
 {{- $publication := $generated.componentPublication | default dict }}
 {{- $provisioning := get (.Values.grafana.alerting | default dict) "instatus-component-publication.yaml" | default dict }}
-{{- if or (empty $publication) (ne (toJson $publication.inputs) (toJson $status.publication)) (ne (toJson $publication.provisioning) (toJson $provisioning)) }}
+{{- /* Container sizing does not change publication policy or webhook bindings. */}}
+{{- $expectedInputs := deepCopy ($publication.inputs | default dict) }}
+{{- $actualInputs := deepCopy $status.publication }}
+{{- range $inputs := list $expectedInputs $actualInputs }}
+{{- if hasKey $inputs "delivery" }}
+{{- $_ := unset (get $inputs "delivery") "resources" }}
+{{- end }}
+{{- end }}
+{{- if or (empty $publication) (ne (toJson $expectedInputs) (toJson $actualInputs)) (ne (toJson $publication.provisioning) (toJson $provisioning)) }}
 {{- fail "statusPage component publication changed; rerun scrollsdk setup status-page" }}
 {{- end }}
 {{- if or (ne (int $publication.orgId) (int $status.grafana.orgId)) (ne $publication.datasourceUid .Values.monitoring.datasources.prometheus.uid) }}

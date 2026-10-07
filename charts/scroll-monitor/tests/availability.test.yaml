@@ -227,7 +227,7 @@ tests:
     exp_samples:
     - labels: '{}'
       value: 1
-- name: other namespace workloads ignored
+- name: shared availability rules cover other namespaces
   interval: 1m
   input_series:
   - series: kube_deployment_spec_replicas{namespace="other",deployment="worker"}
@@ -241,12 +241,12 @@ tests:
     eval_time: 10m
     exp_samples:
     - labels: '{}'
-      value: 0
+      value: 1
   - expr: count(ALERTS{alertname="BusinessJobFailed",alertstate="firing"}) or vector(0)
     eval_time: 10m
     exp_samples:
     - labels: '{}'
-      value: 0
+      value: 1
 - name: readiness recovery resets crash loop pending
   interval: 1m
   input_series:
@@ -265,22 +265,6 @@ tests:
     exp_samples:
     - labels: '{}'
       value: 0
-- name: repeated restarts threshold
-  interval: 1m
-  input_series:
-  - series: kube_pod_container_status_restarts_total{namespace="monitoring",pod="worker-0",uid="uid-1",container="app"}
-    values: 0x3 1 2 3x15
-  promql_expr_test:
-  - expr: count(ALERTS{alertname="BusinessPodRepeatedRestarts",alertstate="firing"}) or vector(0)
-    eval_time: 4m
-    exp_samples:
-    - labels: '{}'
-      value: 0
-  - expr: count(ALERTS{alertname="BusinessPodRepeatedRestarts",alertstate="firing"}) or vector(0)
-    eval_time: 7m
-    exp_samples:
-    - labels: '{}'
-      value: 1
 - name: unready running pod then deletion
   interval: 1m
   input_series:

@@ -81,7 +81,9 @@ class DstackMonitoringTests(unittest.TestCase):
         self.assertEqual(dashboard['uid'], 'dogeos-dstack')
         self.assertIn('cached', dashboard['panels'][0]['options']['content'])
         native = rules(docs)
-        self.assertEqual(len(native), 3)
+        self.assertEqual({r['alert'] for r in native}, {
+            'DstackMetricsUnavailable', 'DstackRunFailures',
+        })
         self.assertTrue(all(r['labels']['visibility'] == 'internal' for r in native))
         self.assertFalse(any('status_page' in str(r['labels']) for r in native))
         values['grafanaAlerting'] = {'enabled': False}

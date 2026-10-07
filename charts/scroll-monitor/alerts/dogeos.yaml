@@ -23,9 +23,12 @@ groups:
           description: 'The oldest of {{ $value | printf "%.0f" }} ready but unpublished row(s) has waited more than one hour. Check the submitter logs, Ethereum fee limits, account balance, and RPC errors.'
 
       - alert: EthDASubmitterFailures
-        # Error counters are created lazily. Summing one selector avoids an
-        # absent counter erasing the other counters through vector addition.
-        expr: sum(increase({__name__=~"eth_da_submitter_(submission|cycle|lifecycle|l2_reorg)_failures_total"}[10m])) > 0
+        # Error counters are created lazily. Label each counter before combining
+        # them to preserve distinct series and tolerate absent counters.
+        expr: sum((label_replace(increase(eth_da_submitter_submission_failures_total[10m]), "error_counter", "eth_da_submitter_submission_failures_total", "", "")
+          or label_replace(increase(eth_da_submitter_cycle_failures_total[10m]), "error_counter", "eth_da_submitter_cycle_failures_total", "", "")
+          or label_replace(increase(eth_da_submitter_lifecycle_failures_total[10m]), "error_counter", "eth_da_submitter_lifecycle_failures_total", "", "")
+          or label_replace(increase(eth_da_submitter_l2_reorg_failures_total[10m]), "error_counter", "eth_da_submitter_l2_reorg_failures_total", "", ""))) > 0
         labels:
           severity: critical
           service: eth-da-submitter
@@ -87,7 +90,9 @@ groups:
           description: Check whether fee-oracle is deployed, its ServiceMonitor is selected, and its metrics endpoint exports the computation timestamp. Missing telemetry does not establish a stale oracle value. Pause this rule if fee-oracle is intentionally absent.
 
       - alert: FeeOracleErrors
-        expr: sum(increase({__name__=~"fee_oracle_(updates_failed|errors|chain_rpc_errors)_total"}[10m])) > 0
+        expr: sum((label_replace(increase(fee_oracle_updates_failed_total[10m]), "error_counter", "fee_oracle_updates_failed_total", "", "")
+          or label_replace(increase(fee_oracle_errors_total[10m]), "error_counter", "fee_oracle_errors_total", "", "")
+          or label_replace(increase(fee_oracle_chain_rpc_errors_total[10m]), "error_counter", "fee_oracle_chain_rpc_errors_total", "", ""))) > 0
         labels:
           severity: warning
           service: fee-oracle
@@ -189,19 +194,15 @@ groups:
           description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not replayed a new WF transaction for 60 minutes. If deposits or withdrawals are pending, they are not settling. Check replay status and Dogecoin indexing in this job; if both are current, check WF jobs, TSO signing, and broadcast.'
 
       # Compare gauges at one-minute intervals. A decrease is not progress.
-      # Require an hour of history and a currently present series; do not add
-      # another pending hour on top of this rolling 60-minute window.
+      # Use businessAlerts.l2BatchStallSeconds for history and the current series;
+      # no extra pending delay is added to the configured window.
+      # The shared expression also recognizes a net height increase across a
+      # scrape gap or Pod replacement, when adjacent-minute comparison is absent.
       - alert: L2BatchHeightStalled
         expr: >-
-          max_over_time((
-            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"})
-            > bool
-            max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"} offset 1m)
-          )[60m:1m]) == 0
-          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"} offset 60m)
-          and max by (namespace, job) ({__name__=~"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height"})
+          (__L2_BATCH_PROGRESS__) == 0
         labels:
           severity: critical
         annotations:
-          summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.'
+          summary: Protocol state has not recorded a new L2 batch for __L2_BATCH_STALL_SECONDS__ seconds.
+          description: 'Job {{ $labels.job }} in namespace {{ $labels.namespace }} has not observed a higher L2 batch in protocol state for __L2_BATCH_STALL_SECONDS__ seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.'

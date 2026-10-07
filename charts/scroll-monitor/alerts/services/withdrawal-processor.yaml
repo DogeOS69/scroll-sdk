@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.withdrawal-processor
   interval: 1m
   rules:
-  - alert: WithdrawalProcessorMetricsTargetDown
-    expr: up{job=~".*withdrawal-processor.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: withdrawal-processor
-    annotations:
-      summary: Metrics target for withdrawal-processor cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: WithdrawalProcessorPodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*withdrawal-processor.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: withdrawal-processor
-    annotations:
-      summary: withdrawal-processor pod {{ $labels.pod }} is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: WFFundingDataCorrupt
     expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_corrupt_funding_row_total[5m]))
       > 0
@@ -56,7 +35,11 @@ groups:
       description: Review {{ $labels.action_kind }} and submit a fresh operator request with a new idempotency key
         after reconciling the canonical head.
   - alert: WFProofGateInvariantViolation
-    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_(bridge_gate_checks|bridge_envelope_enrichment|bridge_local_runtime|scroll_batch_gate_checks|bridge_witness_runtime)_total",outcome="invariant_error"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
+      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
       > 0
     labels:
       severity: critical
@@ -74,7 +57,11 @@ groups:
       summary: Bridge witness materialization hit a terminal invariant.
       description: Inspect persisted witness inputs and the proof control plane before resubmission.
   - alert: WFProofRuntimeUnavailable
-    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_(bridge_gate_checks|bridge_envelope_enrichment|bridge_local_runtime|scroll_batch_gate_checks|bridge_witness_runtime)_total",outcome=~"retryable_error|backend_unavailable"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
+      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
       > 0
     for: 10m
     labels:
@@ -95,7 +82,8 @@ groups:
       summary: Bridge witness artifact bytes remain unavailable.
       description: Check materialization receipts and artifact storage before retrying the WF build.
   - alert: WFTSOHandoffRecoveryFailures
-    expr: sum by (namespace, job, instance) (increase({__name__=~"withdrawal_processor_tso_handoff_recovery_(failures|age_probe_failures)_total"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_tso_handoff_recovery_failures_total[5m]), "error_counter", "withdrawal_processor_tso_handoff_recovery_failures_total", "", "")
+      or label_replace(increase(withdrawal_processor_tso_handoff_recovery_age_probe_failures_total[5m]), "error_counter", "withdrawal_processor_tso_handoff_recovery_age_probe_failures_total", "", "")))
       > 0
     for: 5m
     labels:

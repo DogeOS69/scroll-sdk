@@ -1,13 +1,24 @@
 {{- if and .Values.grafana.enabled .Values.grafanaAlerting.enabled }}
 {{- $grafana := .Subcharts.grafana }}
 {{- $name := printf "%s-grafana-alerts" .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- $groups := (include "scroll-monitor.metricGroups" . | fromYaml).groups }}
+{{- $groups := list }}
+{{- if eq .Values.alerting.backend "grafana" }}
+{{- $groups = (include "scroll-monitor.metricGroups" . | fromYaml).groups }}
+{{- end }}
 {{- if and .Values.grafanaAlerting.logs.enabled .Values.monitoring.datasources.loki.enabled }}
 {{- $namespaces := .Values.alloy.logs.namespaces | default (list .Release.Namespace) }}
 {{- $logGroups := (.Files.Get "alerts/logs.yaml" | replace "__NAMESPACES__" (join "|" $namespaces) | fromYaml).groups }}
 {{- $groups = concat $groups $logGroups }}
 {{- end }}
 {{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups "pauseRules" (include "scroll-monitor.pauseRules" . | fromYaml) }}
+{{- if eq .Values.alerting.backend "prometheus" }}
+{{- $_ := set $config "forwardAlertmanager" (dict "url" .Values.alerting.alertmanager.url "name" "scroll-external-alertmanager" "uid" "scroll-external-alertmanager") }}
+{{- else }}
+{{- with .Values.grafanaAlerting.defaultContactPoint }}
+{{- if .enabled }}
+{{- $_ := set $config "defaultContactPoint" (dict "name" .name) }}
+{{- end }}
+{{- end }}
 {{- if and .Values.businessPodAlerts.enabled .Values.businessPodAlerts.contactPoint }}
 {{- $_ := set $config "businessPodContactPoint" .Values.businessPodAlerts.contactPoint }}
 {{- end }}
@@ -20,8 +31,13 @@
 {{- with .Values.grafanaAlerting.notificationTemplate }}
 {{- if .enabled }}
 {{- $environment := .environment | default $.Values.statusPage.environment }}
-{{- $template := $.Files.Get "notifications/slack.tmpl" | replace "__ENVIRONMENT__" (ternary (printf " · %s" $environment) "" (ne $environment "")) }}
-{{- $_ := set $config "notificationTemplate" (dict "name" .name "template" $template) }}
+{{- $template := printf "%s\n%s" ($.Files.Get "notifications/annotation-helpers.tmpl") ($.Files.Get "notifications/slack.tmpl") | replace "__ENVIRONMENT__" (ternary (printf " · %s" $environment) "" (ne $environment "")) }}
+{{- $bind := true }}
+{{- if hasKey . "bindDefaultContactPoint" }}
+{{- $bind = .bindDefaultContactPoint }}
+{{- end }}
+{{- $_ := set $config "notificationTemplate" (dict "name" .name "template" $template "bindDefaultContactPoint" $bind) }}
+{{- end }}
 {{- end }}
 {{- end }}
 ---

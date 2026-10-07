@@ -21,13 +21,17 @@ statusPage:
   # Automatic is the default; configure inputs and webhook bindings before deployment.
   publication:
     sourceNamespace: ""  # [OPERATOR] Core metrics namespace; empty uses the Helm release namespace.
-    observationContactPointName: slack-alerts  # [OPERATOR] Existing INTERNAL Slack contact point; configure its Secret-backed receiver.
+    observationContactPointName: slack-alerts  # [OPERATOR] Internal destination bootstrapped by the seeder; add Slack in the UI.
     maintenanceWindows: []  # [OPERATOR] Per-component UTC windows; see production values.
     delivery:
       enabled: true  # Single evaluator and publisher; automatic publication requires this.
       image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
       storageClassName: ""  # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
       storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
+      # CPU headroom for concurrent health queries and responsive probes.
+      resources:
+        requests: {cpu: 100m, memory: 64Mi}
+        limits: {cpu: 1000m, memory: 256Mi}
     incidents:
       manageTemplates: true  # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
       notifySubscribers: false  # [OPERATOR] Opt in after incident wording and delivery acceptance.
@@ -142,29 +146,7 @@ statusPage:
 # Read-only adapter for core signing metrics. Evidence only; no Status Page credentials.
 # Explicit inputs belong to scroll-sdk-cli configuration generation or reviewed overrides.
 grafana:
-  # [OPERATOR] First notification acceptance target: Slack. Email stays disabled.
-  # Create the Secret outside values; never commit a Slack webhook URL.
-  # Merge into the existing envValueFrom/alerting mappings (do not duplicate keys).
-  # envValueFrom:
-  #   GRAFANA_SLACK_WEBHOOK_URL:
-  #     secretKeyRef: {name: grafana-slack, key: webhook-url}
-  # alerting:
-  #   internal-slack.yaml:
-  #     apiVersion: 1
-  #     contactPoints:
-  #       - orgId: 1
-  #         name: slack-alerts
-  #         receivers:
-  #           - uid: internal-slack
-  #             type: slack
-  #             disableResolveMessage: false
-  #             settings:
-  #               url: $GRAFANA_SLACK_WEBHOOK_URL
-  #               recipient: ''  # Fill the internal Slack channel manually.
-  #               # Shared format seeded by scroll-monitor. The {{` `}} escape stops this
-  #               # chart's tpl from executing Grafana's template call at install time.
-  #               title: '{{`{{ template "scroll-monitor.slack.title" . }}`}}'
-  #               text: '{{`{{ template "scroll-monitor.slack.text" . }}`}}'
+  # The chart seeder bootstraps slack-alerts; add its Slack integration in the UI.
   # Optional Instatus native webhook; no custom publisher or management API key.
   # Create the referenced Secret in Grafana's namespace with the URL generated
   # by CLI --apply --create-webhook or Instatus > Apps > Grafana. Never inline the URL.
@@ -229,6 +211,12 @@ dashboards:
     enabled: true
 grafanaAlerting:
   enabled: true
+  defaultContactPoint:
+    enabled: true
+    name: slack-alerts
+  notificationTemplate:
+    enabled: true
+    bindDefaultContactPoint: true
 prometheusRules:
   enabled: true  # Fallback when Grafana alerting is disabled.
 
@@ -279,7 +267,7 @@ additionalServiceMonitors:
         scrapeTimeout: 10s
 
 diskAlerts:
-  # Node filesystems cluster-wide; PVCs only in the release namespace.
+  # Node filesystems and PVCs are monitored cluster-wide.
   enabled: true
   # Exclude intentionally read-only or otherwise unmanaged mount paths.
   excludeMountpointRegex: ""
@@ -313,12 +301,13 @@ resourceAlerts:
 
 businessPodAlerts:
   enabled: true
-  # Pod/container health and resource rules select pods in the release namespace.
+  # Restart events and container usage select pods in the release namespace.
+  # Shared readiness, crash-loop, replica availability and CPU throttling checks
+  # cover the cluster to replace overlapping kube-prometheus-stack rules.
   podNameRegex: ".*"
   excludePodNameRegex: ""
   # Controller and final Job alerts select workload names independently.
   workloadNameRegex: ".*"
-  restartThreshold: 3
   crashLoopFor: 5m
   notReadyFor: 10m
   unavailableFor: 2m
@@ -328,10 +317,10 @@ businessPodAlerts:
   # New rules group by category/resource/severity; UI routing is preserved.
   contactPoint: slack-alerts
 
-# Extended service diagnostics remain paused until individually reviewed.
+# Extended service diagnostics are enabled by default; explicit pauses remain available.
 serviceAlerts:
   enabled: true
-  paused: true
+  paused: false
 
 # Internal dstack monitoring is enabled by default. Apply the generated
 # scroll-monitor-dstack.yaml overlay when the controller uses another namespace.
@@ -347,6 +336,8 @@ dogecoinIndexerAlerts:
 
 businessAlerts:
   enabled: true
+  # Shared L2 stall window: two-hour batch interval plus five minutes.
+  l2BatchStallSeconds: 7500
   # Populate from the active bridge policy for exact per-role quorum checks.
   requiredSignersByRole: {}
 
@@ -416,7 +407,35 @@ alloy:
         memory: 2Gi
         cpu: 1000m
 
+# Production defaults target EKS >= 1.28 and its API-server metrics endpoints.
+# For self-managed Kubernetes, set this to false and enable both component
+# ServiceMonitors below. Keep the component enabled/defaultRules switches on.
+eksControlPlane:
+  enabled: true
+
 kube-prometheus-stack:
+  kubeScheduler:
+    serviceMonitor:
+      enabled: false
+  kubeControllerManager:
+    serviceMonitor:
+      enabled: false
+  # Replaced by cluster-wide scroll-monitor rules; avoid duplicate notifications.
+  defaultRules:
+    disabled:
+      TargetDown: true
+      CPUThrottlingHigh: true
+      NodeCPUHighUsage: true
+      NodeMemoryHighUtilization: true
+      NodeFilesystemSpaceFillingUp: true
+      NodeFilesystemAlmostOutOfSpace: true
+      NodeFilesystemAlmostOutOfFiles: true
+      KubePersistentVolumeFillingUp: true
+      KubePersistentVolumeInodesFillingUp: true
+      KubePodCrashLooping: true
+      KubeDeploymentReplicasMismatch: true
+      KubeStatefulSetReplicasMismatch: true
+      KubeJobFailed: true
   prometheus:
     prometheusSpec:
       # [DEFAULT] Discover application PodMonitors (including Blockscout frontend)

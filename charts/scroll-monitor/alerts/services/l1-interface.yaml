@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.l1-interface
   interval: 1m
   rules:
-  - alert: L1InterfaceMetricsTargetDown
-    expr: up{job=~".*l1-interface.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: l1-interface
-    annotations:
-      summary: Metrics target for l1-interface cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: L1InterfacePodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*l1-interface.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: l1-interface
-    annotations:
-      summary: l1-interface pod {{ $labels.pod }} is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: L1InterfaceReplayLagging
     expr: l1_interface_protocol_replay_lag > 10 and on (namespace, job, instance) l1_interface_protocol_replay_configured
       == 1

@@ -19,7 +19,7 @@ class DiskAlertTests(unittest.TestCase):
             self.assertEqual(rule["labels"]["severity"], "warning")
             self.assertIn(">= 80", rule["expr"])
             self.assertTrue(rule["expr"].strip().endswith("< 95"))
-        self.assertIn('namespace="monitoring"', rules["PVCUsageHigh"]["expr"])
+        self.assertNotIn('namespace="monitoring"', rules["PVCUsageHigh"]["expr"])
         self.assertNotIn('namespace="monitoring"', rules["NodeDiskUsageHigh"]["expr"])
 
     def test_threshold_can_change_and_rules_can_be_disabled(self):

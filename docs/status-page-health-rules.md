@@ -114,3 +114,47 @@ WF 快照自身有效且明确停滞时，两项组件均输出 affected，即�
 不会静默降级为 observe。既有配置中显式 observe 需要主动迁移。
 充值和提现示例明确采用 MAJOROUTAGE；二元规则尚不能区分 WF 全停与部分请求超时，
 需要更细严重程度时应提供经过评审的自定义规则和策略。
+
+## L2 adoption stalls affect withdrawals
+
+Withdrawals reuses the progress expression and configured window from
+`L2BatchHeightStalled`. Set `businessAlerts.l2BatchStallSeconds` in scroll-monitor
+values (integer seconds, minimum 60; default 7500 seconds / 125 minutes):
+
+```yaml
+businessAlerts:
+  l2BatchStallSeconds: 7500
+```
+
+The expression lives in `scripts/l2-batch-progress.json`. Helm injects the same
+configured duration into Grafana/Prometheus alerts, their annotations, and the
+shared definition mounted by the status-page evaluator. Changing the value also
+rolls the evaluator through its configuration checksum. The CLI does not generate
+a separate expression or timeout, so CLI regeneration is unnecessary. When using
+`helm upgrade --reuse-values` from an older chart, explicitly supply this new value
+with `--set businessAlerts.l2BatchStallSeconds=7500` or an overriding values file.
+Only an increase in adopted L2 batch height counts as progress. A decrease does
+not establish recovery, and AdvanceL1 WF progress cannot substitute for AdvanceL2.
+The shared expression also compares current height with the window-start height,
+so progress during a scrape gap or Pod replacement clears the diagnostic alert.
+
+Public failure additionally requires outstanding DA batches throughout the window:
+`protocol_latest_da_batch_height > protocol_state_l2_batch_height`. Snapshots are
+validated per target, then aggregated by the alert's stable `namespace/job`
+identity so a Pod IP change does not erase service history. Both replay and L2
+snapshots must be valid and fresh at the current observation and window start.
+History is sampled every minute. A gap inside an otherwise confirmed stall marks
+the failure as partial coverage; a missing start anchor or invalid current
+snapshot is unknown. A partial failure cannot establish a monitoring heartbeat.
+Fresh, valid current height higher than the valid window-start height positively
+proves progress even across a Pod replacement or a historical scrape gap. No
+outstanding DA work, or a recent observed interval caught up with DA, also rules
+out a continuous stall. An absent alert alone never proves recovery.
+
+This covers proof/materialize failures that block AdvanceL2 while the eligible
+withdrawal queue is empty and AdvanceL1 continues. Confirmed failure reports
+`unavailable` with reason `l2_progress_stalled`, even when queue and WF checks pass.
+Publication retains the existing `failureFor` (default 5 minutes) and `recoveryFor`
+(default 10 minutes). With defaults, continuous outstanding work without progress
+therefore publishes an incident after approximately 130 minutes; publication does
+not add a second 125-minute confirmation window.

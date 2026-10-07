@@ -21,13 +21,17 @@ statusPage:
   # Automatic is the default; configure inputs and webhook bindings before deployment.
   publication:
     sourceNamespace: ""  # [OPERATOR] Core metrics namespace; empty uses the Helm release namespace.
-    observationContactPointName: slack-alerts  # [OPERATOR] Existing INTERNAL Slack contact point; configure its Secret-backed receiver.
+    observationContactPointName: slack-alerts  # [OPERATOR] Internal destination bootstrapped by the seeder; add Slack in the UI.
     maintenanceWindows: []  # [OPERATOR] Per-component UTC windows; see production values.
     delivery:
       enabled: true  # Single evaluator and publisher; automatic publication requires this.
       image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
       storageClassName: ""  # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
       storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
+      # CPU headroom for concurrent health queries and responsive probes.
+      resources:
+        requests: {cpu: 100m, memory: 64Mi}
+        limits: {cpu: 1000m, memory: 256Mi}
     incidents:
       manageTemplates: true  # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
       notifySubscribers: false  # [OPERATOR] Opt in after incident wording and delivery acceptance.
@@ -253,6 +257,23 @@ dashboards:
     # referenced through grafana.dashboardsConfigMaps.
     enabled: true
 
+# Metric evaluation owner. Existing installations retain Grafana unless selected.
+# In prometheus mode Grafana evaluates only LogQL rules and forwards them to
+# the same independent Alertmanager. Python health/status-page services remain.
+alerting:
+  backend: grafana  # grafana or prometheus
+  alertmanager:
+    url: http://prometheus-alertmanager:9093
+    datasourceUID: scroll-alertmanager
+    configSecretName: scroll-monitor-alertmanager-config
+    grafanaURL: ""  # Public Grafana base URL for notification links.
+    environment: ""
+    slack:
+      # Empty creates a valid, non-delivering slack-alerts receiver.
+      existingSecret: ""
+      secretKey: url
+      channel: ""  # Empty uses the incoming webhook's configured channel.
+
 grafanaAlerting:
   # Seed editable, enabled Grafana-managed application rules via the HTTP API.
   # Untouched expressions/thresholds follow chart upgrades; UI edits and pause
@@ -263,13 +284,19 @@ grafanaAlerting:
   pauseRules: {}
   folderUID: scroll-monitor-alerts
   folderTitle: Scroll Monitor Alerts
-  # Shared Slack message format. In the Slack contact point (Grafana UI), set
-  # Title '{{ template "scroll-monitor.slack.title" . }}' and Text Body
-  # '{{ template "scroll-monitor.slack.text" . }}'; for grafana.alerting values
-  # use the escaped example in values/production.yaml. UI edits are preserved.
+  # Bootstrap a UI-editable empty destination; replace only Grafana's built-in
+  # email default. Add the Slack integration/webhook in the UI when ready.
+  # Existing integrations, custom defaults and child policies are preserved.
+  defaultContactPoint:
+    enabled: true
+    name: slack-alerts
+  # Shared Slack format. On install/upgrade, bind blank title/text fields on
+  # Slack integrations in defaultContactPoint.name. Custom fields are preserved.
+  # After adding a webhook in the UI, upgrade again to apply the default binding.
   notificationTemplate:
     enabled: true
     name: scroll-monitor
+    bindDefaultContactPoint: true
     environment: ""  # Shown in titles; empty uses statusPage.environment.
   logs:
     # Error/fatal/panic levels or plain error/panic prefixes in the last 5m.
@@ -311,7 +338,7 @@ additionalServiceMonitors:
         scrapeTimeout: 10s
 
 diskAlerts:
-  # Node filesystems cluster-wide; PVCs only in the release namespace.
+  # Node filesystems and PVCs are monitored cluster-wide.
   enabled: true
   # Exclude intentionally read-only or otherwise unmanaged mount paths.
   excludeMountpointRegex: ""
@@ -345,12 +372,13 @@ resourceAlerts:
 
 businessPodAlerts:
   enabled: true
-  # Pod/container health and resource rules select pods in the release namespace.
+  # Restart events and container usage select pods in the release namespace.
+  # Shared readiness, crash-loop, replica availability and CPU throttling checks
+  # cover the cluster to replace overlapping kube-prometheus-stack rules.
   podNameRegex: ".*"
   excludePodNameRegex: ""
   # Controller and final Job alerts select workload names independently.
   workloadNameRegex: ".*"
-  restartThreshold: 3
   crashLoopFor: 5m
   notReadyFor: 10m
   unavailableFor: 2m
@@ -360,10 +388,10 @@ businessPodAlerts:
   # New rules group by category/resource/severity; UI routing is preserved.
   contactPoint: ""
 
-# Extended service diagnostics remain paused until individually reviewed.
+# Extended service diagnostics are enabled by default; explicit pauses remain available.
 serviceAlerts:
   enabled: true
-  paused: true
+  paused: false
 
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
@@ -372,6 +400,8 @@ dogecoinIndexerAlerts:
 
 businessAlerts:
   enabled: true
+  # Shared by L2BatchHeightStalled and Withdrawals health; integer seconds >= 60.
+  l2BatchStallSeconds: 7500
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m
   recoveryFor: 15m
@@ -514,6 +544,22 @@ alloy:
     interval: 15s
 
 kube-prometheus-stack:
+  # Replaced by cluster-wide scroll-monitor rules; avoid duplicate notifications.
+  defaultRules:
+    disabled:
+      TargetDown: true
+      CPUThrottlingHigh: true
+      NodeCPUHighUsage: true
+      NodeMemoryHighUtilization: true
+      NodeFilesystemSpaceFillingUp: true
+      NodeFilesystemAlmostOutOfSpace: true
+      NodeFilesystemAlmostOutOfFiles: true
+      KubePersistentVolumeFillingUp: true
+      KubePersistentVolumeInodesFillingUp: true
+      KubePodCrashLooping: true
+      KubeDeploymentReplicasMismatch: true
+      KubeStatefulSetReplicasMismatch: true
+      KubeJobFailed: true
   enabled: true
   nameOverride: prometheus
   fullnameOverride: prometheus

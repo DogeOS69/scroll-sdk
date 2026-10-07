@@ -10,6 +10,58 @@ The Sepolia example explicitly uses the user-selected
 `config.toml.example`'s `ethereumDa.submitterRpcUrl`. Other deployments must
 generate their own network's URL and chain ID.
 
+## Default Slack destination
+
+Grafana itself creates the initial `grafana-default-email` contact point and
+notification policy. Installing a Slack contact point alone does not change that
+policy. The chart's existing `seed-grafana-alerts.py` Job now bootstraps the
+operator-configured default destination before importing rules and scoped routes:
+
+```yaml
+grafanaAlerting:
+  defaultContactPoint:
+    enabled: true
+    name: slack-alerts
+  notificationTemplate:
+    enabled: true
+    bindDefaultContactPoint: true
+```
+
+The example contains only configuration; the script and Job live in the chart.
+No Slack webhook or Slack Secret is required to install. The seeder creates an
+empty, UI-editable `slack-alerts` contact point and switches only the built-in
+`grafana-default-email` default to it. An empty destination sends no messages;
+alerts still evaluate and remain visible in Grafana. No invalid Slack integration
+or dummy webhook is created.
+
+To enable delivery, open **Alerting > Contact points**, edit **slack-alerts**,
+and add a **Slack** integration with the real incoming webhook URL. Save it,
+verify the default receiver in **Notification policies**, and use **Test** to
+check delivery. On the next chart upgrade, blank Title and Text Body fields
+automatically reference `scroll-monitor.slack.title` and `scroll-monitor.slack.text`.
+To bind them immediately, enter `{{ template "scroll-monitor.slack.title" . }}`
+and `{{ template "scroll-monitor.slack.text" . }}` in those fields.
+Store the webhook in the UI, not in values or Git. Notifications omitted while
+the destination was empty are not a replayable message queue.
+
+Repeated upgrades preserve webhook secrets, custom nonblank Title/Text Body,
+UI-edited templates, child policies, and custom default receivers. Untouched
+chart templates follow chart upgrades. Set
+`notificationTemplate.bindDefaultContactPoint: false` to opt out of new bindings.
+If an existing installation already
+uses a custom default, change that default in the UI when Slack should replace it.
+Set `defaultContactPoint.enabled: false` when another provisioning system owns
+these resources. The seeder reuses its existing Grafana credentials and targets
+organization 1; the full-configuration UI API requires organization-admin access.
+It never logs configuration payloads or credentials.
+
+The example and chart production profile route Pod, disk and resource alerts to
+`slack-alerts` with category/resource/severity grouping. The seeder accepts its
+own empty bootstrap destination before a Slack integration exists; other named
+Slack destinations still require an existing Slack integration. Existing rule
+labels and routes remain UI-owned. The separate Prometheus Alertmanager is
+configured independently as described below.
+
 ## Public health and collection templates
 
 The [health-rule design](../docs/status-page-health-rules.md) defines failure,
@@ -289,9 +341,30 @@ post-install/post-upgrade Job performs the actual updates when you apply.
 
 ## EKS control-plane metrics
 
-Merge `charts/scroll-monitor/values/eks.yaml` into the deployment values. It enables
-API-server-backed scheduler and controller-manager scraping, disables their old
-Pod-based ServiceMonitors, and keeps the upstream alert/recording rules enabled.
+The production example and matching chart production profile default to EKS
+1.28 or later. They enable `eksControlPlane.enabled`, disable the scheduler and
+controller-manager Pod-based ServiceMonitors, and keep the upstream
+alert/recording rules enabled. No additional EKS overlay is needed with these
+production profiles. The base chart remains provider-neutral; deployments using
+only base values can merge `charts/scroll-monitor/values/eks.yaml` to opt in.
+
+For self-managed Kubernetes, override all three settings together:
+
+```yaml
+eksControlPlane:
+  enabled: false
+kube-prometheus-stack:
+  kubeScheduler:
+    serviceMonitor:
+      enabled: true
+  kubeControllerManager:
+    serviceMonitor:
+      enabled: true
+```
+
+Existing deployment values must also adopt the EKS settings; updating an example
+does not change an installed Helm release.
+
 The generated ClusterRole grants only `get` on `ksh/metrics` and `kcm/metrics` in
 `metrics.eks.amazonaws.com`, bound to the actual Prometheus ServiceAccount.
 TLS validates the mounted CA and `kubernetes.default.svc` server name.
@@ -349,3 +422,11 @@ channel; a successful Helm upgrade alone is not delivery confirmation.
 ## Component publication v2
 
 See [component publication controls](../docs/status-page-publication.md) for independent manual/observe/automatic modes, one integration per automatic component, generated Secret references, and migration from the legacy bootstrap described above. Production templates default to automatic with built-in health rules; missing required inputs report not ready. Verified recovery is enabled in the new examples; direct legacy delivery retains manual recovery. External probes and business deadlines must be configured per deployment.
+
+## Select the independent Alertmanager
+
+Apply `values/scroll-monitor-alertmanager.yaml` after the environment values.
+Metric rules then run in Prometheus; Grafana retains LogQL evaluation and forwards
+notifications to the independent Alertmanager. See
+[the migration guide](../docs/alertmanager-backend.md) before switching an existing
+installation. Preserve UI pause states and edited rules during the cutover.

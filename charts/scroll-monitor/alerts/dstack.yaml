@@ -2,13 +2,6 @@ groups:
   - name: dogeos.dstack
     interval: 30s
     rules:
-      - alert: DstackControllerUnavailable
-        expr: kube_deployment_spec_replicas{namespace="__DSTACK_NAMESPACE__",deployment="__DSTACK_CONTROLLER__"} - kube_deployment_status_replicas_available{namespace="__DSTACK_NAMESPACE__",deployment="__DSTACK_CONTROLLER__"} > 0
-        for: __DSTACK_UNAVAILABLE_FOR__
-        labels: {severity: critical, service: dstack-controller, visibility: internal}
-        annotations:
-          summary: Dstack controller has fewer available replicas than desired.
-          description: Check controller Pod events, logs, database and PVC. Scaling the controller to zero intentionally pauses this alert; it does not terminate external GPU instances.
       - alert: DstackMetricsUnavailable
         expr: (max(up{dstack_source="native",dstack_namespace="__DSTACK_NAMESPACE__",dstack_controller="__DSTACK_CONTROLLER__"}) == 0 or absent(up{dstack_source="native",dstack_namespace="__DSTACK_NAMESPACE__",dstack_controller="__DSTACK_CONTROLLER__"})) and on() (max(kube_deployment_spec_replicas{namespace="__DSTACK_NAMESPACE__",deployment="__DSTACK_CONTROLLER__"}) > 0)
         for: __DSTACK_UNAVAILABLE_FOR__

@@ -4,7 +4,6 @@ from collections import Counter
 import json
 from pathlib import Path
 import re
-import tempfile
 import unittest
 
 import yaml
@@ -72,22 +71,17 @@ class SlackTemplateTests(unittest.TestCase):
         config = self.seed_config("--set", "grafanaAlerting.notificationTemplate.enabled=false")
         self.assertNotIn("notificationTemplate", config)
 
-    def test_slack_example_survives_grafana_chart_tpl(self):
+    def test_production_profiles_seed_ui_editable_slack_and_its_template(self):
         for profile in (CHART / "values/production.yaml",
                         CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"):
             with self.subTest(profile=profile.name):
-                block = profile.read_text().split("  # alerting:\n  #   internal-slack.yaml:\n", 1)[1]
-                block = block.split("  # Optional Instatus", 1)[0]
-                lines = [line.replace("  # ", "  ", 1) for line in block.splitlines()]
-                values = "grafana:\n  alerting:\n    internal-slack.yaml:\n" + "\n".join(lines) + "\n"
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as handle:
-                    handle.write(values)
-                    handle.flush()
-                    docs = render("-f", handle.name)
-                provisioned = resource(docs, "ConfigMap", "grafana")["data"]["internal-slack.yaml"]
-                settings = yaml.safe_load(provisioned)["contactPoints"][0]["receivers"][0]["settings"]
-                self.assertEqual(settings["title"], '{{ template "scroll-monitor.slack.title" . }}')
-                self.assertEqual(settings["text"], '{{ template "scroll-monitor.slack.text" . }}')
+                docs = render("-f", str(profile))
+                config = json.loads(resource(docs, "ConfigMap", "scroll-monitor-grafana-alerts")["data"]["rules.json"])
+                self.assertEqual(config["defaultContactPoint"], {"name": "slack-alerts"})
+                template = config["notificationTemplate"]["template"]
+                for name in ("scroll-monitor.slack.title", "scroll-monitor.slack.text"):
+                    self.assertIn(f'{{{{ define "{name}" -}}}}', template)
+                self.assertNotIn("internal-slack.yaml", resource(docs, "ConfigMap", "grafana")["data"])
 
 
 if __name__ == "__main__":

@@ -334,22 +334,18 @@ tests:
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 0+0x120
+    values: 0+0x185
   alert_rule_test:
-  - eval_time: 59m
-    alertname: L2BatchHeightStalled
-    exp_alerts: []
   - eval_time: 60m
     alertname: L2BatchHeightStalled
-    exp_alerts:
-    - exp_labels:
-        job: withdrawal-processor
-        namespace: monitoring
-        severity: critical
-      exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
-  - eval_time: 90m
+    exp_alerts: []
+  - eval_time: 120m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 124m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -357,27 +353,37 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+  - eval_time: 155m
+    alertname: L2BatchHeightStalled
+    exp_alerts:
+    - exp_labels:
+        job: withdrawal-processor
+        namespace: monitoring
+        severity: critical
+      exp_annotations:
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-growing
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 0+1x120
+    values: 0+1x185
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 90m
+  - eval_time: 155m
     alertname: L2BatchHeightStalled
     exp_alerts: []
 - name: L2BatchHeightStalled-resume
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 10+0x60 11+0x60
+    values: 10+0x125 11+0x125
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -385,21 +391,21 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
-  - eval_time: 61m
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+  - eval_time: 126m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 90m
+  - eval_time: 155m
     alertname: L2BatchHeightStalled
     exp_alerts: []
 - name: L2BatchHeightStalled-decreasing
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 200-1x120
+    values: 200-1x185
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -407,9 +413,9 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
-  - eval_time: 90m
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+  - eval_time: 155m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -417,21 +423,21 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-recent-growth
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 0+0x29 1+0x100
+    values: 0+0x29 1+0x165
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 89m
+  - eval_time: 154m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 91m
+  - eval_time: 156m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -439,43 +445,43 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-absent
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: _x120
+    values: _x185
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 90m
+  - eval_time: 155m
     alertname: L2BatchHeightStalled
     exp_alerts: []
 - name: L2BatchHeightStalled-disappeared
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 10+0x59 stale _x60
+    values: 10+0x124 stale _x125
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts: []
-  - eval_time: 90m
+  - eval_time: 155m
     alertname: L2BatchHeightStalled
     exp_alerts: []
 - name: L2BatchHeightStalled-isolation
   interval: 1m
   input_series:
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 10+0x90
+    values: 10+0x155
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="other"}
-    values: 100+1x90
+    values: 100+1x155
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="other-job",namespace="monitoring"}
-    values: 100+1x90
+    values: 100+1x155
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -483,17 +489,17 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job withdrawal-processor in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
 - name: L2BatchHeightStalled-l1-interface
   interval: 1m
   input_series:
   - series: l1_interface_protocol_state_l2_batch_height{job="l1-interface",namespace="monitoring"}
-    values: 10+0x90
+    values: 10+0x155
   - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring"}
-    values: 100+1x90
+    values: 100+1x155
   alert_rule_test:
-  - eval_time: 60m
+  - eval_time: 125m
     alertname: L2BatchHeightStalled
     exp_alerts:
     - exp_labels:
@@ -501,5 +507,19 @@ tests:
         namespace: monitoring
         severity: critical
       exp_annotations:
-        summary: Protocol state has not recorded a new L2 batch for 60 minutes.
-        description: Job l1-interface in namespace monitoring has not observed a higher L2 batch in protocol state for 60 minutes. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+        summary: Protocol state has not recorded a new L2 batch for 7500 seconds.
+        description: Job l1-interface in namespace monitoring has not observed a higher L2 batch in protocol state for 7500 seconds. Check Ethereum DA publication, L2 proof generation, and AdvanceL2 WF jobs. If ProtocolStateWFTxNumberStalled is also firing, start with WF jobs and TSO signing.
+- name: L2BatchHeightStalled-progress-across-pod-replacement-gap
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring",instance="old"}
+    values: 10x119 stale
+  - series: withdrawal_processor_protocol_state_l2_batch_height{job="withdrawal-processor",namespace="monitoring",instance="new"}
+    values: _x121 11x64
+  alert_rule_test:
+  - eval_time: 125m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []
+  - eval_time: 155m
+    alertname: L2BatchHeightStalled
+    exp_alerts: []

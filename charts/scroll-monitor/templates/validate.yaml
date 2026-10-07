@@ -1,5 +1,27 @@
+{{- if not (has .Values.alerting.backend (list "grafana" "prometheus")) }}
+{{- fail "alerting.backend must be grafana or prometheus" }}
+{{- end }}
+{{- if eq .Values.alerting.backend "prometheus" }}
+{{- $am := (index .Values "kube-prometheus-stack").alertmanager }}
+{{- if or (not .Values.prometheusRules.enabled) (not $am.enabled) (not $am.alertmanagerSpec.useExistingSecret) (ne $am.alertmanagerSpec.configSecret .Values.alerting.alertmanager.configSecretName) }}
+{{- fail "prometheus backend requires prometheusRules, Alertmanager, useExistingSecret and matching alertmanagerSpec.configSecret" }}
+{{- end }}
+{{- with .Values.alerting.alertmanager.slack.existingSecret }}
+{{- if not (has . $am.alertmanagerSpec.secrets) }}
+{{- fail "Mount alerting.alertmanager.slack.existingSecret in alertmanagerSpec.secrets" }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
   {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
+{{- end }}
+{{- with .Values.grafanaAlerting.defaultContactPoint }}
+{{- if not (kindIs "bool" .enabled) }}
+{{- fail "grafanaAlerting.defaultContactPoint.enabled must be a boolean" }}
+{{- end }}
+{{- if and .enabled (or (not (kindIs "string" .name)) (empty (trim (toString .name)))) }}
+{{- fail "grafanaAlerting.defaultContactPoint.name must be a nonempty string" }}
+{{- end }}
 {{- end }}
 {{- range $name, $paused := .Values.grafanaAlerting.pauseRules }}
 {{- if not (kindIs "bool" $paused) }}
@@ -51,8 +73,8 @@
 {{- end }}
 {{- end }}
 {{- if .Values.businessPodAlerts.enabled }}
-{{- if or (empty .Values.businessPodAlerts.workloadNameRegex) (not (regexMatch "^[1-9][0-9]*$" (toString .Values.businessPodAlerts.restartThreshold))) }}
-{{- fail "businessPodAlerts requires workloadNameRegex and a positive integer restartThreshold" }}
+{{- if empty .Values.businessPodAlerts.workloadNameRegex }}
+{{- fail "businessPodAlerts.workloadNameRegex must select DaemonSets" }}
 {{- end }}
 {{- end }}
 {{- if .Values.eksControlPlane.enabled }}

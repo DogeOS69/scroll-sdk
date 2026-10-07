@@ -12,6 +12,17 @@
 {{- mergeOverwrite $pauses .Values.grafanaAlerting.pauseRules | toYaml -}}
 {{- end -}}
 
+{{/* One configured window for diagnostic alerts and public health evaluation. */}}
+{{- define "scroll-monitor.l2BatchProgress" -}}
+{{- $seconds := .Values.businessAlerts.l2BatchStallSeconds -}}
+{{- if or (kindIs "string" $seconds) (not (regexMatch "^[0-9]+$" (toString $seconds))) (lt (int $seconds) 60) -}}
+{{- fail "businessAlerts.l2BatchStallSeconds must be an integer of at least 60 seconds" -}}
+{{- end -}}
+{{- $progress := .Files.Get "scripts/l2-batch-progress.json" | fromJson -}}
+{{- $_ := set $progress "windowSeconds" (int $seconds) -}}
+{{- $progress | toJson -}}
+{{- end -}}
+
 {{/* Cached facts require source success and age, not just a fresh scrape. */}}
 {{- define "scroll-monitor.snapshotGuard" -}}
 {{- printf "(%s == 1 and on (namespace, job, instance) (%s <= time() and time() - %s < 120) and on (namespace, job, instance) (up == 1))" .valid .timestamp .timestamp -}}
@@ -31,7 +42,10 @@
 {{- $indexerQueries = append $indexerQueries (printf "clamp_min((max by (namespace) (dogecoin_chain_block_height) - on (namespace) group_right max by (namespace, job) (indexer_dogecoin_last_synced_block{job=%s})) - %v, 0) > %v" ($job | quote) $confirmations $legacyThreshold) -}}
 {{- end -}}
 {{- $metric := printf "indexer_dogecoin_last_synced_block{job=~%s}" (.Values.dogecoinIndexerAlerts.jobRegex | quote) -}}
-{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
+{{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
+{{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
+{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
+{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | fromYaml).groups -}}
 {{- if and .Values.statusPage.enabled (ge (int ((.Values.statusPage.generated | default dict).version | default 0)) 3) ((.Values.statusPage.publication | default dict).delivery | default dict).enabled -}}
 {{- $statusService := printf "%s-status-delivery" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}
@@ -70,7 +84,7 @@
 {{- end -}}
 {{- end -}}
 {{/* Prometheus has no pause state. Omit paused diagnostics from its fallback. */}}
-{{- $grafanaManaged := and .Values.grafana.enabled .Values.grafanaAlerting.enabled -}}
+{{- $grafanaManaged := and (eq .Values.alerting.backend "grafana") .Values.grafana.enabled .Values.grafanaAlerting.enabled -}}
 {{- if and .Values.serviceAlerts.enabled (or $grafanaManaged (not .Values.serviceAlerts.paused)) -}}
 {{- range $path, $_ := .Files.Glob "alerts/services/*.yaml" -}}
 {{- $serviceGroups := ($.Files.Get $path | fromYaml).groups -}}

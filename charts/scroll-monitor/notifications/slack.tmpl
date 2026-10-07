@@ -21,14 +21,13 @@
 {{- end }}
 
 {{ define "scroll-monitor.slack.alert" -}}
-*{{ if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}{{ .Labels.alertname }}{{ end }}*
-{{ with .Annotations.description }}{{ . }}
-{{ end -}}
+*{{ template "scroll-monitor.slack.summary" . }}*
+{{ template "scroll-monitor.slack.description" . }}
 `{{ .Labels.alertname }}{{ range (.Labels.Remove (stringSlice "alertname" "severity" "managed_by" "grafana_folder" "scroll_monitor_route")).SortedPairs }} {{ .Name }}={{ .Value }}{{ end }}`
 {{ if eq .Status "firing" }}Since {{ .StartsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ else }}Resolved {{ .EndsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ end }}
-{{- with .GeneratorURL }} · <{{ . }}|Rule>{{ end }}
-{{- if eq .Status "firing" }}{{ with .SilenceURL }} · <{{ . }}|Silence>{{ end }}{{ end }}
-{{- with .DashboardURL }} · <{{ . }}|Dashboard>{{ end }}
-{{- with .PanelURL }} · <{{ . }}|Panel>{{ end }}
+{{- with .GeneratorURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Rule>{{ end }}{{ end }}
+{{- if eq .Status "firing" }}{{ with .SilenceURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Silence>{{ end }}{{ end }}{{ end }}
+{{- with .DashboardURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Dashboard>{{ end }}{{ end }}
+{{- with .PanelURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Panel>{{ end }}{{ end }}
 
 {{ end }}

@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 
 
 BASELINE = "__scroll_monitor_last_applied__"
+ALERTMANAGER_CONFIG_PATH = "/api/alertmanager/grafana/config/api/v1/alerts"
 TEMPLATE_MARKER = re.compile(r"\{\{/\* scroll-monitor managed template sha256=([0-9a-f]{64}) \*/\}\}\n")
 
 
@@ -88,6 +89,9 @@ def reconcile_rule(existing, source, desired, pause=None):
     updated.setdefault("annotations", {})[BASELINE] = json.dumps(next_baseline, sort_keys=True)
     if conflicts:
         print(f'DRIFT {desired["title"]}: preserved UI/legacy differences in {", ".join(conflicts)}', flush=True)
+    if "notification_settings" in desired and updated.get("notification_settings") != desired["notification_settings"]:
+        updated["notification_settings"] = copy.deepcopy(desired["notification_settings"])
+        changed.append("notification_settings (explicit backend selection)")
     if changed:
         print(f'UPDATE {desired["title"]}: {", ".join(changed)}', flush=True)
     if updated == existing:
@@ -130,14 +134,60 @@ class Grafana:
             except HTTPError as error:
                 if allow_missing and error.code == 404:
                     return None
-                if error.code < 500:
+                if error.code < 500 or (method == "POST" and path == ALERTMANAGER_CONFIG_PATH):
                     # Do not dump response bodies or credentials into Job logs.
                     raise RuntimeError(f"Grafana {method} {path}: HTTP {error.code}") from None
             except (URLError, TimeoutError):
-                pass
+                if method == "POST" and path == ALERTMANAGER_CONFIG_PATH:
+                    raise RuntimeError("Grafana configuration POST outcome unknown; rerun to reread current UI state") from None
             if attempt < 29:
                 time.sleep(5)
         raise RuntimeError(f"Grafana {method} {path} unavailable after retries")
+
+
+def default_contact_point_plan(client, config):
+    """Bootstrap an empty destination through the UI API, preserving integrations."""
+    spec = config.get("defaultContactPoint")
+    if not spec:
+        return None
+    name = spec["name"]
+    current = client.request("GET", ALERTMANAGER_CONFIG_PATH)
+    updated = copy.deepcopy(current)
+    am = updated.get("alertmanager_config", {}) if isinstance(updated, dict) else {}
+    route, receivers = am.get("route", {}), am.get("receivers")
+    if not route.get("receiver") or not isinstance(receivers, list):
+        raise RuntimeError("Missing existing Alertmanager configuration; refusing to replace it")
+    receiver = next((r for r in receivers if r.get("name") == name), None)
+    if receiver is None:
+        receiver = {"name": name, "grafana_managed_receiver_configs": []}
+        receivers.append(receiver)
+    if route["receiver"] == "grafana-default-email":
+        route["receiver"] = name
+    template = config.get("notificationTemplate")
+    if template and template.get("bindDefaultContactPoint", True):
+        for integration in receiver.get("grafana_managed_receiver_configs", []):
+            if integration.get("type") != "slack":
+                continue
+            settings = integration.setdefault("settings", {})
+            for field, definition in (("title", "title"), ("text", "text")):
+                if not (settings.get(field) or "").strip():
+                    settings[field] = '{{ template "scroll-monitor.slack.' + definition + '" . }}'
+    # Empty receivers are valid destinations. A Slack integration is added in
+    # the UI later; no dummy URL, required Slack Secret or file provenance.
+    return {"name": name, "updated": updated, "changed": updated != current,
+            "empty": not receiver.get("grafana_managed_receiver_configs")}
+
+
+def seed_default_contact_point(client, plan, dry_run=False):
+    if not plan or not plan["changed"]:
+        return
+    if dry_run:
+        print(f'PLAN default contact point: {plan["name"]}', flush=True)
+        return
+    # The payload may contain credentials for unrelated integrations. Never
+    # log it. Grafana retains their encrypted secrets via existing secureFields.
+    client.request("POST", ALERTMANAGER_CONFIG_PATH, plan["updated"])
+    print(f'Seeded default contact point {plan["name"]}; preserved UI integrations and custom routing', flush=True)
 
 
 def notification_route_id(config, scope):
@@ -268,6 +318,13 @@ def alert_rule(source, config, group):
             },
         ],
     }
+    if config.get("forwardAlertmanager"):
+        # Forward promptly and refresh firing state before Alertmanager expiry.
+        # The independent Alertmanager owns user-facing grouping/repetition.
+        rule["notification_settings"] = {
+            "receiver": config["forwardAlertmanager"]["name"],
+            "group_wait": "0s", "group_interval": "10s", "repeat_interval": "1m",
+        }
     scope = source.get("labels", {}).get("alert_scope")
     if scope in notification_routes(config):
         # Grafana 11 per-rule routing requires alertname in group_by. Use a
@@ -344,11 +401,33 @@ def seed_template(client, spec, dry_run=False):
     print(f"Seeded notification template {name}: {action}", flush=True)
 
 
+def seed_forwarder(client, spec, dry_run=False):
+    """Route Grafana-evaluated logs to the independent notification owner."""
+    path = "/api/v1/provisioning/contact-points"
+    desired = {"uid": spec["uid"], "name": spec["name"], "type": "prometheus-alertmanager",
+               "settings": {"url": spec["url"]}, "disableResolveMessage": False}
+    existing = next((p for p in client.request("GET", path) or [] if p.get("uid") == spec["uid"]), None)
+    if existing and any(existing.get(k) != desired[k] for k in ("name", "type")):
+        raise RuntimeError("External Alertmanager contact UID is already owned by another integration")
+    # Grafana returns redacted optional secure fields even when unconfigured.
+    # Compare only managed settings; never rewrite those fields on each upgrade.
+    if (existing and all(existing.get(k) == desired[k] for k in ("uid", "name", "type", "disableResolveMessage"))
+            and all(existing.get("settings", {}).get(k) == v for k, v in desired["settings"].items())):
+        return
+    if not dry_run:
+        client.request("PUT" if existing else "POST", path + ("/" + quote(spec["uid"], safe="") if existing else ""), desired)
+
+
 def seed(client, config, dry_run=False):
+    if config.get("forwardAlertmanager"):
+        seed_forwarder(client, config["forwardAlertmanager"], dry_run)
+    default_plan = default_contact_point_plan(client, config)
     contact_points = {config[key] for key in ("businessPodContactPoint", "diskContactPoint", "resourceContactPoint") if config.get(key)}
     if contact_points:
         receivers = client.request("GET", "/api/v1/provisioning/contact-points")
         for contact_point in sorted(contact_points):
+            if default_plan and default_plan["empty"] and contact_point == default_plan["name"]:
+                continue  # Bootstrap destination intentionally has no integration yet.
             if not any(r.get("name") == contact_point and r.get("type") == "slack"
                        for r in (receivers or [])):
                 raise RuntimeError(
@@ -356,14 +435,20 @@ def seed(client, config, dry_run=False):
                     "Create it in Grafana or set businessPodAlerts.contactPoint/diskAlerts.contactPoint/resourceAlerts.contactPoint "
                     "to the existing Slack contact name."
                 )
+    if config.get("notificationTemplate"):
+        seed_template(client, config["notificationTemplate"], dry_run)
+        # This API writes the entire Alertmanager configuration, including its
+        # template files. Refresh after seeding to avoid restoring old templates.
+        default_plan = default_contact_point_plan(client, config)
+    seed_default_contact_point(client, default_plan, dry_run=dry_run)
+    # During dry-run the empty destination has not been created yet, but policy
+    # planning only reads the tree and never asks Grafana to validate/write it.
     seed_notification_policies(client, config, dry_run=dry_run)
     folder = quote(config["folderUID"], safe="")
     if client.request("GET", f"/api/folders/{folder}", allow_missing=True) is None and not dry_run:
         client.request("POST", "/api/folders", {
             "uid": config["folderUID"], "title": config["folderTitle"],
         })
-    if config.get("notificationTemplate"):
-        seed_template(client, config["notificationTemplate"], dry_run)
     for group in config["groups"]:
         path = f'/api/v1/provisioning/folder/{folder}/rule-groups/{quote(group["name"], safe="")}'
         existing = client.request("GET", path, allow_missing=True)
