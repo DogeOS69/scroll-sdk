@@ -176,6 +176,9 @@ class L2RethP2PTests(unittest.TestCase):
                                   values=dict(replicated, **p2p_external(ordinal=ordinal)))
         self.assert_fails("must name a pod of this release", EXTERNAL_P2P,
                           values=p2p_external(ordinal=1))
+        # R3-F3: an explicit zero is not treated as one replica.
+        self.assert_fails("controller.replicas of at least 1", EXTERNAL_P2P,
+                          values={"controller": {"replicas": 0}})
 
     def test_internet_facing_requires_sources_or_open_opt_in(self):
         self.assert_fails("set sourceRanges, or allowOpenPeering: true",
@@ -192,8 +195,17 @@ class L2RethP2PTests(unittest.TestCase):
                           values=p2p_external(subnets=["subnet-a", "subnet-b"]))
 
     def test_refuses_annotations_that_bypass_sources_or_add_proxy_protocol(self):
-        for key in ["security-groups", "disable-nlb-sg", "proxy-protocol"]:
-            annotation = {AWS_ANNOTATION + key: "x"}
+        for key, value in [
+            ("security-groups", "sg-1"),
+            ("security-group-prefix-lists", "pl-1"),
+            ("disable-nlb-sg", "true"),
+            ("proxy-protocol", "*"),
+            ("proxy-protocol-per-target-group", "30303"),
+            # R3-F2: target-group attributes can enable Proxy Protocol v2, also per port.
+            ("target-group-attributes", "proxy_protocol_v2.enabled=true"),
+            ("target-group-attributes.30303", "proxy_protocol_v2.enabled=true"),
+        ]:
+            annotation = {AWS_ANNOTATION + key: value}
             for values in [p2p_external(annotations=annotation), {"global": {"annotations": annotation}}]:
                 with self.subTest(key=key, values=values):
                     self.assert_fails("is not allowed", EXTERNAL_P2P, values=values)
@@ -242,6 +254,40 @@ class L2RethP2PTests(unittest.TestCase):
 
         p2p = self.external(EXTERNAL_P2P, values={"global": {"annotations": {AWS_ANNOTATION + "scheme": "internal"}}})
         self.assertEqual(p2p["metadata"]["annotations"][AWS_ANNOTATION + "scheme"], "internet-facing")
+
+    # R3-F1: with external P2P enabled the chart renders only its generated
+    # Services, so raw service.* inputs it would drop are refused.
+    def test_raw_service_inputs_are_refused_when_enabled(self):
+        probes = [
+            ("service.p2p is not supported", {"p2p": {"ports": {"rpc": RPC_PORT}}}),
+            ("service.p2p is not supported", {"p2p": {"annotations": {AWS_ANNOTATION + "security-groups": "sg-1"}}}),
+            ("service.p2p is not supported", {"p2p": {"extraSelectorLabels": {"app.kubernetes.io/instance": "other"}}}),
+            ("service.rogue is not supported", {"rogue": {"type": "NodePort", "ports": {"rpc": RPC_PORT}}}),
+            ("service.main.externalIPs is not supported", {"main": {"externalIPs": ["203.0.113.1"]}}),
+            ("service.main.ports is not supported", {"main": {"ports": {"extra": RPC_PORT}}}),
+        ]
+        for message, service in probes:
+            with self.subTest(service=service):
+                self.assert_fails(message, EXTERNAL_P2P, values={"service": service})
+
+    def test_enabled_render_contains_only_generated_services(self):
+        values = extra("a-internal", {"ports": {"admin": {"enabled": True, "port": 9000}}})
+        values["service"] = {"main": {"fullname": "l2-bootnode", "annotations": {"team": "l2"}}}
+        services = self.services(self.render(EXTERNAL_P2P, values=values))
+        self.assertEqual(sorted(services), ["l2-bootnode", "review-l2-reth-a-internal", "review-l2-reth-p2p"])
+        main = services["l2-bootnode"]
+        self.assert_internal(main)
+        self.assertEqual(main["metadata"]["annotations"], {"team": "l2"})
+        self.assertNotIn("externalIPs", main["spec"])
+        self.assertEqual(services["review-l2-reth-a-internal"]["spec"]["type"], "ClusterIP")
+        p2p = services["review-l2-reth-p2p"]
+        self.assertEqual(p2p["spec"]["ports"], P2P_PORTS)
+        self.assertEqual(p2p["metadata"]["annotations"], NLB_ANNOTATIONS)
+        self.assertEqual(p2p["spec"]["selector"], {
+            "app.kubernetes.io/instance": "review",
+            "app.kubernetes.io/name": "l2-reth",
+            POD_NAME: "review-l2-reth-0",
+        })
 
 
 if __name__ == "__main__":

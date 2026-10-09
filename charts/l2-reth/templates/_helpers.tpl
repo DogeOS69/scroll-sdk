@@ -80,15 +80,33 @@ Validate l2-reth role constraints before generating common chart values.
     {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
       {{- fail "reth.p2pExternal requires service.main.type ClusterIP; a public main Service would publish RPC, WS and metrics" -}}
     {{- end -}}
+    {{- /* The chart replaces .Values.service with its generated map (common.yaml), so refuse inputs it would drop. */ -}}
+    {{- range $name, $_ := $.Values.service -}}
+      {{- if ne $name "main" -}}
+        {{- fail (printf "service.%s is not supported with reth.p2pExternal; use reth.service.extra for internal Services" $name) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- range $key, $_ := $.Values.service.main -}}
+      {{- if not (has $key (list "fullname" "type" "annotations")) -}}
+        {{- fail (printf "service.main.%s is not supported with reth.p2pExternal; only fullname, type and annotations are" $key) -}}
+      {{- end -}}
+    {{- end -}}
     {{- if eq $role "sequencer" -}}
       {{- fail "reth.p2pExternal is for designated non-sequencer nodes only" -}}
     {{- end -}}
     {{- if ne $.Values.controller.type "statefulset" -}}
       {{- fail "reth.p2pExternal requires controller.type statefulset" -}}
     {{- end -}}
+    {{- $podCount := 1 -}}
+    {{- if not (kindIs "invalid" $.Values.controller.replicas) -}}
+      {{- $podCount = int $.Values.controller.replicas -}}
+    {{- end -}}
+    {{- if lt $podCount 1 -}}
+      {{- fail "reth.p2pExternal requires controller.replicas of at least 1; disable it while the node is scaled to zero" -}}
+    {{- end -}}
     {{- $ordinal := int .ordinal -}}
-    {{- if or (lt $ordinal 0) (ge $ordinal $replicas) -}}
-      {{- fail (printf "reth.p2pExternal.ordinal %d must name a pod of this release: 0 to %d" $ordinal (sub $replicas 1)) -}}
+    {{- if or (lt $ordinal 0) (ge $ordinal $podCount) -}}
+      {{- fail (printf "reth.p2pExternal.ordinal %d must name a pod of this release: 0 to %d" $ordinal (sub $podCount 1)) -}}
     {{- end -}}
     {{- if and .eipAllocations (ne (len .eipAllocations) (len .subnets)) -}}
       {{- fail "reth.p2pExternal.eipAllocations needs one entry per reth.p2pExternal.subnets entry" -}}
@@ -98,9 +116,12 @@ Validate l2-reth role constraints before generating common chart values.
     {{- end -}}
     {{- /* Check what the Service renders: its annotations merged over global.annotations. */ -}}
     {{- $annotations := merge (include "l2-reth.p2pExternal.annotations" $ | fromYaml) (include "scroll.common.lib.metadata.globalAnnotations" $ | fromYaml) -}}
-    {{- range $key := list "security-groups" "disable-nlb-sg" "proxy-protocol" "proxy-protocol-per-target-group" -}}
-      {{- if hasKey $annotations (printf "service.beta.kubernetes.io/aws-load-balancer-%s" $key) -}}
-        {{- fail (printf "reth.p2pExternal: annotation service.beta.kubernetes.io/aws-load-balancer-%s is not allowed; it bypasses the source restriction or adds Proxy Protocol" $key) -}}
+    {{- /* Prefixes also cover the per-port and per-target-group forms. */ -}}
+    {{- range $key, $_ := $annotations -}}
+      {{- range $prefix := list "security-groups" "security-group-prefix-lists" "disable-nlb-sg" "proxy-protocol" "target-group-attributes" -}}
+        {{- if hasPrefix (printf "service.beta.kubernetes.io/aws-load-balancer-%s" $prefix) $key -}}
+          {{- fail (printf "reth.p2pExternal: annotation %s is not allowed; it changes the source restriction or can enable Proxy Protocol" $key) -}}
+        {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
@@ -410,6 +431,7 @@ Generate rollup-node argv without shell interpolation.
 {{- define "l2-reth.service" -}}
 main:
   enabled: true
+  primary: true
   {{- with .Values.service.main.fullname }}
   fullname: {{ . | quote }}
   {{- end }}

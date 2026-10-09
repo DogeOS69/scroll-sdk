@@ -206,13 +206,21 @@ The chart refuses to render `reth.p2pExternal` when:
 - `service.main.type` is not `ClusterIP`, which would publish RPC, WS and
   metrics;
 - `role` is `sequencer`, or `controller.type` is not `statefulset`;
-- `ordinal` names no pod of this release;
+- `ordinal` names no pod of this release, or `controller.replicas` is 0
+  (disable external P2P while the node is scaled to zero);
 - `eipAllocations` and `subnets` differ in length;
 - `sourceRanges` is empty without `allowOpenPeering: true`;
 - the Service's effective annotations, including `global.annotations`, contain
-  `aws-load-balancer-security-groups` or `aws-load-balancer-disable-nlb-sg`
-  (both stop the controller applying the source ranges) or an
-  `aws-load-balancer-proxy-protocol*` annotation.
+  a key starting with `service.beta.kubernetes.io/aws-load-balancer-` plus
+  `security-groups` or `disable-nlb-sg` (the controller then stops applying
+  the source ranges), `security-group-prefix-lists` (adds allowed sources),
+  `proxy-protocol`, or `target-group-attributes` (including the per-port
+  `target-group-attributes.<port>` form, which can enable Proxy Protocol v2);
+- `service` has keys other than `main`, or `service.main` has keys other than
+  `fullname`, `type` and `annotations`. With external P2P enabled the chart
+  renders exactly its generated Services (main, the internal extras and
+  `<fullname>-p2p`), so it refuses other raw inputs instead of dropping them
+  silently.
 
 `reth.service.extra` stays available for internal Services only. The chart
 refuses an enabled extra Service of type `LoadBalancer` or `NodePort`, or with
