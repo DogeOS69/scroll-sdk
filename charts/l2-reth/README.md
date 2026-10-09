@@ -135,3 +135,120 @@ Service, StatefulSet, and PVC names are likewise release-derived. Do not set
 `global.nameOverride` or `global.fullnameOverride` in normal production values.
 For an AWS KMS sequencer, retain an explicit `serviceAccount.name` when the EKS
 IRSA role trust policy pins that namespace/ServiceAccount OIDC subject.
+
+## External P2P (opt-in)
+
+An external partner's L2 nodes can peer with designated non-sequencer bootnodes
+through one P2P-only AWS Network Load Balancer per bootnode. It is off by
+default: the chart renders only the main ClusterIP Service, which carries RPC
+8545, WS 8546, metrics 6060 and, when `reth.service.p2p.enabled`, internal P2P.
+The main Service is never used for external exposure.
+
+Enable it with an additional Service under `reth.service.extra`. The commented
+block in `examples/values/l2-reth-bootnode-production.yaml` is the reference,
+and `ci/external-p2p-values.yaml` is the same block as a lint and test fixture:
+
+```yaml
+reth:
+  service:
+    extra:
+      p2p:
+        enabled: true
+        type: LoadBalancer
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: external
+          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+          service.beta.kubernetes.io/aws-load-balancer-subnets: "<subnet-id>"
+          service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "<eipalloc-id>"
+        loadBalancerSourceRanges:
+          - "<partner CIDR>"
+        ports:
+          p2p-tcp:
+            enabled: true
+            port: 30303
+            targetPort: 30303
+            protocol: TCP
+```
+
+This renders `<fullname>-p2p`, an internet-facing NLB with IP targets that
+forwards TCP 30303 only:
+
+- No UDP. The chart always passes `--disable-discovery`, so the node opens no
+  discovery socket, and peers are configured explicitly. No Proxy Protocol v2:
+  reth's RLPx listener does not parse it.
+- Static address. The Elastic IP allocation is created and owned by the
+  deployment's infrastructure; the chart only references its allocation ID and
+  never creates or releases it. List one allocation per subnet, in the same
+  order. The subnet must be in the same Availability Zone as the node's EBS data
+  volume, or cross-zone load balancing must be enabled
+  (`service.beta.kubernetes.io/aws-load-balancer-attributes:
+  load_balancing.cross_zone.enabled=true`); otherwise a pod scheduled in another
+  AZ has no load balancer node in front of it.
+- Source restriction. `loadBalancerSourceRanges` is enforced by the frontend
+  security group that the AWS Load Balancer Controller creates for the NLB
+  (NLB security groups, controller v2.6.0 or later). An empty list means
+  `0.0.0.0/0`. Do not set `aws-load-balancer-disable-nlb-sg`: without an NLB
+  security group the controller only applies source ranges when client IP
+  preservation is on, which is off by default for IP targets. If you set
+  `aws-load-balancer-security-groups` instead, the controller ignores the source
+  ranges and the listed groups must carry the restriction. See the controller's
+  [Service annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#lb-source-ranges)
+  and [security groups](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/security_groups/)
+  docs.
+- One pod per Service. A `bootnode` release runs at most one replica, so the
+  release's selector picks exactly one pod; deploy one release per exposed
+  bootnode. A replicated release must add
+  `extraSelectorLabels: {statefulset.kubernetes.io/pod-name: <pod>}` to each
+  external Service.
+
+The chart refuses to render an enabled `LoadBalancer` or `NodePort` extra
+Service when `service.main.type` is not `ClusterIP` (that would publish RPC,
+WS and metrics), when `role` is `sequencer`, or when `controller.replicas` is
+greater than 1 without a pod-name selector.
+
+Node identity must survive rescheduling, because the partner pins the enode
+(`enode://<pubkey>@<EIP>:30303`):
+
+- `reth.nodeKey.mode: secret` (the bootnode example) mounts the key from the
+  `<fullname>-secret-env` Secret, synced by External Secrets from the secret
+  store. The key lives outside the pod and the volume.
+- `pvcAutoGenerate` generates the key once at `reth.nodeKey.generatedPath`
+  (`/data/nodekey`) on the data PVC and reuses it afterwards. The identity is
+  lost if the PVC is deleted.
+- `none` lets reth pick a key and is not suitable for an exposed node.
+
+Peering is configured on both sides. The partner adds our enodes to its static
+or trusted peers. The chart passes `--trusted-only` only for `role: rpc` with
+`reth.rpc.trustedOnly: true`; if an exposed node runs that way, add the
+partner's enodes to `reth.trustedPeers`, otherwise its connections are refused.
+Inbound connections also count against `reth.rpc.maxInboundPeers` when set.
+
+L2 blocks reach peers over this one connection: the `scroll-wire` protocol and
+eth-wire `NewBlock` gossip are RLPx sub-protocols on TCP 30303, and
+rollup-node opens no other peer-facing listener.
+
+### Activation checklist
+
+1. The nodes are named (bootnode releases), each with a persistent node key
+   (`secret` mode) and its enode recorded.
+2. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
+   of that node's EBS volume (or cross-zone is enabled).
+3. The source policy (partner CIDRs) is approved and set in
+   `loadBalancerSourceRanges`.
+4. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
+   partner's enodes are added on our side where needed (trusted-only nodes).
+
+### Off-cluster validation
+
+Run from an approved partner address and from an unapproved one:
+
+1. From the approved source, `nc -vz <EIP> 30303` connects; a partner node
+   configured with the enode connects (`admin_peers` on the bootnode lists it
+   with the expected remote enode) and imports new L2 blocks.
+2. Delete the pod (`kubectl delete pod <release>-l2-reth-0`). After it
+   reschedules, the enode (`admin_nodeInfo`) and the EIP are unchanged, and the
+   partner reconnects and resumes block sync without a config change.
+3. From the approved source, 8545, 8546 and 6060 on the EIP time out and UDP
+   30303 gets no answer: only the TCP 30303 listener exists.
+4. From an unapproved source, TCP 30303 on the EIP times out.

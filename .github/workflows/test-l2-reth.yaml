@@ -1,0 +1,32 @@
+name: Test l2-reth chart
+on:
+  pull_request:
+    paths:
+      - charts/l2-reth/**
+      - examples/values/l2-reth-bootnode-production.yaml
+      - .github/tests/test_l2_reth.py
+      - .github/workflows/test-l2-reth.yaml
+  push:
+    paths:
+      - charts/l2-reth/**
+      - examples/values/l2-reth-bootnode-production.yaml
+      - .github/tests/test_l2_reth.py
+      - .github/workflows/test-l2-reth.yaml
+permissions:
+  contents: read
+jobs:
+  chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install PyYAML==6.0.2
+      - name: Download declared chart dependencies
+        run: helm dependency build charts/l2-reth
+      - run: helm lint --strict charts/l2-reth
+      - run: python3 -m unittest discover -s .github/tests -p 'test_l2_reth.py' -v

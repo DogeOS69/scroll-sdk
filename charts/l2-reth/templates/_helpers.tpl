@@ -62,6 +62,20 @@ Validate l2-reth role constraints before generating common chart values.
   {{- if and (eq $signerType "localFile") (eq $nodeKeyMode "secret") (eq (dir .Values.reth.signer.localFile.path) (dir .Values.reth.nodeKey.path)) -}}
     {{- fail "reth.signer.localFile.path and reth.nodeKey.path must use different directories when both are mounted from secrets" -}}
   {{- end -}}
+  {{- /* External P2P: an enabled reth.service.extra Service of type LoadBalancer or NodePort. */ -}}
+  {{- range $name, $svc := .Values.reth.service.extra -}}
+    {{- if and (kindIs "map" $svc) (dig "enabled" true $svc) (has (default "ClusterIP" $svc.type) (list "LoadBalancer" "NodePort")) -}}
+      {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
+        {{- fail (printf "reth.service.extra.%s exposes P2P externally, so service.main.type must be ClusterIP; a public main Service would publish RPC, WS and metrics" $name) -}}
+      {{- end -}}
+      {{- if eq $role "sequencer" -}}
+        {{- fail (printf "reth.service.extra.%s: external P2P is for designated non-sequencer nodes only" $name) -}}
+      {{- end -}}
+      {{- if and (gt $replicas 1) (not (dig "extraSelectorLabels" "statefulset.kubernetes.io/pod-name" "" $svc)) -}}
+        {{- fail (printf "reth.service.extra.%s must select one pod via extraSelectorLabels.statefulset.kubernetes.io/pod-name when controller.replicas > 1" $name) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 
 {{/*

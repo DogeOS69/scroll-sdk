@@ -1,0 +1,27 @@
+# One bootnode with external P2P enabled. reth.service.extra mirrors the
+# commented example in examples/values/l2-reth-bootnode-production.yaml.
+role: bootnode
+reth:
+  nodeKey:
+    mode: secret
+  service:
+    p2p:
+      enabled: true
+    extra:
+      p2p:
+        enabled: true
+        type: LoadBalancer
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: external
+          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+          service.beta.kubernetes.io/aws-load-balancer-subnets: "<TODO subnet-id>"
+          service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "<TODO eipalloc-id>"
+        loadBalancerSourceRanges:
+          - "<TODO partner CIDR>"
+        ports:
+          p2p-tcp:
+            enabled: true
+            port: 30303
+            targetPort: 30303
+            protocol: TCP

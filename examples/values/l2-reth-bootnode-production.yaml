@@ -114,23 +114,37 @@ reth:
     api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   service:
+    # Internal ClusterIP P2P ports on the main Service, for in-cluster peering.
     p2p:
       enabled: true
-    extra:
-      p2p:
-        enabled: true
-        type: LoadBalancer
-        ports:
-          p2p-tcp:
-            enabled: true
-            port: 30303
-            targetPort: 30303
-            protocol: TCP
-          p2p-udp:
-            enabled: true
-            port: 30303
-            targetPort: 30303
-            protocol: UDP
+    # External P2P is opt-in and off until its activation checklist is complete
+    # (charts/l2-reth/README.md, "External P2P (opt-in)"). To expose this
+    # bootnode to a partner, replace `extra: {}` with the block below. It
+    # renders one P2P-only internet-facing NLB Service (TCP 30303 only) on the
+    # deployment-owned Elastic IP, reachable only from the approved sources.
+    extra: {}
+    # extra:
+    #   p2p:
+    #     enabled: true
+    #     type: LoadBalancer
+    #     annotations:
+    #       service.beta.kubernetes.io/aws-load-balancer-type: external
+    #       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    #       # One allocation per subnet, in the same order. The subnet must be in
+    #       # the AZ of this node's EBS volume (or enable cross-zone load balancing).
+    #       service.beta.kubernetes.io/aws-load-balancer-subnets: "<TODO subnet-id>"
+    #       service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "<TODO eipalloc-id>"
+    #     # Enforced by the NLB security group that the AWS Load Balancer Controller
+    #     # creates. Empty would mean 0.0.0.0/0.
+    #     loadBalancerSourceRanges:
+    #       - "<TODO partner CIDR>"
+    #     ports:
+    #       p2p-tcp:
+    #         enabled: true
+    #         port: 30303
+    #         targetPort: 30303
+    #         protocol: TCP
 
 serviceMonitor:
   main:
