@@ -1,7 +1,7 @@
 image:
   repository: dogeos69/cubesigner-signer
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 global:
   nameOverride: "cubesigner-signer"
@@ -107,6 +107,9 @@ env:
     value: ""
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROGRAM_IDENTITY_DIGEST"
     value: ""
+  # The proof artifact bucket origin (doge-config proofArtifacts.s3), the only
+  # artifact origin the policy admits; never the DA archive bucket. Bake it
+  # into the policy bundle before genesis to avoid a post-launch rotation.
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROOF_RESOLVER_AUTHORITY"
     value: ""
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_REQUEST_CONTRACT"

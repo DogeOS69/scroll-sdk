@@ -26,7 +26,7 @@ PROOF_COORDINATOR_CHART_VERSION ?= 0.3.3
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.23
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.24
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.5
@@ -201,7 +201,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.7 \
+		--version=0.1.10 \
 		--values values/tso-service-production.yaml \
 		--wait
 

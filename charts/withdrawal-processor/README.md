@@ -4,6 +4,17 @@
 
 A Helm chart for the DOGEOS Withdrawal Processor
 
+## Beta.6 signer configuration
+
+Chart 0.1.24 renders the beta.6 `[[tso_signers]]` format. Replace each legacy
+`role` with a single-entry `roles` list. Pull signers need `delivery: pull`,
+`publicKeyOverride` and `transportPubkey`, and must omit `uri`. Push signers
+retain their URI. The chart rejects the old format and incomplete delivery
+settings before installation. Regenerate values with a CLI containing
+scroll-sdk-cli #77 and deploy a matching beta.6 WP image; older binaries do
+not understand the new signer directory. See the
+[beta.6 rollout checklist](../../examples/core-beta6-configuration.md).
+
 ## Maintainers
 
 | Name | Email | Url |

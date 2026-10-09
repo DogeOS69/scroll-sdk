@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/tso-service
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 service:
   main:
@@ -73,28 +73,43 @@ env:
 
 ingress:
   main:
-    # External signers need a reachable endpoint. prep-charts fills the host;
-    # review ingress access controls/TLS before exposing this endpoint.
-    # Expose only health and signature callbacks. Registration, proposals,
-    # status and metrics stay on the in-cluster Service.
+    # Public edge for external signers: /health and the transport-signed
+    # /signer/* routes only (poll, submit-attestation-signatures,
+    # reject-signatures). /propose, /register-*, /status, /metrics and the
+    # unprefixed callbacks stay in-cluster. prep-charts fills the host.
+    #
+    # Mainnet uses its own AWS ALB (AWS Load Balancer Controller; no
+    # group.name), separate from the proof coordinator's, for independent
+    # config, security-group source rules and idle timeout. TLS from ACM;
+    # optional WAF web ACL with a per-IP rate rule (oversize handling =
+    # continue, see the chart README). ALB has no request-body limit of its
+    # own; the TSO's 4 MiB application limit applies. To use ingress-nginx instead, set
+    # ingressClassName: nginx, replace the alb.* annotations with
+    #   nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+    # (plus cert-manager.io/cluster-issuer), and add tls[0].secretName.
     enabled: true
     primary: true
     annotations:
-      # Keep nginx comfortably above TSO's current 4 MiB application body limit.
-      nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      alb.ingress.kubernetes.io/certificate-arn: "<TODO>"
+      alb.ingress.kubernetes.io/wafv2-acl-arn: "<TODO>"
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      # Optional source allowlist for this ALB's security group (comma-separated
+      # CIDRs); unset = open. The TSO's security is the signed requests, not the
+      # allowlist: operators may have no static IPs.
+      # alb.ingress.kubernetes.io/inbound-cidrs: ""
     labels: {}
-    ingressClassName: "nginx"
+    ingressClassName: "alb"
     hosts:
       - host: ""
         paths:
           - path: /health
             pathType: Exact
-          - path: /submit-attestation-signatures
-            pathType: Exact
-          - path: /submit-correctness-signatures
-            pathType: Exact
-          - path: /reject-signatures
-            pathType: Exact
+          - path: /signer
+            pathType: Prefix
 
 resources:
   requests:
@@ -138,5 +153,9 @@ networkPolicy:
       - podSelector: {matchLabels: {app.kubernetes.io/name: withdrawal-processor}}
     signers:
       - podSelector: {matchLabels: {app.kubernetes.io/name: cubesigner-signer}}
+    # ALB target-type ip: the ALB connects from its subnets. List each public
+    # subnet CIDR the ALB uses (ingress-nginx: its pods instead).
+    edge:
+      - ipBlock: {cidr: "<TODO>"}
     operators: []
-    monitoring: []   # e.g. a namespaceSelector for your Prometheus
+    monitoring: []   # Prometheus peers can reach every route on the API port

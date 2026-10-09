@@ -60,6 +60,11 @@ serviceMonitor:
   main:
     enabled: false
 
+# Public edge. Only /health and the transport-signed /signer/* routes are
+# public; every other TSO route (/propose, /register-*, /status, /metrics and
+# the unprefixed callbacks used by in-cluster signers) stays in-cluster.
+# ingressClassName "alb" (AWS Load Balancer Controller) or "nginx"; see
+# values/production.yaml for the annotations each one needs.
 ingress:
   main:
     enabled: true
@@ -70,7 +75,9 @@ ingress:
     hosts:
       - host: tso.scrollsdk
         paths:
-          - path: /
+          - path: /health
+            pathType: Exact
+          - path: /signer
             pathType: Prefix
 
 # Ingress NetworkPolicy for the TSO API port. The TSO routes are unauthenticated
@@ -81,11 +88,14 @@ ingress:
 # All lists hold NetworkPolicyPeer entries (podSelector / namespaceSelector).
 # The API, /health and /metrics share one port, so every listed peer reaches
 # every route. withdrawalProcessor and signers are required when enabled.
+# edge admits the ALB subnet CIDRs (or ingress proxy pods). The Ingress
+# restricts public paths; this L4 policy cannot filter HTTP routes.
 networkPolicy:
   enabled: false
   port: 3000
   allowFrom:
     withdrawalProcessor: []   # e.g. [{podSelector: {matchLabels: {app.kubernetes.io/name: <wp>}}}]
     signers: []               # signer pods that post signature callbacks
+    edge: []                  # public Ingress sources, e.g. [{ipBlock: {cidr: <ALB subnet CIDR>}}]
     operators: []             # optional: operator tooling / ad-hoc port-forward source
     monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port

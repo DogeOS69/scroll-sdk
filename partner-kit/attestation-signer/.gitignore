@@ -1,0 +1,7 @@
+# Operator instances and secrets created by the runbook. Never commit them.
+# The tracked nonfunctional examples (docker-compose/.env.example,
+# attestation-signer.toml, signer-policy.env) stay visible.
+/signer-*/
+/docker-compose/attestation-signer.env
+/docker-compose/transport.key
+/docker-compose/transport.key.new

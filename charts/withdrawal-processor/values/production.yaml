@@ -506,19 +506,21 @@ externalSecrets:
 # TSO Signers Configuration for local K8s testing
 # This will be used by the Helm template to create a ConfigMap
 # which is then mounted as /app/config/signers.toml
+# Push entries carry a uri; pull entries (external attestation signers) carry
+# none and pin publicKeyOverride and transportPubkey instead.
 tsoSigners:
   - network: "testnet"
-    uri: "https://j6pqntddtp.us-west-2.awsapprunner.com" # Or 127.0.0.1:4001 if the Tee signer is local
-    role: "Tee"
+    uri: "http://cubesigner-signer:3000"
+    roles: ["Correctness"]
+    delivery: "push"
+    publicKeyOverride: "<66-hex CubeSigner pubkey>"
+    signatureMode: "ecdsa"
   - network: "testnet"
-    uri: "http://cubesigner-signer-0:3000"
-    role: "Attestation"
-  - network: "testnet"
-    uri: "http://cubesigner-signer-1:3000"
-    role: "Attestation"
-  - network: "testnet"
-    uri: "http://cubesigner-signer-2:3000"
-    role: "Attestation"
+    roles: ["Attestation"]
+    delivery: "pull"
+    publicKeyOverride: "<66-hex attestation pubkey>"
+    transportPubkey: "<66-hex transport pubkey>"
+    signatureMode: "ecdsa"
 
 # Persistence Configuration
 persistence:

@@ -1,20 +1,24 @@
 # Running a DogeOS Attestation Signer
 
 This kit is for a partner that operates one Rust `attestation-signer` outside
-the bridge operator's cluster. The bridge operator receives only the signer's
-HTTPS endpoint and compressed public key. It never receives the WIF, KMS
-credentials, private RPC credentials, or the partner's trust policy.
+the bridge operator's cluster. The signer dials out to the bridge operator's
+TSO over HTTPS, so the partner opens nothing inbound and needs no static IP or
+certificate. The bridge operator receives only the signer's descriptor: its
+compressed attestation public key and its transport public key. It never
+receives the WIF, KMS credentials, the transport key, private RPC credentials,
+or the partner's trust policy.
 
-The reference Compose image defaults to `v0.3.0-beta.5c`. The environment
-example includes that binary's release/commit approval pins. When upgrading
-an existing beta.5b signer, update its selected image and approval pins together
-while retaining its identity, policy bundle and database volume. See the
-[beta.5c upgrade checklist](../../examples/core-beta5c-configuration.md).
+The reference Compose image defaults to `v0.3.0-beta.6`. Update the selected
+image and binary approval pins together. Preserve both signer keys and the
+partner-owned trust policy; regenerate the proof-policy bundle from the
+selected beta.6 proof artifacts. Follow the
+[beta.6 configuration checklist](../../examples/core-beta6-configuration.md).
+Use a CLI release containing scroll-sdk-cli #77 for the pull-signer workflow.
 
 The current dogeos-core contract is `attestation_evidence_v2`:
 
 ```text
-partner creates key + descriptor
+partner creates signing key + transport key + descriptor
             ↓
 bridge operator fixes keyset and generates canonical protocol context
             ↓
@@ -30,9 +34,13 @@ bridge operator returns the generated policy bundle.
 
 ## What the signer exposes
 
-TSO needs one inbound application API and three status surfaces:
+Nothing is exposed to the TSO. With pull delivery the signer long-polls the TSO
+(`/signer/poll`) and returns signatures or rejections on `/signer/*`; every
+request carries a signature from the transport key, which the TSO pins.
 
-- `POST /sign` receives signing requests.
+Locally (loopback in the reference Compose file) it serves three status
+surfaces for preflight:
+
 - `GET /health` reports process health, public key, network, and build identity.
 - `GET /ready` is HTTP 503 in `enforce` until every production V2
   capability can serve.
@@ -41,23 +49,19 @@ TSO needs one inbound application API and three status surfaces:
 Prometheus uses a separate metrics-only listener:
 
 - `GET /metrics` is exposed on port `9100` by the reference Compose file.
-- Other routes, including `POST /sign`, are not served on port `9100`.
+- Other routes are not served on port `9100`.
 
 The signer makes two outbound connections:
 
-- callbacks to the bridge operator's TSO URL;
+- polls and signed callbacks to the bridge operator's TSO URL (HTTPS);
 - HTTPS GET requests for the concrete proof-artifact URLs carried by requests.
-
-Use a private network/VPN or an IP-allowlisted TLS proxy. There is no
-application-layer authentication on the signer↔TSO HTTP path today.
 
 ## Prometheus scrape contract
 
 The reference Compose deployment sets
 `ATTESTATION_SIGNER_METRICS_PORT=9100` and publishes host port `9100`. Configure
 an authorized Prometheus server to pull `GET /metrics` from that port. Keep the
-signing port (`4040`) on the TSO-only network; do not expose it merely to enable
-monitoring. The partner is responsible for private routing, firewall or
+API port (`4040`) on loopback; do not expose it merely to enable monitoring. The partner is responsible for private routing, firewall or
 allowlist rules between Prometheus and the metrics port.
 
 The exposition provides these metric families:
@@ -131,50 +135,98 @@ The partner-owned `attestation-signer.toml` owns operational trust choices:
 with `--force`. The bridge bundle must never contain a common source-set file:
 different partners are expected to use independently operated sources.
 
-## Step 1 — create the key, policy template, and descriptor
+## Step 1 — create the keys, policy template, and descriptor
 
 Run from this directory. Choose a stable DNS-label-shaped signer id agreed with
-the bridge operator.
+the bridge operator. The block below is the same Phase A that scrollsdk
+generates in `PARTNER-COMMANDS.md`. It is one `set -eu` subshell, so it stops
+at the first failing step: a corrupt transport key or a failed `openssl` never
+reaches the identity step, and the runtime key is left as it was. It is safe
+to rerun after an interruption.
 
-Local WIF backend:
+1. `signer init` creates the signing key and env once (pull delivery and the
+   transport key file are selected there).
+2. The signing env and policy are copied next to the Compose file, and the
+   transport key is created locally only if absent, validated as a whole and
+   installed into `docker-compose/`.
+3. `--print-identity` runs through the same Compose service and mounts the
+   runtime uses, with the real backend, network and transport key.
+4. The second `signer init` only reads the existing signer (it re-checks the
+   KMS public key) and writes `descriptor.json`; it never reprovisions.
 
 ```bash
-scrollsdk signer init \
-  --id <agreed-signer-id> \
-  --network testnet \
-  --endpoint https://signer.your-org.example:4040
-```
-
-AWS KMS backend (recommended for production):
-
-```bash
-scrollsdk signer init \
-  --id <agreed-signer-id> \
-  --network testnet \
-  --endpoint https://signer.your-org.example:4040 \
-  --backend aws-kms \
-  --kms-key-id <ECC_SECG_P256K1-key-id-or-arn> \
-  --kms-region <region> \
-  --allowed-release-version <approved-cargo-version> \
-  --allowed-git-commit <approved-full-40-character-git-sha>
+export SIGNER_ID=<agreed-signer-id> DOGE_NETWORK=testnet
+# Local WIF backend: leave SIGNER_INIT_FLAGS unset. AWS KMS backend
+# (recommended for production) and production release pins:
+# export SIGNER_INIT_FLAGS='--backend aws-kms --kms-key-id <ECC_SECG_P256K1-key-id-or-arn> --kms-region <region> --allowed-release-version <approved-cargo-version> --allowed-git-commit <approved-full-40-character-git-sha>'
+(
+  set -eu
+  # 1. Signing key and env, once (a rerun keeps them). The env selects pull
+  #    delivery and the transport key file.
+  [ -e "signer-$SIGNER_ID/attestation-signer.env" ] \
+    || scrollsdk signer init --id "$SIGNER_ID" --network "$DOGE_NETWORK" ${SIGNER_INIT_FLAGS:-}
+  # 2. Signing env and policy next to the Compose file, then the transport key:
+  #    created locally only if absent, validated, installed.
+  cp "signer-$SIGNER_ID/attestation-signer.env" "signer-$SIGNER_ID/attestation-signer.toml" docker-compose/
+  chmod 600 docker-compose/attestation-signer.env
+  (
+    set -eu
+    key="signer-$SIGNER_ID/transport.key"
+    # Create only when absent: write a temp file, then link it in exclusively.
+    if [ ! -e "$key" ]; then
+      umask 077
+      openssl rand -hex 32 > "$key.new"
+      ln "$key.new" "$key"
+      rm -f "$key.new"
+    fi
+    # The whole file must be exactly 64 lowercase hex characters and a newline.
+    if [ "$(wc -c < "$key")" -ne 65 ] || [ "$(tail -c 1 "$key" | wc -l)" -ne 1 ] \
+      || ! head -c 64 "$key" | grep -Eqx '[0-9a-f]{64}'; then
+      echo "$key must be exactly one line of 64 hex characters; restore it (rotation is a separate step)" >&2
+      exit 1
+    fi
+    # Install atomically: the runtime key is replaced only by a validated copy.
+    cp "$key" docker-compose/transport.key.new
+    chmod 600 docker-compose/transport.key.new
+    mv -f docker-compose/transport.key.new docker-compose/transport.key
+  )
+  # 3. Print the identity with the real backend, network and transport key
+  #    (the same Compose service and mounts the runtime uses).
+  docker compose --project-directory docker-compose run --rm --no-deps -T attestation-signer \
+    -c /etc/dogeos-partner/attestation-signer.toml --print-identity > "signer-$SIGNER_ID/identity.json.new"
+  mv "signer-$SIGNER_ID/identity.json.new" "signer-$SIGNER_ID/identity.json"
+  # 4. Wrap it into descriptor.json (read-only for the existing signer).
+  scrollsdk signer init --id "$SIGNER_ID" --network "$DOGE_NETWORK" --identity "signer-$SIGNER_ID/identity.json"
+)
 ```
 
 The output is:
 
 ```text
 signer-<id>/
-├── attestation-signer.env    # secret key/backend and image approval pins
+├── attestation-signer.env    # secret key/backend, pull delivery, image pins
 ├── attestation-signer.toml   # partner-owned V2 source/rotation policy
-└── descriptor.json           # public endpoint + key handoff
+├── transport.key             # SECRET transport key (0600); never send it
+├── identity.json             # --print-identity output
+└── descriptor.json           # public handoff: attestation + transport pubkeys
 ```
 
 For KMS, the container needs `kms:Sign` and `kms:GetPublicKey` on the selected
 key. For a local backend, `attestation-signer.env` contains the WIF and must be
-stored with secret-file permissions.
+stored with secret-file permissions. Keep `transport.key` the same way: the TSO
+pins its public key, so replacing it is a coordinated configuration change.
+Rotating it is an explicit step, never a rerun: move the old file aside,
+create a new key, send the new descriptor, and switch the runtime key only after
+the bridge operator has updated the TSO signer directory.
+
+The generated `signer-*/` directories and the operator files copied into
+`docker-compose/` (`attestation-signer.env`, `transport.key`) are git-ignored
+in this kit; never commit them.
 
 To regenerate files for an existing local signer, copy its current env and
 partner TOML into a separate output directory under the filenames above, then
-run `signer init --out <directory>` with the same id, network, and endpoint.
+run `signer init --out <directory>` with the same id and network. Preserve the transport key and re-export the
+identity with `--print-identity` before updating the descriptor.
 Without `--force`, the CLI reuses the WIF and preserves the partner TOML. Check
 that the resulting descriptor has the original public key before installing
 anything. Do not use `--force` for this workflow: it creates a new local key.
@@ -187,8 +239,8 @@ template. This only reads the existing KMS public key; it does not create or
 rotate a KMS key.
 
 Send only `descriptor.json` to the bridge operator. The public key enters the
-bridge keyset at genesis, so review it carefully. Do not send either signer
-configuration file.
+bridge keyset at genesis, so review it carefully. Do not send the signer
+configuration files or `transport.key`.
 
 ## Step 2 — prepare partner-owned production policy
 
@@ -237,23 +289,51 @@ allowlist, and TEE signer allowlist are not part of V2. A bundle containing
 those instead of the files above targets an old dogeos-core release.
 
 Keep the received directory intact and execute its generated
-`signer-policy-bundle/PARTNER-COMMANDS.md`. The equivalent file placement is:
+`signer-policy-bundle/PARTNER-COMMANDS.md`. Its Phase B is the block below:
+one `set -eu` subshell, so the signer is configured and started only if every
+step succeeds (a bad transport key never reaches `up -d`). It ends with the
+preflight from Step 4; `PREFLIGHT_FLAGS` selects the production check.
 
 ```bash
 export SIGNER_ID=<agreed-signer-id>
-
-cp "signer-$SIGNER_ID/attestation-signer.env" docker-compose/
-cp "signer-$SIGNER_ID/attestation-signer.toml" docker-compose/
-chmod 600 docker-compose/attestation-signer.env
-mkdir -p docker-compose/policy
-cp signer-policy-bundle/signer-policy.env docker-compose/signer-policy.env
-cp signer-policy-bundle/protocol_context.json docker-compose/policy/protocol_context.json
-
-# Production bundle only:
-cp signer-policy-bundle/advance-l2-agg-verifying-key.bin docker-compose/policy/
-
-docker compose --project-directory docker-compose config --quiet
-docker compose --project-directory docker-compose up -d
+# Production bundles (enforce):
+# export PREFLIGHT_FLAGS='--require-production-ready'
+(
+  set -eu
+  cp "signer-$SIGNER_ID/attestation-signer.env" "signer-$SIGNER_ID/attestation-signer.toml" docker-compose/
+  chmod 600 docker-compose/attestation-signer.env
+  (
+    set -eu
+    key="signer-$SIGNER_ID/transport.key"
+    # Create only when absent: write a temp file, then link it in exclusively.
+    if [ ! -e "$key" ]; then
+      umask 077
+      openssl rand -hex 32 > "$key.new"
+      ln "$key.new" "$key"
+      rm -f "$key.new"
+    fi
+    # The whole file must be exactly 64 lowercase hex characters and a newline.
+    if [ "$(wc -c < "$key")" -ne 65 ] || [ "$(tail -c 1 "$key" | wc -l)" -ne 1 ] \
+      || ! head -c 64 "$key" | grep -Eqx '[0-9a-f]{64}'; then
+      echo "$key must be exactly one line of 64 hex characters; restore it (rotation is a separate step)" >&2
+      exit 1
+    fi
+    # Install atomically: the runtime key is replaced only by a validated copy.
+    cp "$key" docker-compose/transport.key.new
+    chmod 600 docker-compose/transport.key.new
+    mv -f docker-compose/transport.key.new docker-compose/transport.key
+  )
+  mkdir -p docker-compose/policy
+  cp signer-policy-bundle/signer-policy.env docker-compose/signer-policy.env
+  cp signer-policy-bundle/protocol_context.json docker-compose/policy/protocol_context.json
+  # Production bundles also carry the aggregate verifying key.
+  if [ -e signer-policy-bundle/advance-l2-agg-verifying-key.bin ]; then
+    cp signer-policy-bundle/advance-l2-agg-verifying-key.bin docker-compose/policy/advance-l2-agg-verifying-key.bin
+  fi
+  docker compose --project-directory docker-compose config --quiet
+  docker compose --project-directory docker-compose up -d
+  scrollsdk signer preflight --dir "signer-$SIGNER_ID" ${PREFLIGHT_FLAGS:-}
+)
 ```
 
 The Compose service starts the signer with
@@ -262,7 +342,7 @@ bundle overrides only bridge-owned fields.
 
 ## Step 4 — preflight
 
-For disabled or mock mode:
+Phase B already ends with this check. Rerun it any time. For disabled or mock mode:
 
 ```bash
 scrollsdk signer preflight --dir signer-<agreed-signer-id>
@@ -333,7 +413,8 @@ in this order: WP, Rust signer, TSO; then enable proof mode. See
 - Persist the SQLite volume; it contains the signer audit/request database.
 - Never operate two live instances with the same signing key.
 - Do not rotate the key unilaterally; RotateKey is a coordinated bridge event.
-- The bridge operator should independently probe `/health` from the actual TSO
-  network. A successful laptop check does not prove that route.
+- The bridge operator sees each signer's last poll in TSO metrics; a signer that
+  stops polling becomes unavailable on the same schedule as an unreachable one.
 - The CLI does not invent an artifact key for reachability checks. A real
-  withdrawal request is authoritative for signer artifact GET and TSO callback.
+  withdrawal request is authoritative for signer artifact GET and TSO poll and
+  callback.
