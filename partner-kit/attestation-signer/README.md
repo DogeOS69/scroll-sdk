@@ -195,6 +195,12 @@ descriptor or runtime key already exists, a missing source key stops the block;
 restore the registered key instead of generating a replacement. An existing
 descriptor must match the transport key before it is installed.
 
+Phase A creates `docker-compose/policy/` as the partner operator before the
+first container invocation. This prevents Docker from creating a root-owned
+bind directory that blocks Phase B. If an older run left it unwritable, restore
+operator ownership of that directory before retrying; the script does not
+change ownership of existing deployment files.
+
 1. `signer init` creates the signing key and env once (pull delivery and the
    transport key file are selected there).
 2. The signing env and policy are copied next to the Compose file, and the

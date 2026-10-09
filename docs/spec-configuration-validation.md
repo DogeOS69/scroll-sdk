@@ -1,0 +1,141 @@
+# Spec configuration candidate validation
+
+This records local validation of the candidate following the
+[beta.6 input audit](spec-configuration-audit.md). The audit's original JSON
+remains evidence for the old baseline, not the repaired candidate.
+
+## Sources and scope
+
+- CLI base: `4355e19e91db8433d28a8727e71fdb4fe1704232`.
+- CLI candidate: [`2a1b0b3849ca965366556968d150c2060abca738`](https://github.com/DogeOS69/scroll-sdk-cli/commit/2a1b0b3849ca965366556968d150c2060abca738)
+  on `feat/spec-plan-apply`.
+- SDK template pin: `c8f7871b6f6ad0d19504342558d96b7e39608d4d`.
+- Core beta.6: `56007d3c413ad07f33d0e08b272004089c911f78`.
+- Contracts policy: `dogeos-v0.3.0-rc.4`, 30,000,000 gas, 2-second blocks.
+- Reth `v0.3.0-beta.1c` was explicitly selected for a rendering rehearsal only;
+  this does not approve it for the beta.6 production deployment.
+
+The supported scope is configuration for SDK-managed services, with explicit
+identity provisioning and derived-artifact stages. Optional capacity-manager
+installation and arbitrary service tuning are outside the standard SDK service
+set; pinned templates and reviewed operator values own those policies.
+
+## Executed fresh-directory rehearsal
+
+All generated configuration, disposable keys, logs and Docker state were kept in
+private temporary directories outside the checkouts. No credential-bearing
+artifacts are attached to this report.
+
+| Check | Result and meaning |
+| --- | --- |
+| Actual `generate-from-spec --bootstrap --sdk-dir` | Passed with a custom external spec path and an empty output directory; read committed SDK templates, generated TOML/values, saved template provenance. |
+| `gen-keystore --plan` | Passed without key creation or AWS calls. |
+| Local service identities, two sequencers and one bootnode | Created with actual CLI commands; immediate rerun preserved saved identity state exactly. |
+| Partner Phase A | Actual beta.6 signer container exported its identity; Phase A rerun succeeded; the policy directory remained owned by the non-root operator. |
+| Descriptor import | Actual CLI imported the partner's public descriptor with saved initial signer selection. |
+| `prep-charts`, then rerun | Passed after test Bridge prerequisites were supplied; consumed proof intent from doge-config. |
+| Disabled/mock/observe topology | Actual pinned beta.6 compiler ran; `proof-config-check` passed. |
+| `gen-secrets` | Completed in the private deployment directory. |
+| Helm rendering | Passed for TSO, WP, PC, submitter, CubeSigner, fee-oracle, dstack and a Reth sequencer. |
+| Active/mock/observe topology | Actual compiler and config check passed; exported signer policy successfully. |
+| Separate S3 stores | Assertions verified the DA writers/readers use the blob store and WP/PC plus signer policy use the proof store. No AWS bucket was created or accessed. |
+
+The rehearsal found a further omission: the minimal spec's Reth values defaulted
+the fee recipient, while generated `config.toml` omitted the fee-vault override
+required by prep. Both projections now share the same default; the repeated-prep
+regression no longer supplies a manual override to mask the omission.
+
+## Automated regression coverage
+
+The full CLI suite completed with **928 passing and 17 pending** tests. After
+the final identity flag, account-only scope and plan-output refinements, the
+focused suites passed **65 tests**. Full lint and subsequent changed-file lint had zero errors
+(existing/style-complexity warnings remain). SDK Makefile checks passed all
+**8 tests**; shell syntax and both repositories' whitespace checks passed.
+
+The CLI suites cover projection defaults/overrides, full field validation,
+unknown containers, strict bucket separation, source-independent proof handoff,
+initial signer selection, saved identity reuse, KMS adapter calls, conflicting
+identity flags, pinned template reads and partner script behavior. KMS providers
+are stubbed; their outputs are disposable test facts. The SDK Makefile context
+suite checks recipe expansion without contacting a cluster. Phase A also passes
+shell syntax validation.
+
+Reproduce the automated checks in a built CLI checkout (set `OCLIF_TEST_ROOT`
+to that checkout when running from a linked worktree):
+
+```bash
+npm run build
+OCLIF_TEST_ROOT="$PWD" npm test
+npm run lint
+```
+
+In the SDK checkout:
+
+```bash
+python3 examples/tests/test_makefile_context.py
+bash -n partner-kit/attestation-signer/scripts/phase-a.sh
+```
+
+## Acceptance boundaries
+
+Bridge transaction, protocol-context and proof-identity inputs in this local
+rehearsal were explicitly synthetic fixtures. No chain transaction, genesis
+launch, deposit, real proof, withdrawal or cloud resource creation was performed.
+Mock/observe success is not evidence of real/enforce production readiness.
+
+A production deployment must supply approved binary pins, provider credentials,
+real funding and Bridge facts, generated genesis, matching proof materials and
+partner policy approvals at their respective stages. `--bootstrap` records those
+stages as pending rather than generating placeholders that pretend they are
+complete. Local creation/reuse and mocked KMS calls establish configuration
+handoff; live AWS/IRSA and runtime acceptance require the intended environment.
+
+## Resumable production Bridge preparation
+
+The same CLI candidate now exposes `setup plan --spec --output --sdk-dir` and
+`setup apply --dir`. Its `docs/spec-preparation.md` defines the spec fields,
+external funding handoff, immutable fresh-deployment plan, private environment
+file and resume outcomes. This is preparation orchestration; Helm installation
+and running-chain acceptance remain separate.
+
+A further private rehearsal ran the production path from core beta.6's
+`docs/bridge-genesis-deployment.md`. Unlike the earlier fixture-only Bridge
+rehearsal, this run executed the actual rc.4 genesis container and the actual
+beta.6 namespace, Bridge artifact and protocol-context tools. It used
+`dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262`.
+The Dogecoin/Ethereum RPC and funding transactions remained synthetic fixtures;
+there was no transaction broadcast or live cloud provisioning.
+
+The reproducible CLI driver is `scripts/test-preparation-e2e.mjs`. It verified:
+
+- Planning did not provision identities, contact cloud providers or broadcast.
+- The first apply created local identities, imported a public partner descriptor
+  and private dummy dstack credentials, generated genesis, and waited for wallet
+  outpoints. The private environment file was reloaded across CLI processes.
+- Sequencer funding was exactly 42,069,000 satoshis. Verified funding facts drove
+  the real core namespace and final Bridge address generation, followed by a
+  second wait for marked Bridge funding.
+- The final apply generated canonical protocol context, compiled mock/observe
+  topology, prepared service values and private Secrets, exported signer policy,
+  and passed the proof configuration check.
+- A subsequent apply completed without rerunning completed steps. The RPC method
+  record contained only read operations.
+
+Regression coverage also rejects wrong-network or spent funding, wrong amounts,
+insufficient confirmations, noncanonical block anchors, incorrect/multiple funding
+markers, mutated prepared artifacts and concurrent apply. Ambiguous test-helper
+broadcast failures remain blocked for reconciliation. Production mode excludes
+helper broadcasts and omits the helper seed/funding placeholders.
+
+This confirms production artifact construction and the configuration handoffs
+against beta.6. It does not establish actual chain confirmation, live AWS/KMS or
+Kubernetes permissions, real/enforce proving, partner policy approval, or full
+bridge business-operation acceptance.
+
+Final candidate verification for this addition: CLI build passed; the full suite
+reported **945 passing, 17 pending**; lint reported **0 errors, 258 warnings**.
+The 16 preparation regression cases cover state/resume, command boundaries,
+private output handling, funding validation and early destination checks. The
+container rehearsal above passed with the same candidate and a mock/observe
+proof fixture. No chart defaults were changed by the preparation orchestration.

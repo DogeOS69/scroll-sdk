@@ -8,6 +8,16 @@ For additional, more robust helper scripts, checkout the [scroll-sdk-cli](https:
 1. `Makefile.example`: A basic makefile for quickly installing and deleting the charts necessary for the Scroll SDK.
 2. `config.toml.example`: A template config.toml file for new deployments. A good starting point for filling out chain-specific details or using the Scroll SDK CLI tool.
 
+For the CLI spec `plan`/`apply` workflow, use the complete
+[deployment-spec.example.yaml](deployment-spec.example.yaml), the companion
+[deployment.env.example](deployment.env.example), and the
+[step-by-step operator guide](deployment-spec.md). Copy the YAML and env file
+outside the checkout, fill the marked deployment inputs, and pass them to
+`setup plan --spec ... --env-file ...`. The example selects the tested testnet
+production-Bridge flow with disabled/mock/observe proofs. Comments identify base
+variables, wallet keys and optional signer/database imports. Keep completed inputs
+private; the output deployment directory starts empty.
+
 Production service overlays are intentionally operator-readable and repeat all
 runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
@@ -28,6 +38,12 @@ For monitoring inputs, see the [scroll-monitor generation contract](scroll-monit
 and [production values example](values/scroll-monitor-production.yaml). They
 identify the public signer addresses, RPC URLs, expected chain IDs, optional
 Secret keys and ServiceMonitor ownership that must follow the deployment.
+
+For the beta.6/rc.4 configuration sources, DeploymentSpec coverage and known
+differences from individual setup commands, see the
+[spec configuration audit](../docs/spec-configuration-audit.md). It includes
+a diagnostic probe and separates generated configuration from deployment
+acceptance.
 
 ### Keep deployment fixes and examples synchronized
 

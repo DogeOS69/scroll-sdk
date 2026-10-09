@@ -1,0 +1,255 @@
+# Complete setup plan/apply input for a TESTNET configuration rehearsal.
+# See deployment-spec.md and copy deployment.env.example outside this checkout.
+# Bridge uses the beta.6 production outpoint flow; proofs are disabled/mock/observe.
+# Replace REPLACE_WITH_*, TODO_*, *.example.invalid and the marked numeric inputs.
+# This file contains no private keys, signer sessions or working credentials.
+version: "1.0"
+
+metadata:
+  name: dogeos-testnet
+  environment: testnet
+  description: "beta.6 / rc.4 preparation with production Bridge initialization"
+
+# The current CLI requires a full commit. This is the reviewed beta.6 template
+# baseline, already present in v0.3.0-develop; no manual SHA lookup is needed.
+# The proposed automatic SDK HEAD selection is not implemented yet.
+templates:
+  sdkRevision: c8f7871b6f6ad0d19504342558d96b7e39608d4d
+
+# Reference existing infrastructure; this spec does not create a cluster.
+# Local identity backends below do not create AWS KMS keys.
+infrastructure:
+  provider: aws
+  aws:
+    accountId: REPLACE_WITH_AWS_ACCOUNT_ID
+    region: us-west-2
+    eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
+    secretsPrefix: dogeos-testnet
+  namespace: dogeos-testnet
+  sequencerCount: 1
+  bootnodeCount: 1
+
+network:
+  l1ChainName: DOGE
+  l2ChainName: DogeOS Testnet
+  l1ChainId: 111111
+  l2ChainId: 221122
+  tokenSymbol: DOGE
+
+accounts:
+  owner:
+    address: "$ENV:OWNER_ADDRESS"
+  # setup apply creates a private deployer account if one is not supplied.
+
+identities:
+  ethDaSubmitter: {action: create, backend: local}
+  feeOracle: {action: create, backend: local}
+  sequencers:
+    - index: 0
+      nodekey: {action: create}
+      signer: {action: create, backend: local}
+  bootnodes:
+    - index: 0
+      nodekey: {action: create}
+
+# Existing PostgreSQL used by SDK applications. Keep credentials in the env file.
+database:
+  admin:
+    host: postgres.example.invalid
+    port: 5432
+    username: REPLACE_WITH_DATABASE_ADMIN_USERNAME
+    password: "$ENV:DB_ADMIN_PASSWORD"
+    database: postgres
+    vpcHost: postgres.internal.example.invalid
+    vpcPort: 5432
+
+dogecoin:
+  network: testnet
+  externalRpc:
+    url: https://dogecoin.example.invalid
+    username: "$ENV:DOGECOIN_EXTERNAL_RPC_USERNAME"
+    password: "$ENV:DOGECOIN_EXTERNAL_RPC_PASSWORD"
+  clusterRpc:
+    username: "$ENV:DOGECOIN_CLUSTER_RPC_USERNAME"
+    password: "$ENV:DOGECOIN_CLUSTER_RPC_PASSWORD"
+  walletPath: .data/doge-wallet.json
+  # Production Bridge preparation derives indexer/genesis heights from verified
+  # funding; do not transcribe a previous deployment's heights here.
+
+ethereumDa:
+  chain: sepolia
+  chainId: 11155111
+  l1RpcUrl: https://ethereum-sepolia.example.invalid
+  beaconRpcUrl: https://beacon-sepolia.example.invalid
+  confirmationDepth: 1
+  finalizationDepth: 64
+  # Existing DA blob bucket. This is NOT the proof artifact bucket below.
+  blobArchive:
+    s3:
+      enabled: true
+      bucket: replace-with-unique-dogeos-blob-bucket
+      region: us-west-2
+      keyPrefix: dogeos-testnet/blobs
+      publicBaseUrl: https://replace-with-unique-dogeos-blob-bucket.s3.us-west-2.amazonaws.com
+
+proofArtifacts:
+  s3:
+    bucket: replace-with-unique-dogeos-proof-bucket
+    region: us-west-2
+    keyPrefix: dogeos-testnet/proofs
+
+bridge:
+  # One partner is a rehearsal policy, not a mainnet quorum recommendation.
+  thresholds: {attestation: 1, recovery: 1}
+  keyCounts: {attestation: 1, recovery: 1}
+  initialAttestationKeyset:
+    signerIds: [partner-a]
+    threshold: 1
+  teePubkey: REPLACE_WITH_COMPRESSED_TEE_PUBLIC_KEY
+  # REQUIRED: replace 100 with a reviewed future Dogecoin block height (<500000000).
+  # The production planner intentionally rejects this unfilled placeholder.
+  timelock: 100
+  feeRateSatsPerKvb: 1000000
+  targetAmountsSats:
+    sequencer: 42069000  # Fixed protocol amount: exactly 0.42069 DOGE.
+    feeWallet: 100000000  # Rehearsal funding budget; review before funding.
+    bridge: 1000000000
+  confirmationsRequired: 2
+  fees:
+    depositFeeSats: "10000"
+    withdrawalFeeWei: "100000000000000"
+    minWithdrawalAmountWei: "1000000000000000"
+  feeRecipient: "$ENV:OWNER_ADDRESS"
+  # No seedString: production mode does not derive wallet or recovery keys.
+
+signing:
+  cubesigner:
+    mode: transport_only
+  # This prepares files without provisioning a hosted TEE key/session or proving
+  # control of teePubkey. Supply the actual CubeSigner role/session before runtime.
+  # External attestation signers dial out to the TSO; no signer endpoint is required.
+
+feeOracle:
+  contractWriteMode: live
+
+frontend:
+  protocol: https
+  baseDomain: dogeos.example.invalid
+  externalUrls:
+    l1Rpc: https://dogecoin.example.invalid
+    l1Explorer: https://dogecoin-explorer.example.invalid
+  subdomains:
+    frontend: portal
+    rpcGateway: rpc
+    blockscout: blockscout
+    grafana: grafana
+    tso: tso
+    proofCoordinator: proof
+
+rollup:
+  coordinator:
+    chunkCollectionTimeSec: 30
+    batchCollectionTimeSec: 60
+    bundleCollectionTimeSec: 180
+
+contracts:
+  deploymentSalt: REPLACE_WITH_UNIQUE_DEPLOYMENT_SALT
+  l2BaseFeeOverheadWei: "420000000000"
+  gasOracle:
+    blobScalar: 7400000000
+    commitScalar: 600000000
+    scalar: 1
+    penaltyThreshold: 1515986167
+    penaltyFactor: 10000
+
+genesis:
+  gasLimit: 30000000
+  maxEthSupplyWei: "100000000000000000000000000000"
+  deployerInitialBalanceWei: "1000000000000000000000000"
+  baseFeePerGasWei: 1000000000
+  # The current CLI projects the 2000 ms block / 1400 ms build policy.
+
+images:
+  services:
+    # Reth is released separately. Select a reviewed compatible release;
+    # do not assume that the core beta.6 tag is also a Reth image tag.
+    l2Rpc: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
+    l2Sequencer: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
+    l2Bootnode: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
+    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.6}
+    l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.6}
+    tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.6}
+    proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.6}
+    ethDaSubmitter: {repository: dogeos69/eth-da-submitter, tag: v0.3.0-beta.6}
+    feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.6}
+    cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.6}
+
+# This complete example matches the tested preparation scope, not real proving.
+# The operator supplies the release's public compiler identity as an external file.
+proofTopology:
+  mode: disabled
+  generation: mock
+  enforcement: observe
+  observeRealProofDeadlineMs: 1800000
+  compiler:
+    image:
+      repository: dogeos69/dogeos-proof-topology
+      digest: sha256:c72edcd9350bd5f69d312d92ed42ed306eefd92462417e70b87cbd981429f1a1
+    identityFilePath: .data/compiler-identity.json
+  deployment:
+    artifactKeyPrefix: dogeos-testnet/proofs
+    proverPublicUrl: https://proof.dogeos.example.invalid
+  active:
+    profile: withdrawal_mock_prover
+    workerLaunch: local_cpu
+    artifactStore:
+      kind: s3_compatible
+      bucket: replace-with-unique-dogeos-proof-bucket
+      region: us-west-2
+      endpointUrl: https://s3.us-west-2.amazonaws.com
+    # Mock identity is read from compiler.identityFilePath; no invented hashes.
+    realScroll: {}
+
+dstackController:
+  enabled: true
+  database: {type: sqlite}
+  persistence: {size: 10Gi}
+  ingress:
+    enabled: true
+    className: nginx
+    hosts: [dstack.dogeos.example.invalid]
+  # SQLite matches the rehearsal. PostgreSQL requires initializeDatabase or
+  # databaseUrlEnv in preparation.dstack, plus database.type: postgresql here.
+
+preparation:
+  # Paths below are relative to the OUTPUT deployment directory, not this YAML.
+  # Put external inputs in its sibling 'inputs' directory or use absolute paths.
+  attestationDescriptors:
+    - ../inputs/partner-a/descriptor.json
+  bridge:
+    mode: production
+    image: dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262
+    fundingFile: .scrollsdk/inputs/bridge-funding.json
+    production:
+      sequencerPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_SEQUENCER_PUBLIC_KEY
+      sequencerKeyEnv: DOGECOIN_SEQUENCER_KEY
+      feeWalletPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_FEE_WALLET_PUBLIC_KEY
+      feeWalletKeyEnv: DOGECOIN_FEE_WALLET_KEY
+      recoveryPublicKeys:
+        - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY
+      ethereumAnchor:
+        # REQUIRED: choose the real Ethereum DA boundary; block 0 is illustrative.
+        blockNumber: 0
+        transactionIndex: 0
+  dstack:
+    mode: import
+    providers: [vastai]
+    vastaiApiKeyFile: ../inputs/vastai-api-key
+  proofMaterials:
+    mode: existing
+  inputs:
+    - source: ../inputs/compiler-identity.json
+      destination: .data/compiler-identity.json
+  # No archive/proofAws/secretUpload actions are selected in this example.
+  # Existing bucket permissions and external runtime authentication are prerequisites.
+  # Optional cloud operations require explicit intent; see deployment-spec.md.
