@@ -43,6 +43,8 @@ Core service images are beta.6, with `v0.3.0-beta.6-kms` for withdrawal-processo
 That image supports KMS sequencing; its fee wallet still uses a local key.
 The CLI genesis default is contracts rc.5, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
+Empty blocks are disabled by default (`reth.sequencer.allowEmptyBlocks: false`);
+the block interval does not require producing a block when there is no eligible work.
 Reth has its own release lineage; its tag must be selected explicitly. Plan
 resolves the committed HEAD of `--sdk-dir` and freezes its full commit in
 the saved intent. Working-tree edits do not affect template selection. Advanced
