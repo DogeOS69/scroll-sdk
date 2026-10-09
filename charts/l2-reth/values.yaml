@@ -157,6 +157,24 @@ reth:
       enabled: false
     extra: {}
 
+  # Opt-in external P2P for a designated non-sequencer node. When enabled, the
+  # chart renders <fullname>-p2p: an internet-facing AWS NLB (IP targets) that
+  # forwards TCP ports.p2p to one pod of this release, <fullname>-<ordinal>.
+  # See the README section "External P2P (opt-in)".
+  p2pExternal:
+    enabled: false
+    ordinal: 0
+    # Allowed peer CIDRs, enforced by the NLB security group. Required unless
+    # allowOpenPeering is true.
+    sourceRanges: []
+    allowOpenPeering: false
+    # Deployment-owned subnet and Elastic IP allocation IDs, one EIP per subnet
+    # and in the same order. The chart references them and never creates them.
+    subnets: []
+    eipAllocations: []
+    # Additional AWS Load Balancer Controller annotations.
+    annotations: {}
+
 ingress: {}
 serviceMonitor: {}
 externalSecrets: {}

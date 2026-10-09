@@ -114,23 +114,30 @@ reth:
     api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
 
   service:
+    # Internal ClusterIP P2P ports on the main Service, for in-cluster peering.
     p2p:
       enabled: true
-    extra:
-      p2p:
-        enabled: true
-        type: LoadBalancer
-        ports:
-          p2p-tcp:
-            enabled: true
-            port: 30303
-            targetPort: 30303
-            protocol: TCP
-          p2p-udp:
-            enabled: true
-            port: 30303
-            targetPort: 30303
-            protocol: UDP
+    extra: {}
+
+  # External P2P is opt-in and off until its activation checklist is complete
+  # (charts/l2-reth/README.md, "External P2P (opt-in)"). When enabled, the chart
+  # renders one P2P-only internet-facing NLB Service (TCP 30303 only) for pod
+  # <fullname>-<ordinal>, on the deployment-owned Elastic IP and reachable only
+  # from sourceRanges. To expose this bootnode, set enabled and fill the TODOs.
+  p2pExternal:
+    enabled: false
+    ordinal: 0
+    # Approved partner CIDRs, enforced by the NLB security group.
+    sourceRanges:
+      - "<TODO partner CIDR>"
+    allowOpenPeering: false
+    # One EIP allocation per subnet, in the same order. The subnet must be in the
+    # AZ of this node's EBS volume (or enable cross-zone load balancing).
+    subnets:
+      - "<TODO subnet-id>"
+    eipAllocations:
+      - "<TODO eipalloc-id>"
+    annotations: {}
 
 serviceMonitor:
   main:

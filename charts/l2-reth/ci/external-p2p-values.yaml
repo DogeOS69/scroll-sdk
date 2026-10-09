@@ -1,0 +1,21 @@
+# One bootnode with external P2P enabled. reth.p2pExternal mirrors the
+# commented example in examples/values/l2-reth-bootnode-production.yaml.
+role: bootnode
+reth:
+  nodeKey:
+    mode: secret
+  service:
+    p2p:
+      enabled: true
+    extra: {}
+  p2pExternal:
+    enabled: true
+    ordinal: 0
+    sourceRanges:
+      - "<TODO partner CIDR>"
+    allowOpenPeering: false
+    subnets:
+      - "<TODO subnet-id>"
+    eipAllocations:
+      - "<TODO eipalloc-id>"
+    annotations: {}

@@ -135,3 +135,192 @@ Service, StatefulSet, and PVC names are likewise release-derived. Do not set
 `global.nameOverride` or `global.fullnameOverride` in normal production values.
 For an AWS KMS sequencer, retain an explicit `serviceAccount.name` when the EKS
 IRSA role trust policy pins that namespace/ServiceAccount OIDC subject.
+
+## External P2P (opt-in)
+
+An external partner's L2 nodes can peer with designated non-sequencer bootnodes
+through one P2P-only AWS Network Load Balancer per bootnode. It is off by
+default: the chart renders only the main ClusterIP Service, which carries RPC
+8545, WS 8546, metrics 6060 and, when `reth.service.p2p.enabled`, internal P2P.
+The main Service is never used for external exposure.
+
+Enable it with `reth.p2pExternal`. The block in
+`examples/values/l2-reth-bootnode-production.yaml` is the reference (disabled),
+and `ci/external-p2p-values.yaml` is the same block enabled, as a lint and test
+fixture:
+
+```yaml
+reth:
+  p2pExternal:
+    enabled: true
+    ordinal: 0
+    sourceRanges:
+      - "<partner CIDR>"
+    allowOpenPeering: false
+    subnets:
+      - "<subnet-id>"
+    eipAllocations:
+      - "<eipalloc-id>"
+    annotations: {}
+```
+
+This renders `<fullname>-p2p`. The template fixes everything that decides what
+is exposed and to whom; values only supply the deployment-specific inputs:
+
+- Type `LoadBalancer`, with `service.beta.kubernetes.io/aws-load-balancer-type:
+  external`, `aws-load-balancer-nlb-target-type: ip` and
+  `aws-load-balancer-scheme: internet-facing`. These are set after
+  `reth.p2pExternal.annotations` and take precedence over `global.annotations`,
+  so neither can change them. Use `annotations` for other settings, for example
+  `aws-load-balancer-name` or `aws-load-balancer-attributes`.
+- One port: TCP `reth.ports.p2p` (30303) to the same container port. No UDP:
+  the chart always passes `--disable-discovery`, so the node opens no discovery
+  socket, and peers are configured explicitly. No Proxy Protocol v2: reth's
+  RLPx listener does not parse it. No TLS termination or TLS backend: RLPx is
+  not TLS. The chart refuses SSL, backend-protocol and ALPN annotations, including
+  inherited global annotations. A certificate annotation alone can otherwise
+  turn the NLB listener into TLS even though the Service port says TCP.
+- One pod: the selector is this release's labels plus
+  `statefulset.kubernetes.io/pod-name: <fullname>-<ordinal>`, and `ordinal`
+  must be below `controller.replicas`. A `bootnode` release runs at most one
+  replica, so deploy one release per exposed bootnode with `ordinal: 0`.
+- Static address: `subnets` and `eipAllocations` become the
+  `aws-load-balancer-subnets` and `aws-load-balancer-eip-allocations`
+  annotations. The Elastic IPs are created and owned by the deployment's
+  infrastructure; the chart only references their allocation IDs and never
+  creates or releases them. List one allocation per subnet, in the same order.
+  The subnet must be in the same Availability Zone as the node's EBS data
+  volume, or cross-zone load balancing must be enabled
+  (`service.beta.kubernetes.io/aws-load-balancer-attributes:
+  load_balancing.cross_zone.enabled=true`); otherwise a pod scheduled in another
+  AZ has no load balancer node in front of it.
+- Source restriction: `sourceRanges` becomes `spec.loadBalancerSourceRanges`,
+  which is enforced by the frontend security group that the AWS Load Balancer
+  Controller creates for the NLB (NLB security groups, controller v2.6.0 or
+  later). An empty list means `0.0.0.0/0`, so the chart refuses an empty
+  `sourceRanges` unless `allowOpenPeering: true` (a YAML boolean) records that
+  public peering is intended. See the controller's
+  [Service annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#lb-source-ranges)
+  and [security groups](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/security_groups/)
+  docs.
+
+The chart refuses to render `reth.p2pExternal` when:
+
+- `service.main.type` is not `ClusterIP`, which would publish RPC, WS and
+  metrics;
+- `role` is `sequencer`, or `controller.type` is not `statefulset`;
+- `ordinal` names no pod of this release, or `controller.replicas` is 0
+  (disable external P2P while the node is scaled to zero);
+- `eipAllocations` and `subnets` differ in length;
+- `sourceRanges` is empty without `allowOpenPeering: true`;
+- the Service's effective annotations, including `global.annotations`, contain
+  a key starting with `service.beta.kubernetes.io/aws-load-balancer-` plus
+  `security-groups` or `disable-nlb-sg` (the controller then stops applying
+  the source ranges), `security-group-prefix-lists` (adds allowed sources),
+  `proxy-protocol`, or `target-group-attributes` (including the per-port
+  `target-group-attributes.<port>` form, which can enable Proxy Protocol v2);
+- the effective annotations contain `aws-load-balancer-ssl-*`,
+  `aws-load-balancer-backend-protocol` or `aws-load-balancer-alpn-policy`,
+  which can change the P2P listener or backend transport;
+- `service` has keys other than `main`, or `service.main` has keys other than
+  `fullname`, `type` and `annotations`. With external P2P enabled the chart
+  renders exactly its generated Services (main, the internal extras and
+  `<fullname>-p2p`), so it refuses other raw inputs instead of dropping them
+  silently.
+
+Trust model: Helm values are trusted. Anyone who can set this chart's values
+can already deploy arbitrary manifests, so these checks are not a security
+boundary against a deliberately crafted values file. They exist to stop common
+honest mistakes: a public main Service, an exposed sequencer, missing source
+ranges, extra ports or Proxy Protocol. For the same reason, the chart refuses
+`common.reth` and non-default `common.global` values (the common library's
+dependency namespace, merged after validation) while external P2P is enabled,
+rather than validating them.
+
+`reth.service.extra` stays available for internal Services only. The chart
+refuses an enabled extra Service of type `LoadBalancer` or `NodePort`, or with
+`externalIPs`, and the keys `main` (always) and `p2p` (when `reth.p2pExternal`
+is enabled), which would replace a chart-owned Service.
+
+Testnet is the open variant. Its bootnodes run internet-facing NLBs with no
+Elastic IP and no source restriction, and peer this way today. They currently
+use an extra `LoadBalancer` Service, `reth.service.extra.p2p`, which this
+chart version refuses. Move them to `reth.p2pExternal` with
+`allowOpenPeering: true`, and keep their other settings, such as cross-zone
+load balancing and the load balancer name, in `annotations`. The Service keeps
+its name, `<fullname>-p2p`. If the old Service's type, target-type or scheme
+annotations differ from the fixed values, plan a Service/NLB replacement rather
+than changing its controller-selection annotations in place. Check the address
+that partners use after the upgrade. Their NLBs
+also open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
+disabled; the move drops it. Mainnet uses `sourceRanges` and TCP 30303 only.
+
+Before adding source restrictions to an existing NLB, inspect the actual AWS
+load balancer's attached security groups. Upgrading the controller to v2.6.0
+or later does not retrofit security groups onto an NLB created without them:
+[AWS does not allow adding a security group to such an NLB later](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-security-groups.html).
+Do not treat a successful Helm upgrade or the presence of
+`spec.loadBalancerSourceRanges` as evidence that an old NLB enforces the CIDRs.
+
+If the existing NLB has no security groups, arrange a controlled Service/NLB
+replacement so the new NLB is created with a controller-managed frontend
+security group. Preserve the node key and data PVC, coordinate address/EIP
+ownership and the peering interruption, and confirm the new group's inbound
+rules match the partner CIDRs. Changing the controller-selection annotation on
+an existing Service is unsupported; follow the
+[controller's Service migration restrictions](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#traffic-routing).
+The chart does not delete an existing NLB or perform that migration. Complete
+both approved-source and unapproved-source tests below before relying on the
+source restriction.
+
+Node identity must survive rescheduling, because the partner pins the enode
+(`enode://<pubkey>@<EIP>:30303`):
+
+- `reth.nodeKey.mode: secret` (the bootnode example) mounts the key from the
+  `<fullname>-secret-env` Secret, synced by External Secrets from the secret
+  store. The key lives outside the pod and the volume.
+- `pvcAutoGenerate` generates the key once at `reth.nodeKey.generatedPath`
+  (`/data/nodekey`) on the data PVC and reuses it afterwards. The identity is
+  lost if the PVC is deleted.
+- `none` lets reth pick a key and is not suitable for an exposed node.
+
+Peering is configured on both sides. The partner adds our enodes to its static
+or trusted peers. The chart passes `--trusted-only` only for `role: rpc` with
+`reth.rpc.trustedOnly: true`; if an exposed node runs that way, add the
+partner's enodes to `reth.trustedPeers`, otherwise its connections are refused.
+Inbound connections also count against `reth.rpc.maxInboundPeers` when set.
+
+L2 blocks reach peers over this one connection: the `scroll-wire` protocol and
+eth-wire `NewBlock` gossip are RLPx sub-protocols on TCP 30303, and
+rollup-node opens no other peer-facing listener.
+
+### Activation checklist
+
+1. The nodes are named (bootnode releases), each with a persistent node key
+   (`secret` mode) and its enode recorded.
+2. Infra confirms the cluster runs AWS Load Balancer Controller v2.6.0 or
+   later with NLB security groups enabled, and that the actual NLB has its
+   managed frontend security group attached. Replace older NLBs created without
+   security groups before relying on `reth.p2pExternal.sourceRanges`.
+3. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
+   of that node's EBS volume (or cross-zone is enabled).
+4. The source policy (partner CIDRs) is approved and set in
+   `reth.p2pExternal.sourceRanges`.
+5. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
+   partner's enodes are added on our side where needed (trusted-only nodes).
+
+### Off-cluster validation
+
+Run from an approved partner address and from an unapproved one:
+
+1. From the approved source, `nc -vz <EIP> 30303` connects; a partner node
+   configured with the enode connects (`admin_peers` on the bootnode lists it
+   with the expected remote enode) and imports new L2 blocks. This checks
+   that the bootnode relays the sequencer's blocks to its peers; the testnet
+   bootnodes already serve external peers this way.
+2. Delete the pod (`kubectl delete pod <release>-l2-reth-0`). After it
+   reschedules, the enode (`admin_nodeInfo`) and the EIP are unchanged, and the
+   partner reconnects and resumes block sync without a config change.
+3. From the approved source, 8545, 8546 and 6060 on the EIP time out and UDP
+   30303 gets no answer: only the TCP 30303 listener exists.
+4. From an unapproved source, TCP 30303 on the EIP times out.

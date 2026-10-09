@@ -1,9 +1,14 @@
 ---
+{{- /* Validate the operator's values before the common library merges in its defaults. */ -}}
+{{- include "l2-reth.validate" . }}
 {{- include "scroll.common.loader.init" . }}
 
-{{- include "l2-reth.validate" . }}
 {{- $generated := include "l2-reth.generatedValues" . | fromYaml }}
 {{- $_ := mergeOverwrite .Values $generated }}
+{{- /* With external P2P, render exactly the generated Services; a recursive merge would keep raw service.* keys. */ -}}
+{{- if .Values.reth.p2pExternal.enabled }}
+{{- $_ := set .Values "service" $generated.service }}
+{{- end }}
 
 {{- $fullname := include "scroll.common.lib.chart.names.fullname" . -}}
 {{- if hasKey .Values.externalSecrets "secret-env" -}}
