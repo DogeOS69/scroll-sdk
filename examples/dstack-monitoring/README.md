@@ -68,12 +68,32 @@ second file AFTER the monitor's normal production values. It is an overlay, not
 an independent chart or release:
 
 ```bash
-helm upgrade --install dstack-controller ./charts/dstack-controller \
-  --namespace dstack-system -f values/dstack-controller-production.yaml
-helm upgrade --install scroll-monitor ./charts/scroll-monitor \
-  --namespace YOUR_CHAIN_NAMESPACE \
-  -f values/scroll-monitor-production.yaml -f values/scroll-monitor-dstack.yaml
+make -f Makefile.example install-scroll-monitor \
+  KUBE_CONTEXT=YOUR_CONTEXT NAMESPACE=YOUR_CHAIN_NAMESPACE
+make -f Makefile.example install-dstack-controller \
+  KUBE_CONTEXT=YOUR_CONTEXT DSTACK_NAMESPACE=dstack-system
 ```
+
+Run these commands from the deployment directory containing `Makefile.example`
+and `values/`. If you copied the example to `Makefile`, omit `-f Makefile.example`.
+Prepare the base `values/scroll-monitor-production.yaml` and provision its
+referenced Secrets first. `prep-charts --dstack-only` generates only the two
+dstack files; it does not create or fill the base monitor values. Prepare and
+publish the controller's Secrets before installing the controller.
+
+`install-scroll-monitor` automatically loads `values/scroll-monitor-dstack.yaml`
+after the base production values when it exists, including when called by
+`install-all`. Override `SCROLL_MONITOR_DSTACK_VALUES` for another overlay path;
+an explicit empty value skips the overlay. To disable an existing integration,
+regenerate an overlay with monitoring disabled rather than just omitting it.
+
+`install-dstack-controller` installs the independent OCI chart, pinned to version
+`0.1.2`, and creates its namespace if needed. `DSTACK_NAMESPACE` defaults to
+`dstack-system`; it must match `dstackController.monitoring.namespace` and the
+namespace containing the controller Secrets. Override `DSTACK_CONTROLLER_CHART`,
+`DSTACK_CONTROLLER_CHART_VERSION` or `DSTACK_CONTROLLER_VALUES` for a local chart,
+another version or another generated values path. The controller is installed
+explicitly and is not part of the chain's `install-all` or `delete-all` targets.
 
 These commands change the selected cluster; generation itself does not. For
 manual chart usage, `charts/scroll-monitor/values/dstack.yaml` is the equivalent

@@ -10,6 +10,33 @@ The Sepolia example explicitly uses the user-selected
 `config.toml.example`'s `ethereumDa.submitterRpcUrl`. Other deployments must
 generate their own network's URL and chain ID.
 
+## CLI generation coverage
+
+`scrollsdk setup prep-charts -N` updates an existing
+`values/scroll-monitor-production.yaml` using the deployment configuration.
+Start with the production example; this command scans existing production values
+and does not create the complete monitor file from scratch.
+
+The CLI updates Grafana's ingress host, server domain and root URL; projects the
+configured Grafana admin Secret reference; and reconciles balance-monitoring
+addresses, RPC URLs and chain IDs. It supplies missing balance thresholds while
+preserving operator overrides and explicit Secret-owned RPC URLs. When
+`statusPage.enabled` is true, it also derives the status-page catalog and runtime
+configuration from the selected service values. Remote Instatus changes still
+use the separate explicit `setup status-page --apply` workflow.
+
+Alert thresholds and routing, storage and resource sizing, EKS collection policy,
+and other monitoring choices come from the example or operator configuration.
+They are not all modeled as DeploymentSpec fields or inferred by the CLI.
+
+For dstack, `setup prep-charts --dstack-only -N` and
+`setup generate-from-spec --spec deployment-spec.yaml --values-only` generate
+`values/dstack-controller-production.yaml` and `values/scroll-monitor-dstack.yaml`
+when the controller is enabled. Neither path generates the complete base
+`scroll-monitor-production.yaml`. The Makefile's `install-scroll-monitor` target
+loads the generated dstack overlay after the base file when present; see
+[dstack installation and monitoring](dstack-monitoring/README.md).
+
 ## Default Slack destination
 
 Grafana itself creates the initial `grafana-default-email` contact point and

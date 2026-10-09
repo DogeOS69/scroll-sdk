@@ -8,6 +8,15 @@ NAMESPACE ?= default
 # Empty uses the current kubeconfig context; no global context is changed.
 # Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
+# Must match dstackController.monitoring.namespace and the published Secrets.
+DSTACK_NAMESPACE ?= dstack-system
+DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.2
+DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
+# prep-charts emits this overlay separately from the base monitor values.
+# Keep applying it on subsequent monitor upgrades, including install-all.
+SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
+SCROLL_MONITOR_DSTACK_ARGS = $(if $(strip $(SCROLL_MONITOR_DSTACK_VALUES)),--values "$(SCROLL_MONITOR_DSTACK_VALUES)")
 EAGER_MATERIALIZER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eager-materializer
 EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.1
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
@@ -67,6 +76,7 @@ INSTALL_ALL_REQUIRED_VALUES += $(L2_RETH_GENESIS_NORMALIZER_VALUES) $(L2_RETH_GE
 endif
 
 .PHONY: prepare install-dogecoin install-scroll-core \
+	install-dstack-controller install-scroll-monitor \
 	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
@@ -108,7 +118,15 @@ install-l1-devnet:
 install-scroll-monitor:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n "$(NAMESPACE)" \
 		--version=0.1.43-dogeos \
-		--values values/scroll-monitor-production.yaml
+		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
+
+# Independent release: prepare/publish dstack Secrets and install the monitor's
+# Prometheus Operator CRDs first. See dstack-monitoring/README.md.
+install-dstack-controller:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dstack-controller $(DSTACK_CONTROLLER_CHART) -n "$(DSTACK_NAMESPACE)" \
+		--create-namespace \
+		--version $(DSTACK_CONTROLLER_CHART_VERSION) \
+		--values "$(DSTACK_CONTROLLER_VALUES)"
 
 install-scroll-common:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n "$(NAMESPACE)" \
