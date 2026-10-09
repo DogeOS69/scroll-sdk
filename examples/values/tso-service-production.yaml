@@ -124,3 +124,19 @@ persistence:
 
 defaultProbes:
   enabled: false
+
+# Restrict the unauthenticated TSO API port to the pods that legitimately call
+# it. Replace the placeholder selectors with your own labels.
+# Opt in after configuring monitoring and every ingress caller. Beta.6
+# serves metrics on the API port; a monitoring peer can reach all API routes.
+
+networkPolicy:
+  enabled: false
+  port: 3000
+  allowFrom:
+    withdrawalProcessor:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: withdrawal-processor}}
+    signers:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: cubesigner-signer}}
+    operators: []
+    monitoring: []   # e.g. a namespaceSelector for your Prometheus
