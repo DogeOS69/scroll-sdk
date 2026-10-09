@@ -74,6 +74,10 @@ Validate l2-reth role constraints before generating common chart values.
       {{- if and (gt $replicas 1) (not (dig "extraSelectorLabels" "statefulset.kubernetes.io/pod-name" "" $svc)) -}}
         {{- fail (printf "reth.service.extra.%s must select one pod via extraSelectorLabels.statefulset.kubernetes.io/pod-name when controller.replicas > 1" $name) -}}
       {{- end -}}
+      {{- $scheme := get (default (dict) $svc.annotations) "service.beta.kubernetes.io/aws-load-balancer-scheme" -}}
+      {{- if and (eq $scheme "internet-facing") (not $svc.loadBalancerSourceRanges) (not $svc.allowOpenPeering) -}}
+        {{- fail (printf "reth.service.extra.%s is internet-facing: set loadBalancerSourceRanges, or allowOpenPeering: true to accept peers from any address" $name) -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}

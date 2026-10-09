@@ -161,6 +161,16 @@ class L2RethP2PTests(unittest.TestCase):
         p2p = self.services(self.render(EXTERNAL_P2P, values=selected))["review-l2-reth-p2p"]
         self.assertEqual(p2p["spec"]["selector"][POD_NAME], "review-l2-reth-1")
 
+    def test_internet_facing_requires_sources_or_open_opt_in(self):
+        open_values = {"reth": {"service": {"extra": {"p2p": {"loadBalancerSourceRanges": []}}}}}
+        self.assert_fails("set loadBalancerSourceRanges, or allowOpenPeering: true",
+                          EXTERNAL_P2P, values=open_values)
+
+        open_values["reth"]["service"]["extra"]["p2p"]["allowOpenPeering"] = True
+        p2p = self.services(self.render(EXTERNAL_P2P, values=open_values))["review-l2-reth-p2p"]
+        self.assertNotIn("loadBalancerSourceRanges", p2p["spec"])
+        self.assertNotIn("allowOpenPeering", p2p["spec"])
+
     def test_disabled_extra_service_is_not_guarded(self):
         values = {
             "service": {"main": {"type": "LoadBalancer"}},

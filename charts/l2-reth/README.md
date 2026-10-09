@@ -188,7 +188,15 @@ forwards TCP 30303 only:
 - Source restriction. `loadBalancerSourceRanges` is enforced by the frontend
   security group that the AWS Load Balancer Controller creates for the NLB
   (NLB security groups, controller v2.6.0 or later). An empty list means
-  `0.0.0.0/0`. Do not set `aws-load-balancer-disable-nlb-sg`: without an NLB
+  `0.0.0.0/0`, so the chart refuses an internet-facing extra Service with no
+  source ranges unless that Service also sets `allowOpenPeering: true` (read by
+  the chart only, not rendered). That opt-out is for deliberately public
+  peering: the testnet bootnodes run this open variant (internet-facing, no
+  Elastic IP, no source restriction) and peer this way today, so their values
+  must add `allowOpenPeering: true` to render with this chart. Their NLBs also
+  open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
+  disabled; removing it is a testnet cleanup item. Mainnet uses source ranges
+  and TCP 30303 only. Do not set `aws-load-balancer-disable-nlb-sg`: without an NLB
   security group the controller only applies source ranges when client IP
   preservation is on, which is off by default for IP targets. If you set
   `aws-load-balancer-security-groups` instead, the controller ignores the source
@@ -204,8 +212,9 @@ forwards TCP 30303 only:
 
 The chart refuses to render an enabled `LoadBalancer` or `NodePort` extra
 Service when `service.main.type` is not `ClusterIP` (that would publish RPC,
-WS and metrics), when `role` is `sequencer`, or when `controller.replicas` is
-greater than 1 without a pod-name selector.
+WS and metrics), when `role` is `sequencer`, when `controller.replicas` is
+greater than 1 without a pod-name selector, or when it is internet-facing with
+neither `loadBalancerSourceRanges` nor `allowOpenPeering: true`.
 
 Node identity must survive rescheduling, because the partner pins the enode
 (`enode://<pubkey>@<EIP>:30303`):
@@ -232,11 +241,14 @@ rollup-node opens no other peer-facing listener.
 
 1. The nodes are named (bootnode releases), each with a persistent node key
    (`secret` mode) and its enode recorded.
-2. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
-   of that node's EBS volume (or cross-zone is enabled).
-3. The source policy (partner CIDRs) is approved and set in
+2. Infra confirms the cluster runs AWS Load Balancer Controller v2.6.0 or
+   later with NLB security groups enabled (the default), which is what enforces
    `loadBalancerSourceRanges`.
-4. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
+3. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
+   of that node's EBS volume (or cross-zone is enabled).
+4. The source policy (partner CIDRs) is approved and set in
+   `loadBalancerSourceRanges`.
+5. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
    partner's enodes are added on our side where needed (trusted-only nodes).
 
 ### Off-cluster validation
@@ -245,7 +257,9 @@ Run from an approved partner address and from an unapproved one:
 
 1. From the approved source, `nc -vz <EIP> 30303` connects; a partner node
    configured with the enode connects (`admin_peers` on the bootnode lists it
-   with the expected remote enode) and imports new L2 blocks.
+   with the expected remote enode) and imports new L2 blocks. This checks
+   that the bootnode relays the sequencer's blocks to its peers; the testnet
+   bootnodes already serve external peers this way.
 2. Delete the pod (`kubectl delete pod <release>-l2-reth-0`). After it
    reschedules, the enode (`admin_nodeInfo`) and the EIP are unchanged, and the
    partner reconnects and resumes block sync without a config change.
