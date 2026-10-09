@@ -169,3 +169,60 @@ No apply against AWS or the three-signer cohort was run in this follow-up. The
 container rehearsal above describes the earlier local-identity variant. The TEE
 public key remains an operator input obtained from CubeSigner before planning;
 role/key lookup and hosted session provisioning are not yet part of plan/apply.
+
+
+## Intent input simplification and real/enforce example
+
+CLI follow-up [`6bc68023cef6b7244084671a97acb958a1cf68a6`](https://github.com/DogeOS69/scroll-sdk-cli/commit/6bc68023cef6b7244084671a97acb958a1cf68a6)
+derives proof/dstack endpoints from the base domain, removes retired coordinator
+collection timers, imports Vast.ai credentials from a named environment variable,
+and selects/persists the finalized Ethereum anchor without an operator-supplied
+block height. Funding waits create the default input file and display wallet
+addresses, amounts and outpoint templates.
+
+The SDK starter now selects four AWS KMS signing identities (eth-da-submitter,
+fee-oracle and both sequencers); P2P nodekeys remain local. Its `active/real/enforce`
+intent selects a checksum-verified proof release manifest. Apply generates the
+Bridge-bound identities, exports materializers and checks the release CUDA Worker
+image before material import and publication. These orchestration changes were
+tested with synthetic manifests and command adapters, not a live real release.
+The subsequent CLI commit `953914a` lets the operator select only
+`proofRelease.version`. It retrieves the official manifest/checksum and freezes
+their pins; offline manifest/hash inputs remain an advanced alternative. The
+release workflow is currently in open dogeos-core PR #1335. Missing release
+artifacts are a publisher dependency, not a manual operator SHA256 input.
+
+The deposit fee is now explicitly 1 DOGE (`depositFeeSats: "100000000"`), matching
+the SDK's existing `config.toml.example` policy. The CLI converts satoshis to L2
+wei for `contracts.DEPOSIT_FEE` instead of copying the number unchanged.
+Withdrawal remains 0.1 DOGE, with a 1 DOGE minimum. Regression tests cover integer
+precision, zero, one satoshi, invalid/overflowing inputs and legacy wei fields.
+
+The Dogecoin network/chain-ID mapping remains enforced by the CLI. Both Ethereum
+submitter depth fields remain supported: beta.6's `txmgr.rs` reads confirmation
+and finalization depths in the transaction lifecycle, and its `.env.example`
+selects 1/64. They are distinct from DA readers' safe/finalized block-tag checks.
+Source baseline: dogeos-core `56007d3c413ad07f33d0e08b272004089c911f78`.
+
+Validation for this candidate:
+
+- CLI build and generated-field inventory check passed.
+- Changed TypeScript files: lint passed with 0 errors and 22 warnings.
+- Temporary SDK example validation passed: environment coverage, rejection of
+  unfilled placeholders, schema validation, all four KMS selections, real/enforce
+  intent, fee conversion, and all 22 planned steps. Only identities and proof
+  publication select cloud mutations; no transaction-broadcast step is selected.
+- Full suite at `6bc6802`: **960 passing, 15 pending, 1 failing**. The failure
+  is the existing `setup bootnode-public-p2p` integration with the adjacent Reth
+  chart: it emits the legacy public P2P shape rejected by the chart. The tested
+  command, test and chart are unchanged from their respective base branches.
+- The subsequent version-lookup change (`953914a`) passed build and **181 targeted
+  tests**, including publication lookup, missing assets, checksum mismatch,
+  immutable offline reuse, preparation state, projection and CLI spec workflow.
+  Its changed-file lint passed with 0 errors and 9 warnings.
+
+No live KMS provisioning, S3 publication, paid Worker launch, real proving or
+partner policy acceptance was performed. The previous container rehearsal covers
+the earlier local/mock variant. Importing returned partner validation references
+and regenerating their bound configuration remains outside current plan/apply;
+without that evidence the final enforcing proof check rejects completion.

@@ -1,22 +1,40 @@
 # Prepare from a complete DeploymentSpec
 
 Use [deployment-spec.example.yaml](deployment-spec.example.yaml) together with
-[deployment.env.example](deployment.env.example). The spec contains every section
-needed by the current `scrollsdk setup plan` / `setup apply` workflow; it does not
-require assembling YAML fragments from the CLI documentation.
+[deployment.env.example](deployment.env.example). The spec selects deployment
+intent for `scrollsdk setup plan` / `setup apply`.
+Operator inputs, automatically generated artifacts and external approval handoffs
+are described below. Enforcing-policy evidence remains a separate integration
+boundary; see the completion limits before using this starter.
 
 ## Selected scope
 
 This example prepares a **testnet deployment** with the beta.6 production Bridge
 outpoint flow, two Reth sequencers, two bootnodes, AWS KMS signing identities for
-eth-da-submitter and fee-oracle, and a SQLite dstack controller with imported
-Vast.ai credentials. Sequencer signing keys and P2P nodekeys are local. Both the
+eth-da-submitter, fee-oracle and both sequencers, and a SQLite dstack controller
+with imported Vast.ai credentials. P2P nodekeys remain local. Both the
 attestation and recovery cohorts use 2-of-3; Bridge funding requires 6 confirmations.
-It selects `disabled / mock / observe` proofs and imports an existing public compiler identity.
-It does not demonstrate mainnet quorum policy or real/enforce proving.
+It selects `active / real / enforce` proofs. The approved release producer
+generates this deployment's Bridge-bound compiler identity; no hand-written
+compiler identity or mock proof hashes are accepted. This is a testnet policy;
+CubeSigner remains explicitly `transport_only`.
 
-Withdrawal fees match `config.toml.example`: 0.1 DOGE per withdrawal and a
-1 DOGE minimum withdrawal amount (L2 values use 18 decimals).
+`network.l1ChainId` must match the fixed Dogecoin network mapping: mainnet `1`,
+testnet `111111`, regtest `5555555`. The CLI rejects mismatches. This is separate
+from `ethereumDa.chainId`, which is `11155111` for Sepolia.
+
+The beta.6 eth-da-submitter still consumes `ethereumDa.confirmationDepth` and
+`finalizationDepth`. The example explicitly selects `1` and `64`, matching core's
+submitter `.env.example`. These depths use Ethereum tip height minus transaction
+inclusion height, controlling confirmation and later settlement finalization.
+They do not replace the DA readers' `safe`/`finalized` checks. The Rust fallback
+for omitted finalization depth is `1`; `64` is the explicit policy selected here.
+
+Bridge fees match `config.toml.example`: 1 DOGE per deposit, 0.1 DOGE per
+withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoin's
+8 decimals, so 1 DOGE is `100000000` sats. The CLI converts it to
+`contracts.DEPOSIT_FEE = "1000000000000000000"` in L2 wei (18 decimals); withdrawal
+and minimum withdrawal values already use L2 wei.
 
 Core service images are beta.6, the CLI genesis default is contracts rc.4, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
@@ -26,10 +44,11 @@ CLI still requires that field; automatic selection of SDK HEAD is not implemente
 
 Use a CLI build containing `setup plan` and `setup apply`. Check `scrollsdk setup
 plan --help` before starting. AWS, Kubernetes, PostgreSQL and the external RPCs
-referenced here already exist. Apply creates the two declared AWS KMS identities
-and their IAM/IRSA resources,
-using the configured region, EKS cluster and namespace. It selects no bucket
-creation or Secret upload operations. Plan itself does not provision resources;
+referenced here already exist. Apply creates the four declared AWS KMS signing identities
+and their IAM/IRSA resources using the configured region, EKS cluster and
+namespace. It also publishes the real proof program bundle to the existing proof
+bucket. It selects no bucket creation or Secret upload operations. Plan itself
+does not provision resources;
 generated configuration does not establish runtime access.
 
 ## Prepare the private inputs
@@ -45,8 +64,8 @@ private-instance/
     partner-a/descriptor.json
     partner-b/descriptor.json
     partner-c/descriptor.json
-    compiler-identity.json
-    vastai-api-key
+    proof/
+      proof-aws.json
   deployment/                 # created by setup plan
 ```
 
@@ -64,22 +83,27 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Sepolia execution/beacon URLs use the CLI defaults; override them if needed. Set reachable service domains. |
-| Environment file | Fill the six base spec variables and both `DOGECOIN_*_KEY` wallet variables. The KMS-service/local-sequencer/SQLite example does not use `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`; remove those optional entries. |
+| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Sepolia execution/beacon URLs use the CLI defaults; override them if needed. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Environment file | Fill the six base spec variables, both `DOGECOIN_*_KEY` wallet variables and `VASTAI_API_KEY`. The KMS-signer/SQLite example does not use `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`; remove those optional entries. |
 | Owner and deployment salt | Select the owner address and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
 | Bridge public keys | Supply the TEE public key, independently managed sequencer/fee-wallet public keys and three distinct recovery public keys. Wallet keys in the env file must match their declared public keys. Do not derive recovery/TEE keys from a helper seed. |
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
-| Ethereum anchor | Select the real Ethereum DA starting block/index. The illustrative block 0 is not a deployment recommendation. Apply checks it against the chosen RPC. |
+| Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
 | Partner descriptor | Obtain three public beta.6 descriptors and place them at `inputs/partner-a/descriptor.json`, `inputs/partner-b/descriptor.json` and `inputs/partner-c/descriptor.json`. Their actual signer IDs must match `bridge.initialAttestationKeyset.signerIds`; update the sample IDs if necessary. Descriptors include signing/transport public keys; no publicly reachable signer endpoint is required. |
-| Compiler identity | Obtain the matching release's public compiler identity JSON and place it at `inputs/compiler-identity.json`. This must be an actual tool-produced identity compatible with the selected compiler, not invented hashes. |
-| dstack credentials | Put the provider key in the private `inputs/vastai-api-key` file. Importing it prepares configuration; it does not validate provider access or rent GPUs. |
+| Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
+| Existing proof store | Supply the actual `proof-aws.json` receipt for the existing bucket/IRSA configuration. Its bucket, region, key prefix and service accounts must match the spec. Supply matching role ARNs in `proofCoordinator`. This is a resource-provisioning receipt, not an identity file to invent. |
+| dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct existing buckets. Keep `proofArtifacts.s3` and `proofTopology.active.artifactStore` on the proof bucket, and `ethereumDa.blobArchive.s3` on the blob bucket. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
 External file paths in `preparation` are relative to the **output deployment
 directory**. With the layout above, `../inputs/...` resolves to the correct sibling
-directory. Absolute paths are also supported. Descriptor and compiler/provider
-input files can arrive later: apply waits when a declared file is missing.
+directory. Absolute paths are also supported. Plan needs read access to the official
+GitHub proof release; optional `GH_TOKEN` / `GITHUB_TOKEN` supports private
+repository access and authenticated API limits. Keep tokens outside source control.
+Descriptor and existing proof-store receipt files may
+arrive later; apply waits when a declared file is missing. Missing environment
+credentials also produce an actionable wait.
 
 ## Obtain the TEE public key
 
@@ -123,28 +147,33 @@ scrollsdk setup apply --dir /private/instance/deployment
 
 Plan validates and records the chosen inputs without provisioning resources or
 sending transactions. Apply prepares identities and genesis, then waits for
-confirmed sequencer and fee-wallet outpoints. It displays the required address,
-amount and input file. Using your external wallet, make the payments and record
+confirmed sequencer and fee-wallet outpoints. It displays both required addresses,
+amounts, the input file and a JSON input template. Using your external wallet, make the payments and record
 only the actual outpoints in:
 
 ```text
 /private/instance/deployment/.scrollsdk/inputs/bridge-funding.json
 ```
 
-The file starts as `{}`. Populate the `sequencer` and `feeWallet` objects with
+No funding file is needed while writing the spec or running plan. Apply creates
+the file as `{}` at the funding step and prints a template for the required
+entries; replace its placeholder txids and output indices with actual facts. Populate the `sequencer` and `feeWallet` objects with
 `txid` and `vout`, then rerun the same apply command. The CLI checks network,
 unspent status, transaction bytes, scripts, amounts and confirmations before
 using the sequencer outpoint to generate the final Bridge address.
 
-The next pause requests Bridge funding. This transaction must contain the required
+Keep the existing wallet entries when adding the Bridge entry. The next pause requests Bridge funding. This transaction must contain the required
 zero-value OP_RETURN funding marker; an ordinary payment is insufficient. Use the
 full marker script printed by apply. Add the confirmed `bridge` outpoint to the
 same JSON file and rerun apply. Do not edit generated TOML to supply funding facts.
 
-Starting without funding normally takes one plan plus three apply invocations.
+The Bridge portion, starting without funding, normally takes one plan plus three
+apply invocations.
 If the independent wallets are already funded and their outpoints are supplied
 before the first apply, it takes one plan plus two apply invocations. Completed
-steps and identities are preserved across these normal resumptions.
+steps and identities are preserved across these normal resumptions. Real proof
+material and partner handoffs can require additional work; these counts are not
+a guarantee that enforcing preparation finishes in four commands.
 
 Successful completion reports `prepared`: service configuration, genesis, Bridge
 artifacts, Secrets and signer policy are prepared. It does not mean Helm releases
@@ -154,35 +183,75 @@ runtime prerequisites. This example intentionally does not fabricate them.
 
 ## Other deployment choices
 
-The example already selects KMS identity creation for the two service signers.
+The example already selects KMS identity creation for eth-da-submitter, fee-oracle
+and both sequencers.
 The CLI supports additional explicit preparation operations (`archive`, `proofAws`,
 `databases`, `secretUpload`). Adding them authorizes further resource changes during apply. See the matching CLI's `docs/spec-preparation.md` for their
 input contracts and required destinations; the complete example above leaves them
 unselected. Use the standard AWS credential provider chain for the selected KMS
 operations; do not put cloud credentials in the spec.
 
-For real/enforce proving, use the deployment-bound real material receipts,
-materializers, production Worker image, publication evidence and hosted signer
-policy required by the chosen release. Merely changing three proof mode flags in
-this mock example does not supply those inputs. This example's validation is not
-evidence for that separate production proof path.
+## Real proof generation and completion limits
+
+The operator selects `preparation.proofRelease.version`, for example
+`v0.3.0-beta.6`. Plan reads the official `DogeOS69/dogeos-core` release
+`proof-release-<version>`, downloads `dogeos-proof-release-v1.json` and its
+published `.sha256`, verifies the checksum and schema, and caches the verified
+manifest by digest. The immutable plan records the manifest path, checksum and
+compiler/Worker image digests; apply uses these pins without selecting a newer
+release. The checksum verifies the artifact against the publisher's release; it
+is not an independent publisher signature. No operator-generated hash is needed.
+
+**Release dependency:** the publishing workflow is in
+[dogeos-core PR #1335](https://github.com/DogeOS69/dogeos-core/pull/1335), still open
+at this update (2026-10-09). Neither `proof-release-v0.3.0-beta.6` nor
+`v0.3.0-beta.6` was available through GitHub Release lookup. The core release owner
+must land the workflow and publish the compatible proof artifacts. Plan fails
+clearly when the release/assets are unavailable; it does not ask operators to
+invent a manifest or silently substitute mock proofs. Thus this starter expresses
+the intended version but cannot currently complete online planning for beta.6.
+
+For an offline/private release handoff only, replace `version` with
+`manifest: /private/approved/dogeos-proof-release-v1.json` and `sha256` from the
+release owner's accompanying checksum. Supply both; do not combine them with
+`version`. This is an advanced override, not the normal first step.
+
+After generating this deployment's `.data/protocol_context.json`, apply:
+
+1. Runs the pinned `proof-preparation-producer` through `proof-image-tools
+   --action prepare-real`. This generates the deployment-bound
+   `bridge/worker-identity-bundle.json`, Bridge program and preparation receipt
+   under `.data/proof-release-preparation/`.
+2. Exports Chunk/Batch materializers from the matching coordinator image and
+   checks the CUDA Worker image against the baked identities without a GPU.
+3. Imports the validated real material into `.data/proof-materials/`, builds the
+   full real topology and prepares the service configuration.
+4. Publishes the verified program bundle using the selected release and existing
+   proof-store receipt, then exports the enforcing signer-policy bundle.
+
+The legacy coordinator chunk/batch/bundle collection timers are removed: they
+belong to retired Scroll services, not beta.6 Proof Coordinator. Native proof
+materialization policy remains owned by the pinned core compiler/templates.
+
+**Current completion limit:** partner operators must validate the exported
+policy and return real signer-validation receipts. The current plan/apply flow
+exports that bundle but does not yet import the returned validation references
+and regenerate their bound configuration. Without this evidence, the final
+`proof-config-check` rejects `enforce`; this example must not be presented as a
+verified unattended path to `prepared`. The matching CLI
+`docs/proof-config-transactions.md` describes that evidence and generation handoff.
+External CUDA Worker startup, actual proving and deployment acceptance are also
+separate operations. No proof mode is silently downgraded to mock or observe.
 
 ## Validation
 
-The example is checked with the CLI in a temporary directory after replacing
-operator placeholders with disposable test inputs. Unedited placeholders must
-fail planning. The container rehearsal uses actual rc.4 / beta.6 tools with a
-synthetic local chain RPC and disposable identities; no live funding, cloud
-provisioning, provider access or Kubernetes deployment is implied.
+Validation uses disposable inputs in a private temporary directory. Checks cover
+placeholder rejection, one-domain endpoint derivation, omitted coordinator fields,
+release-derived image pins, real/enforce selection, planned resource effects,
+finalized-anchor persistence and Vast.ai environment-key handling.
 
-The earlier local-identity, one-node, 1-of-1 variant passed field validation and produced all 17 planned steps
-with disposable replacement inputs. Using that filled example as the baseline,
-the CLI's `scripts/test-preparation-e2e.mjs` completed both funding waits,
-resumed to `prepared`, and completed a further apply without repeating finished
-steps. The CLI preparation/identity regression selection also passed 24 tests
-from the normal repository directory after the working-copy migration.
-
-The current example selects two nodes of each type, two KMS service identities,
-2-of-3 cohorts and 6 funding confirmations. Its schema, generated configuration
-and preparation plan are checked without applying AWS changes. The earlier
-container rehearsal does not verify live KMS provisioning or this larger cohort.
+The previously recorded rc.4/beta.6 container rehearsal used a
+`disabled / mock / observe`, local-identity variant. It does not establish real
+proof generation, live KMS, program publication or partner enforcing-policy
+acceptance for this revised example. See the
+[validation record](../docs/spec-configuration-validation.md) for exact scope.

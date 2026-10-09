@@ -13,8 +13,8 @@ For the CLI spec `plan`/`apply` workflow, use the complete
 [deployment.env.example](deployment.env.example), and the
 [step-by-step operator guide](deployment-spec.md). Copy the YAML and env file
 outside the checkout, fill the marked deployment inputs, and pass them to
-`setup plan --spec ... --env-file ...`. The example selects the tested testnet
-production-Bridge flow with disabled/mock/observe proofs. Comments identify base
+`setup plan --spec ... --env-file ...`. The example selects testnet production-Bridge preparation with active/real/enforce
+proof intent; the guide records the outstanding partner-evidence handoff. Comments identify base
 variables, wallet keys and optional signer/database imports. Keep completed inputs
 private; the output deployment directory starts empty.
 

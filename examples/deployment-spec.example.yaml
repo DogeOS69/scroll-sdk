@@ -1,6 +1,7 @@
-# Complete setup plan/apply input for a TESTNET configuration rehearsal.
+# Deployment intent for a TESTNET with active / real / enforce proofs.
 # See deployment-spec.md and copy deployment.env.example outside this checkout.
-# Bridge uses the beta.6 production outpoint flow; proofs are disabled/mock/observe.
+# Bridge uses the beta.6 production outpoint flow. Real material/evidence handoffs
+# are required; see deployment-spec.md for the current enforce orchestration limit.
 # Replace REPLACE_WITH_*, TODO_*, *.example.invalid and the marked numeric inputs.
 # This file contains no private keys, signer sessions or working credentials.
 version: "1.0"
@@ -17,8 +18,8 @@ templates:
   sdkRevision: c8f7871b6f6ad0d19504342558d96b7e39608d4d
 
 # Reference existing infrastructure; this spec does not create a cluster.
-# Apply creates AWS KMS keys and IAM/IRSA resources for the two service signers.
-# Sequencer transaction signers and all P2P nodekeys below remain local.
+# Apply creates AWS KMS keys and IAM/IRSA resources for all four signing identities:
+# eth-da-submitter, fee-oracle and both sequencers. P2P nodekeys remain local.
 infrastructure:
   provider: aws
   aws:
@@ -33,6 +34,8 @@ infrastructure:
 network:
   l1ChainName: DOGE
   l2ChainName: DogeOS Testnet
+  # Fixed Dogecoin network mapping: mainnet=1, testnet=111111, regtest=5555555.
+  # Must match dogecoin.network; this is separate from ethereumDa.chainId.
   l1ChainId: 111111
   l2ChainId: 221122
   tokenSymbol: DOGE
@@ -48,10 +51,10 @@ identities:
   sequencers:
     - index: 0
       nodekey: {action: create}
-      signer: {action: create, backend: local}
+      signer: {action: create, backend: aws_kms}
     - index: 1
       nodekey: {action: create}
-      signer: {action: create, backend: local}
+      signer: {action: create, backend: aws_kms}
   bootnodes:
     - index: 0
       nodekey: {action: create}
@@ -88,6 +91,8 @@ ethereumDa:
   # Same Sepolia defaults as the CLI; override with deployment-specific endpoints if needed.
   l1RpcUrl: https://gateway.tenderly.co/public/sepolia
   beaconRpcUrl: https://ethereum-sepolia-beacon-api.publicnode.com
+  # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
+  # These do not replace Ethereum safe/finalized block-tag checks.
   confirmationDepth: 1
   finalizationDepth: 64
   # Existing DA blob bucket. This is NOT the proof artifact bucket below.
@@ -129,7 +134,7 @@ bridge:
     bridge: 1000000000
   confirmationsRequired: 6
   fees:
-    depositFeeSats: "10000"
+    depositFeeSats: "100000000" # 1 DOGE (Dogecoin uses 8 decimals)
     withdrawalFeeWei: "100000000000000000" # 0.1 DOGE (L2 uses 18 decimals)
     minWithdrawalAmountWei: "1000000000000000000" # 1 DOGE
   feeRecipient: "$ENV:OWNER_ADDRESS"
@@ -147,6 +152,7 @@ feeOracle:
 
 frontend:
   protocol: https
+  # Set the deployment domain once; service hosts, proof URL and dstack derive from it.
   baseDomain: dogeos.example.invalid
   externalUrls:
     l1Rpc: https://dogecoin.example.invalid
@@ -158,12 +164,6 @@ frontend:
     grafana: grafana
     tso: tso
     proofCoordinator: proof
-
-rollup:
-  coordinator:
-    chunkCollectionTimeSec: 30
-    batchCollectionTimeSec: 60
-    bundleCollectionTimeSec: 180
 
 contracts:
   deploymentSalt: REPLACE_WITH_UNIQUE_DEPLOYMENT_SALT
@@ -197,31 +197,48 @@ images:
     feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.6}
     cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.6}
 
-# This complete example matches the tested preparation scope, not real proving.
-# The operator supplies the release's public compiler identity as an external file.
+# Real proof materials are imported from release/Worker receipts after Bridge
+# context exists. Their hashes and public identities are tool-produced, never invented.
+proofCoordinator:
+  enabled: true
+  s3AuthMode: irsa
+  artifactStore:
+    bucket: replace-with-unique-dogeos-proof-bucket
+    region: us-west-2
+    keyPrefix: dogeos-testnet/proofs
+  serviceAccount:
+    name: proof-coordinator
+    annotations:
+      eks.amazonaws.com/role-arn: REPLACE_WITH_PROOF_COORDINATOR_IRSA_ROLE_ARN
+  withdrawalProcessorServiceAccount:
+    name: withdrawal-processor
+    annotations:
+      eks.amazonaws.com/role-arn: REPLACE_WITH_WITHDRAWAL_PROCESSOR_IRSA_ROLE_ARN
+
 proofTopology:
-  mode: disabled
-  generation: mock
-  enforcement: observe
+  mode: active
+  generation: real
+  enforcement: enforce
+  # The core schema requires this field even under enforce.
   observeRealProofDeadlineMs: 1800000
-  compiler:
-    image:
-      repository: dogeos69/dogeos-proof-topology
-      digest: sha256:c72edcd9350bd5f69d312d92ed42ed306eefd92462417e70b87cbd981429f1a1
-    identityFilePath: .data/compiler-identity.json
+  # Compiler and CUDA Worker image pins are read from preparation.proofRelease.
+  # Compiler identity is generated after protocol_context.json exists.
   deployment:
     artifactKeyPrefix: dogeos-testnet/proofs
-    proverPublicUrl: https://proof.dogeos.example.invalid
+    # proverPublicUrl defaults to frontend.protocol + the proofCoordinator host.
   active:
-    profile: withdrawal_mock_prover
-    workerLaunch: local_cpu
+    profile: real_scroll_withdrawal_full_topology
+    workerLaunch: external
     artifactStore:
       kind: s3_compatible
       bucket: replace-with-unique-dogeos-proof-bucket
       region: us-west-2
       endpointUrl: https://s3.us-west-2.amazonaws.com
-    # Mock identity is read from compiler.identityFilePath; no invented hashes.
-    realScroll: {}
+    # Apply fills identities and resource paths from the validated real receipt.
+    # Block witnesses come from the SDK's internal Reth RPC service.
+    realScroll:
+      chunkWitnessSource: rpc
+      chunkWitnessRpcUrl: http://l2-rpc:8545
 
 dstackController:
   enabled: true
@@ -230,7 +247,7 @@ dstackController:
   ingress:
     enabled: true
     className: nginx
-    hosts: [dstack.dogeos.example.invalid]
+    # hosts defaults to [dstack.<frontend.baseDomain>]; set only to override.
   # SQLite matches the rehearsal. PostgreSQL requires initializeDatabase or
   # databaseUrlEnv in preparation.dstack, plus database.type: postgresql here.
 
@@ -244,7 +261,7 @@ preparation:
   bridge:
     mode: production
     image: dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262
-    fundingFile: .scrollsdk/inputs/bridge-funding.json
+    # Apply creates the funding input at the default path when payments are needed.
     production:
       sequencerPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_SEQUENCER_PUBLIC_KEY
       sequencerKeyEnv: DOGECOIN_SEQUENCER_KEY
@@ -255,19 +272,26 @@ preparation:
         - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_2
         - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_3
       ethereumAnchor:
-        # REQUIRED: choose the real Ethereum DA boundary; block 0 is illustrative.
-        blockNumber: 0
-        transactionIndex: 0
+        # Apply queries the finalized Ethereum block once and records the exact
+        # hash/height with transactionIndex 0. Resumes reuse the saved boundary.
+        blockTag: finalized
   dstack:
     mode: import
     providers: [vastai]
-    vastaiApiKeyFile: ../inputs/vastai-api-key
+    vastaiApiKeyEnv: VASTAI_API_KEY
+  proofRelease:
+    # CLI retrieves the official manifest/checksum and freezes immutable image pins.
+    # Requires the core release owner to publish this version's proof release.
+    version: v0.3.0-beta.6
   proofMaterials:
-    mode: existing
+    mode: real
+  # Explicitly request publication using the same pinned release manifest.
+  proofPublication: {}
   inputs:
-    - source: ../inputs/compiler-identity.json
-      destination: .data/compiler-identity.json
-  # No archive/proofAws/secretUpload actions are selected in this example.
-  # Existing bucket permissions and external runtime authentication are prerequisites.
-  # KMS identity creation above is selected; other cloud operations are optional.
-  # See deployment-spec.md for the resource changes and required permissions.
+    # Existing artifact-store/IRSA receipt, matching the bucket and identities above.
+    - source: ../inputs/proof/proof-aws.json
+      destination: .data/proof-aws.json
+  # Apply creates KMS identities and publishes the verified proof program bundle.
+  # No archive/proofAws/secretUpload actions are selected; the proof store, access
+  # permissions and proof-aws receipt must already exist. External CUDA Worker
+  # launch and partner enforcing-policy validation remain separate handoffs.
