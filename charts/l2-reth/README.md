@@ -144,77 +144,92 @@ default: the chart renders only the main ClusterIP Service, which carries RPC
 8545, WS 8546, metrics 6060 and, when `reth.service.p2p.enabled`, internal P2P.
 The main Service is never used for external exposure.
 
-Enable it with an additional Service under `reth.service.extra`. The commented
-block in `examples/values/l2-reth-bootnode-production.yaml` is the reference,
-and `ci/external-p2p-values.yaml` is the same block as a lint and test fixture:
+Enable it with `reth.p2pExternal`. The block in
+`examples/values/l2-reth-bootnode-production.yaml` is the reference (disabled),
+and `ci/external-p2p-values.yaml` is the same block enabled, as a lint and test
+fixture:
 
 ```yaml
 reth:
-  service:
-    extra:
-      p2p:
-        enabled: true
-        type: LoadBalancer
-        annotations:
-          service.beta.kubernetes.io/aws-load-balancer-type: external
-          service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-          service.beta.kubernetes.io/aws-load-balancer-subnets: "<subnet-id>"
-          service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "<eipalloc-id>"
-        loadBalancerSourceRanges:
-          - "<partner CIDR>"
-        ports:
-          p2p-tcp:
-            enabled: true
-            port: 30303
-            targetPort: 30303
-            protocol: TCP
+  p2pExternal:
+    enabled: true
+    ordinal: 0
+    sourceRanges:
+      - "<partner CIDR>"
+    allowOpenPeering: false
+    subnets:
+      - "<subnet-id>"
+    eipAllocations:
+      - "<eipalloc-id>"
+    annotations: {}
 ```
 
-This renders `<fullname>-p2p`, an internet-facing NLB with IP targets that
-forwards TCP 30303 only:
+This renders `<fullname>-p2p`. The template fixes everything that decides what
+is exposed and to whom; values only supply the deployment-specific inputs:
 
-- No UDP. The chart always passes `--disable-discovery`, so the node opens no
-  discovery socket, and peers are configured explicitly. No Proxy Protocol v2:
-  reth's RLPx listener does not parse it.
-- Static address. The Elastic IP allocation is created and owned by the
-  deployment's infrastructure; the chart only references its allocation ID and
-  never creates or releases it. List one allocation per subnet, in the same
-  order. The subnet must be in the same Availability Zone as the node's EBS data
+- Type `LoadBalancer`, with `service.beta.kubernetes.io/aws-load-balancer-type:
+  external`, `aws-load-balancer-nlb-target-type: ip` and
+  `aws-load-balancer-scheme: internet-facing`. These are set after
+  `reth.p2pExternal.annotations` and take precedence over `global.annotations`,
+  so neither can change them. Use `annotations` for other settings, for example
+  `aws-load-balancer-name` or `aws-load-balancer-attributes`.
+- One port: TCP `reth.ports.p2p` (30303) to the same container port. No UDP:
+  the chart always passes `--disable-discovery`, so the node opens no discovery
+  socket, and peers are configured explicitly. No Proxy Protocol v2: reth's
+  RLPx listener does not parse it.
+- One pod: the selector is this release's labels plus
+  `statefulset.kubernetes.io/pod-name: <fullname>-<ordinal>`, and `ordinal`
+  must be below `controller.replicas`. A `bootnode` release runs at most one
+  replica, so deploy one release per exposed bootnode with `ordinal: 0`.
+- Static address: `subnets` and `eipAllocations` become the
+  `aws-load-balancer-subnets` and `aws-load-balancer-eip-allocations`
+  annotations. The Elastic IPs are created and owned by the deployment's
+  infrastructure; the chart only references their allocation IDs and never
+  creates or releases them. List one allocation per subnet, in the same order.
+  The subnet must be in the same Availability Zone as the node's EBS data
   volume, or cross-zone load balancing must be enabled
   (`service.beta.kubernetes.io/aws-load-balancer-attributes:
   load_balancing.cross_zone.enabled=true`); otherwise a pod scheduled in another
   AZ has no load balancer node in front of it.
-- Source restriction. `loadBalancerSourceRanges` is enforced by the frontend
-  security group that the AWS Load Balancer Controller creates for the NLB
-  (NLB security groups, controller v2.6.0 or later). An empty list means
-  `0.0.0.0/0`, so the chart refuses an internet-facing extra Service with no
-  source ranges unless that Service also sets `allowOpenPeering: true` (read by
-  the chart only, not rendered). That opt-out is for deliberately public
-  peering: the testnet bootnodes run this open variant (internet-facing, no
-  Elastic IP, no source restriction) and peer this way today, so their values
-  must add `allowOpenPeering: true` to render with this chart. Their NLBs also
-  open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
-  disabled; removing it is a testnet cleanup item. Mainnet uses source ranges
-  and TCP 30303 only. Do not set `aws-load-balancer-disable-nlb-sg`: without an NLB
-  security group the controller only applies source ranges when client IP
-  preservation is on, which is off by default for IP targets. If you set
-  `aws-load-balancer-security-groups` instead, the controller ignores the source
-  ranges and the listed groups must carry the restriction. See the controller's
+- Source restriction: `sourceRanges` becomes `spec.loadBalancerSourceRanges`,
+  which is enforced by the frontend security group that the AWS Load Balancer
+  Controller creates for the NLB (NLB security groups, controller v2.6.0 or
+  later). An empty list means `0.0.0.0/0`, so the chart refuses an empty
+  `sourceRanges` unless `allowOpenPeering: true` (a YAML boolean) records that
+  public peering is intended. See the controller's
   [Service annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#lb-source-ranges)
   and [security groups](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/security_groups/)
   docs.
-- One pod per Service. A `bootnode` release runs at most one replica, so the
-  release's selector picks exactly one pod; deploy one release per exposed
-  bootnode. A replicated release must add
-  `extraSelectorLabels: {statefulset.kubernetes.io/pod-name: <pod>}` to each
-  external Service.
 
-The chart refuses to render an enabled `LoadBalancer` or `NodePort` extra
-Service when `service.main.type` is not `ClusterIP` (that would publish RPC,
-WS and metrics), when `role` is `sequencer`, when `controller.replicas` is
-greater than 1 without a pod-name selector, or when it is internet-facing with
-neither `loadBalancerSourceRanges` nor `allowOpenPeering: true`.
+The chart refuses to render `reth.p2pExternal` when:
+
+- `service.main.type` is not `ClusterIP`, which would publish RPC, WS and
+  metrics;
+- `role` is `sequencer`, or `controller.type` is not `statefulset`;
+- `ordinal` names no pod of this release;
+- `eipAllocations` and `subnets` differ in length;
+- `sourceRanges` is empty without `allowOpenPeering: true`;
+- the Service's effective annotations, including `global.annotations`, contain
+  `aws-load-balancer-security-groups` or `aws-load-balancer-disable-nlb-sg`
+  (both stop the controller applying the source ranges) or an
+  `aws-load-balancer-proxy-protocol*` annotation.
+
+`reth.service.extra` stays available for internal Services only. The chart
+refuses an enabled extra Service of type `LoadBalancer` or `NodePort`, or with
+`externalIPs`, and the keys `main` (always) and `p2p` (when `reth.p2pExternal`
+is enabled), which would replace a chart-owned Service.
+
+Testnet is the open variant. Its bootnodes run internet-facing NLBs with no
+Elastic IP and no source restriction, and peer this way today. They currently
+use an extra `LoadBalancer` Service, `reth.service.extra.p2p`, which this
+chart version refuses. Move them to `reth.p2pExternal` with
+`allowOpenPeering: true`, and keep their other settings, such as cross-zone
+load balancing and the load balancer name, in `annotations`. The Service keeps
+its name, `<fullname>-p2p`. If the old Service's type, target-type or scheme
+annotations differ from the fixed values, the controller may replace the load
+balancer, so check the address that partners use after the upgrade. Their NLBs
+also open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
+disabled; the move drops it. Mainnet uses `sourceRanges` and TCP 30303 only.
 
 Node identity must survive rescheduling, because the partner pins the enode
 (`enode://<pubkey>@<EIP>:30303`):
@@ -243,11 +258,11 @@ rollup-node opens no other peer-facing listener.
    (`secret` mode) and its enode recorded.
 2. Infra confirms the cluster runs AWS Load Balancer Controller v2.6.0 or
    later with NLB security groups enabled (the default), which is what enforces
-   `loadBalancerSourceRanges`.
+   `reth.p2pExternal.sourceRanges`.
 3. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
    of that node's EBS volume (or cross-zone is enabled).
 4. The source policy (partner CIDRs) is approved and set in
-   `loadBalancerSourceRanges`.
+   `reth.p2pExternal.sourceRanges`.
 5. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
    partner's enodes are added on our side where needed (trusted-only nodes).
 

@@ -1,7 +1,6 @@
 """Render the l2-reth chart's opt-in external P2P Service and its guards."""
 
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 import unittest
@@ -21,7 +20,9 @@ NLB_ANNOTATIONS = {
     AWS_ANNOTATION + "subnets": "<TODO subnet-id>",
     AWS_ANNOTATION + "eip-allocations": "<TODO eipalloc-id>",
 }
+P2P_PORTS = [{"port": 30303, "targetPort": 30303, "protocol": "TCP", "name": "p2p-tcp"}]
 POD_NAME = "statefulset.kubernetes.io/pod-name"
+RPC_PORT = {"enabled": True, "port": 8545, "targetPort": 8545, "protocol": "TCP"}
 
 
 def helm_template(*value_files, values=None):
@@ -35,16 +36,12 @@ def helm_template(*value_files, values=None):
         return subprocess.run(command, capture_output=True, text=True)
 
 
-def commented_extra_example():
-    """Uncomment the disabled `extra:` block in the bootnode example."""
-    lines = BOOTNODE_EXAMPLE.read_text().splitlines()
-    start = lines.index("    # extra:")
-    block = []
-    for line in lines[start:]:
-        if not line.startswith("    #"):
-            break
-        block.append(re.sub(r"^    # ?", "", line))
-    return yaml.safe_load("\n".join(block))["extra"]
+def p2p_external(**settings):
+    return {"reth": {"p2pExternal": settings}}
+
+
+def extra(name, service):
+    return {"reth": {"service": {"extra": {name: service}}}}
 
 
 class L2RethP2PTests(unittest.TestCase):
@@ -63,6 +60,9 @@ class L2RethP2PTests(unittest.TestCase):
 
     def statefulset(self, docs):
         return next(doc for doc in docs if doc["kind"] == "StatefulSet")
+
+    def external(self, *value_files, values=None):
+        return self.services(self.render(*value_files, values=values))["review-l2-reth-p2p"]
 
     def assert_internal(self, service):
         self.assertEqual(service["spec"]["type"], "ClusterIP")
@@ -87,9 +87,10 @@ class L2RethP2PTests(unittest.TestCase):
         self.assertEqual(list(services), ["review-l2-reth"])
         self.assert_internal(services["review-l2-reth"])
 
-    def test_ci_fixture_matches_commented_example(self):
-        fixture = yaml.safe_load(EXTERNAL_P2P.read_text())
-        self.assertEqual(fixture["reth"]["service"]["extra"], commented_extra_example())
+    def test_ci_fixture_matches_example(self):
+        fixture = yaml.safe_load(EXTERNAL_P2P.read_text())["reth"]["p2pExternal"]
+        example = yaml.safe_load(BOOTNODE_EXAMPLE.read_text())["reth"]["p2pExternal"]
+        self.assertEqual(fixture, dict(example, enabled=True))
 
     def test_enabled_renders_one_p2p_only_nlb_for_one_pod(self):
         docs = self.render(EXTERNAL_P2P)
@@ -101,21 +102,33 @@ class L2RethP2PTests(unittest.TestCase):
         self.assertEqual(p2p["spec"]["type"], "LoadBalancer")
         self.assertEqual(p2p["metadata"]["annotations"], NLB_ANNOTATIONS)
         self.assertEqual(p2p["spec"]["loadBalancerSourceRanges"], ["<TODO partner CIDR>"])
-        self.assertEqual(
-            p2p["spec"]["ports"],
-            [{"port": 30303, "targetPort": 30303, "protocol": "TCP", "name": "p2p-tcp"}],
-        )
+        self.assertEqual(p2p["spec"]["ports"], P2P_PORTS)
+        self.assertEqual(p2p["spec"]["selector"], {
+            "app.kubernetes.io/instance": "review",
+            "app.kubernetes.io/name": "l2-reth",
+            POD_NAME: "review-l2-reth-0",
+        })
 
-        # One bootnode release runs one pod, and the Service selects that release.
         workload = self.statefulset(docs)
+        self.assertEqual(workload["metadata"]["name"], "review-l2-reth")
         self.assertEqual(workload["spec"]["replicas"], 1)
         pod_labels = workload["spec"]["template"]["metadata"]["labels"]
-        for key, value in p2p["spec"]["selector"].items():
-            self.assertEqual(pod_labels.get(key), value)
+        for key in ["app.kubernetes.io/instance", "app.kubernetes.io/name"]:
+            self.assertEqual(pod_labels[key], p2p["spec"]["selector"][key])
 
         args = workload["spec"]["template"]["spec"]["containers"][0]["args"]
         self.assertIn("--disable-discovery", args)
         self.assertIn("--port=30303", args)
+
+    def test_operator_annotations_cannot_change_fixed_settings(self):
+        values = p2p_external(annotations={
+            AWS_ANNOTATION + "scheme": "internal",
+            AWS_ANNOTATION + "nlb-target-type": "instance",
+            AWS_ANNOTATION + "name": "bootnode-0",
+        })
+        values["global"] = {"annotations": {AWS_ANNOTATION + "type": "nlb"}}
+        annotations = self.external(EXTERNAL_P2P, values=values)["metadata"]["annotations"]
+        self.assertEqual(annotations, dict(NLB_ANNOTATIONS, **{AWS_ANNOTATION + "name": "bootnode-0"}))
 
     def test_node_key_is_persistent(self):
         # secret mode: the bootnode example mounts the node key from its Secret.
@@ -139,7 +152,7 @@ class L2RethP2PTests(unittest.TestCase):
         for main_type in ["LoadBalancer", "NodePort"]:
             with self.subTest(main_type=main_type):
                 self.assert_fails(
-                    "service.main.type must be ClusterIP",
+                    "requires service.main.type ClusterIP",
                     EXTERNAL_P2P,
                     values={"service": {"main": {"type": main_type}}},
                 )
@@ -151,33 +164,84 @@ class L2RethP2PTests(unittest.TestCase):
             values={"role": "sequencer", "reth": {"signer": {"type": "awsKms", "awsKmsKeyId": "k"}}},
         )
 
-    def test_replicas_require_a_pod_name_selector(self):
+    def test_ordinal_selects_a_pod_of_this_release(self):
         replicated = {"role": "rpc", "controller": {"replicas": 3}}
-        self.assert_fails("statefulset.kubernetes.io/pod-name", EXTERNAL_P2P, values=replicated)
+        p2p = self.external(EXTERNAL_P2P, values=dict(replicated, **p2p_external(ordinal=2)))
+        self.assertEqual(p2p["spec"]["selector"][POD_NAME], "review-l2-reth-2")
+        self.assertEqual(p2p["spec"]["ports"], P2P_PORTS)
 
-        selected = dict(replicated, reth={"service": {"extra": {"p2p": {
-            "extraSelectorLabels": {POD_NAME: "review-l2-reth-1"},
-        }}}})
-        p2p = self.services(self.render(EXTERNAL_P2P, values=selected))["review-l2-reth-p2p"]
-        self.assertEqual(p2p["spec"]["selector"][POD_NAME], "review-l2-reth-1")
+        for ordinal in [3, -1]:
+            with self.subTest(ordinal=ordinal):
+                self.assert_fails("must name a pod of this release", EXTERNAL_P2P,
+                                  values=dict(replicated, **p2p_external(ordinal=ordinal)))
+        self.assert_fails("must name a pod of this release", EXTERNAL_P2P,
+                          values=p2p_external(ordinal=1))
 
     def test_internet_facing_requires_sources_or_open_opt_in(self):
-        open_values = {"reth": {"service": {"extra": {"p2p": {"loadBalancerSourceRanges": []}}}}}
-        self.assert_fails("set loadBalancerSourceRanges, or allowOpenPeering: true",
-                          EXTERNAL_P2P, values=open_values)
+        self.assert_fails("set sourceRanges, or allowOpenPeering: true",
+                          EXTERNAL_P2P, values=p2p_external(sourceRanges=[]))
+        self.assert_fails("set sourceRanges, or allowOpenPeering: true",
+                          EXTERNAL_P2P, values=p2p_external(sourceRanges=[], allowOpenPeering="true"))
 
-        open_values["reth"]["service"]["extra"]["p2p"]["allowOpenPeering"] = True
-        p2p = self.services(self.render(EXTERNAL_P2P, values=open_values))["review-l2-reth-p2p"]
+        p2p = self.external(EXTERNAL_P2P, values=p2p_external(sourceRanges=[], allowOpenPeering=True))
         self.assertNotIn("loadBalancerSourceRanges", p2p["spec"])
-        self.assertNotIn("allowOpenPeering", p2p["spec"])
+        self.assertEqual(p2p["metadata"]["annotations"][AWS_ANNOTATION + "scheme"], "internet-facing")
 
-    def test_disabled_extra_service_is_not_guarded(self):
-        values = {
-            "service": {"main": {"type": "LoadBalancer"}},
-            "reth": {"service": {"extra": {"p2p": {"enabled": False}}}},
-        }
-        services = self.services(self.render(EXTERNAL_P2P, values=values))
-        self.assertEqual(list(services), ["review-l2-reth"])
+    def test_eip_allocations_match_subnets(self):
+        self.assert_fails("one entry per reth.p2pExternal.subnets entry", EXTERNAL_P2P,
+                          values=p2p_external(subnets=["subnet-a", "subnet-b"]))
+
+    def test_refuses_annotations_that_bypass_sources_or_add_proxy_protocol(self):
+        for key in ["security-groups", "disable-nlb-sg", "proxy-protocol"]:
+            annotation = {AWS_ANNOTATION + key: "x"}
+            for values in [p2p_external(annotations=annotation), {"global": {"annotations": annotation}}]:
+                with self.subTest(key=key, values=values):
+                    self.assert_fails("is not allowed", EXTERNAL_P2P, values=values)
+
+    # Review bypasses through reth.service.extra (F1, F3); NodePort included.
+    def test_extra_services_cannot_publish_ports(self):
+        for service_type in ["LoadBalancer", "NodePort"]:
+            for ports in [
+                {"rpc": RPC_PORT},
+                {"p2p-tcp": {"enabled": True, "port": 30303, "targetPort": 8545, "protocol": "TCP"}},
+            ]:
+                service = {"enabled": True, "type": service_type, "ports": ports}
+                with self.subTest(service_type=service_type, ports=ports):
+                    self.assert_fails("must stay internal", values=extra("public", service))
+                    self.assert_fails("must stay internal", EXTERNAL_P2P, values=extra("public", service))
+        self.assert_fails("must stay internal", values=extra("public", {
+            "externalIPs": ["203.0.113.1"], "ports": {"rpc": RPC_PORT},
+        }))
+
+    def test_extra_cannot_replace_main_or_p2p(self):
+        self.assert_fails("reserved for the chart's main Service", values=extra("main", {
+            "type": "ClusterIP", "ports": {"http": RPC_PORT},
+        }))
+        self.assert_fails("reserved for reth.p2pExternal", EXTERNAL_P2P, values=extra("p2p", {
+            "ports": {"http": RPC_PORT},
+        }))
+
+    def test_extra_selectors_cannot_retarget_the_external_service(self):
+        values = extra("internal", {
+            "extraSelectorLabels": {
+                "app.kubernetes.io/instance": "other-release",
+                POD_NAME: "other-release-0",
+            },
+            "ports": {"p2p-tcp": {"enabled": True, "port": 30303, "targetPort": 30303}},
+        })
+        p2p = self.external(EXTERNAL_P2P, values=values)
+        self.assertEqual(p2p["spec"]["selector"]["app.kubernetes.io/instance"], "review")
+        self.assertEqual(p2p["spec"]["selector"][POD_NAME], "review-l2-reth-0")
+
+    def test_inherited_annotations_cannot_make_it_internal_or_open(self):
+        # F2: global annotations merge under the Service's own, so the fixed
+        # scheme wins and the source-range check still applies.
+        values = p2p_external(sourceRanges=[])
+        values["global"] = {"annotations": {AWS_ANNOTATION + "scheme": "internal"}}
+        self.assert_fails("set sourceRanges, or allowOpenPeering: true", EXTERNAL_P2P, values=values)
+
+        p2p = self.external(EXTERNAL_P2P, values={"global": {"annotations": {AWS_ANNOTATION + "scheme": "internal"}}})
+        self.assertEqual(p2p["metadata"]["annotations"][AWS_ANNOTATION + "scheme"], "internet-facing")
 
 
 if __name__ == "__main__":

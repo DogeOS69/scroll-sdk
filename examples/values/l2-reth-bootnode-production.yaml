@@ -117,34 +117,27 @@ reth:
     # Internal ClusterIP P2P ports on the main Service, for in-cluster peering.
     p2p:
       enabled: true
-    # External P2P is opt-in and off until its activation checklist is complete
-    # (charts/l2-reth/README.md, "External P2P (opt-in)"). To expose this
-    # bootnode to a partner, replace `extra: {}` with the block below. It
-    # renders one P2P-only internet-facing NLB Service (TCP 30303 only) on the
-    # deployment-owned Elastic IP, reachable only from the approved sources.
     extra: {}
-    # extra:
-    #   p2p:
-    #     enabled: true
-    #     type: LoadBalancer
-    #     annotations:
-    #       service.beta.kubernetes.io/aws-load-balancer-type: external
-    #       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-    #       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    #       # One allocation per subnet, in the same order. The subnet must be in
-    #       # the AZ of this node's EBS volume (or enable cross-zone load balancing).
-    #       service.beta.kubernetes.io/aws-load-balancer-subnets: "<TODO subnet-id>"
-    #       service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "<TODO eipalloc-id>"
-    #     # Enforced by the NLB security group that the AWS Load Balancer Controller
-    #     # creates. Empty would mean 0.0.0.0/0.
-    #     loadBalancerSourceRanges:
-    #       - "<TODO partner CIDR>"
-    #     ports:
-    #       p2p-tcp:
-    #         enabled: true
-    #         port: 30303
-    #         targetPort: 30303
-    #         protocol: TCP
+
+  # External P2P is opt-in and off until its activation checklist is complete
+  # (charts/l2-reth/README.md, "External P2P (opt-in)"). When enabled, the chart
+  # renders one P2P-only internet-facing NLB Service (TCP 30303 only) for pod
+  # <fullname>-<ordinal>, on the deployment-owned Elastic IP and reachable only
+  # from sourceRanges. To expose this bootnode, set enabled and fill the TODOs.
+  p2pExternal:
+    enabled: false
+    ordinal: 0
+    # Approved partner CIDRs, enforced by the NLB security group.
+    sourceRanges:
+      - "<TODO partner CIDR>"
+    allowOpenPeering: false
+    # One EIP allocation per subnet, in the same order. The subnet must be in the
+    # AZ of this node's EBS volume (or enable cross-zone load balancing).
+    subnets:
+      - "<TODO subnet-id>"
+    eipAllocations:
+      - "<TODO eipalloc-id>"
+    annotations: {}
 
 serviceMonitor:
   main:

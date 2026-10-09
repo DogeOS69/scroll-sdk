@@ -62,23 +62,48 @@ Validate l2-reth role constraints before generating common chart values.
   {{- if and (eq $signerType "localFile") (eq $nodeKeyMode "secret") (eq (dir .Values.reth.signer.localFile.path) (dir .Values.reth.nodeKey.path)) -}}
     {{- fail "reth.signer.localFile.path and reth.nodeKey.path must use different directories when both are mounted from secrets" -}}
   {{- end -}}
-  {{- /* External P2P: an enabled reth.service.extra Service of type LoadBalancer or NodePort. */ -}}
   {{- range $name, $svc := .Values.reth.service.extra -}}
-    {{- if and (kindIs "map" $svc) (dig "enabled" true $svc) (has (default "ClusterIP" $svc.type) (list "LoadBalancer" "NodePort")) -}}
-      {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
-        {{- fail (printf "reth.service.extra.%s exposes P2P externally, so service.main.type must be ClusterIP; a public main Service would publish RPC, WS and metrics" $name) -}}
-      {{- end -}}
-      {{- if eq $role "sequencer" -}}
-        {{- fail (printf "reth.service.extra.%s: external P2P is for designated non-sequencer nodes only" $name) -}}
-      {{- end -}}
-      {{- if and (gt $replicas 1) (not (dig "extraSelectorLabels" "statefulset.kubernetes.io/pod-name" "" $svc)) -}}
-        {{- fail (printf "reth.service.extra.%s must select one pod via extraSelectorLabels.statefulset.kubernetes.io/pod-name when controller.replicas > 1" $name) -}}
-      {{- end -}}
-      {{- $scheme := get (default (dict) $svc.annotations) "service.beta.kubernetes.io/aws-load-balancer-scheme" -}}
-      {{- if and (eq $scheme "internet-facing") (not $svc.loadBalancerSourceRanges) (not $svc.allowOpenPeering) -}}
-        {{- fail (printf "reth.service.extra.%s is internet-facing: set loadBalancerSourceRanges, or allowOpenPeering: true to accept peers from any address" $name) -}}
+    {{- if eq $name "main" -}}
+      {{- fail "reth.service.extra.main is reserved for the chart's main Service" -}}
+    {{- end -}}
+    {{- if and (eq $name "p2p") $.Values.reth.p2pExternal.enabled -}}
+      {{- fail "reth.service.extra.p2p is reserved for reth.p2pExternal" -}}
+    {{- end -}}
+    {{- if and (kindIs "map" $svc) (dig "enabled" true $svc) -}}
+      {{- if or (has (default "ClusterIP" $svc.type) (list "LoadBalancer" "NodePort")) $svc.externalIPs -}}
+        {{- fail (printf "reth.service.extra.%s must stay internal; expose P2P with reth.p2pExternal" $name) -}}
       {{- end -}}
     {{- end -}}
+  {{- end -}}
+  {{- with .Values.reth.p2pExternal -}}
+  {{- if .enabled -}}
+    {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
+      {{- fail "reth.p2pExternal requires service.main.type ClusterIP; a public main Service would publish RPC, WS and metrics" -}}
+    {{- end -}}
+    {{- if eq $role "sequencer" -}}
+      {{- fail "reth.p2pExternal is for designated non-sequencer nodes only" -}}
+    {{- end -}}
+    {{- if ne $.Values.controller.type "statefulset" -}}
+      {{- fail "reth.p2pExternal requires controller.type statefulset" -}}
+    {{- end -}}
+    {{- $ordinal := int .ordinal -}}
+    {{- if or (lt $ordinal 0) (ge $ordinal $replicas) -}}
+      {{- fail (printf "reth.p2pExternal.ordinal %d must name a pod of this release: 0 to %d" $ordinal (sub $replicas 1)) -}}
+    {{- end -}}
+    {{- if and .eipAllocations (ne (len .eipAllocations) (len .subnets)) -}}
+      {{- fail "reth.p2pExternal.eipAllocations needs one entry per reth.p2pExternal.subnets entry" -}}
+    {{- end -}}
+    {{- if and (not .sourceRanges) (not (and (kindIs "bool" .allowOpenPeering) .allowOpenPeering)) -}}
+      {{- fail "reth.p2pExternal is internet-facing: set sourceRanges, or allowOpenPeering: true to accept peers from any address" -}}
+    {{- end -}}
+    {{- /* Check what the Service renders: its annotations merged over global.annotations. */ -}}
+    {{- $annotations := merge (include "l2-reth.p2pExternal.annotations" $ | fromYaml) (include "scroll.common.lib.metadata.globalAnnotations" $ | fromYaml) -}}
+    {{- range $key := list "security-groups" "disable-nlb-sg" "proxy-protocol" "proxy-protocol-per-target-group" -}}
+      {{- if hasKey $annotations (printf "service.beta.kubernetes.io/aws-load-balancer-%s" $key) -}}
+        {{- fail (printf "reth.p2pExternal: annotation service.beta.kubernetes.io/aws-load-balancer-%s is not allowed; it bypasses the source restriction or adds Proxy Protocol" $key) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
   {{- end -}}
 {{- end -}}
 
@@ -416,9 +441,47 @@ main:
       port: {{ .Values.reth.ports.p2p }}
       targetPort: {{ .Values.reth.ports.p2p }}
       protocol: UDP
+{{- if .Values.reth.p2pExternal.enabled }}
+p2p:
+  enabled: true
+  type: LoadBalancer
+  annotations:
+    {{- include "l2-reth.p2pExternal.annotations" . | nindent 4 }}
+  {{- with .Values.reth.p2pExternal.sourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  extraSelectorLabels:
+    statefulset.kubernetes.io/pod-name: {{ printf "%s-%d" (include "scroll.common.lib.chart.names.fullname" .) (int .Values.reth.p2pExternal.ordinal) | quote }}
+  ports:
+    p2p-tcp:
+      enabled: true
+      port: {{ .Values.reth.ports.p2p }}
+      targetPort: {{ .Values.reth.ports.p2p }}
+      protocol: TCP
+{{- end }}
 {{- with .Values.reth.service.extra }}
 {{ toYaml . }}
 {{- end }}
+{{- end -}}
+
+{{/*
+Annotations for the reth.p2pExternal Service. The fixed keys are set last so
+operator annotations cannot change the load balancer's type, targets or scheme.
+*/}}
+{{- define "l2-reth.p2pExternal.annotations" -}}
+{{- $p2p := .Values.reth.p2pExternal -}}
+{{- $annotations := deepCopy (default (dict) $p2p.annotations) -}}
+{{- with $p2p.subnets }}
+{{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-subnets" (join ", " .) -}}
+{{- end }}
+{{- with $p2p.eipAllocations }}
+{{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-eip-allocations" (join ", " .) -}}
+{{- end }}
+{{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-type" "external" -}}
+{{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" "ip" -}}
+{{- $_ := set $annotations "service.beta.kubernetes.io/aws-load-balancer-scheme" "internet-facing" -}}
+{{- toYaml $annotations -}}
 {{- end -}}
 
 {{- define "l2-reth.probes" -}}
