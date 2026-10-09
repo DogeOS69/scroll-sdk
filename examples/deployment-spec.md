@@ -97,7 +97,28 @@ placeholders, not working identities or credentials.
 | Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
 | Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
-| Blob/proof buckets | Select two distinct bucket names; the blob bucket already exists and apply prepares the proof bucket as selected by `proofAws`. Keep `proofArtifacts.s3` and `proofTopology.active.artifactStore` on the proof bucket, and `ethereumDa.blobArchive.s3` on the blob bucket. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
+| Blob/proof buckets | Select two distinct bucket names; the blob bucket already exists and apply prepares the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
+
+### Configure proof storage once
+
+```yaml
+proofArtifacts:
+  s3:
+    bucket: replace-with-unique-proof-bucket
+    keyPrefix: dogeos-devnet/proofs
+    # region: us-east-1  # optional; defaults to infrastructure.aws.region
+```
+
+Coordinator, Withdrawal Processor, topology compiler and proof AWS preparation
+consume this one store. The generated service configurations still contain their
+required storage fields; the source spec does not repeat them. Do not set
+`proofCoordinator.artifactStore.bucket/region/keyPrefix/endpointUrl/forcePathStyle`,
+`proofTopology.active.artifactStore.bucket/region/keyPrefix/endpointUrl/forcePathStyle`,
+or `proofTopology.deployment.artifactKeyPrefix`. These are rejected even if they
+match the canonical store. For nonstandard S3 services, set `endpointUrl` and
+`forcePathStyle` once under `proofArtifacts.s3`. Normal AWS S3 endpoint and access
+style are derived automatically. Consumer tuning such as `maxReadBodyBytes`
+remains separate from storage coordinates.
 
 External file paths in `preparation` are relative to the **output deployment
 directory**. With the layout above, `../inputs/...` resolves to the correct sibling

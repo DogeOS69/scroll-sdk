@@ -102,10 +102,10 @@ ethereumDa:
       # Keep keyPrefix separate; the reader appends it.
       # publicBaseUrl: https://blob-gateway.example.invalid
 
+# Configure proof storage once; region defaults to infrastructure.aws.region.
 proofArtifacts:
   s3:
     bucket: replace-with-unique-dogeos-proof-bucket
-    region: us-west-2
     keyPrefix: dogeos-testnet/proofs
 
 bridge:
@@ -197,10 +197,6 @@ images:
 proofCoordinator:
   enabled: true
   s3AuthMode: irsa
-  artifactStore:
-    bucket: replace-with-unique-dogeos-proof-bucket
-    region: us-west-2
-    keyPrefix: dogeos-testnet/proofs
   serviceAccount:
     name: proof-coordinator
   withdrawalProcessorServiceAccount:
@@ -214,17 +210,11 @@ proofTopology:
   observeRealProofDeadlineMs: 1800000
   # Compiler and CUDA Worker image pins are read from preparation.proofRelease.
   # Compiler identity is generated after protocol_context.json exists.
-  deployment:
-    artifactKeyPrefix: dogeos-testnet/proofs
-    # proverPublicUrl defaults to frontend.protocol + the proofCoordinator host.
+  # Proof artifact coordinates/prefix derive from proofArtifacts.s3.
+  # proverPublicUrl defaults to frontend.protocol + the proofCoordinator host.
   active:
     profile: real_scroll_withdrawal_full_topology
     workerLaunch: external
-    artifactStore:
-      kind: s3_compatible
-      bucket: replace-with-unique-dogeos-proof-bucket
-      region: us-west-2
-      endpointUrl: https://s3.us-west-2.amazonaws.com
     # Apply fills identities and resource paths from the validated real receipt.
     # Block witnesses come from the SDK's internal Reth RPC service.
     realScroll:

@@ -357,3 +357,30 @@ This validates image consumption and configuration generation. It does not
 exercise live AWS provisioning, S3 program publication, GPU proof generation,
 partner policy acceptance or complete `setup apply` readiness. Protocol context
 came from the earlier synthetic-funding Bridge rehearsal, not a funded network.
+
+## Single proof-store intent (2026-10-10)
+
+The spec now configures proof storage only at `proofArtifacts.s3`. Region may
+inherit `infrastructure.aws.region`; AWS endpoint and access style are derived.
+Coordinator and compiler storage coordinates and the topology artifact prefix
+are generated from that source. The source spec and frozen plan do not repeat
+them. Removed coordinate fields are rejected even when their values match;
+there is no compatibility path for duplicate proof-store inputs.
+
+Validation covered canonical input through native TOML and Helm generation,
+explicit custom endpoint/region overrides, immutable source input, separate
+blob/proof buckets, and rejection of all 11 removed field paths before plan
+creates an output directory or performs external discovery. The simplified SDK
+example and the operator's spec both passed local field/projection checks.
+
+The previously baked real materials were also compiled with the new single-store
+projection through the actual beta.6 experimental compiler image. It produced
+the same installable real/enforce bundle revision:
+`a84a79fdcb0e05fb9ac835ba9282c0b941693af3d0f018a538f744de464685f2`.
+This check made no cloud changes and did not execute GPU proving.
+
+The full CLI suite reported **986 passing, 15 pending, 1 failing**. The remaining
+failure is the previously recorded bootnode public-P2P actual-chart fixture
+(`reth.service.extra.p2p` versus `reth.p2pExternal`), outside this change. Changed
+TypeScript lint reported zero errors. The proof-store projection suite passed
+all 22 tests.
