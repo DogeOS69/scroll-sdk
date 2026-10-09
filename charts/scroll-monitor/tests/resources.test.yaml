@@ -1,0 +1,334 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 1m
+tests:
+- name: node memory available 10 percent
+  interval: 1m
+  input_series:
+  - series: node_memory_MemTotal_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 100x30
+  - series: node_memory_MemAvailable_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 10x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 9m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node memory available 11 percent
+  interval: 1m
+  input_series:
+  - series: node_memory_MemTotal_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 100x30
+  - series: node_memory_MemAvailable_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 11x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 9m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node memory available 5 percent
+  interval: 1m
+  input_series:
+  - series: node_memory_MemTotal_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 100x30
+  - series: node_memory_MemAvailable_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 5x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 9m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: node memory spike recovers before pending duration
+  interval: 1m
+  input_series:
+  - series: node_memory_MemTotal_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 100x30
+  - series: node_memory_MemAvailable_bytes{job="node-exporter",instance="node-a:9100"}
+    values: 3x3 50x26
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: container memory 84 percent limit
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 84x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: container memory 85 percent limit
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 85x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: container memory 95 percent limit
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 95x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: container memory missing limit ignored
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: container memory zero limit ignored
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 100x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: '0x30'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: container other namespace ignored
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="other",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 99x30
+  - series: kube_pod_container_resource_limits{namespace="other",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: duplicate container scrape targets not added
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 60x30
+  - series: container_memory_working_set_bytes{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="duplicate"}
+    values: 60x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="memory",unit="byte"}
+    values: 100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerMemoryUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 15m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node high CPU sustained not spike
+  interval: 1m
+  input_series:
+  - series: node_cpu_seconds_total{job="node-exporter",instance="node-a",cpu="0",mode="idle"}
+    values: 0+3x30
+  - series: node_cpu_seconds_total{job="node-exporter",instance="node-a",cpu="1",mode="idle"}
+    values: 0+3x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeCPUUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeCPUUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 16m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: container CPU high relative to limit
+  interval: 1m
+  input_series:
+  - series: container_cpu_usage_seconds_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 0+114x30
+  - series: kube_pod_container_resource_limits{namespace="monitoring",pod="worker-0",container="app",resource="cpu",unit="core"}
+    values: 2x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerCPUUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerCPUUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: CPU requests are not limits
+  interval: 1m
+  input_series:
+  - series: container_cpu_usage_seconds_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 0+114x30
+  - series: kube_pod_container_resource_requests{namespace="monitoring",pod="worker-0",container="app",resource="cpu",unit="core"}
+    values: 2x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerCPUUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: CPU throttle fraction sustained
+  interval: 1m
+  input_series:
+  - series: container_cpu_cfs_throttled_periods_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 0+30x30
+  - series: container_cpu_cfs_periods_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: 0+100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerCPUThrottlingHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="ContainerCPUThrottlingHigh",alertstate="firing"}) or vector(0)
+    eval_time: 16m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: zero scheduling periods not throttling
+  interval: 1m
+  input_series:
+  - series: container_cpu_cfs_throttled_periods_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: '0x30'
+  - series: container_cpu_cfs_periods_total{job="kubelet",metrics_path="/metrics/cadvisor",namespace="monitoring",pod="worker-0",container="app",image="fake",instance="node-a"}
+    values: '0x30'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="ContainerCPUThrottlingHigh",alertstate="firing"}) or vector(0)
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: MemoryPressure sustained
+  interval: 1m
+  input_series:
+  - series: kube_node_status_condition{node="node-a",condition="MemoryPressure",status="true"}
+    values: 1x4 0x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeMemoryPressure",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeMemoryPressure",alertstate="firing"}) or vector(0)
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeMemoryPressure",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: DiskPressure sustained
+  interval: 1m
+  input_series:
+  - series: kube_node_status_condition{node="node-a",condition="DiskPressure",status="true"}
+    values: 1x4 0x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskPressure",alertstate="firing"}) or vector(0)
+    eval_time: 1m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskPressure",alertstate="firing"}) or vector(0)
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskPressure",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0

@@ -1,0 +1,33 @@
+# Apply after the environment's generated production values.
+# Metric rules run in Prometheus. Grafana evaluates LogQL rules only and
+# forwards their firing/resolved events to the independent Alertmanager.
+alerting:
+  backend: prometheus
+  alertmanager:
+    url: http://prometheus-alertmanager:9093
+    datasourceUID: scroll-alertmanager
+    configSecretName: scroll-monitor-alertmanager-config
+    grafanaURL: ""  # Set to the public Grafana base URL for notification links.
+    environment: ""
+    slack:
+      existingSecret: ""  # Set to an externally managed Secret containing key url.
+      secretKey: url
+      channel: ""  # The webhook's configured channel is used when empty.
+
+grafana:
+  podAnnotations:
+    scroll-monitor/alerting-backend: prometheus
+
+grafanaAlerting:
+  enabled: true  # LogQL evaluator and forwarding contact-point provisioning.
+
+prometheusRules:
+  enabled: true
+
+kube-prometheus-stack:
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      useExistingSecret: true
+      configSecret: scroll-monitor-alertmanager-config
+      secrets: []  # Add the Slack Secret name when existingSecret is configured.

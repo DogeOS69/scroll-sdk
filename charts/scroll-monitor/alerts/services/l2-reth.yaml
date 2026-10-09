@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.l2-reth
   interval: 1m
   rules:
-  - alert: L2RethMetricsTargetDown
-    expr: up{job=~".*l2-reth.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: l2-reth
-    annotations:
-      summary: A l2-reth metrics target cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: L2RethPodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*l2-reth.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: l2-reth
-    annotations:
-      summary: A l2-reth pod is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: L2RethNoPeers
     expr: reth_network_connected_peers{job=~".*l2-reth.*"} == 0
     for: 10m
@@ -57,23 +36,31 @@ groups:
       summary: L2 derivation has queued work but produces no blocks.
       description: Check L1 Interface batch data, blob availability, payload validation, and the derivation loop.
   - alert: L2RethPayloadValidationFailed
-    expr: sum by (namespace, job, instance) (increase({__name__=~"reth_consensus_engine_beacon_(new_payload|forkchoice_updated)_(invalid|error)",job=~".*l2-reth.*"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_consensus_engine_beacon_new_payload_invalid{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_invalid", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_new_payload_error{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_error", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_invalid{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_invalid", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_error{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_error", "", "")))
       > 0
     labels:
       severity: critical
       service: l2-reth
     annotations:
-      summary: Reth rejected a payload or forkchoice update.
+      summary: L2 Reth rejected a payload or forkchoice update.
       description: Inspect engine validation errors and canonical data before replaying the affected payload.
   - alert: L2RethDownloaderErrors
-    expr: sum by (namespace, job, instance) (increase({__name__=~"reth_downloaders_(headers|bodies)_(timeout|unexpected|validation)_errors",job=~".*l2-reth.*"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_downloaders_headers_timeout_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_timeout_errors", "", "")
+      or label_replace(increase(reth_downloaders_headers_unexpected_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_unexpected_errors", "", "")
+      or label_replace(increase(reth_downloaders_headers_validation_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_validation_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_timeout_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_timeout_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_unexpected_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_unexpected_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_validation_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_validation_errors", "", "")))
       > 0
     for: 10m
     labels:
       severity: warning
       service: l2-reth
     annotations:
-      summary: Reth block downloads keep failing.
+      summary: L2 Reth block downloads keep failing.
       description: Check peer health, network transport, and block validation errors.
   - alert: L2RethRPCErrors
     expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_failed_total{job=~".*l2-reth.*"}[10m]))
@@ -98,17 +85,18 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: l2-reth mean operation latency exceeds 2 seconds.
+      summary: L2 Reth RPC calls average more than 2 seconds.
       description: L2 RPC calls average more than two seconds. Inspect expensive methods and CPU, storage, and database
         contention.
   - alert: L2RethBlobStoreFailure
-    expr: sum by (namespace, job, instance) (increase({__name__=~"reth_transaction_pool_blobstore_failed_(inserts|deletes)",job=~".*l2-reth.*"}[5m]))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_transaction_pool_blobstore_failed_inserts{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_inserts", "", "")
+      or label_replace(increase(reth_transaction_pool_blobstore_failed_deletes{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_deletes", "", "")))
       > 0
     labels:
       severity: critical
       service: l2-reth
     annotations:
-      summary: Reth transaction-pool blob storage operations failed.
+      summary: L2 Reth transaction-pool blob storage operations failed.
       description: Check disk space, filesystem health, and blobstore errors.
   - alert: L2RethTransactionQueueLarge
     expr: reth_transaction_pool_queued_pool_transactions{job=~".*l2-reth.*"} > 1000
@@ -117,7 +105,7 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: The Reth queued transaction pool exceeds 1000 transactions.
+      summary: L2 Reth queued transaction pool exceeds 1000 transactions.
       description: Check nonce gaps, gas prices, account balances, and admission pressure. Calibrate against normal
         traffic.
   - alert: L2RethL1ReorgObserved
@@ -126,6 +114,6 @@ groups:
       severity: warning
       service: l2-reth
     annotations:
-      summary: The L2 derivation watcher observed an L1 reorg.
+      summary: L2 Reth derivation watcher observed an L1 reorg.
       description: Inspect watcher reorg depth and canonical recovery. Expected shallow reorganizations may not
         warrant paging.

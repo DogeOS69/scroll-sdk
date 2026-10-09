@@ -3,13 +3,26 @@
 # ordinary Helm installs/removals. Run prep-charts and proof-config-check first.
 
 NAMESPACE ?= default
+# Kubernetes context name from `kubectl config get-contexts`.
+# Applies to every Helm/Kubectl cluster operation, including recursive targets.
+# Empty uses the current kubeconfig context; no global context is changed.
+# Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
+# Must match dstackController.monitoring.namespace and the published Secrets.
+DSTACK_NAMESPACE ?= dstack-system
+DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.2
+DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
+# prep-charts emits this overlay separately from the base monitor values.
+# Keep applying it on subsequent monitor upgrades, including install-all.
+SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
+SCROLL_MONITOR_DSTACK_ARGS = $(if $(strip $(SCROLL_MONITOR_DSTACK_VALUES)),--values "$(SCROLL_MONITOR_DSTACK_VALUES)")
 EAGER_MATERIALIZER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eager-materializer
-EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.0
+EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.1
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.3
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.2
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.3
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
@@ -17,8 +30,11 @@ WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.22
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.4
-L2_RETH_GENESIS_NORMALIZER_VALUES ?= values/l2-reth-genesis-normalizer.yaml
-L2_RETH_GENESIS_NORMALIZER_SCRIPT ?= scripts/upgrade/normalize-reth-genesis.sh
+# Existing-chain upgrade hook only. Fresh native Reth genesis needs neither
+# file, and this repository does not ship a deployment-specific normalizer.
+# To perform a reviewed migration, supply BOTH paths explicitly.
+L2_RETH_GENESIS_NORMALIZER_VALUES ?=
+L2_RETH_GENESIS_NORMALIZER_SCRIPT ?=
 INSTALL_ALL_REQUIRED_VALUES = \
 	values/scroll-monitor-production.yaml \
 	values/genesis.yaml \
@@ -30,7 +46,6 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/l2-reth-bootnode-production-0.yaml \
 	values/l2-reth-bootnode-production-1.yaml \
 	values/l2-reth-rpc-production.yaml \
-	values/l2-reth-genesis-normalizer.yaml \
 	values/contracts-production.yaml \
 	values/scroll-common-config-contracts.yaml \
 	values/scroll-common-config.yaml \
@@ -47,10 +62,21 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
 	values/testnet-activity-helper-production.yaml
+L2_RETH_GENESIS_NORMALIZER_ARGS =
+ifneq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)),)
+ifeq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)),)
+$(error Supply L2_RETH_GENESIS_NORMALIZER_VALUES together with L2_RETH_GENESIS_NORMALIZER_SCRIPT)
+endif
+ifeq ($(strip $(L2_RETH_GENESIS_NORMALIZER_SCRIPT)),)
+$(error Supply L2_RETH_GENESIS_NORMALIZER_SCRIPT together with L2_RETH_GENESIS_NORMALIZER_VALUES)
+endif
 L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) \
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
+INSTALL_ALL_REQUIRED_VALUES += $(L2_RETH_GENESIS_NORMALIZER_VALUES) $(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
+endif
 
-.PHONY: prepare install-dogecoin install-celestia install-scroll-core \
+.PHONY: prepare install-dogecoin install-scroll-core \
+	install-dstack-controller install-scroll-monitor \
 	install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
@@ -58,7 +84,7 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 	install-fee-oracle \
 	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin  delete-celestia delete-frontends \
+	delete-all delete-dogecoin delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
@@ -69,38 +95,41 @@ prepare:
 	helm repo update
 
 install-dogecoin:
-	helm upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n $(NAMESPACE) \
-		--version=0.1.12 \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n "$(NAMESPACE)" \
+		--version=0.1.13 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:
-	helm upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n "$(NAMESPACE)" \
 		--version=0.1.4 \
 		--values values/blockbook-production.yaml
 
-install-celestia:
-	helm upgrade -i celestia-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/celestia-node -n $(NAMESPACE) \
-		--version=0.1.13 \
-		--values values/celestia-node-production.yaml
-
 install-l1-interface:
-	helm upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n "$(NAMESPACE)" \
 		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
 install-l1-devnet:
-	helm upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
 		--version=0.1.6-dogeos \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:
-	helm upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n $(NAMESPACE) \
-		--version=0.1.30-dogeos \
-		--values values/scroll-monitor-production.yaml
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n "$(NAMESPACE)" \
+		--version=0.1.43-dogeos \
+		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
+
+# Independent release: prepare/publish dstack Secrets and install the monitor's
+# Prometheus Operator CRDs first. See dstack-monitoring/README.md.
+install-dstack-controller:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dstack-controller $(DSTACK_CONTROLLER_CHART) -n "$(DSTACK_NAMESPACE)" \
+		--create-namespace \
+		--version $(DSTACK_CONTROLLER_CHART_VERSION) \
+		--values "$(DSTACK_CONTROLLER_VALUES)"
 
 install-scroll-common:
-	helm upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-common oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-common -n "$(NAMESPACE)" \
 		--version=0.3.2-dogeos \
 		--values values/genesis.yaml \
 		--values values/protocol_context.yaml
@@ -110,7 +139,7 @@ install-scroll-core:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-common
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l1-interface
 
-	helm upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n "$(NAMESPACE)" \
 		--version=0.1.9 \
 		--values values/metrics-exporter-production.yaml
 
@@ -119,81 +148,75 @@ install-scroll-core:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l2-reth-rpc
 
 install-l2-reth-sequencer:
-	helm upgrade -i l2-reth-sequencer-0 $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-sequencer-0 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-sequencer-production-0.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-sequencer-production-0.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
-	helm upgrade -i l2-reth-sequencer-1 $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-sequencer-1 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-sequencer-production-1.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-sequencer-production-1.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
 
 install-l2-reth-rpc:
-	helm upgrade -i l2-reth-rpc $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-rpc $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-rpc-production.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-rpc-production.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
-	helm upgrade -i l2-reth-rpc-public $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-rpc-public $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-rpc-public-production.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-rpc-public-production.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
 install-l2-reth-bootnode:
-	helm upgrade -i l2-reth-bootnode-0 $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-bootnode-0 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-bootnode-production-0.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-bootnode-production-0.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
-	helm upgrade -i l2-reth-bootnode-1 $(L2_RETH_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-bootnode-1 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-bootnode-production-1.yaml \
-		$(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-bootnode-production-1.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
 install-contracts:
-	helm upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n "$(NAMESPACE)" \
 		--version=0.1.23 \
 		--values values/contracts-production.yaml \
 		--values values/scroll-common-config-contracts.yaml \
 		--values values/scroll-common-config.yaml
-	kubectl wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n $(NAMESPACE)
+	kubectl --context "$(KUBE_CONTEXT)" wait --for=jsonpath='{.status.phase}'=Succeeded --timeout=600s pod -l app.kubernetes.io/instance=contracts -n "$(NAMESPACE)"
 
 install-eth-da-submitter:
-	helm upgrade -i eth-da-submitter $(ETH_DA_SUBMITTER_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i eth-da-submitter $(ETH_DA_SUBMITTER_CHART) -n "$(NAMESPACE)" \
 		--version=$(ETH_DA_SUBMITTER_CHART_VERSION) \
 		--values values/eth-da-submitter-production.yaml \
 		--wait
 
 install-fee-oracle:
-	helm upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n "$(NAMESPACE)" \
 		--version=0.0.10 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signer:
-	helm upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n "$(NAMESPACE)" \
 		--version=0.1.9 \
 		--values values/cubesigner-signer-production.yaml
 
 install-tso:
-	helm upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n $(NAMESPACE) \
-		--version=0.1.5 \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
+		--version=0.1.6 \
 		--values values/tso-service-production.yaml \
 		--wait
 
 install-withdrawal-processor:
-	helm upgrade -i withdrawal-processor $(WITHDRAWAL_PROCESSOR_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i withdrawal-processor $(WITHDRAWAL_PROCESSOR_CHART) -n "$(NAMESPACE)" \
 		--version $(WITHDRAWAL_PROCESSOR_CHART_VERSION) \
 		--values values/withdrawal-processor-production.yaml
 
 install-proof-coordinator:
-	helm upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i proof-coordinator $(PROOF_COORDINATOR_CHART) -n "$(NAMESPACE)" \
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
 		--values values/proof-coordinator-production.yaml
 
 install-prover-worker:
-	helm upgrade -i prover-worker $(PROVER_WORKER_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i prover-worker $(PROVER_WORKER_CHART) -n "$(NAMESPACE)" \
 		--version $(PROVER_WORKER_CHART_VERSION) \
 		--values values/prover-worker-production.yaml
 
@@ -202,7 +225,7 @@ install-prover-worker:
 install-eager-materializer:
 	test -n "$(KUBE_CONTEXT)"
 	test "$$(jq -r '.components.eagerMaterializer.enabled // false' .data/proof-deployment.json)" = true
-	helm --kube-context $(KUBE_CONTEXT) upgrade -i eager-materializer $(EAGER_MATERIALIZER_CHART) -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i eager-materializer $(EAGER_MATERIALIZER_CHART) -n "$(NAMESPACE)" \
 		--version $(EAGER_MATERIALIZER_CHART_VERSION) \
 		--values values/eager-materializer-production.yaml
 
@@ -217,28 +240,28 @@ reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
 install-blockscout:
-	helm upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
 		--version=0.1.9-dogeos \
 		--values values/blockscout-production.yaml
 
-	helm upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n "$(NAMESPACE)" \
 		--version=0.1.6-dogeos
 
 install-frontends:
-	helm upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n "$(NAMESPACE)" \
 		--version=0.1.2-dogeos \
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
 
 install-testnet-activity-helper:
-	helm upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n $(NAMESPACE) \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n "$(NAMESPACE)" \
 		--version=0.1.2 \
 		--values values/testnet-activity-helper-production.yaml
 
 start-l1-sync:
-	kubectl run "start-l1-sync-$$(date +%s)" \
-		-n $(NAMESPACE) \
+	kubectl --context "$(KUBE_CONTEXT)" run "start-l1-sync-$$(date +%s)" \
+		-n "$(NAMESPACE)" \
 		--image=$(CURL_IMAGE) \
 		--restart=Never \
 		--rm \
@@ -259,9 +282,9 @@ check-install-all-values:
 	fi
 
 install-all: check-install-all-values
-	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet && scrollsdk setup dogecoin-wallet-import
+	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet -n "$(NAMESPACE)" && scrollsdk setup dogecoin-wallet-import
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-core
-	kubectl wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n $(NAMESPACE)
+	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n "$(NAMESPACE)"
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
@@ -274,72 +297,69 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync
 
 delete-all:
-	helm delete -n $(NAMESPACE) scroll-common || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" scroll-common || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-l2-reth || true
-	helm delete -n $(NAMESPACE) frontends || true
-	helm delete -n $(NAMESPACE) fee-oracle || true
-	helm delete -n $(NAMESPACE) contracts || true
-	helm delete -n $(NAMESPACE) scroll-monitor || true
-	helm delete -n $(NAMESPACE) metrics-exporter || true
-	helm delete -n $(NAMESPACE) blockscout || true
-	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
-	helm delete -n $(NAMESPACE) withdrawal-processor || true
-	helm delete -n $(NAMESPACE) proof-coordinator || true
-	helm delete -n $(NAMESPACE) prover-worker || true
-	helm delete -n $(NAMESPACE) tso-service || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" frontends || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" fee-oracle || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" contracts || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" scroll-monitor || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" metrics-exporter || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockscout || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockscout-sc-verifier || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" withdrawal-processor || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" proof-coordinator || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" prover-worker || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" tso-service || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-cubesigner-signer || true
-	helm delete -n $(NAMESPACE) eth-da-submitter || true
-	helm delete -n $(NAMESPACE) l1-interface || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" eth-da-submitter || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-interface || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-testnet-activity-helper || true
 
 delete-l1-interface:
-	helm delete -n $(NAMESPACE) l1-interface
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-interface
 
 delete-l1-devnet:
-	helm delete -n $(NAMESPACE) l1-devnet
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-devnet
 
 delete-dogecoin:
-	helm delete -n $(NAMESPACE) dogecoin-testnet
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" dogecoin-testnet
 
 delete-blockbook:
-	helm delete -n $(NAMESPACE) blockbook-testnet
-
-delete-celestia:
-	helm delete -n $(NAMESPACE) celestia-testnet
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockbook-testnet
 
 delete-frontends:
-	helm delete -n $(NAMESPACE) frontends
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" frontends
 
 delete-blockscout:
-	helm delete -n $(NAMESPACE) blockscout || true
-	helm delete -n $(NAMESPACE) blockscout-sc-verifier || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockscout || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockscout-sc-verifier || true
 
 delete-withdrawal-processor:
-	helm delete -n $(NAMESPACE) withdrawal-processor
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" withdrawal-processor
 
 delete-proof-coordinator:
-	helm delete -n $(NAMESPACE) proof-coordinator
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" proof-coordinator
 
 delete-prover-worker:
-	helm delete -n $(NAMESPACE) prover-worker
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" prover-worker
 
 delete-tso:
-	helm delete -n $(NAMESPACE) tso-service
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" tso-service
 
 delete-eth-da-submitter:
-	helm delete -n $(NAMESPACE) eth-da-submitter
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" eth-da-submitter
 
 delete-fee-oracle:
-	helm delete -n $(NAMESPACE) fee-oracle
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" fee-oracle
 
 delete-cubesigner-signer:
-	helm delete -n $(NAMESPACE) cubesigner-signer || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" cubesigner-signer || true
 
 delete-testnet-activity-helper:
-	helm delete -n $(NAMESPACE) testnet-activity-helper
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" testnet-activity-helper
 
 delete-l2-reth-rpc:
-	helm delete -n $(NAMESPACE) l2-reth-rpc
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-rpc
 
 delete-l2-reth:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-l2-reth-rpc || true
@@ -347,13 +367,13 @@ delete-l2-reth:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-l2-reth-bootnode || true
 
 delete-l2-reth-sequencer:
-	helm delete -n $(NAMESPACE) l2-reth-sequencer-0 || true
-	helm delete -n $(NAMESPACE) l2-reth-sequencer-1 || true
-	kubectl delete pvc -n $(NAMESPACE) l2-reth-sequencer-0-data || true
-	kubectl delete pvc -n $(NAMESPACE) l2-reth-sequencer-1-data || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-sequencer-0 || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-sequencer-1 || true
+	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-sequencer-0-data || true
+	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-sequencer-1-data || true
 
 delete-l2-reth-bootnode:
-	helm delete -n $(NAMESPACE) l2-reth-bootnode-0 || true
-	kubectl delete pvc -n $(NAMESPACE) l2-reth-bootnode-0-data || true
-	helm delete -n $(NAMESPACE) l2-reth-bootnode-1 || true
-	kubectl delete pvc -n $(NAMESPACE) l2-reth-bootnode-1-data || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-bootnode-0 || true
+	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-bootnode-0-data || true
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-bootnode-1 || true
+	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-bootnode-1-data || true

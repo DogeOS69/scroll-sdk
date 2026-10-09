@@ -1,0 +1,13 @@
+groups:
+  - name: scroll.monitoring
+    interval: 1m
+    rules:
+      - alert: MetricsTargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: Metrics target cannot be scraped.
+          description: Target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for five minutes. Inspect the metrics listener, discovery and network path. Other healthy replicas do not mask this target.

@@ -5,6 +5,12 @@ the bridge operator's cluster. The bridge operator receives only the signer's
 HTTPS endpoint and compressed public key. It never receives the WIF, KMS
 credentials, private RPC credentials, or the partner's trust policy.
 
+The reference Compose image defaults to `v0.3.0-beta.5c`. The environment
+example includes that binary's release/commit approval pins. When upgrading
+an existing beta.5b signer, update its selected image and approval pins together
+while retaining its identity, policy bundle and database volume. See the
+[beta.5c upgrade checklist](../../examples/core-beta5c-configuration.md).
+
 The current dogeos-core contract is `attestation_evidence_v2`:
 
 ```text
@@ -28,7 +34,7 @@ TSO needs one inbound application API and three status surfaces:
 
 - `POST /sign` receives signing requests.
 - `GET /health` reports process health, public key, network, and build identity.
-- `GET /ready` is HTTP 503 in `production_enforce` until every production V2
+- `GET /ready` is HTTP 503 in `enforce` until every production V2
   capability can serve.
 - `GET /policy` reports the active V2 contract, capability rows, and blocks.
 
@@ -166,6 +172,20 @@ For KMS, the container needs `kms:Sign` and `kms:GetPublicKey` on the selected
 key. For a local backend, `attestation-signer.env` contains the WIF and must be
 stored with secret-file permissions.
 
+To regenerate files for an existing local signer, copy its current env and
+partner TOML into a separate output directory under the filenames above, then
+run `signer init --out <directory>` with the same id, network, and endpoint.
+Without `--force`, the CLI reuses the WIF and preserves the partner TOML. Check
+that the resulting descriptor has the original public key before installing
+anything. Do not use `--force` for this workflow: it creates a new local key.
+Keep the existing bridge policy bundle, release approvals, and database volume.
+For an existing KMS signer, generate into a new output directory using its
+original `--kms-key-id` and `--kms-region`, without `--create-key`. Pass the
+currently approved release/commit pins, compare the resulting public key with
+the existing descriptor, and copy the reviewed partner TOML over the new
+template. This only reads the existing KMS public key; it does not create or
+rotate a KMS key.
+
 Send only `descriptor.json` to the bridge operator. The public key enters the
 bridge keyset at genesis, so review it carefully. Do not send either signer
 configuration file.
@@ -178,11 +198,16 @@ dogeos-core section names. In production, configure all of the following:
 1. `[advance_l1_policy.terminal_anchor_sources]` with independently trusted
    Dogecoin sources. Production quorum needs at least two trust domains.
 2. `[advance_l2_policy.ethereum_sources]` for Ethereum canonicality/finality.
-3. `[advance_l2_policy.l2_sources]` for the exact L2 state root. A deliberate
-   one-source deployment must use `explicit_single_source`; quorum is better
-   when independent sources exist.
+3. `[advance_l2_policy.l2_sources]` for the exact L2 state root.
 4. `[rotation_policy].allowed_next_bridge_script_hashes`.
 5. `[rotation_policy].allowed_next_sequencer_signers`.
+
+All three source sets must use `posture = "quorum"` with
+`required_agreement >= 2` and enough independently trusted source domains to
+meet that threshold in `enforce` mode. `explicit_single_source` is accepted
+only in `observe` mode; using it in `enforce` prevents startup.
+Both rotation allowlists must contain reviewed, approved targets. Do not
+invent targets merely to satisfy readiness.
 
 RPC credentials may be kept in the operator secret env where supported. Never
 put credentials in URLs. dogeos-core rejects URL userinfo/query/fragment and
@@ -254,7 +279,7 @@ scrollsdk signer preflight \
 The production check requires:
 
 - `/ready` HTTP 200;
-- `policy_mode=production_enforce` and contract
+- `policy_mode=enforce` and contract
   `attestation_evidence_v2`;
 - scaffold/unimplemented bypasses disabled;
 - public key and network equal `/health` and the descriptor;
@@ -265,9 +290,10 @@ The production check requires:
 Recovery capability rows are intentionally visible but do not count toward
 production readiness.
 
-Mock uses `staging_scaffold` with deterministic, non-cryptographic proof bytes.
-AdvanceL1 never bypass-signs; incomplete eligible AdvanceL2/rotation policy may
-use dogeos-core's explicit audited scaffold bypass. It is not production-safe.
+Mock uses `observe` with deterministic, non-cryptographic proof bytes. Observe
+requires a signer binary built with the `testnet-observe` feature and is
+rejected on mainnet. AdvanceL1 never bypass-signs; eligible AdvanceL2/rotation
+checks may use dogeos-core's audited observe bypass. It is not production-safe.
 
 ## Proof artifacts versus release files
 

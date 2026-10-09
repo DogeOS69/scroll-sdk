@@ -4,6 +4,12 @@
 # defaults. dogeos-proof-topology replaces the complete proof-specific
 # verifier, materializer, artifact, auth, and topology projection for the
 # selected mode. Do not add parallel mock/production profiles here.
+#
+# beta.5c defaults [prover_api].eager_chunk_proving to true. It only acts with
+# real generation and the chunk materializer/segmentation prerequisites. The
+# compiler owns the complete [prover_api] table and renders false for real
+# materialization topologies without the eager materializer or explicit opt-out.
+# Keep that projection compiler-owned; see ../core-beta5c-configuration.md.
 
 proof_work_base_url = "http://withdrawal-processor:9300"
 protocol_context_json = "/app/protocol_context.json"

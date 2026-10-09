@@ -92,7 +92,7 @@
   "timezone": "",
   "title": "DogeOS Ethereum DA Submitter",
   "uid": "dengy26ra2ry8a",
-  "version": 4,
+  "version": 5,
   "weekStart": "",
   "panels": [
     {
@@ -102,7 +102,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -119,13 +120,16 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_ready{namespace=~\"$namespace\"})",
-          "legendFormat": "ready",
-          "refId": "A"
+          "expr": "min by (namespace, instance) (eth_da_submitter_ready{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} ready {{instance}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Service Ready",
-      "type": "stat"
+      "type": "stat",
+      "description": "One value per scraped instance; a ready replica does not hide an unready replica. A missing series remains No data."
     },
     {
       "datasource": {
@@ -134,7 +138,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -151,9 +156,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "batch",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} batch",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Latest Batch Height",
@@ -166,7 +173,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -183,9 +191,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_l1_block{namespace=~\"$namespace\"})",
-          "legendFormat": "l1",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_latest_l1_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Latest L1 Block",
@@ -198,7 +208,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -215,9 +226,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_l2_block{namespace=~\"$namespace\"})",
-          "legendFormat": "l2",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_latest_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l2",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Latest L2 Block",
@@ -230,7 +243,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -247,9 +261,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
-          "legendFormat": "pending",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} pending",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Pending Txs (awaiting settlement)",
@@ -262,7 +278,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -279,9 +296,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
-          "legendFormat": "backlog",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} backlog",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Ready Backlog",
@@ -297,8 +316,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -315,8 +336,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
-          "legendFormat": "proposed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_batch_height{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} proposed",
           "refId": "A"
         },
         {
@@ -324,8 +345,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "submitted",
+          "expr": "max by (namespace) (eth_da_submitter_latest_submitted_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} submitted",
           "refId": "B"
         },
         {
@@ -333,8 +354,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "confirmed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_confirmed_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} confirmed",
           "refId": "C"
         },
         {
@@ -342,8 +363,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
-          "legendFormat": "finalized",
+          "expr": "max by (namespace) (eth_da_submitter_latest_finalized_batch_index{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} finalized",
           "refId": "D"
         }
       ],
@@ -360,10 +381,29 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -378,8 +418,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
-          "legendFormat": "ready_backlog",
+          "expr": "max by (namespace) (eth_da_publish_ready_backlog{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} ready_backlog",
           "refId": "A"
         },
         {
@@ -387,8 +427,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
-          "legendFormat": "pending_txs",
+          "expr": "max by (namespace) (eth_da_submitter_pending_txs{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} pending_txs",
           "refId": "B"
         },
         {
@@ -396,8 +436,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_pending_tx_pressure{namespace=~\"$namespace\"})",
-          "legendFormat": "pending_tx_pressure",
+          "expr": "max by (namespace) (eth_da_publish_pending_tx_pressure{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} pending_tx_pressure",
           "refId": "C"
         },
         {
@@ -405,8 +445,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_oldest_ready_age_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "oldest_ready_age_s",
+          "expr": "max by (namespace) (eth_da_publish_oldest_ready_age_seconds{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} oldest_ready_age_s",
           "refId": "D"
         }
       ],
@@ -423,8 +463,10 @@
           "unit": "ops",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -441,8 +483,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_cycles_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "cycles",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_cycles_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} cycles",
           "refId": "A"
         },
         {
@@ -450,8 +492,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_submissions_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "submissions",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_submissions_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} submissions",
           "refId": "B"
         },
         {
@@ -459,8 +501,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_cycle_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "cycle_failures",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_cycle_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} cycle_failures",
           "refId": "C"
         },
         {
@@ -468,8 +510,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_submission_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "submission_failures",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_submission_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} submission_failures",
           "refId": "D"
         }
       ],
@@ -483,11 +525,13 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "ops",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -504,8 +548,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (decision, reason) (rate(eth_da_publish_policy_decisions_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{decision}}: {{reason}}",
+          "expr": "sum by (namespace, decision, reason) (rate(eth_da_publish_policy_decisions_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{decision}}: {{reason}}",
           "refId": "A"
         }
       ],
@@ -522,8 +566,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -540,8 +586,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(eth_da_publish_selected_blobs_per_tx_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
-          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.99, sum by (namespace, le) (rate(eth_da_publish_selected_blobs_per_tx_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p99",
           "refId": "A"
         },
         {
@@ -549,8 +595,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(eth_da_publish_selected_blobs_per_tx_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
-          "legendFormat": "p50",
+          "expr": "histogram_quantile(0.50, sum by (namespace, le) (rate(eth_da_publish_selected_blobs_per_tx_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p50",
           "refId": "B"
         },
         {
@@ -558,8 +604,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_publish_selected_blobs_per_tx_sum{namespace=~\"$namespace\"}[$__rate_interval])) / sum(rate(eth_da_publish_selected_blobs_per_tx_count{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "avg",
+          "expr": "sum by (namespace) (rate(eth_da_publish_selected_blobs_per_tx_sum{namespace=~\"$namespace\"}[$__rate_interval])) / sum by (namespace) (rate(eth_da_publish_selected_blobs_per_tx_count{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} avg",
           "refId": "C"
         }
       ],
@@ -576,8 +622,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -594,8 +642,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_window_budget_configured{namespace=~\"$namespace\"})",
-          "legendFormat": "configured",
+          "expr": "max by (namespace) (eth_da_publish_window_budget_configured{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} configured",
           "refId": "A"
         },
         {
@@ -603,8 +651,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_window_budget_used_blobs{namespace=~\"$namespace\"})",
-          "legendFormat": "used_blobs",
+          "expr": "max by (namespace) (eth_da_publish_window_budget_used_blobs{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} used_blobs",
           "refId": "B"
         },
         {
@@ -612,8 +660,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_window_budget_remaining_blobs{namespace=~\"$namespace\"})",
-          "legendFormat": "remaining_blobs",
+          "expr": "max by (namespace) (eth_da_publish_window_budget_remaining_blobs{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} remaining_blobs",
           "refId": "C"
         }
       ],
@@ -630,8 +678,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -648,8 +698,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_l1_base_fee_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "l1_base_fee",
+          "expr": "max by (namespace) (eth_da_publish_l1_base_fee_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1_base_fee",
           "refId": "A"
         },
         {
@@ -657,8 +707,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_blob_base_fee_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "blob_base_fee",
+          "expr": "max by (namespace) (eth_da_publish_blob_base_fee_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} blob_base_fee",
           "refId": "B"
         },
         {
@@ -666,8 +716,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_resolved_max_fee_per_gas_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "resolved_max_fee_per_gas",
+          "expr": "max by (namespace) (eth_da_publish_resolved_max_fee_per_gas_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} resolved_max_fee_per_gas",
           "refId": "C"
         },
         {
@@ -675,8 +725,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_resolved_max_fee_per_blob_gas_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "resolved_max_fee_per_blob_gas",
+          "expr": "max by (namespace) (eth_da_publish_resolved_max_fee_per_blob_gas_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} resolved_max_fee_per_blob_gas",
           "refId": "D"
         }
       ],
@@ -693,10 +743,29 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ops"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -711,8 +780,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (status) (rate(eth_da_publish_fee_samples_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "samples {{status}}",
+          "expr": "sum by (namespace, status) (rate(eth_da_publish_fee_samples_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} samples {{status}}",
           "refId": "A"
         },
         {
@@ -720,8 +789,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_fee_sample_available{namespace=~\"$namespace\"})",
-          "legendFormat": "sample_available",
+          "expr": "max by (namespace) (eth_da_publish_fee_sample_available{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} sample_available",
           "refId": "B"
         },
         {
@@ -729,8 +798,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (fee_type) (eth_da_publish_hard_fee_cap_configured{namespace=~\"$namespace\"})",
-          "legendFormat": "hard_cap {{fee_type}}",
+          "expr": "max by (namespace, fee_type) (eth_da_publish_hard_fee_cap_configured{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} hard_cap {{fee_type}}",
           "refId": "C"
         }
       ],
@@ -744,13 +813,32 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "suffix:wei",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -765,8 +853,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (component) (eth_da_publish_estimated_cost_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "{{component}}",
+          "expr": "max by (namespace, component) (eth_da_publish_estimated_cost_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} {{component}}",
           "refId": "A"
         },
         {
@@ -774,8 +862,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_publish_estimated_cost_available{namespace=~\"$namespace\"})",
-          "legendFormat": "available",
+          "expr": "max by (namespace) (eth_da_publish_estimated_cost_available{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} available",
           "refId": "B"
         }
       ],
@@ -792,8 +880,10 @@
           "unit": "ops",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -810,8 +900,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (backend) (rate(eth_da_submitter_sign_requests_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{backend}}",
+          "expr": "sum by (namespace, backend) (rate(eth_da_submitter_sign_requests_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{backend}}",
           "refId": "A"
         },
         {
@@ -819,8 +909,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (backend) (rate(eth_da_submitter_sign_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "failures {{backend}}",
+          "expr": "sum by (namespace, backend) (rate(eth_da_submitter_sign_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} failures {{backend}}",
           "refId": "B"
         }
       ],
@@ -837,8 +927,10 @@
           "unit": "s",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -855,8 +947,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (backend) (eth_da_submitter_sign_duration_seconds{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "p99 {{backend}}",
+          "expr": "histogram_quantile(0.99, sum by (namespace, le, backend) (rate(eth_da_submitter_sign_duration_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p99 {{backend}}",
           "refId": "A"
         },
         {
@@ -864,13 +956,14 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (backend) (eth_da_submitter_sign_duration_seconds{namespace=~\"$namespace\",quantile=\"0.5\"})",
-          "legendFormat": "p50 {{backend}}",
+          "expr": "histogram_quantile(0.5, sum by (namespace, le, backend) (rate(eth_da_submitter_sign_duration_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p50 {{backend}}",
           "refId": "B"
         }
       ],
-      "title": "Sign Duration (summary)",
-      "type": "timeseries"
+      "title": "Sign Duration (histogram)",
+      "type": "timeseries",
+      "description": "Percentiles computed from per-bucket counter rates exported by the service. Empty buckets mean no observations; they do not imply zero latency."
     },
     {
       "datasource": {
@@ -882,8 +975,10 @@
           "unit": "ops",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -900,8 +995,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_publish_replacement_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "replacement",
+          "expr": "sum by (namespace) (rate(eth_da_publish_replacement_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} replacement",
           "refId": "A"
         },
         {
@@ -909,8 +1004,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_publish_fresh_submission_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "fresh_submission",
+          "expr": "sum by (namespace) (rate(eth_da_publish_fresh_submission_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} fresh_submission",
           "refId": "B"
         },
         {
@@ -918,8 +1013,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (event) (rate(eth_da_publish_canonicality_events_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "canonicality {{event}}",
+          "expr": "sum by (namespace, event) (rate(eth_da_publish_canonicality_events_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} canonicality {{event}}",
           "refId": "C"
         },
         {
@@ -927,8 +1022,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_publish_fee_cap_deferrals_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "fee_cap_deferrals",
+          "expr": "sum by (namespace) (rate(eth_da_publish_fee_cap_deferrals_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} fee_cap_deferrals",
           "refId": "D"
         },
         {
@@ -936,8 +1031,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_publish_liveness_blocked_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "liveness_blocked",
+          "expr": "sum by (namespace) (rate(eth_da_publish_liveness_blocked_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} liveness_blocked",
           "refId": "E"
         }
       ],
@@ -954,8 +1049,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -972,8 +1069,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (state) (eth_da_submitter_blob_upload_rows{namespace=~\"$namespace\"})",
-          "legendFormat": "{{state}}",
+          "expr": "max by (namespace, state) (eth_da_submitter_blob_upload_rows{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} {{state}}",
           "refId": "A"
         }
       ],
@@ -990,8 +1087,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1008,8 +1107,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_blob_upload_conflict_rows{namespace=~\"$namespace\"})",
-          "legendFormat": "conflict_rows",
+          "expr": "max by (namespace) (eth_da_submitter_blob_upload_conflict_rows{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} conflict_rows",
           "refId": "A"
         },
         {
@@ -1017,8 +1116,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_blob_upload_retry_exhausted_rows{namespace=~\"$namespace\"})",
-          "legendFormat": "retry_exhausted_rows",
+          "expr": "max by (namespace) (eth_da_submitter_blob_upload_retry_exhausted_rows{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} retry_exhausted_rows",
           "refId": "B"
         }
       ],
@@ -1035,8 +1134,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1053,8 +1154,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (chain_id, sender) (eth_da_submitter_blob_upload_task_running{namespace=~\"$namespace\"})",
-          "legendFormat": "running {{sender}}",
+          "expr": "max by (namespace, chain_id, sender) (eth_da_submitter_blob_upload_task_running{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} running {{sender}}",
           "refId": "A"
         },
         {
@@ -1062,8 +1163,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (chain_id, sender) (eth_da_submitter_blob_upload_task_fatal{namespace=~\"$namespace\"})",
-          "legendFormat": "fatal {{sender}}",
+          "expr": "max by (namespace, chain_id, sender) (eth_da_submitter_blob_upload_task_fatal{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} fatal {{sender}}",
           "refId": "B"
         }
       ],
@@ -1080,8 +1181,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1098,8 +1201,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (outcome) (increase(eth_da_submitter_blob_upload_anonymous_write_probe_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{outcome}}",
+          "expr": "sum by (namespace, outcome) (increase(eth_da_submitter_blob_upload_anonymous_write_probe_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{outcome}}",
           "refId": "A"
         }
       ],
@@ -1116,8 +1219,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1134,8 +1239,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_lifecycle_batch_chunks{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "chunks p99",
+          "expr": "max by (namespace, instance) (eth_da_submitter_lifecycle_batch_chunks{namespace=~\"$namespace\",quantile=\"0.99\"})",
+          "legendFormat": "{{namespace}} {{instance}} chunks p99",
           "refId": "A"
         },
         {
@@ -1143,13 +1248,14 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_lifecycle_batch_l2_blocks{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "l2_blocks p99",
+          "expr": "max by (namespace, instance) (eth_da_submitter_lifecycle_batch_l2_blocks{namespace=~\"$namespace\",quantile=\"0.99\"})",
+          "legendFormat": "{{namespace}} {{instance}} l2_blocks p99",
           "refId": "B"
         }
       ],
       "title": "Batch Chunks / L2 Blocks (summary p99)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Per-instance summary quantiles; these cannot be aggregated into a fleet percentile."
     },
     {
       "datasource": {
@@ -1161,8 +1267,10 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1179,8 +1287,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "estimated_uncompressed p99",
+          "expr": "max by (namespace, instance) (eth_da_submitter_lifecycle_batch_estimated_uncompressed_bytes{namespace=~\"$namespace\",quantile=\"0.99\"})",
+          "legendFormat": "{{namespace}} {{instance}} estimated_uncompressed p99",
           "refId": "A"
         },
         {
@@ -1188,23 +1296,25 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_lifecycle_batch_effective_blob_bytes{namespace=~\"$namespace\",quantile=\"0.99\"})",
-          "legendFormat": "effective_blob p99",
+          "expr": "max by (namespace, instance) (eth_da_submitter_lifecycle_batch_effective_blob_bytes{namespace=~\"$namespace\",quantile=\"0.99\"})",
+          "legendFormat": "{{namespace}} {{instance}} effective_blob p99",
           "refId": "B"
         }
       ],
       "title": "Batch Bytes (summary p99)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Per-instance summary quantiles; these cannot be aggregated into a fleet percentile."
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "1 after the historical L2 queue-state invariant audit completes; publication is blocked while this is 0.",
+      "description": "One value per scraped instance; a ready replica does not hide an unready replica. A missing series remains No data.",
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1221,9 +1331,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_l2_queue_state_validation_complete{namespace=~\"$namespace\"})",
-          "legendFormat": "validation complete",
-          "refId": "A"
+          "expr": "min by (namespace, instance) (eth_da_submitter_l2_queue_state_validation_complete{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} validation complete {{instance}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "L2 Queue-state Validation Complete",
@@ -1237,7 +1349,8 @@
       "description": "1 while lifecycle ingestion is retrying or repeatedly recovering L2 history; returns to 0 after a clean cycle.",
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1254,9 +1367,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_l2_reorg_recovery_active{namespace=~\"$namespace\"})",
-          "legendFormat": "recovery active",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_l2_reorg_recovery_active{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} recovery active",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "L2 History Recovery Active",
@@ -1269,7 +1384,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1286,9 +1402,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_l2_reorg_recovery_retry_backoff_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "retry backoff",
-          "refId": "A"
+          "expr": "max by (namespace) (eth_da_submitter_l2_reorg_recovery_retry_backoff_seconds{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} retry backoff",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "L2 History Recovery Retry Backoff",
@@ -1301,7 +1419,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1318,8 +1437,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (kind) (rate(eth_da_submitter_l2_reorg_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "failure {{kind}}",
+          "expr": "sum by (namespace, kind) (rate(eth_da_submitter_l2_reorg_failures_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} failure {{kind}}",
           "refId": "A"
         },
         {
@@ -1327,8 +1446,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (kind) (rate(eth_da_submitter_l2_reorg_recoveries_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "recovery {{kind}}",
+          "expr": "sum by (namespace, kind) (rate(eth_da_submitter_l2_reorg_recoveries_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} recovery {{kind}}",
           "refId": "B"
         },
         {
@@ -1336,8 +1455,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_l2_reorg_orphaned_finalized_batches_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "orphaned finalized batches",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_l2_reorg_orphaned_finalized_batches_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} orphaned finalized batches",
           "refId": "C"
         },
         {
@@ -1345,8 +1464,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(eth_da_submitter_l2_reorg_depth_exceeds_bound_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "depth exceeds bound",
+          "expr": "sum by (namespace) (rate(eth_da_submitter_l2_reorg_depth_exceeds_bound_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} depth exceeds bound",
           "refId": "D"
         }
       ],
@@ -1364,8 +1483,10 @@
           "custom": {
             "fillOpacity": 8,
             "showPoints": "never",
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1382,8 +1503,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_l2_block{namespace=~\"$namespace\"})",
-          "legendFormat": "L2 indexed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_l2_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} L2 indexed",
           "refId": "A"
         },
         {
@@ -1391,8 +1512,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "submitted",
+          "expr": "max by (namespace) (eth_da_submitter_latest_submitted_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} submitted",
           "refId": "B"
         },
         {
@@ -1400,8 +1521,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "confirmed",
+          "expr": "max by (namespace) (eth_da_submitter_latest_confirmed_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} confirmed",
           "refId": "C"
         },
         {
@@ -1409,8 +1530,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
-          "legendFormat": "finalized",
+          "expr": "max by (namespace) (eth_da_submitter_latest_finalized_batch_l2_end_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} finalized",
           "refId": "D"
         }
       ],
@@ -1428,8 +1549,10 @@
           "custom": {
             "fillOpacity": 8,
             "showPoints": "never",
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -1446,8 +1569,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_l1_block{namespace=~\"$namespace\"})",
-          "legendFormat": "Ethereum tip",
+          "expr": "max by (namespace) (eth_da_submitter_latest_l1_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} Ethereum tip",
           "refId": "A"
         },
         {
@@ -1455,8 +1578,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_confirmed_batch_ethereum_block{namespace=~\"$namespace\"})",
-          "legendFormat": "confirmed batch inclusion",
+          "expr": "max by (namespace) (eth_da_submitter_latest_confirmed_batch_ethereum_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} confirmed batch inclusion",
           "refId": "B"
         },
         {
@@ -1464,8 +1587,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(eth_da_submitter_latest_finalized_batch_ethereum_block{namespace=~\"$namespace\"})",
-          "legendFormat": "finalized batch inclusion",
+          "expr": "max by (namespace) (eth_da_submitter_latest_finalized_batch_ethereum_block{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} finalized batch inclusion",
           "refId": "C"
         }
       ],

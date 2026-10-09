@@ -1,0 +1,33 @@
+{{ define "scroll-monitor.slack.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+{{- with .CommonLabels.severity }} {{ . | toUpper }}{{ end }}__ENVIRONMENT__ ·
+{{- if .CommonLabels.alert_category }} {{ .CommonLabels.alert_category }}{{ else if .CommonLabels.alertname }} {{ .CommonLabels.alertname }}{{ else }} {{ len .Alerts }} alerts{{ end }}
+{{- if .CommonLabels.service }} · {{ .CommonLabels.service }}{{ else if .CommonLabels.job }} · {{ .CommonLabels.job }}{{ end }}
+{{- end }}
+
+{{ define "scroll-monitor.slack.text" -}}
+{{ if .Alerts.Firing -}}
+*Firing ({{ len .Alerts.Firing }})*
+{{ range $index, $alert := .Alerts.Firing }}{{ if lt $index 10 }}{{ template "scroll-monitor.slack.alert" $alert }}{{ end }}{{ end -}}
+{{ if gt (len .Alerts.Firing) 10 }}_Showing 10 of {{ len .Alerts.Firing }} firing alerts; open Grafana for the rest._
+{{ end -}}
+{{ end -}}
+{{ if .Alerts.Resolved -}}
+*Resolved ({{ len .Alerts.Resolved }})*
+{{ range $index, $alert := .Alerts.Resolved }}{{ if lt $index 10 }}{{ template "scroll-monitor.slack.alert" $alert }}{{ end }}{{ end -}}
+{{ if gt (len .Alerts.Resolved) 10 }}_Showing 10 of {{ len .Alerts.Resolved }} resolved alerts._
+{{ end -}}
+{{ end -}}
+{{- end }}
+
+{{ define "scroll-monitor.slack.alert" -}}
+*{{ template "scroll-monitor.slack.summary" . }}*
+{{ template "scroll-monitor.slack.description" . }}
+`{{ .Labels.alertname }}{{ range (.Labels.Remove (stringSlice "alertname" "severity" "managed_by" "grafana_folder" "scroll_monitor_route")).SortedPairs }} {{ .Name }}={{ .Value }}{{ end }}`
+{{ if eq .Status "firing" }}Since {{ .StartsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ else }}Resolved {{ .EndsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ end }}
+{{- with .GeneratorURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Rule>{{ end }}{{ end }}
+{{- if eq .Status "firing" }}{{ with .SilenceURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Silence>{{ end }}{{ end }}{{ end }}
+{{- with .DashboardURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Dashboard>{{ end }}{{ end }}
+{{- with .PanelURL }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Panel>{{ end }}{{ end }}
+
+{{ end }}

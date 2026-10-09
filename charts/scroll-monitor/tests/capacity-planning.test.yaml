@@ -1,0 +1,467 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 5m
+tests:
+- name: NodeDisk forecast with initial free 1000
+  interval: 5m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 10000x100
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 1000-5x100
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 5h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk forecast with initial free 500
+  interval: 5m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 10000x100
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 500-5x100
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 5h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h30m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: NodeDisk increasing free space does not predict exhaustion
+  interval: 5m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 10000x100
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 100+1x100
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk resize invalidates linear prediction
+  interval: 5m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 10000x71 20000x28
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 500-5x100
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk inode free 10
+  interval: 5m
+  input_series:
+  - series: node_filesystem_files{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_files_free{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 10x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk inode free 5
+  interval: 5m
+  input_series:
+  - series: node_filesystem_files{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_files_free{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 5x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: NodeDisk inode free 11
+  interval: 5m
+  input_series:
+  - series: node_filesystem_files{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_files_free{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 11x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk zero inode count ignored
+  interval: 5m
+  input_series:
+  - series: node_filesystem_files{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_files_free{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x10'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: NodeDisk capacity critical at exact 95
+  interval: 5m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 100x10
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 5x10
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: '0x100'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC forecast with initial free 1000
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 10000x100
+  - series: kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 1000-5x100
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 5h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC forecast with initial free 500
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 10000x100
+  - series: kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 500-5x100
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 5h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 6h30m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 6h5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: PVC increasing free space does not predict exhaustion
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 10000x100
+  - series: kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 100+1x100
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC resize invalidates linear prediction
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 10000x71 20000x28
+  - series: kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 500-5x100
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCFillingUp",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCFillingUpCritical",alertstate="firing"}) or vector(0)
+    eval_time: 7h
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC inode free 10
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 100x10
+  - series: kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 10x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="PVCInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC inode free 5
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 100x10
+  - series: kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 5x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: PVC inode free 11
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 100x10
+  - series: kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 11x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC zero inode count ignored
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: '0x10'
+  - series: kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: '0x10'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCInodesHigh",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCInodesHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 10m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: PVC capacity critical at exact 95
+  interval: 5m
+  input_series:
+  - series: kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 100x10
+  - series: kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics",namespace="monitoring",persistentvolumeclaim="data",instance="node-a"}
+    values: 95x10
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="PVCUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="PVCUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: read only persistent filesystem stays alerting
+  interval: 5m
+  input_series:
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
+    values: 1x20
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeFilesystemReadOnly",alertstate="firing"}) or vector(0)
+    eval_time: 0m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeFilesystemReadOnly",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeFilesystemReadOnly",alertstate="firing"}) or vector(0)
+    eval_time: 90m
+    exp_samples:
+    - labels: '{}'
+      value: 1

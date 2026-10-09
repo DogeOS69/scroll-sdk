@@ -1,0 +1,14 @@
+apiVersion: v2
+name: dstack-controller
+description: Provider-neutral dstack server for managing external GPU worker pools
+type: application
+version: 0.1.2
+appVersion: "0.21.5"
+kubeVersion: ">=1.22.0-0"
+home: https://dstack.ai/
+sources:
+  - https://github.com/dstackai/dstack
+  - https://github.com/DogeOS69/scroll-sdk
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com

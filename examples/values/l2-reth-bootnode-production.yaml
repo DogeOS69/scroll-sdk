@@ -38,7 +38,7 @@ reth:
   l1LivenessCheckInterval: "3600"
   blobS3Url: ""
   trustedPeers: ""
-  builderGasLimit: "10000000"
+  builderGasLimit: "30000000"
   engineSyncAtStartup: "true"
   engineLegacyStateRoot: true
   ipcPath: /tmp/reth.ipc
@@ -82,10 +82,10 @@ reth:
     enabled: false
     autoStart: true
     allowEmptyBlocks: false
-    blockTimeMs: "3000"
-    payloadBuildingDurationMs: "800"
+    blockTimeMs: "2000"
+    payloadBuildingDurationMs: "1400"
     l1InclusionMode: finalized:2
-    feeRecipient: "<TODO>"
+    feeRecipient: "0x5300000000000000000000000000000000000005"
 
   rpc:
     trustedOnly: false

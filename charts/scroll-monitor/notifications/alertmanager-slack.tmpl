@@ -1,0 +1,22 @@
+{{ define "scroll-monitor.slack.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ len .Alerts.Firing }}{{ end }}]{{ with .CommonLabels.severity }} {{ . | toUpper }}{{ end }} · __ENVIRONMENT__ · {{ .CommonLabels.alertname }}
+{{- end }}
+{{ define "scroll-monitor.slack.titlelink" -}}
+{{ if "__GRAFANA_URL__" }}__GRAFANA_URL__/alerting/list{{ with .CommonLabels.alertname }}?search={{ . | urlquery }}{{ end }}{{ end }}
+{{- end }}
+{{ define "scroll-monitor.slack.text" -}}
+{{ range $i, $alert := .Alerts }}{{ if lt $i 10 }}
+*{{ .Status | toUpper }}: {{ template "scroll-monitor.slack.summary" . }}*
+{{ template "scroll-monitor.slack.description" . }}
+`{{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}`
+{{ if eq .Status "firing" }}Since {{ .StartsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ else }}Resolved {{ .EndsAt.UTC.Format "2006-01-02 15:04 UTC" }}{{ end }}
+{{ if "__GRAFANA_URL__" -}}
+<__GRAFANA_URL__/alerting/list?search={{ .Labels.alertname | urlquery }}|Alerts>
+{{- if eq .Status "firing" }} · <__GRAFANA_URL__/alerting/silence/new?alertmanager=Alertmanager{{ range .Labels.SortedPairs }}&matcher={{ printf "%s=%s" .Name .Value | urlquery }}{{ end }}|Silence>{{ end }}
+{{- end }}
+{{ with .Annotations.dashboard_url }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Dashboard>{{ end }}{{ end }}
+{{ with .Annotations.runbook_url }}{{ if and (match `^https?://` .) (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .)) }} · <{{ . }}|Runbook>{{ end }}{{ end }}
+
+{{ end }}{{ end -}}
+{{ if gt (len .Alerts) 10 }}_Showing 10 of {{ len .Alerts }} alerts._{{ end }}
+{{- end }}

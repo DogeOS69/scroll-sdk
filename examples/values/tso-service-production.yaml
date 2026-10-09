@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/tso-service
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5c
 
 service:
   main:
@@ -75,6 +75,8 @@ ingress:
   main:
     # External signers need a reachable endpoint. prep-charts fills the host;
     # review ingress access controls/TLS before exposing this endpoint.
+    # Expose only health and signature callbacks. Registration, proposals,
+    # status and metrics stay on the in-cluster Service.
     enabled: true
     primary: true
     annotations:
@@ -85,8 +87,14 @@ ingress:
     hosts:
       - host: ""
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /health
+            pathType: Exact
+          - path: /submit-attestation-signatures
+            pathType: Exact
+          - path: /submit-correctness-signatures
+            pathType: Exact
+          - path: /reject-signatures
+            pathType: Exact
 
 resources:
   requests:
@@ -96,9 +104,11 @@ resources:
     memory: "1Gi"
     cpu: "1000m"
 
+# scroll-monitor owns the default TSO metrics scrape. Enable this only when
+# its additionalServiceMonitors.tso entry is disabled.
 serviceMonitor:
   main:
-    enabled: true
+    enabled: false
     endpoints:
       - {port: http, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
 

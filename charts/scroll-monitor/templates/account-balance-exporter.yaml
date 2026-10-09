@@ -67,6 +67,8 @@ spec:
             - name: SCROLL_BALANCE_RPC_TIMEOUT_SECONDS
               value: {{ .Values.balanceMonitoring.exporter.rpcTimeoutSeconds | quote }}
             {{- range $prefix, $account := dict "FEE_ORACLE" .Values.balanceMonitoring.ethereum.feeOracle "ETH_DA_SUBMITTER" .Values.balanceMonitoring.ethereum.ethDaSubmitter }}
+            - name: {{ printf "SCROLL_BALANCE_%s_ENABLED" $prefix }}
+              value: {{ $account.enabled | toString | quote }}
             {{- range $suffix, $value := dict "ADDRESS" $account.address "RPC_URL" $account.rpcUrl "EXPECTED_CHAIN_ID" $account.expectedChainId }}
             {{- if ne (toString $value) "" }}
             - name: {{ printf "SCROLL_BALANCE_%s_%s" $prefix $suffix }}

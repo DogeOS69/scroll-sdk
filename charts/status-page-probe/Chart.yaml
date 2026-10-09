@@ -1,0 +1,8 @@
+apiVersion: v2
+name: status-page-probe
+description: Independent semantic probes for public DogeOS components
+version: 0.1.1
+appVersion: '1'
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com

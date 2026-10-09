@@ -1,0 +1,7 @@
+# Configuration generation stages a copy of the deployment directory.
+# Keep runtime logs and historical acceptance evidence outside that copy.
+logs
+artifacts
+# Add deployment-relative paths to unused build/history directories here.
+# No globs or negation. Do not exclude current proof receipts, their referenced
+# inputs, or the whole .data directory: generation must validate those inputs.

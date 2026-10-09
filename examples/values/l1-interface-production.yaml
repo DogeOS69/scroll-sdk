@@ -8,7 +8,7 @@ global:
 image:
   repository: dogeos69/l1-interface
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5c
 
 command:
   - /usr/local/bin/l1_interface
@@ -105,7 +105,9 @@ configMaps:
       # the versioned recipient envelope; P2SH is always versioned.
       DOGEOS_L1_INTERFACE_REPLAY_READ__P2PKH_VERSIONED_ENVELOPE_START_WITHDRAW_INDEX: "0"
       DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true"
-      DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "false"
+      DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "true"
+      # Only a declared new bridge may initialize an absent replay database.
+      DOGEOS_L1_INTERFACE_REPLAY_READ__FRESH_GENESIS_INIT: "false"
       DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
       # Cutover/snapshot deployments only; prep-charts fills this from the
       # deployment's first real L2 height when one is configured.

@@ -1,0 +1,54 @@
+rule_files: [rules.yaml]
+evaluation_interval: 1m
+tests:
+- name: a healthy replica cannot mask a failed scrape target
+  interval: 1m
+  input_series:
+  - series: up{namespace="other",job="worker",instance="failed"}
+    values: '0x20'
+  - series: up{namespace="other",job="worker",instance="healthy"}
+    values: '1x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="MetricsTargetDown",alertstate="firing",instance="failed"})
+    eval_time: 6m
+    exp_samples: [{labels: '{}', value: 1}]
+- name: running pod readiness is monitored outside the release namespace
+  interval: 1m
+  input_series:
+  - series: kube_pod_status_ready{namespace="other",pod="worker-0",uid="one",condition="true"}
+    values: '0x20'
+  - series: kube_pod_status_phase{namespace="other",pod="worker-0",uid="one",phase="Running"}
+    values: '1x20'
+  - series: kube_pod_status_ready{namespace="other",pod="worker-1",uid="two",condition="true"}
+    values: '0x20'
+  - series: kube_pod_status_phase{namespace="other",pod="worker-1",uid="two",phase="Pending"}
+    values: '1x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessPodNotReady",alertstate="firing"})
+    eval_time: 11m
+    exp_samples: [{labels: '{}', value: 1}]
+- name: replacement PVC capacity rule covers other namespaces
+  interval: 1m
+  input_series:
+  - series: kubelet_volume_stats_used_bytes{namespace="other",persistentvolumeclaim="data",job="kubelet",metrics_path="/metrics"}
+    values: '99x20'
+  - series: kubelet_volume_stats_capacity_bytes{namespace="other",persistentvolumeclaim="data",job="kubelet",metrics_path="/metrics"}
+    values: '100x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="PVCUsageHighCritical",alertstate="firing",namespace="other"})
+    eval_time: 16m
+    exp_samples: [{labels: '{}', value: 1}]
+- name: controller outage is covered by shared availability rules
+  interval: 1m
+  input_series:
+  - series: kube_deployment_spec_replicas{namespace="dstack-system",deployment="dstack-controller"}
+    values: '1x20'
+  - series: kube_deployment_status_replicas_available{namespace="dstack-system",deployment="dstack-controller"}
+    values: '0x20'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="BusinessDeploymentUnavailable",alertstate="firing"})
+    eval_time: 3m
+    exp_samples: [{labels: '{}', value: 1}]
+  - expr: count(ALERTS{alertname="DstackControllerUnavailable",alertstate="firing"}) or vector(0)
+    eval_time: 3m
+    exp_samples: [{labels: '{}', value: 0}]

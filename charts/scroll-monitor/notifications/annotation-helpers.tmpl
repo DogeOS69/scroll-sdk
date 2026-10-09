@@ -1,0 +1,24 @@
+{{ define "scroll-monitor.slack.summary" -}}
+{{- if eq .Labels.alertname "ServiceErrorOrPanickedLogs" -}}
+{{- if eq .Status "resolved" }}Log error alert resolved for {{ else }}ERROR or panicked logs detected in {{ end -}}
+{{- if .Labels.service }}{{ .Labels.service }}{{ else if .Labels.pod }}{{ .Labels.pod }}{{ else }}the monitored service{{ end }}.
+{{- else if and .Annotations.summary (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .Annotations.summary)) -}}
+{{ .Annotations.summary }}
+{{- else -}}
+{{ .Labels.alertname }}
+{{- end -}}
+{{- end }}
+{{ define "scroll-monitor.slack.description" -}}
+{{- if and (eq .Labels.alertname "ServiceErrorOrPanickedLogs") (eq .Status "resolved") -}}
+The log alert for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else }}the monitored service{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }} is resolved.
+{{ if eq .Annotations.grafana_state_reason "MissingSeries" }}Grafana no longer receives this alert series. This can happen when matching logs leave the query window or a workload disappears; it does not by itself confirm service recovery.
+{{ else }}{{ with .Annotations.grafana_state_reason }}{{ if not (match `\{\{|\$(labels|values|value)\b` .) }}Grafana state reason: {{ . }}.
+{{ end }}{{ end }}{{ end }}Open the service logs in Explore to review the recovery context.
+{{- else if and .Annotations.description (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .Annotations.description)) -}}
+{{ .Annotations.description }}
+{{- else if eq .Labels.alertname "ServiceErrorOrPanickedLogs" -}}
+Matching ERROR or panicked logs were detected for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else }}the monitored service{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }}. Open the service logs in Explore to investigate.
+{{- else if .Annotations.description -}}
+Open the alert in Grafana to inspect its current state.
+{{- end -}}
+{{- end }}

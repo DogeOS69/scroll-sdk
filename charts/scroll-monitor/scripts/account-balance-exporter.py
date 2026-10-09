@@ -67,6 +67,11 @@ def account_config(env):
     accounts = {}
     for account, prefix in ACCOUNTS.items():
         base = f"SCROLL_BALANCE_{prefix}_"
+        enabled = env.get(base + "ENABLED", "true").strip().lower()
+        if enabled not in ("true", "false"):
+            raise ValueError(base + "ENABLED must be true or false")
+        if enabled == "false":
+            continue
         accounts[account] = {
             "address": env.get(base + "ADDRESS", "").strip(),
             "rpc_url": env.get(base + "RPC_URL", "").strip(),

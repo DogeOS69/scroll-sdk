@@ -92,7 +92,7 @@
   "timezone": "",
   "title": "DogeOS Fee Oracle",
   "uid": "dogeos-fee-oracle",
-  "version": 3,
+  "version": 4,
   "weekStart": "",
   "panels": [
     {
@@ -102,7 +102,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -119,9 +120,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_uptime_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "uptime",
-          "refId": "A"
+          "expr": "max by (namespace) (fee_oracle_uptime_seconds{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} uptime",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Uptime",
@@ -134,7 +137,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -151,9 +155,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode) (fee_oracle_active_da_mode{namespace=~\"$namespace\"} == 1)",
-          "legendFormat": "{{mode}}",
-          "refId": "A"
+          "expr": "max by (namespace, mode) (fee_oracle_active_da_mode{namespace=~\"$namespace\"} == 1)",
+          "legendFormat": "{{namespace}} {{mode}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Active DA Mode",
@@ -169,7 +175,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -186,9 +193,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode) (fee_oracle_ethereum_da_contract_write_mode{namespace=~\"$namespace\"} == 1)",
-          "legendFormat": "{{mode}}",
-          "refId": "A"
+          "expr": "max by (namespace, mode) (fee_oracle_ethereum_da_contract_write_mode{namespace=~\"$namespace\"} == 1)",
+          "legendFormat": "{{namespace}} {{mode}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Contract Write Mode",
@@ -204,7 +213,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -221,9 +231,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (status) (fee_oracle_ethereum_da_status{namespace=~\"$namespace\"} == 1)",
-          "legendFormat": "{{status}}",
-          "refId": "A"
+          "expr": "max by (namespace, status) (fee_oracle_ethereum_da_status{namespace=~\"$namespace\"} == 1)",
+          "legendFormat": "{{namespace}} {{status}}",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Ethereum DA Status",
@@ -239,7 +251,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -256,9 +269,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_sample_available{namespace=~\"$namespace\"})",
-          "legendFormat": "available",
-          "refId": "A"
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_sample_available{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} available",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Sample Available",
@@ -271,7 +286,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -288,9 +304,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"}) / 1000",
-          "legendFormat": "age",
-          "refId": "A"
+          "expr": "time() - max by (namespace) ((fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"} > 0)) / 1000",
+          "legendFormat": "{{namespace}} age",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Oracle Loop Age",
@@ -306,8 +324,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -324,13 +344,14 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (status, reason) (fee_oracle_ethereum_da_oracle_value_latest_status{namespace=~\"$namespace\"})",
-          "legendFormat": "{{status}}: {{reason}}",
+          "expr": "max by (namespace, status, reason) (fee_oracle_ethereum_da_oracle_value_latest_status{namespace=~\"$namespace\"} == 1)",
+          "legendFormat": "{{namespace}} {{status}}: {{reason}}",
           "refId": "A"
         }
       ],
       "title": "Latest Oracle Value Status",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Only the active latest status/reason pair is shown. The service resets previously observed pairs to zero."
     },
     {
       "datasource": {
@@ -342,8 +363,10 @@
           "unit": "ops",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -360,8 +383,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(fee_oracle_ethereum_da_oracle_value_persisted_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "persisted",
+          "expr": "sum by (namespace) (rate(fee_oracle_ethereum_da_oracle_value_persisted_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} persisted",
           "refId": "A"
         },
         {
@@ -369,8 +392,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(fee_oracle_ethereum_da_oracle_value_persisted_degraded_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "degraded",
+          "expr": "sum by (namespace) (rate(fee_oracle_ethereum_da_oracle_value_persisted_degraded_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} degraded",
           "refId": "B"
         }
       ],
@@ -387,8 +410,10 @@
           "unit": "s",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -405,8 +430,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_sample_age_seconds{namespace=~\"$namespace\"})",
-          "legendFormat": "sample_age",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_sample_age_seconds{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} sample_age",
           "refId": "A"
         },
         {
@@ -414,8 +439,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"}) / 1000",
-          "legendFormat": "oracle_value_age",
+          "expr": "time() - max by (namespace) ((fee_oracle_ethereum_da_oracle_value_latest_computed_at_ms{namespace=~\"$namespace\"} > 0)) / 1000",
+          "legendFormat": "{{namespace}} oracle_value_age",
           "refId": "B"
         }
       ],
@@ -432,8 +457,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -450,8 +477,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_l1_base_fee_per_gas_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "l1_base_fee_per_gas",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_l1_base_fee_per_gas_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} l1_base_fee_per_gas",
           "refId": "A"
         },
         {
@@ -459,8 +486,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "blob_base_fee_per_blob_gas",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_l1_blob_base_fee_per_blob_gas_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} blob_base_fee_per_blob_gas",
           "refId": "B"
         },
         {
@@ -468,8 +495,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_priority_fee_per_gas_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "priority_fee_per_gas",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_priority_fee_per_gas_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} priority_fee_per_gas",
           "refId": "C"
         }
       ],
@@ -486,8 +513,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -504,8 +533,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas{namespace=~\"$namespace\"})",
-          "legendFormat": "base_fee_per_exec_gas",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_base_fee_dogewei_per_exec_gas{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} base_fee_per_exec_gas",
           "refId": "A"
         },
         {
@@ -513,8 +542,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas{namespace=~\"$namespace\"})",
-          "legendFormat": "blob_base_fee_per_blob_gas",
+          "expr": "max by (namespace) (fee_oracle_ethereum_da_oracle_value_last_writeable_oracle_l1_blob_base_fee_dogewei_per_blob_gas{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} blob_base_fee_per_blob_gas",
           "refId": "B"
         }
       ],
@@ -531,8 +560,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -549,8 +580,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode) (fee_oracle_ethereum_da_effective_blobs_per_tx{namespace=~\"$namespace\"})",
-          "legendFormat": "{{mode}}",
+          "expr": "max by (namespace, mode) (fee_oracle_ethereum_da_effective_blobs_per_tx{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} {{mode}}",
           "refId": "A"
         }
       ],
@@ -567,8 +598,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -585,8 +618,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode, role) (fee_oracle_ethereum_da_cost_per_blob_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "total {{mode}}",
+          "expr": "max by (namespace, mode, role) (fee_oracle_ethereum_da_cost_per_blob_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} total {{mode}}",
           "refId": "A"
         },
         {
@@ -594,8 +627,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode, role) (fee_oracle_ethereum_da_blob_cost_per_blob_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "blob {{mode}}",
+          "expr": "max by (namespace, mode, role) (fee_oracle_ethereum_da_blob_cost_per_blob_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} blob {{mode}}",
           "refId": "B"
         },
         {
@@ -603,8 +636,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode, role) (fee_oracle_ethereum_da_execution_cost_per_blob_wei{namespace=~\"$namespace\"})",
-          "legendFormat": "execution {{mode}}",
+          "expr": "max by (namespace, mode, role) (fee_oracle_ethereum_da_execution_cost_per_blob_wei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} execution {{mode}}",
           "refId": "C"
         }
       ],
@@ -621,8 +654,10 @@
           "unit": "none",
           "custom": {
             "fillOpacity": 8,
-            "showPoints": "never"
-          }
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -639,8 +674,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (mode, role) (fee_oracle_ethereum_da_cost_per_blob_dogewei{namespace=~\"$namespace\"})",
-          "legendFormat": "{{mode}} ({{role}})",
+          "expr": "max by (namespace, mode, role) (fee_oracle_ethereum_da_cost_per_blob_dogewei{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} {{mode}} ({{role}})",
           "refId": "A"
         }
       ],
@@ -655,7 +690,8 @@
       "description": "Disjoint pending-row buckets observed by the live contract-write lifecycle after its most recent cycle.",
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -672,8 +708,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_live_pending_in_flight{namespace=~\"$namespace\"})",
-          "legendFormat": "in flight",
+          "expr": "max by (namespace) (fee_oracle_live_pending_in_flight{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} in flight",
           "refId": "A"
         },
         {
@@ -681,8 +717,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_live_pending_unsent{namespace=~\"$namespace\"})",
-          "legendFormat": "unsent",
+          "expr": "max by (namespace) (fee_oracle_live_pending_unsent{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} unsent",
           "refId": "B"
         },
         {
@@ -690,8 +726,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_live_pending_orphans{namespace=~\"$namespace\"})",
-          "legendFormat": "orphans",
+          "expr": "max by (namespace) (fee_oracle_live_pending_orphans{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} orphans",
           "refId": "C"
         },
         {
@@ -699,8 +735,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_live_pending_nonce_drift{namespace=~\"$namespace\"})",
-          "legendFormat": "nonce drift",
+          "expr": "max by (namespace) (fee_oracle_live_pending_nonce_drift{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} nonce drift",
           "refId": "D"
         },
         {
@@ -708,8 +744,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(fee_oracle_live_pending_rbf_eligible{namespace=~\"$namespace\"})",
-          "legendFormat": "RBF eligible",
+          "expr": "max by (namespace) (fee_oracle_live_pending_rbf_eligible{namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}} RBF eligible",
           "refId": "E"
         }
       ],
@@ -723,7 +759,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -740,8 +777,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (outcome) (rate(fee_oracle_live_submits_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{outcome}}",
+          "expr": "sum by (namespace, outcome) (rate(fee_oracle_live_submits_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{outcome}}",
           "refId": "A"
         },
         {
@@ -749,8 +786,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(fee_oracle_live_submit_errors_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "pre-broadcast error",
+          "expr": "sum by (namespace) (rate(fee_oracle_live_submit_errors_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} pre-broadcast error",
           "refId": "B"
         }
       ],
@@ -764,7 +801,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -781,8 +819,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (class) (rate(fee_oracle_live_confirmer_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{class}}",
+          "expr": "sum by (namespace, class) (rate(fee_oracle_live_confirmer_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{class}}",
           "refId": "A"
         }
       ],
@@ -796,7 +834,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -813,8 +852,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (phase, result) (rate(fee_oracle_live_recovery_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{phase}} {{result}}",
+          "expr": "sum by (namespace, phase, result) (rate(fee_oracle_live_recovery_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{phase}} {{result}}",
           "refId": "A"
         }
       ],
@@ -828,7 +867,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -845,8 +885,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (result, kind) (rate(fee_oracle_live_rbf_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{result}} {{kind}}",
+          "expr": "sum by (namespace, result, kind) (rate(fee_oracle_live_rbf_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{result}} {{kind}}",
           "refId": "A"
         }
       ],

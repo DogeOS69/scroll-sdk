@@ -1,0 +1,4 @@
+# Test artifacts are not runtime chart assets and can exceed Helm's release Secret limit.
+tests/
+scripts/__pycache__/
+*.pyc
