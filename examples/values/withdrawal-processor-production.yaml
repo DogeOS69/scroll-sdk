@@ -110,12 +110,6 @@ env:
   # setup prep-charts replaces the proof-system entries together.
   # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
   # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
-    value: "disabled"
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
-    value: "false"
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
-    value: "false"
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"

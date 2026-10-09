@@ -52,6 +52,24 @@ class MakefileContextTests(unittest.TestCase):
     def test_empty_context_is_an_empty_argument_not_the_next_option(self):
         self.assert_context(self.expanded_commands('', 'default'), '', 'default')
 
+    def test_fresh_genesis_does_not_require_unshipped_upgrade_files(self):
+        commands = self.expanded_commands('', 'default')
+        self.assertFalse(any('normalize-reth-genesis' in arg
+                             for command in commands for arg in command))
+
+    def test_reviewed_upgrade_can_explicitly_supply_both_normalizer_files(self):
+        commands = self.expanded_commands('', 'default', {
+            'L2_RETH_GENESIS_NORMALIZER_VALUES': 'upgrade/normalizer.yaml',
+            'L2_RETH_GENESIS_NORMALIZER_SCRIPT': 'upgrade/normalize.sh',
+        })
+        reth = [command for command in commands
+                if any(arg.startswith('l2-reth-') for arg in command)
+                and 'upgrade' in command]
+        self.assertTrue(reth)
+        for command in reth:
+            self.assertIn('upgrade/normalizer.yaml', command)
+            self.assertIn('configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=upgrade/normalize.sh', command)
+
 
 if __name__ == '__main__':
     unittest.main()
