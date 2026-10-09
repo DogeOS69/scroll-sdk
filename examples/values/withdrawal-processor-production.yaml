@@ -17,7 +17,7 @@ global:
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 # The image entrypoint is retained; args select the checked-in native config.
 command: []
@@ -158,14 +158,31 @@ externalSecrets:
 # TSO Signers Configuration for local K8s testing
 # This will be used by the Helm template to create a ConfigMap
 # which is then mounted as /app/config/signers.toml
+#
+# This is the TSO signer directory; prep-charts regenerates it from
+# doge-config. Each entry renders to one [[tso_signers]] table:
+#   roles -> roles (exactly one entry today), delivery -> delivery,
+#   publicKeyOverride -> public_key_override,
+#   transportPubkey -> transport_pubkey, uri -> uri (push only).
 tsoSigners:
+  # In-cluster CubeSigner: push to its Service, unprefixed TSO routes.
   - network: "<TODO>"
     uri: "http://cubesigner-signer:3000"
-    role: "Correctness"
+    roles: ["Correctness"]
+    delivery: "push"
     # prep-charts derives the canonical compressed key from doge-config. It is
     # required by the production bridge-proof-reference transport.
     publicKeyOverride: "<TODO>"
     signatureMode: "ecdsa"
+  # One entry per external attestation signer, from the operator's
+  # descriptor (`attestation_signer --print-identity`). Pull signers dial out
+  # to the TSO's /signer/* routes, so they have no uri; both keys are pinned.
+  # - network: "<TODO>"
+  #   roles: ["Attestation"]
+  #   delivery: "pull"
+  #   publicKeyOverride: "<66-hex attestation pubkey>"
+  #   transportPubkey: "<66-hex transport pubkey>"
+  #   signatureMode: "ecdsa"
 
 # Persistence Configuration
 persistence:

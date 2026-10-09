@@ -116,15 +116,17 @@ policy with its own defaults.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.5c**.
-Upgrading **beta.5b to beta.5c** preserves
-the existing databases and proof identities after removing the retired WP
-finality fields and updating image/build pins. Follow the
-[beta.5c configuration and upgrade checklist](core-beta5c-configuration.md).
-The earlier beta.5a-to-beta.5b cutover required fresh databases and new
-Bridge/proof identities; the beta.5c in-place instructions do not cover that
-older transition. See the [fresh deployment checklist](../docs/fresh-deployment-known-issues.md)
-for owner access, Bridge funding, CubeSigner binding, retained L2 runtime
+The core service examples target **v0.3.0-beta.6**. Follow the
+[beta.6 configuration checklist](core-beta6-configuration.md) for the signer
+format, independent S3 targets, binary approval pins and proof identities.
+Update the generated deployment configuration together with the images;
+changing only the tags is not sufficient.
+
+The [beta.5c upgrade checklist](core-beta5c-configuration.md) describes the
+historical beta.5b-to-beta.5c transition only. Its statements about retaining
+proof identities do not apply to beta.6. See the
+[fresh deployment checklist](../docs/fresh-deployment-known-issues.md) for
+owner access, Bridge funding, CubeSigner binding, retained L2 runtime
 configuration and dstack bootstrap/monitoring. Copy the hidden `.scrollsdkignore`
 when starting from these examples.
 
@@ -283,7 +285,8 @@ make reconcile-proof-services
 
 Before bridge genesis, give each external signer operator the complete
 `partner-kit/attestation-signer/` directory, collect the descriptor produced by
-their `scrollsdk signer init`, and import the descriptors with
+its Phase A script (`signer init`, `--print-identity`, then `signer init --identity`),
+and import the descriptors with
 `scrollsdk setup attestation-signer`. After genesis, send every partner the
 complete `signer-policy-bundle/` produced by
 `scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
@@ -291,6 +294,9 @@ protocol context in every signer mode, so partners start the service and run
 `signer preflight` only after installing that bundle. Production partners use
 `--require-production-ready` and keep their own RPC source sets and rotation
 allowlists in the generated `attestation-signer.toml`.
+External signers initiate signed polling and callbacks to TSO; they do not
+provide a reachable signer endpoint. The kit publishes local preflight and
+metrics ports only on host loopback by default.
 
 For a deployment that will later use real proving, import the software
 identities and Bridge-bound material before selecting `generation = real`.

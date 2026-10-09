@@ -1,8 +1,9 @@
 # Core beta.5c configuration and in-place upgrade
 
-The eight core service values examples select `v0.3.0-beta.5c`. The external
-attestation-signer Compose example in `partner-kit/attestation-signer` selects
-the same release.
+This historical checklist describes `v0.3.0-beta.5c`. The current examples
+select beta.6; use the [beta.6 checklist](core-beta6-configuration.md) for that
+release. The identity and state-retention statements below apply only to the
+beta.5b-to-beta.5c transition.
 
 Release instructions:
 [dogeos-core #1284](https://github.com/DogeOS69/dogeos-core/issues/1284#issuecomment-5904045604).

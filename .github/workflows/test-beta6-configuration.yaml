@@ -1,0 +1,47 @@
+name: Test beta.6 configuration
+on:
+  pull_request:
+    paths:
+      - charts/tso-service/**
+      - charts/withdrawal-processor/**
+      - charts/proof-coordinator/**
+      - examples/values/**
+      - partner-kit/attestation-signer/**
+      - .github/tests/test_partner_transport.py
+      - .github/tests/test_beta6_compatibility.py
+      - .github/workflows/test-beta6-configuration.yaml
+  push:
+    paths:
+      - charts/tso-service/**
+      - charts/withdrawal-processor/**
+      - charts/proof-coordinator/**
+      - examples/values/**
+      - partner-kit/attestation-signer/**
+      - .github/tests/test_partner_transport.py
+      - .github/tests/test_beta6_compatibility.py
+      - .github/workflows/test-beta6-configuration.yaml
+permissions:
+  contents: read
+jobs:
+  chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      - run: pip install PyYAML==6.0.2
+      - run: helm dependency build charts/tso-service
+      - run: helm dependency build charts/withdrawal-processor
+      - run: helm dependency build charts/proof-coordinator
+      - run: python3 -m unittest discover -s .github/tests -p 'test_beta6_compatibility.py' -v
+      - run: python3 -m unittest discover -s .github/tests -p 'test_partner_transport.py' -v

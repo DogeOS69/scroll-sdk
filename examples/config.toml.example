@@ -110,7 +110,8 @@ BLOCKSCOUT_HOST = "blockscout.scrollsdk"
 L1_DEVNET_HOST = "l1-devnet.scrollsdk"
 GRAFANA_HOST = "grafana.scrollsdk"
 
-# Public TSO endpoint used by signer callbacks; setup domains configures this host.
+# Public TSO endpoint for signed signer polling and callbacks. This is the TSO
+# host, not a partner signer endpoint; setup domains configures it.
 TSO_HOST = "tso.scrollsdk"
 
 # Public prover API; prep-charts enables this ingress when proof mode is active.

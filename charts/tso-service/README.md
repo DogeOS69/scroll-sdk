@@ -19,10 +19,33 @@ Kubernetes: `>=1.22.0-0`
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | external-secrets-lib | 0.0.4 |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | common | 1.5.1 |
 
+## Public edge
+
+The Ingress routes only `/health` and the transport-signed `/signer/*` routes;
+every other TSO route stays in-cluster. With `networkPolicy.enabled`,
+`allowFrom.edge` admits the Ingress source (the ALB subnets for
+`ingressClassName: alb` with target-type ip, or the ingress-nginx pods) to the
+whole API port: a NetworkPolicy works at L4, so the path restriction is
+enforced only by the Ingress/ALB rules, not by the policy.
+
+With `ingressClassName: alb` the TSO gets its own ALB (no
+`alb.ingress.kubernetes.io/group.name`), separate from the proof coordinator's.
+Separation is for independent configuration and change scope, per-ALB
+security-group source rules (`alb.ingress.kubernetes.io/inbound-cidrs`,
+optional and unset by default) and per-ALB idle timeouts. It is not for rate
+limiting: a WAF rule can be scoped by host. The TSO's security is the signed
+signer requests, not a source allowlist, since operators may have no static IPs.
+
+If a WAF web ACL is attached (`alb.ingress.kubernetes.io/wafv2-acl-arn`), use a
+per-IP rate-based rule and set body oversize handling to **continue**: WAF
+inspects only the first 8 KiB of a body, and signature callbacks are megabytes,
+so a match or block action on oversize bodies would reject legitimate signers.
+
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| networkPolicy.allowFrom.edge | list | `[]` | Public Ingress sources: ALB subnets (ipBlock) or ingress-nginx pods |
 | networkPolicy.allowFrom.monitoring | list | `[]` | Peers allowed to scrape /metrics (shared port) |
 | networkPolicy.allowFrom.operators | list | `[]` | Optional operator peers |
 | networkPolicy.allowFrom.signers | list | `[]` | Signer pods posting callbacks (required when enabled) |
@@ -44,8 +67,10 @@ Kubernetes: `>=1.22.0-0`
 | ingress.main.annotations | object | `{}` |  |
 | ingress.main.enabled | bool | `true` |  |
 | ingress.main.hosts[0].host | string | `"tso.scrollsdk"` |  |
-| ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
-| ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
+| ingress.main.hosts[0].paths[0].path | string | `"/health"` |  |
+| ingress.main.hosts[0].paths[0].pathType | string | `"Exact"` |  |
+| ingress.main.hosts[0].paths[1].path | string | `"/signer"` | Transport-signed signer routes (poll, submit, reject) |
+| ingress.main.hosts[0].paths[1].pathType | string | `"Prefix"` |  |
 | ingress.main.ingressClassName | string | `"nginx"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |

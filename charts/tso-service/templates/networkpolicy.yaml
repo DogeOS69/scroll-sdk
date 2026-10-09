@@ -3,7 +3,8 @@ Ingress allow-list for the TSO API port. The TSO routes (/propose,
 /register-signer, /register-script-pubkey, /reject-signatures,
 /submit-*-signatures) carry no caller authentication by design; access control
 is this policy. /health, /status and /metrics share the same port, so any peer
-allowed here can reach every route. Selectors come from values only.
+allowed here can reach every route. Edge peers admit the ingress proxy;
+only the Ingress paths limit public callers to /health and signed /signer/*.
 */ -}}
 {{- if .Values.networkPolicy.enabled }}
 {{- $from := .Values.networkPolicy.allowFrom }}
@@ -16,6 +17,7 @@ allowed here can reach every route. Selectors come from values only.
 {{- $peers := concat
       (required "networkPolicy.allowFrom.withdrawalProcessor must list the withdrawal-processor pods" $from.withdrawalProcessor)
       (required "networkPolicy.allowFrom.signers must list the signer pods (signature callbacks)" $from.signers)
+      ($from.edge | default list)
       ($from.operators | default list)
       ($from.monitoring | default list) }}
 ---

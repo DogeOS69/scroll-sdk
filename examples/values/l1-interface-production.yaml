@@ -8,7 +8,7 @@ global:
 image:
   repository: dogeos69/l1-interface
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 command:
   - /usr/local/bin/l1_interface

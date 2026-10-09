@@ -17,7 +17,7 @@ proofCoordinator:
 image:
   repository: dogeos69/proof-coordinator
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 # Application process and arguments are deployment policy. Keep them in the
 # production values rather than introducing a chart revision for this rollout.
@@ -173,7 +173,35 @@ serviceMonitor:
 ingress:
   main:
     # Public Worker access is opt-in; mock generation needs no external Worker.
+    # When prover workers run outside the cluster, prep-charts enables this
+    # and fills the host, keeping the class and annotations below. Mainnet
+    # gives the coordinator its own ALB (no group.name), separate from the
+    # TSO's, for independent config, security-group source rules and idle
+    # timeout; bearer-token auth still applies.
+    # For ingress-nginx, set ingressClassName: nginx and drop the alb.*
+    # annotations.
     enabled: false
+    ingressClassName: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      alb.ingress.kubernetes.io/certificate-arn: "<TODO>"
+      alb.ingress.kubernetes.io/wafv2-acl-arn: "<TODO>"
+      alb.ingress.kubernetes.io/healthcheck-path: /healthz
+      # The longest-held request is a Worker's result/fail POST: the
+      # coordinator answers only after its WP prove call, bounded at 60 s
+      # (WP_PROVE_REQUEST_TIMEOUT_MS, dogeos-core proof_coordinator
+      # src/prover_api/wp_prove_client.rs), and the Worker allows it 90 s
+      # (PROVER_WORKER_COMPLETION_HTTP_TIMEOUT_MS, dogeos_proof_worker_contract
+      # src/reliability.rs). Claims are not long-polls. The ALB default (60 s)
+      # would cut that request, so idle timeout is above the Worker's 90 s.
+      alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=120
+      # Optional source allowlist for this ALB's security group (comma-separated
+      # CIDRs, e.g. the external Workers' egress); unset = open. Bearer-token
+      # auth is the access control.
+      # alb.ingress.kubernetes.io/inbound-cidrs: ""
 
 configMaps:
   config:

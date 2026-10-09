@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.5c
+  tag: v0.3.0-beta.6
 
 # Empty command/args explicitly retain the image ENTRYPOINT and CMD.
 command: []
@@ -135,6 +135,9 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_STORE__SUBMITTER_DB_PATH: "/app/data/submitter.sqlite"
       DOGEOS_ETH_DA_SUBMITTER_STORE__LIFECYCLE_DB_PATH: "/app/data/submitter.sqlite"
 
+      # [s3] is the DA archive writer only (doge-config ethereumDa.blobArchive.s3):
+      # its own versioned bucket, PutObject for this role, public read behind a
+      # kill switch (scrollsdk setup artifact-access --store da).
       DOGEOS_ETH_DA_SUBMITTER_S3__ENABLED: "false"
       # BUCKET and REGION default to empty and are required when S3 is enabled.
       DOGEOS_ETH_DA_SUBMITTER_S3__BUCKET: ""
@@ -143,7 +146,7 @@ configMaps:
       # Optional S3-compatible endpoint. If specifying AWS explicitly, use the
       # regional endpoint even in us-east-1, e.g. https://s3.us-east-1.amazonaws.com.
       # The global https://s3.amazonaws.com prevents the anonymous-PUT safety
-      # check from deriving its probe URL. prep-charts projects the topology store.
+      # check from deriving its probe URL. prep-charts projects the DA archive.
       # DOGEOS_ETH_DA_SUBMITTER_S3__ENDPOINT_URL: "https://s3.<TODO_REGION>.amazonaws.com"
       DOGEOS_ETH_DA_SUBMITTER_S3__FORCE_PATH_STYLE: "false"
       DOGEOS_ETH_DA_SUBMITTER_S3__POLL_INTERVAL_MS: "5000"
@@ -152,13 +155,14 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_S3__MAX_RETRIES: "12"
       DOGEOS_ETH_DA_SUBMITTER_S3__UPLOADING_TIMEOUT_MS: "600000"
 
-      # Active eager topology: prep-charts enables sidecars and S3 together from
-      # the topology's store; do not introduce a second bucket/prefix authority.
-      # Optional proof chunk-segmentation sidecar publisher. It is disabled by
-      # default. When enabled, select exactly one target: LOCAL_ROOT or S3=true.
+      # Optional proof chunk-segmentation sidecar publisher, disabled by
+      # default. Its target is the proof artifact store (doge-config
+      # proofArtifacts.s3), never the DA archive: for an active topology
+      # prep-charts projects SEGMENTATION_SIDECAR__S3__{BUCKET,REGION,
+      # KEY_PREFIX,FORCE_PATH_STYLE[,ENDPOINT_URL]} from the compiled topology.
+      # Select exactly one target: LOCAL_ROOT or the S3__* fields.
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__ENABLED: "false"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__LOCAL_ROOT: ""
-      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__S3: "false"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__POLL_INTERVAL_MS: "30000"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__MAX_PER_TICK: "64"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__MAX_READ_BODY_BYTES: "4194304"

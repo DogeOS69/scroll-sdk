@@ -8,12 +8,42 @@ metadata:
 data:
   signers.toml: |
 {{- range .Values.tsoSigners }}
+{{- if hasKey . "role" }}
+{{- fail "tsoSigners.role is retired in beta.6; use roles: [Correctness] or roles: [Attestation]" }}
+{{- end }}
+{{- if not (kindIs "slice" .roles) }}
+{{- fail "tsoSigners.roles must be a list containing exactly one role" }}
+{{- end }}
+{{- if ne (len .roles) 1 }}
+{{- fail "tsoSigners.roles must contain exactly one role" }}
+{{- end }}
+{{- if not (has (first .roles) (list "Correctness" "Attestation")) }}
+{{- fail "tsoSigners.roles must contain Correctness or Attestation" }}
+{{- end }}
+{{- $delivery := default "push" .delivery }}
+{{- if not (has $delivery (list "push" "pull")) }}
+{{- fail "tsoSigners.delivery must be push or pull" }}
+{{- end }}
+{{- if and (eq $delivery "pull") (or .uri (empty .transportPubkey) (empty .publicKeyOverride)) }}
+{{- fail "a pull tsoSigner needs publicKeyOverride and transportPubkey, and no uri" }}
+{{- end }}
+{{- if and (eq $delivery "push") (empty .uri) }}
+{{- fail "a push tsoSigner needs uri" }}
+{{- end }}
     [[tso_signers]]
     network = "{{ .network }}"
-    uri = "{{ .uri }}"
-    role = "{{ .role }}"
+{{- with .uri }}
+    uri = "{{ . }}"
+{{- end }}
+    roles = [{{- range $i, $role := .roles }}{{ if $i }}, {{ end }}"{{ $role }}"{{- end }}]
+{{- with .delivery }}
+    delivery = "{{ . }}"
+{{- end }}
 {{- with .publicKeyOverride }}
     public_key_override = "{{ . }}"
+{{- end }}
+{{- with .transportPubkey }}
+    transport_pubkey = "{{ . }}"
 {{- end }}
 {{- with .signatureMode }}
     signature_mode = "{{ . }}"

@@ -13,17 +13,46 @@ env:
   - name: RUST_LOG
     value: "debug"
 
+# Public edge: only /health and /signer/* (transport-signed poll, submit and
+# reject). Everything else stays in-cluster.
+#
+# Ingress controller is a values choice:
+# - alb (mainnet): AWS Load Balancer Controller. TLS from ACM, ALB health
+#   check on /health, optional WAF web ACL (see README). The TSO has its own
+#   ALB (no group.name), separate from the proof coordinator's, so each keeps
+#   independent config, security-group source rules and idle timeout. With
+#   target-type ip, add the ALB subnets to networkPolicy.allowFrom.edge.
+# - nginx: replace ingressClassName and annotations with
+#     ingressClassName: nginx
+#     annotations:
+#       cert-manager.io/cluster-issuer: letsencrypt-prod
+#       nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+#   and set tls[0].secretName (e.g. tso-tls).
 ingress:
   main:
-    ingressClassName: nginx
+    ingressClassName: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      alb.ingress.kubernetes.io/certificate-arn: "<ACM_CERTIFICATE_ARN>"
+      alb.ingress.kubernetes.io/wafv2-acl-arn: "<WAFV2_WEB_ACL_ARN>"
+      alb.ingress.kubernetes.io/healthcheck-path: /health
+      # Optional source allowlist for this ALB's security group (comma-separated
+      # CIDRs); unset = open. The TSO's security is the signed requests, not the
+      # allowlist: operators may have no static IPs.
+      # alb.ingress.kubernetes.io/inbound-cidrs: ""
     hosts:
       - host: tso.scrollsdk
         paths:
-          - path: /
+          - path: /health
+            pathType: Exact
+          - path: /signer
             pathType: Prefix
     tls:
-      - secretName: tso-tls
-        hosts:
+      - hosts:
+          - tso.scrollsdk
 
 resources:
   requests:
@@ -47,6 +76,7 @@ networkPolicy:
   port: 3000
   allowFrom:
     withdrawalProcessor: []   # e.g. [{podSelector: {matchLabels: {app.kubernetes.io/name: <wp>}}}]
+    edge: []                  # ALB subnet CIDRs or ingress proxy pods
     signers: []               # signer pods that post signature callbacks
     operators: []             # optional: operator tooling / ad-hoc port-forward source
     monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port
