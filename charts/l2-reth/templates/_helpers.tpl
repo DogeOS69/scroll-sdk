@@ -134,6 +134,11 @@ Validate l2-reth role constraints before generating common chart values.
           {{- fail (printf "reth.p2pExternal: annotation %s is not allowed; it changes the source restriction or can enable Proxy Protocol" $key) -}}
         {{- end -}}
       {{- end -}}
+      {{- range $prefix := list "ssl-" "backend-protocol" "alpn-policy" -}}
+        {{- if hasPrefix (printf "service.beta.kubernetes.io/aws-load-balancer-%s" $prefix) $key -}}
+          {{- fail (printf "reth.p2pExternal: annotation %s is not allowed; P2P requires a plain TCP listener and backend, without TLS or ALPN" $key) -}}
+        {{- end -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
   {{- end -}}

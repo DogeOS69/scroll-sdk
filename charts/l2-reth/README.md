@@ -176,7 +176,10 @@ is exposed and to whom; values only supply the deployment-specific inputs:
 - One port: TCP `reth.ports.p2p` (30303) to the same container port. No UDP:
   the chart always passes `--disable-discovery`, so the node opens no discovery
   socket, and peers are configured explicitly. No Proxy Protocol v2: reth's
-  RLPx listener does not parse it.
+  RLPx listener does not parse it. No TLS termination or TLS backend: RLPx is
+  not TLS. The chart refuses SSL, backend-protocol and ALPN annotations, including
+  inherited global annotations. A certificate annotation alone can otherwise
+  turn the NLB listener into TLS even though the Service port says TCP.
 - One pod: the selector is this release's labels plus
   `statefulset.kubernetes.io/pod-name: <fullname>-<ordinal>`, and `ordinal`
   must be below `controller.replicas`. A `bootnode` release runs at most one
@@ -216,6 +219,9 @@ The chart refuses to render `reth.p2pExternal` when:
   the source ranges), `security-group-prefix-lists` (adds allowed sources),
   `proxy-protocol`, or `target-group-attributes` (including the per-port
   `target-group-attributes.<port>` form, which can enable Proxy Protocol v2);
+- the effective annotations contain `aws-load-balancer-ssl-*`,
+  `aws-load-balancer-backend-protocol` or `aws-load-balancer-alpn-policy`,
+  which can change the P2P listener or backend transport;
 - `service` has keys other than `main`, or `service.main` has keys other than
   `fullname`, `type` and `annotations`. With external P2P enabled the chart
   renders exactly its generated Services (main, the internal extras and
@@ -243,10 +249,29 @@ chart version refuses. Move them to `reth.p2pExternal` with
 `allowOpenPeering: true`, and keep their other settings, such as cross-zone
 load balancing and the load balancer name, in `annotations`. The Service keeps
 its name, `<fullname>-p2p`. If the old Service's type, target-type or scheme
-annotations differ from the fixed values, the controller may replace the load
-balancer, so check the address that partners use after the upgrade. Their NLBs
+annotations differ from the fixed values, plan a Service/NLB replacement rather
+than changing its controller-selection annotations in place. Check the address
+that partners use after the upgrade. Their NLBs
 also open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
 disabled; the move drops it. Mainnet uses `sourceRanges` and TCP 30303 only.
+
+Before adding source restrictions to an existing NLB, inspect the actual AWS
+load balancer's attached security groups. Upgrading the controller to v2.6.0
+or later does not retrofit security groups onto an NLB created without them:
+[AWS does not allow adding a security group to such an NLB later](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-security-groups.html).
+Do not treat a successful Helm upgrade or the presence of
+`spec.loadBalancerSourceRanges` as evidence that an old NLB enforces the CIDRs.
+
+If the existing NLB has no security groups, arrange a controlled Service/NLB
+replacement so the new NLB is created with a controller-managed frontend
+security group. Preserve the node key and data PVC, coordinate address/EIP
+ownership and the peering interruption, and confirm the new group's inbound
+rules match the partner CIDRs. Changing the controller-selection annotation on
+an existing Service is unsupported; follow the
+[controller's Service migration restrictions](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#traffic-routing).
+The chart does not delete an existing NLB or perform that migration. Complete
+both approved-source and unapproved-source tests below before relying on the
+source restriction.
 
 Node identity must survive rescheduling, because the partner pins the enode
 (`enode://<pubkey>@<EIP>:30303`):
@@ -274,8 +299,9 @@ rollup-node opens no other peer-facing listener.
 1. The nodes are named (bootnode releases), each with a persistent node key
    (`secret` mode) and its enode recorded.
 2. Infra confirms the cluster runs AWS Load Balancer Controller v2.6.0 or
-   later with NLB security groups enabled (the default), which is what enforces
-   `reth.p2pExternal.sourceRanges`.
+   later with NLB security groups enabled, and that the actual NLB has its
+   managed frontend security group attached. Replace older NLBs created without
+   security groups before relying on `reth.p2pExternal.sourceRanges`.
 3. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
    of that node's EBS volume (or cross-zone is enabled).
 4. The source policy (partner CIDRs) is approved and set in

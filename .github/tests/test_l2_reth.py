@@ -210,6 +210,20 @@ class L2RethP2PTests(unittest.TestCase):
                 with self.subTest(key=key, values=values):
                     self.assert_fails("is not allowed", EXTERNAL_P2P, values=values)
 
+    def test_refuses_tls_annotations_on_the_rlpx_listener(self):
+        for key, value in [
+            ("ssl-cert", "arn:aws:acm:us-east-1:123456789012:certificate/test-only"),
+            ("ssl-ports", "30303"),
+            ("ssl-negotiation-policy", "ELBSecurityPolicy-TLS13-1-2-2021-06"),
+            ("backend-protocol", "ssl"),
+            ("alpn-policy", "HTTP2Preferred"),
+        ]:
+            annotation = {AWS_ANNOTATION + key: value}
+            for values in [p2p_external(annotations=annotation), {"global": {"annotations": annotation}}]:
+                with self.subTest(key=key, values=values):
+                    self.assert_fails("P2P requires a plain TCP listener and backend",
+                                      EXTERNAL_P2P, values=values)
+
     # Review bypasses through reth.service.extra (F1, F3); NodePort included.
     def test_extra_services_cannot_publish_ports(self):
         for service_type in ["LoadBalancer", "NodePort"]:
