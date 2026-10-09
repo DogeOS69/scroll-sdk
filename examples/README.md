@@ -42,6 +42,22 @@ environment differences explicit (for example, DA MAX_OPEN_L2_TIME is 3000s
 in the example while this devnet uses 300s). Validate Helm rendering and the
 native config, record manual steps in the CLI handbook, and commit each fix.
 
+## Contracts images
+
+Use the matching `dogeos69/scroll-stack-contracts` rc.4 images for the three
+contracts operations:
+
+| Operation | Image tag |
+| --- | --- |
+| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.4` |
+| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.4` |
+| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.4` |
+
+The deployment example pins `image.tag`. The CLI selects the generation and
+verification images separately; use a CLI release configured for rc.4 or supply
+the matching explicit `--image-tag` to `setup gen-l2-artifacts` and
+`setup verify-contracts`.
+
 ## Scripts
 
 1. `l2-generate-txs.sh`: Generates transactions on the L2 network to produce more blocks.

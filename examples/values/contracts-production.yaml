@@ -1,6 +1,6 @@
 image:
   repository: dogeos69/scroll-stack-contracts
-  tag: deploy-b9605373dc10fdfcdd34c231148cfe2dedab9849
+  tag: deploy-dogeos-v0.3.0-rc.4
 
 configMaps:
   contracts-deployment-env:
