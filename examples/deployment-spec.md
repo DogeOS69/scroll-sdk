@@ -11,7 +11,8 @@ boundary; see the completion limits before using this starter.
 
 This example prepares a **testnet deployment** with the beta.6 production Bridge
 outpoint flow, two Reth sequencers, two bootnodes, AWS KMS signing identities for
-eth-da-submitter, fee-oracle and both sequencers, and a SQLite dstack controller
+eth-da-submitter, fee-oracle, both L2 sequencers and the Dogecoin Bridge sequencer,
+and a SQLite dstack controller
 with imported Vast.ai credentials. P2P nodekeys remain local. Both the
 attestation and recovery cohorts use 2-of-3; Bridge funding requires 6 confirmations.
 It selects `active / real / enforce` proofs. The approved release producer
@@ -38,7 +39,9 @@ withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoi
 `contracts.DEPOSIT_FEE = "1000000000000000000"` in L2 wei (18 decimals); withdrawal
 and minimum withdrawal values already use L2 wei.
 
-Core service images are beta.6, the CLI genesis default is contracts rc.4, and
+Core service images are beta.6, with `v0.3.0-beta.6-kms` for withdrawal-processor.
+That image supports KMS sequencing; its fee wallet still uses a local key.
+The CLI genesis default is contracts rc.4, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Reth has its own release lineage; its tag must be selected explicitly. Plan
 resolves the committed HEAD of `--sdk-dir` and freezes its full commit in
@@ -47,8 +50,11 @@ users may override it with `templates.sdkRevision: <full-commit>`; normal specs
 omit `templates`. Apply keeps the frozen revision even if the checkout advances.
 
 Use a CLI build containing `setup plan` and `setup apply`. Check `scrollsdk setup
-plan --help` before starting. AWS, Kubernetes, PostgreSQL and the external RPCs
-referenced here already exist. Apply creates the four declared AWS KMS signing identities
+plan --help` before starting. AWS, Kubernetes and the external RPCs
+referenced here already exist. PostgreSQL is needed when deploying Blockscout,
+or when explicitly selecting PostgreSQL for dstack. The SQLite example does not
+select Blockscout database initialization; PostgreSQL can be deferred while
+preparing the chain. Apply creates the five declared AWS KMS signing identities
 and their IAM/IRSA resources using the configured region, EKS cluster and
 namespace. It also creates/reconciles the declared proof bucket, its workload
 roles and token Secret, and publishes the real proof program bundle. Secret
@@ -65,10 +71,7 @@ future `deployment/` directory absent or empty for `plan`:
 private-instance/
   deployment-spec.yaml
   deployment.env
-  inputs/
-    partner-a/descriptor.json
-    partner-b/descriptor.json
-    partner-c/descriptor.json
+  inputs/                     # other external inputs, when selected
   deployment/                 # created by setup plan
 ```
 
@@ -87,17 +90,30 @@ placeholders, not working identities or credentials.
 | Input | Required action |
 | --- | --- |
 | Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Sepolia execution/beacon URLs use the CLI defaults; override them if needed. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
-| Environment file | Fill the six base spec variables, both `DOGECOIN_*_KEY` wallet variables and `VASTAI_API_KEY`. The KMS-signer/SQLite example does not use `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`; remove those optional entries. |
+| Environment file | Fill the six base spec variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner and deployment salt | Select the owner address and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
-| Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Supply independently managed sequencer/fee-wallet public keys and three distinct recovery public keys. Wallet keys in the env file must match their declared public keys. Do not derive recovery/TEE keys from a helper seed. |
+| Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
 | Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
-| Partner descriptor | Obtain three public beta.6 descriptors and place them at `inputs/partner-a/descriptor.json`, `inputs/partner-b/descriptor.json` and `inputs/partner-c/descriptor.json`. Their actual signer IDs must match `bridge.initialAttestationKeyset.signerIds`; update the sample IDs if necessary. Descriptors include signing/transport public keys; no publicly reachable signer endpoint is required. |
+| Attestation identities | Fill `attestationSigners` from approved Governance records: one `name`, `attestationPubkey` and `transportPubkey` per signer. Selected names must match `bridge.initialAttestationKeyset.signerIds`. No descriptor files or publicly reachable signer endpoints are required. |
 | Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
 | Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct bucket names; the blob bucket already exists and apply prepares the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
+
+PostgreSQL settings can remain unconfigured while Blockscout is deferred and
+dstack uses SQLite. Do not select `preparation.databases: [blockscout]` until its
+database is ready. If the spec still references `$ENV:DB_ADMIN_PASSWORD`, keep
+that variable defined in the env file: generic environment resolution still
+requires it, even though no database connection is made at this stage. This does
+not make the generated Blockscout configuration ready to deploy.
+
+`frontend.externalUrls.l1Rpc` and `l1Explorer` are projected into frontend
+configuration; they are not unused fields. They can remain illustrative while
+testing chain preparation, but must be reviewed before enabling the frontend.
+`l1Rpc` also feeds contract verification when that optional configuration is
+selected. Neither field replaces `dogecoin.externalRpc.url` for Bridge RPC calls.
 
 ### Configure proof storage once
 
@@ -143,6 +159,101 @@ explicit public key remains an advanced input; if combined with an identity
 lookup it must match the queried key. Explicit full `roles` and `identity` are
 mutually exclusive. Creating the hosted key and authorizing runtime signing
 sessions remain CubeSigner owner operations.
+
+## Prepare the Bridge keys
+
+The production spec selects a KMS key for the Dogecoin Bridge sequencer and
+imports an independently managed local fee-wallet key. These are distinct from
+the L2 sequencers' AWS KMS keys and are not derived from a helper seed.
+Decide who controls each key before running plan:
+
+| Identity | How to obtain the public input | Private material |
+| --- | --- | --- |
+| Dogecoin Bridge sequencer | Set `preparation.bridge.production.sequencerKms: {action: create}`; apply reads and pins its public key. | The private key stays in AWS KMS. |
+| Dogecoin fee wallet | Apply derives and pins its public key and funding address; no spec fields are needed. | Put its compressed WIF in `DOGECOIN_FEE_WALLET_KEY` in the private environment file. |
+| Three recovery signers | Each custodian creates or selects their own key and supplies only its compressed public key. Fill the three `recoveryPublicKeys` entries in the agreed order. | Each custodian retains their private key and backup; do not collect these into the deployment env file. |
+| CubeSigner TEE | Provide the role/key reference described above; plan resolves the public key. | The hosted private key stays in CubeSigner. |
+| Three attestation signers | Copy each approved Governance record's paired public keys into `attestationSigners`. | Each partner retains their signer credentials. These are separate from the recovery keys. |
+
+With `sequencerKms: {action: create}`, apply creates or reuses
+`alias/dogeos/<metadata.name>/<eksClusterName>/bridge-sequencer`. It adds signing
+permissions to the existing proof AWS withdrawal role, preserving proof access,
+and derives the sequencer funding address from the pinned KMS public key.
+For an existing key use `sequencerKms: {action: reuse, keyId: alias/EXISTING_KEY}`;
+its existing workload role must already permit `kms:GetPublicKey` and `kms:Sign`.
+The role defaults to the proof AWS withdrawal role; `roleArn` selects another
+existing role only when it does not conflict with proof access. Region defaults
+to `infrastructure.aws.region`. No sequencer WIF or public-key transcription is
+needed. The local alternative is `sequencerPublicKey` plus `sequencerKeyEnv`;
+do not combine those fields with `sequencerKms`.
+
+Recovery custodians do **not** need a Dogecoin node. Give each custodian the
+[offline recovery-key guide](../partner-kit/recovery-key/README.md). With a CLI
+build containing `helper recovery-key`, each runs this on their own machine:
+
+```bash
+scrollsdk helper recovery-key --network testnet --output "$HOME/.dogeos-recovery-key"
+```
+
+Each custodian retains `recovery-key.private.json` and sends only
+`recovery-key.public.json`. Copy the `publicKey` from each of the three public
+files into `preparation.bridge.production.recoveryPublicKeys` in the agreed
+order. Check that the network matches and all three public keys are distinct.
+The command uses local cryptographic randomness and needs no RPC, node, AWS,
+CubeSigner account or deployment spec. A repeated create refuses to overwrite
+the directory; `--action inspect` verifies the saved key or restored backup.
+This software-key helper is for rehearsal; it does not implement hardware custody
+or the emergency recovery transaction signing workflow. Production custody must
+also demonstrate signing the actual Bridge recovery script and preserve its
+public configuration, key order and timelock.
+
+For the local fee wallet (and the optional local sequencer backend), one option is Dogecoin Core with
+wallet support enabled, plus `dogecoin-cli` and `jq`. Use a wallet you control,
+with local RPC authentication already configured. A public RPC provider cannot
+create or export your private wallet keys. If you have no wallet yet, initialize
+and back up an operator-owned Dogecoin Core wallet first; the example below
+assumes it is running. Use `-regtest` for regtest, or omit `-testnet` for mainnet.
+
+For a **new** deployment, obtain a fee-wallet address:
+
+```bash
+bridge_fee_address=$(dogecoin-cli -testnet getnewaddress)
+```
+
+There is no fee-wallet public key to transcribe into the spec. Apply derives it
+and the funding address from the WIF below. Record the address in your private deployment records.
+When resuming an existing deployment, use its recorded addresses instead of
+calling `getnewaddress` again.
+
+Export the fee-wallet key to a private file. If the wallet is
+encrypted, unlock it using your wallet's normal secure procedure first. The
+commands below create a fresh private directory under your home directory and
+redirect WIF output into files, without printing private keys:
+
+```bash
+umask 077
+bridge_key_dir=$(mktemp -d "$HOME/.dogeos-bridge-keys.XXXXXX")
+dogecoin-cli -testnet dumpprivkey "$bridge_fee_address" > "$bridge_key_dir/fee-wallet.wif"
+```
+
+Check that the export succeeded. Using a private editor, put its contents
+into `DOGECOIN_FEE_WALLET_KEY` in your existing `deployment.env`, preserving
+the other entries. Keep that file mode `0600` and outside version control.
+Do not paste the WIF into the spec, shell commands, chat or logs. Retain the
+wallet backup; apply validates the WIF and selected network, then pins only its
+public key and address in `.data/bridge-fee-wallet.json`. Resume refuses a changed
+fee-wallet identity. Creating this key sends no transaction;
+wait for apply's funding instructions before making payments.
+
+Custodians who already use Dogecoin Core can alternatively obtain their recovery
+public key with `getnewaddress` / `validateaddress`. They do not export their
+private key to the operator. Do not reuse the sequencer, fee-wallet or
+attestation signing keys for recovery.
+
+The wallet commands above follow Dogecoin Core's
+[getnewaddress implementation](https://github.com/dogecoin/dogecoin/blob/v1.14.9/src/wallet/rpcwallet.cpp),
+[validateaddress implementation](https://github.com/dogecoin/dogecoin/blob/v1.14.9/src/rpc/misc.cpp),
+and [dumpprivkey implementation](https://github.com/dogecoin/dogecoin/blob/v1.14.9/src/wallet/rpcdump.cpp).
 
 ## Plan, apply and fund
 

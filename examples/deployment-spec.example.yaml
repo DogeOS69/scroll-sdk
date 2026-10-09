@@ -108,6 +108,20 @@ proofArtifacts:
     bucket: replace-with-unique-dogeos-proof-bucket
     keyPrefix: dogeos-testnet/proofs
 
+# Public identities approved in Governance. Copy both keys from the same signer
+# record; never include private keys. Names are stable IDs, not team display names.
+# The network is inherited from dogecoin.network; no descriptor files are needed.
+attestationSigners:
+  - name: partner-a
+    attestationPubkey: REPLACE_WITH_PARTNER_A_ATTESTATION_PUBLIC_KEY
+    transportPubkey: REPLACE_WITH_PARTNER_A_TRANSPORT_PUBLIC_KEY
+  - name: partner-b
+    attestationPubkey: REPLACE_WITH_PARTNER_B_ATTESTATION_PUBLIC_KEY
+    transportPubkey: REPLACE_WITH_PARTNER_B_TRANSPORT_PUBLIC_KEY
+  - name: partner-c
+    attestationPubkey: REPLACE_WITH_PARTNER_C_ATTESTATION_PUBLIC_KEY
+    transportPubkey: REPLACE_WITH_PARTNER_C_TRANSPORT_PUBLIC_KEY
+
 bridge:
   # Independent 2-of-3 cohorts for attestation and recovery.
   thresholds: {attestation: 2, recovery: 2}
@@ -184,7 +198,7 @@ images:
     l2Rpc: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
     l2Sequencer: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
     l2Bootnode: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
-    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.6}
+    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.6-kms}
     l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.6}
     tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.6}
     proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.6}
@@ -235,19 +249,19 @@ dstackController:
 preparation:
   # Paths below are relative to the OUTPUT deployment directory, not this YAML.
   # Put external inputs in its sibling 'inputs' directory or use absolute paths.
-  attestationDescriptors:
-    - ../inputs/partner-a/descriptor.json
-    - ../inputs/partner-b/descriptor.json
-    - ../inputs/partner-c/descriptor.json
   bridge:
     mode: production
     image: dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262
     # Apply creates the funding input at the default path when payments are needed.
     production:
-      sequencerPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_SEQUENCER_PUBLIC_KEY
-      sequencerKeyEnv: DOGECOIN_SEQUENCER_KEY
-      feeWalletPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_FEE_WALLET_PUBLIC_KEY
-      feeWalletKeyEnv: DOGECOIN_FEE_WALLET_KEY
+      # Apply creates/reuses the derived KMS alias and pins its public key.
+      # This is separate from the L2 Reth sequencer KMS keys.
+      sequencerKms: {action: create}
+      # Existing key: sequencerKms: {action: reuse, keyId: alias/EXISTING_KEY}
+      # The workload role defaults to the proofAws withdrawal role.
+      # beta.6-kms supports KMS for the sequencer only; fee wallet remains local.
+      # Set DOGECOIN_FEE_WALLET_KEY in private deployment.env only.
+      # Apply derives and pins the fee-wallet public key and funding address.
       recoveryPublicKeys:
         - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_1
         - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_2

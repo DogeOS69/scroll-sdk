@@ -17,7 +17,7 @@ global:
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.6
+  tag: v0.3.0-beta.6-kms
 
 # The image entrypoint is retained; args select the checked-in native config.
 command: []
@@ -135,6 +135,8 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+      # Local sequencer backend only. prep-charts removes this entry when the
+      # Bridge output selects sequencer_signer_kms; the fee wallet stays local.
       - remoteRef:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY

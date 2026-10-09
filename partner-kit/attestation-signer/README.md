@@ -4,17 +4,35 @@ This kit is for a partner that operates one Rust `attestation-signer` outside
 the bridge operator's cluster. The signer dials out to the bridge operator's
 TSO over HTTPS, so no inbound signer API, static IP, or TLS certificate is
 required for the TSO connection. Monitoring has its own access rules below.
-The bridge operator receives only the signer's descriptor: its
-compressed attestation public key and its transport public key. It never
+The bridge operator receives only the signer's public identity: its stable
+name, compressed attestation public key and transport public key. For the spec
+workflow these are copied from the approved Governance record into
+`attestationSigners`; no descriptor file is required. It never
 receives the WIF, KMS credentials, the transport key, private RPC credentials,
 or the partner's trust policy.
+
+**To create two local keys and register their public keys in Governance**, use
+the [Docker-only key initialization guide](docs/key-initialization.md):
+
+```bash
+bash scripts/init-keys.sh --name signer-a --network testnet \
+  --out "$HOME/dogeos-signer-a/docker-compose"
+```
+
+This standalone entry point needs only Docker and Bash on the operator's host.
+It writes both private keys into the files used by the signer, displays both
+public keys, and reuses a complete existing identity. No scroll-sdk-cli, host
+OpenSSL/Python/Node.js, RPC connection, or bridge configuration bundle is needed
+for this step. The CLI-assisted Phase A/B workflow below remains available for
+existing deployments and KMS onboarding; do not run its key initializer over
+the Docker-only output.
 
 The reference Compose image defaults to `v0.3.0-beta.6`. Update the selected
 image and binary approval pins together. Preserve both signer keys and the
 partner-owned trust policy; regenerate the proof-policy bundle from the
 selected beta.6 proof artifacts. Follow the
 [beta.6 configuration checklist](../../examples/core-beta6-configuration.md).
-Use a CLI build containing [scroll-sdk-cli #77](https://github.com/DogeOS69/scroll-sdk-cli/pull/77),
+For the CLI-assisted workflow below, use a CLI build containing [scroll-sdk-cli #77](https://github.com/DogeOS69/scroll-sdk-cli/pull/77),
 including the transport-key installation fix `6e5668a` or its successor. Check
 `scrollsdk signer init --help` for `--identity` and
 `scrollsdk signer network-check --help` before onboarding. A previously installed
