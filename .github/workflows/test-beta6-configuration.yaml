@@ -6,6 +6,8 @@ on:
       - charts/withdrawal-processor/**
       - charts/proof-coordinator/**
       - examples/values/**
+      - partner-kit/attestation-signer/**
+      - .github/tests/test_partner_transport.py
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
   push:
@@ -14,6 +16,8 @@ on:
       - charts/withdrawal-processor/**
       - charts/proof-coordinator/**
       - examples/values/**
+      - partner-kit/attestation-signer/**
+      - .github/tests/test_partner_transport.py
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
 permissions:
@@ -29,8 +33,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: pip install PyYAML==6.0.2
       - run: helm dependency build charts/tso-service
       - run: helm dependency build charts/withdrawal-processor
       - run: helm dependency build charts/proof-coordinator
       - run: python3 -m unittest discover -s .github/tests -p 'test_beta6_compatibility.py' -v
+      - run: python3 -m unittest discover -s .github/tests -p 'test_partner_transport.py' -v

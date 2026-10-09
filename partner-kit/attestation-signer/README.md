@@ -142,7 +142,10 @@ the bridge operator. The block below is the same Phase A that scrollsdk
 generates in `PARTNER-COMMANDS.md`. It is one `set -eu` subshell, so it stops
 at the first failing step: a corrupt transport key or a failed `openssl` never
 reaches the identity step, and the runtime key is left as it was. It is safe
-to rerun after an interruption.
+to rerun after an interruption while retaining the original key files. If a
+descriptor or runtime key already exists, a missing source key stops the block;
+restore the registered key instead of generating a replacement. An existing
+descriptor must match the transport key before it is installed.
 
 1. `signer init` creates the signing key and env once (pull delivery and the
    transport key file are selected there).
@@ -172,8 +175,13 @@ export SIGNER_ID=<agreed-signer-id> DOGE_NETWORK=testnet
   (
     set -eu
     key="signer-$SIGNER_ID/transport.key"
-    # Create only when absent: write a temp file, then link it in exclusively.
+    descriptor="signer-$SIGNER_ID/descriptor.json"
+    # Only first-time initialization may create a key; never recover by rotating.
     if [ ! -e "$key" ]; then
+      if [ -e "$descriptor" ] || [ -e docker-compose/transport.key ]; then
+        echo "Transport key missing; restore the registered key before continuing" >&2
+        exit 1
+      fi
       umask 077
       openssl rand -hex 32 > "$key.new"
       ln "$key.new" "$key"
@@ -185,6 +193,26 @@ export SIGNER_ID=<agreed-signer-id> DOGE_NETWORK=testnet
       echo "$key must be exactly one line of 64 hex characters; restore it (rotation is a separate step)" >&2
       exit 1
     fi
+    # Node is already required by scrollsdk. Derive the compressed secp256k1
+    # public key locally; never print the private key or pass it in argv.
+    node --input-type=commonjs -e '
+      const fs = require("node:fs");
+      const {createECDH} = require("node:crypto");
+      try {
+        const key = createECDH("secp256k1");
+        key.setPrivateKey(Buffer.from(fs.readFileSync(process.argv[1], "utf8").trim(), "hex"));
+        if (fs.existsSync(process.argv[2])) {
+          const descriptor = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (typeof descriptor.transportPubkey !== "string" ||
+              descriptor.transportPubkey.toLowerCase() !== key.getPublicKey("hex", "compressed")) {
+            throw new Error();
+          }
+        }
+      } catch {
+        console.error("Transport key invalid or does not match descriptor; restore the registered files");
+        process.exit(1);
+      }
+    ' "$key" "$descriptor"
     # Install atomically: the runtime key is replaced only by a validated copy.
     cp "$key" docker-compose/transport.key.new
     chmod 600 docker-compose/transport.key.new
@@ -294,6 +322,14 @@ one `set -eu` subshell, so the signer is configured and started only if every
 step succeeds (a bad transport key never reaches `up -d`). It ends with the
 preflight from Step 4; `PREFLIGHT_FLAGS` selects the production check.
 
+Phase B requires both the existing `transport.key` and `descriptor.json` from
+Phase A. It never creates a key. Before replacing the runtime key, it derives
+the source key's compressed secp256k1 public key and compares it with the
+descriptor's `transportPubkey`. Missing, malformed, or mismatched inputs stop
+installation and leave the runtime key intact. Restore the registered files
+on failure; changing the transport key requires the coordinated rotation above.
+This local check uses Node.js, which is already required by `scrollsdk`.
+
 ```bash
 export SIGNER_ID=<agreed-signer-id>
 # Production bundles (enforce):
@@ -305,12 +341,11 @@ export SIGNER_ID=<agreed-signer-id>
   (
     set -eu
     key="signer-$SIGNER_ID/transport.key"
-    # Create only when absent: write a temp file, then link it in exclusively.
-    if [ ! -e "$key" ]; then
-      umask 077
-      openssl rand -hex 32 > "$key.new"
-      ln "$key.new" "$key"
-      rm -f "$key.new"
+    descriptor="signer-$SIGNER_ID/descriptor.json"
+    # Registration is complete: missing inputs must never generate a new key.
+    if [ ! -f "$key" ] || [ ! -f "$descriptor" ]; then
+      echo "Transport key or descriptor missing; restore the registered files before continuing" >&2
+      exit 1
     fi
     # The whole file must be exactly 64 lowercase hex characters and a newline.
     if [ "$(wc -c < "$key")" -ne 65 ] || [ "$(tail -c 1 "$key" | wc -l)" -ne 1 ] \
@@ -318,6 +353,26 @@ export SIGNER_ID=<agreed-signer-id>
       echo "$key must be exactly one line of 64 hex characters; restore it (rotation is a separate step)" >&2
       exit 1
     fi
+    # Node is already required by scrollsdk. Derive the compressed secp256k1
+    # public key locally; never print the private key or pass it in argv.
+    node --input-type=commonjs -e '
+      const fs = require("node:fs");
+      const {createECDH} = require("node:crypto");
+      try {
+        const key = createECDH("secp256k1");
+        key.setPrivateKey(Buffer.from(fs.readFileSync(process.argv[1], "utf8").trim(), "hex"));
+        if (fs.existsSync(process.argv[2])) {
+          const descriptor = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (typeof descriptor.transportPubkey !== "string" ||
+              descriptor.transportPubkey.toLowerCase() !== key.getPublicKey("hex", "compressed")) {
+            throw new Error();
+          }
+        }
+      } catch {
+        console.error("Transport key invalid or does not match descriptor; restore the registered files");
+        process.exit(1);
+      }
+    ' "$key" "$descriptor"
     # Install atomically: the runtime key is replaced only by a validated copy.
     cp "$key" docker-compose/transport.key.new
     chmod 600 docker-compose/transport.key.new
