@@ -80,6 +80,17 @@ Validate l2-reth role constraints before generating common chart values.
     {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
       {{- fail "reth.p2pExternal requires service.main.type ClusterIP; a public main Service would publish RPC, WS and metrics" -}}
     {{- end -}}
+    {{- /* The common loader overlays these values on .Values.common after validation; keep the dependency namespace out of it. */ -}}
+    {{- $common := default (dict) $.Values.common -}}
+    {{- if $common.reth -}}
+      {{- fail "common.reth is not supported with reth.p2pExternal; set reth.* at the top level" -}}
+    {{- end -}}
+    {{- /* Helm copies the top-level global into common.global, so only a difference comes from the dependency namespace. */ -}}
+    {{- range $key, $value := (default (dict) $common.global) -}}
+      {{- if and $value (ne (toYaml $value) (toYaml (get (default (dict) $.Values.global) $key))) -}}
+        {{- fail (printf "common.global.%s is not supported with reth.p2pExternal; set global.%s at the top level" $key $key) -}}
+      {{- end -}}
+    {{- end -}}
     {{- /* The chart replaces .Values.service with its generated map (common.yaml), so refuse inputs it would drop. */ -}}
     {{- range $name, $_ := $.Values.service -}}
       {{- if ne $name "main" -}}

@@ -222,6 +222,15 @@ The chart refuses to render `reth.p2pExternal` when:
   `<fullname>-p2p`), so it refuses other raw inputs instead of dropping them
   silently.
 
+Trust model: Helm values are trusted. Anyone who can set this chart's values
+can already deploy arbitrary manifests, so these checks are not a security
+boundary against a deliberately crafted values file. They exist to stop common
+honest mistakes: a public main Service, an exposed sequencer, missing source
+ranges, extra ports or Proxy Protocol. For the same reason, the chart refuses
+`common.reth` and non-default `common.global` values (the common library's
+dependency namespace, merged after validation) while external P2P is enabled,
+rather than validating them.
+
 `reth.service.extra` stays available for internal Services only. The chart
 refuses an enabled extra Service of type `LoadBalancer` or `NodePort`, or with
 `externalIPs`, and the keys `main` (always) and `p2p` (when `reth.p2pExternal`

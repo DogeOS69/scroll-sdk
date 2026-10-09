@@ -270,6 +270,27 @@ class L2RethP2PTests(unittest.TestCase):
             with self.subTest(service=service):
                 self.assert_fails(message, EXTERNAL_P2P, values={"service": service})
 
+    # R4-F1: values in the common dependency namespace are merged after
+    # validation, so they are refused while external P2P is enabled.
+    def test_common_dependency_values_are_refused_when_enabled(self):
+        public = {"type": "LoadBalancer", "annotations": {AWS_ANNOTATION + "scheme": "internet-facing"},
+                  "ports": {"rpc": RPC_PORT}}
+        foreign = {"type": "NodePort", "ports": {"rpc": RPC_PORT},
+                   "extraSelectorLabels": {"app.kubernetes.io/instance": "other-release"}}
+        security_groups = {AWS_ANNOTATION + "security-groups": "sg-1"}
+        proxy_protocol = {AWS_ANNOTATION + "target-group-attributes": "proxy_protocol_v2.enabled=true"}
+        probes = [
+            ("common.reth is not supported", {"reth": {"service": {"extra": {"public": public}}}}),
+            ("common.reth is not supported", {"reth": {"service": {"extra": {"main": public}}}}),
+            ("common.reth is not supported", {"reth": {"service": {"extra": {"p2p": foreign}}}}),
+            ("common.reth is not supported", {"reth": {"p2pExternal": {"annotations": security_groups}}}),
+            ("common.global.annotations is not supported", {"global": {"annotations": security_groups}}),
+            ("common.global.annotations is not supported", {"global": {"annotations": proxy_protocol}}),
+        ]
+        for message, common in probes:
+            with self.subTest(common=common):
+                self.assert_fails(message, EXTERNAL_P2P, values={"common": common})
+
     def test_enabled_render_contains_only_generated_services(self):
         values = extra("a-internal", {"ports": {"admin": {"enabled": True, "port": 9000}}})
         values["service"] = {"main": {"fullname": "l2-bootnode", "annotations": {"team": "l2"}}}
