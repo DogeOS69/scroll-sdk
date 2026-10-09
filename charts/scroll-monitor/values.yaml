@@ -1,3 +1,162 @@
+# Status-page automation. Default is offline/disabled; see docs/status-page-automation.md.
+statusPage:
+  enabled: false  # [OPERATOR] Set true before CLI generation.
+  environment: ""  # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
+  sources:
+    frontends: frontends-production.yaml  # [OPERATOR] Filename in this values directory.
+    frontendsConfig: frontends-config.yaml  # [SOURCE] Read actual REACT_APP_BRIDGE_API_URI and verify chain ID; empty disables inference.
+    sequencer: l2-reth-sequencer-production.yaml  # [SOURCE] Select the effective sequencer file (e.g. ...-0.yaml), not an inactive/base template.
+    publicRpc: l2-reth-rpc-public-production.yaml  # [OPERATOR] Select the ENABLED public RPC release.
+    blockscout: blockscout-production.yaml  # [OPERATOR] Deployed Blockscout; L2Scan excluded.
+    scheme: https  # [OPERATOR] Actual external scheme; no domain substitution.
+    bridgePath: /bridge  # [CONVENTION] Public route, appended to frontend ingress host.
+  grafana:
+    orgId: 1  # [OPERATOR] Organization in scroll-monitor's Grafana, not Instatus.
+    contactPointName: instatus-public  # [LEGACY] Bootstrap name; publication uses per-component names.
+    receiverUid: instatus-public-webhook  # [LEGACY] Bootstrap UID; retained for existing installations.
+    webhookSecretRef:
+      name: instatus-grafana-webhook  # [LEGACY] Bootstrap Secret; component references are generated below.
+      key: url  # [LEGACY] Bootstrap Secret data key.
+  # [OPERATOR] Independent component modes: manual, observe or automatic.
+  # Automatic is the default; configure inputs and webhook bindings before deployment.
+  publication:
+    sourceNamespace: ""  # [OPERATOR] Core metrics namespace; empty uses the Helm release namespace.
+    observationContactPointName: slack-alerts  # [OPERATOR] Internal destination bootstrapped by the seeder; add Slack in the UI.
+    maintenanceWindows: []  # [OPERATOR] Per-component UTC windows; see production values.
+    delivery:
+      enabled: true  # Single evaluator and publisher; automatic publication requires this.
+      image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
+      storageClassName: ""  # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
+      storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
+      # CPU headroom for concurrent health queries and responsive probes.
+      resources:
+        requests: {cpu: 100m, memory: 64Mi}
+        limits: {cpu: 1000m, memory: 256Mi}
+    incidents:
+      manageTemplates: true  # [OPERATOR] CLI --apply sets templates on this network's managed integrations.
+      notifySubscribers: false  # [OPERATOR] Opt in after incident wording and delivery acceptance.
+    heartbeat:
+      enabled: false  # [OPERATOR] Enable independent Instatus detection of lost monitoring.
+      alertIds: []  # [OPERATOR] Instatus monitor alert destination IDs; required when enabled.
+      # [GENERATED] Cron monitor: 180s period + 180s grace, no public component/incident.
+      # [PRIVATE GENERATED] secrets/status-page/heartbeat.json and heartbeat.secret.yaml.
+    health: {}  # [OPERATOR] Explicit overrides only; rule defaults belong to the evaluator.
+    #   failureFor: 5m  # [DEFAULT] Continuous failure confirmation.
+    #   recoveryFor: 10m  # [DEFAULT] Continuous fresh health before recovery; resets on restart/gaps.
+    #   freshnessSeconds: 120  # [DEFAULT] Maximum observation/snapshot age.
+    #   minimumProbeLocations: 2  # [EXTERNAL MODE ONLY] Independent locations; unused in alloy mode.
+    #   maxBlockAgeSeconds: 120  # [OPERATOR] Confirm continuous block production and normal block period.
+    #   maxRpcLatencySeconds: 2  # [DEFAULT] p95 threshold after at least 10 samples within 5 minutes.
+    #   maxIndexLagSeconds: 120  # [DEFAULT] Explorer indexed block vs canonical RPC block time.
+    #   maxNodeLagSeconds: 120  # [DEFAULT] Follower/canary lag measured in canonical block time.
+    #   depositDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Set confirmed normal processing deadline; 0 means unconfigured.
+    #   wfStallSeconds: 3600  # [DEFAULT] No WF progress with overdue queued/in-flight work; affects BOTH deposits and withdrawals.
+    #   withdrawalDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Count only protocol-eligible, unfulfilled withdrawals.
+    #   batchPublicationDeadlineSeconds: 0  # [REQUIRED FOR BUILTIN] Include time awaiting transaction confirmation.
+    #   ethDaSubmitterJobRegex: eth-da-submitter  # [OPERATOR] Prometheus job for the actual publisher.
+    #   withdrawalProcessorExpectedTargets: 1  # [OPERATOR] Expected active WP metric targets; missing targets cannot imply recovery.
+    #   ethDaSubmitterExpectedTargets: 1  # [OPERATOR] Expected active DA metric targets.
+    #   withdrawalProcessorJobRegex: withdrawal-processor  # [OPERATOR] Withdrawal role only; exclude proof-work-only replicas.
+    nodeSync:
+      mode: external  # [OPERATOR] Set official and select deployed sources below to use in-cluster followers.
+      namespace: ""  # [OPERATOR] Node namespace; empty uses scroll-monitor's Helm namespace.
+      image: python:3.12.11-alpine3.22  # [DEFAULT] Read-only RPC collector; no Instatus credentials.
+      reference: {}  # [SOURCE] Exactly one ACTIVE sequencer release (one replica, allowEmptyBlocks: true).
+      # reference: {values: l2-reth-sequencer-production.yaml, release: l2-reth-sequencer, role: sequencer}
+      followers: []  # [SOURCE] Select effective values/release pairs, including numbered bootnode files when deployed.
+      # followers:
+      #   - {values: l2-reth-bootnode-production.yaml, release: l2-reth-bootnode, role: bootnode}
+      #   - {values: l2-reth-rpc-production.yaml, release: l2-reth-rpc, role: internal-rpc}
+      #   - {values: l2-reth-rpc-public-production.yaml, release: l2-reth-rpc-public, role: public-rpc}
+      # [DERIVED] Service name, HTTP port, replica count and chain ID come from each selected values file.
+      # Optional per-source service overrides templated/custom names. replicas: 0 excludes intentional standby.
+      # All selected follower Pods must be observed. A missing/stale reference produces unknown.
+    probes:
+      websocketImage: node:22.23.3-alpine3.23  # [DEFAULT] Auxiliary container in the existing Alloy Pod when WSS is configured.
+      mode: alloy  # [OPERATOR] Existing Alloy probes public entrypoints; external retains browser/chain-aware probes.
+      # [SCOPE] Alloy checks HTTP/TLS, RPC chain ID/block-number patterns and API availability.
+      # Browser rendering and indexing freshness require external checks.
+      # WebSocket uses the Alloy helper; continuous sequencing uses the official reference collector.
+      # CLI narrows public descriptions/readiness accordingly; unsupported built-ins stay unready.
+      # Automatic publication in alloy mode requires heartbeat.enabled + internal alertIds above.
+      alloyChecks: []  # [OPTIONAL] Additional GET body assertions using RE2, combined with all generated checks.
+      # - {component: bridge-portal, url: 'https://YOUR_PUBLIC_API/health', bodyRegex: ['"status"\s*:\s*"ok"']}
+      # URLs must use public DNS/ingress with valid TLS, without privileged allowlisting or credentials.
+      # [GENERATED] generated.alloyProbes modules/targets/revision; never deploy a separate probe chart in alloy mode.
+      metricsTargets: []  # [OPERATOR] EXTERNAL ONLY: Private host:port per location; empty in alloy mode.
+      # Empty if your existing private federation/remote-write already supplies the probe metrics.
+      sequencingMode: auto  # [DERIVED] Selected reth.sequencer.allowEmptyBlocks; on-demand requires a custom eligible-work rule.
+      # Set bridgeChecks: disabled in Alloy mode when the legacy history API is retired.
+      # This explicitly monitors page availability only; auto still requires the API.
+      bridgeChecks: auto  # [DERIVED] Frontend history /txs API; Alloy uses URLs only. JSON path/type overrides require external mode.
+      explorerApiUrls: []  # [GENERATED/OPERATOR] CLI can derive Blockscout backend ingress; [] requires an override.
+      explorerSelector: ""  # [OPERATOR] EXTERNAL ONLY: Reviewed CSS selector proving rendered explorer data.
+      nodeRpcUrl: ""  # [OPERATOR] Independently operated sync canary; override per external probe location.
+      nodeDependencyChecks: []  # [OPERATOR] Semantic JSON checks for public bootstrap/DA dependencies.
+    # [REQUIRED BEFORE AUTOMATIC] Set components.<key>.affectedStatus after reviewing
+    # that rule's impact: DEGRADEDPERFORMANCE / PARTIALOUTAGE / MAJOROUTAGE.
+    # No implicit severity. A binary built-in does NOT dynamically distinguish them.
+    # Mixed latency/availability rules need separate severity evidence for dynamic grading.
+    components:
+      public-rpc: {mode: automatic, rule: {builtin: true}}
+      sequencing: {mode: automatic, rule: {builtin: true}}
+      deposits: {mode: automatic, affectedStatus: MAJOROUTAGE, rule: {builtin: true}}
+      withdrawals: {mode: automatic, affectedStatus: MAJOROUTAGE, rule: {builtin: true}}
+      batch-publication: {mode: automatic, rule: {builtin: true}}
+      node-sync: {mode: automatic, rule: {builtin: true}}
+      bridge-portal: {mode: automatic, rule: {builtin: true}}
+      block-explorer: {mode: automatic, rule: {builtin: true}}
+    # Custom rule alternative: {builtin: false, expr: '<EXACTLY_ONE_0_OR_1_SERIES>', for: 5m}
+    # 0=healthy, 1=affected, absent=unknown; expression must enforce source completeness/freshness.
+    # [GENERATED] Per-component instatus-<key> contact point, rule UID status-<key>.
+    # [PRIVATE GENERATED] Secret instatus-<key>-webhook, key url; secrets/status-page/<key>.binding.json and .secret.yaml.
+    # --apply --create-webhook creates/reuses one integration per automatic component.
+    # EXTERNAL ONLY: --probe-values values/status-page-probe-production.yaml exports deep-probe values.
+  instatus:
+    workspaceSlug: 6wxpx  # [OPERATOR] Existing DogeOS workspace; validated by --plan/--apply.
+    pageId: ""  # [GENERATED] Shared dogeos page ID; same for all three deployments.
+    subdomain: dogeos  # [CONVENTION] One public page for Mainnet, Testnet and Devnet.
+    pageName: DogeOS  # [SHARED] Keep page name/branding identical across deployments.
+    groupId: ""  # [GENERATED] Discovered from the group named Mainnet/Testnet/Devnet.
+    # [ONE-TIME SETUP] DogeOS network groups already exist; reuse them on every deployment.
+    # For a NEW page only, initialize missing groups in the Instatus dashboard.
+    # Public REST API can attach components to groups; group creation requires the dashboard.
+    branding:  # [SHARED DEFAULTS] Official DogeOS brand assets; {} leaves existing branding unchanged.
+      # Upload the logo in Instatus Look & feel; omitted here to preserve that URL.
+      # Raw GitHub logo URLs are rejected by the public page image optimizer.
+      faviconUrl: https://raw.githubusercontent.com/DogeOS69/web-images/main/dogeos_favicon.png
+      websiteUrl: https://www.dogeos.com/
+    email: ""  # [OPERATOR] Page owner email; required only when creating a page.
+    initialStatus: OPERATIONAL  # [DEFAULT] Initial state for NEW components only; existing live status is preserved.
+    # This initializes the page; it is not a health-check result. Override if needed.
+    # Allowed: OPERATIONAL, UNDERMAINTENANCE, DEGRADEDPERFORMANCE, PARTIALOUTAGE, MAJOROUTAGE.
+    showUptime: false  # [OPERATOR] Enable after public alert coverage/history is ready.
+    componentIds: {}  # [GENERATED] Persisted by --apply; may map existing component keys to IDs.
+  # [GENERATED] catalog and generated are written by the CLI; do not edit manually.
+  # Native grafana.envValueFrom and grafana.alerting are generated too.
+  # [SECRET] INSTATUS_API_KEY is an environment variable used by CLI --plan/--apply only.
+  # Legacy bootstrap (without publication block): scrollsdk setup status-page --plan --create-webhook, then --apply --create-webhook.
+  # [PRIVATE GENERATED] secrets/status-page/binding.json + grafana.secret.yaml.
+  # Keep that directory in private backups; ordinary --apply reuses it.
+  # Apply grafana.secret.yaml to the existing Grafana namespace separately.
+  # Existing URL: --apply --webhook-url-file /private/instatus-grafana.url.
+  # [GENERATED] generated.webhookRequested prevents replacement if private state is lost.
+  # Neither API key, webhook URL nor integration ID belongs in this YAML.
+
+# Read-only adapter for core signing metrics. Evidence only; no Status Page credentials.
+# Explicit inputs belong to scroll-sdk-cli configuration generation or reviewed overrides.
+bridgeHealth:
+  enabled: false
+  environment: ""  # Required: devnet, testnet or mainnet.
+  chainId: ""  # Required: L2 chain ID, not Dogecoin network.
+  sourceNamespace: ""  # Empty uses this Helm release's namespace.
+  tsoJob: tso-service  # Exact Prometheus job, never an all-network regex.
+  expectedTargets: 1  # All expected targets must supply the complete v1 contract.
+  intervalSeconds: 30
+  freshnessSeconds: 120
+  timeoutSeconds: 5
+  image: python:3.12.11-alpine3.22
+
 monitoring:
   datasources:
     prometheus:
@@ -32,14 +191,6 @@ grafana:
     dashboardproviders.yaml:
       apiVersion: 1
       providers:
-        - name: 'scroll'
-          orgId: 1
-          folder: 'scroll'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/scroll/
         - name: 'kubernetes'
           orgId: 1
           folder: 'kubernetes'
@@ -76,7 +227,6 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/blockscout/
   dashboardsConfigMaps:
-    scroll: grafana-scroll-dashboards
     kubernetes: grafana-kubernetes-dashboards
     dogeos: grafana-dogeos-dashboards
     reth: grafana-reth-dashboards
@@ -107,12 +257,47 @@ dashboards:
     # referenced through grafana.dashboardsConfigMaps.
     enabled: true
 
+# Metric evaluation owner. Existing installations retain Grafana unless selected.
+# In prometheus mode Grafana evaluates only LogQL rules and forwards them to
+# the same independent Alertmanager. Python health/status-page services remain.
+alerting:
+  backend: grafana  # grafana or prometheus
+  alertmanager:
+    url: http://prometheus-alertmanager:9093
+    datasourceUID: scroll-alertmanager
+    configSecretName: scroll-monitor-alertmanager-config
+    grafanaURL: ""  # Public Grafana base URL for notification links.
+    environment: ""
+    slack:
+      # Empty creates a valid, non-delivering slack-alerts receiver.
+      existingSecret: ""
+      secretKey: url
+      channel: ""  # Empty uses the incoming webhook's configured channel.
+
 grafanaAlerting:
   # Seed editable, enabled Grafana-managed application rules via the HTTP API.
-  # Existing rules (including UI edits and pause state) survive Helm upgrades.
+  # Untouched expressions/thresholds follow chart upgrades; UI edits and pause
+  # state are preserved. Legacy rules without a baseline report drift safely.
   enabled: true
+  # Explicit rule-name -> boolean overrides. Unlike default pause state, these
+  # also apply to existing chart-managed rules. Remove an override for UI control.
+  pauseRules: {}
   folderUID: scroll-monitor-alerts
   folderTitle: Scroll Monitor Alerts
+  # Bootstrap a UI-editable empty destination; replace only Grafana's built-in
+  # email default. Add the Slack integration/webhook in the UI when ready.
+  # Existing integrations, custom defaults and child policies are preserved.
+  defaultContactPoint:
+    enabled: true
+    name: slack-alerts
+  # Shared Slack format. On install/upgrade, bind blank title/text fields on
+  # Slack integrations in defaultContactPoint.name. Custom fields are preserved.
+  # After adding a webhook in the UI, upgrade again to apply the default binding.
+  notificationTemplate:
+    enabled: true
+    name: scroll-monitor
+    bindDefaultContactPoint: true
+    environment: ""  # Shown in titles; empty uses statusPage.environment.
   logs:
     # Error/fatal/panic levels or plain error/panic prefixes in the last 5m.
     # Excludes the retired rollup explorer and its exporter module.
@@ -134,12 +319,14 @@ grafanaAlerting:
       cpu: 100m
       memory: 64Mi
 
+# TSO is scraped by default. Disable this supplemental monitor only when the
+# TSO chart already owns a monitor or TSO is intentionally absent.
 # Supplemental monitors for services whose own chart does not create one.
 # Enable only one monitor per endpoint to avoid duplicate scraping. These
 # discover Services in the scroll-monitor release namespace, using named ports.
 additionalServiceMonitors:
   tso:
-    enabled: false
+    enabled: true
     selector:
       matchLabels:
         app.kubernetes.io/name: tso-service
@@ -150,12 +337,61 @@ additionalServiceMonitors:
         interval: 30s
         scrapeTimeout: 10s
 
-# Extended per-service diagnostics are created in Grafana but start paused.
-# Existing Grafana rules retain their UI pause state on every upgrade.
-# Prometheus fallback omits these rules while paused=true.
+diskAlerts:
+  # Node filesystems and PVCs are monitored cluster-wide.
+  enabled: true
+  # Exclude intentionally read-only or otherwise unmanaged mount paths.
+  excludeMountpointRegex: ""
+  usagePercent: 80
+  criticalUsagePercent: 95
+  warningFor: 5m
+  criticalFor: 5m
+  inodeWarningPercent: 90
+  inodeCriticalPercent: 95
+  # Forecasts require six hours of history, <40% free space and no capacity change.
+  predictionWarningHours: 24
+  predictionCriticalHours: 4
+  predictionWarningFor: 30m
+  predictionCriticalFor: 5m
+  contactPoint: ""
+
+resourceAlerts:
+  # Node metrics cluster-wide; containers use businessPodAlerts pod selectors.
+  enabled: true
+  nodeMemoryWarningPercent: 90
+  nodeMemoryCriticalPercent: 95
+  containerMemoryWarningPercent: 85
+  containerMemoryCriticalPercent: 95
+  memoryWarningFor: 10m
+  memoryCriticalFor: 5m
+  cpuWarningPercent: 90
+  cpuThrottlingPercent: 25
+  cpuFor: 15m
+  pressureFor: 2m
+  contactPoint: ""
+
+businessPodAlerts:
+  enabled: true
+  # Restart events and container usage select pods in the release namespace.
+  # Shared readiness, crash-loop, replica availability and CPU throttling checks
+  # cover the cluster to replace overlapping kube-prometheus-stack rules.
+  podNameRegex: ".*"
+  excludePodNameRegex: ""
+  # Controller and final Job alerts select workload names independently.
+  workloadNameRegex: ".*"
+  crashLoopFor: 5m
+  notReadyFor: 10m
+  unavailableFor: 2m
+  degradedFor: 10m
+  # Single restarts remain warning notifications; Job attempts are excluded.
+  # Existing Grafana Slack contact name; empty inherits notification policies.
+  # New rules group by category/resource/severity; UI routing is preserved.
+  contactPoint: ""
+
+# Extended service diagnostics are enabled by default; explicit pauses remain available.
 serviceAlerts:
   enabled: true
-  paused: true
+  paused: false
 
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
@@ -164,6 +400,8 @@ dogecoinIndexerAlerts:
 
 businessAlerts:
   enabled: true
+  # Shared by L2BatchHeightStalled and Withdrawals health; integer seconds >= 60.
+  l2BatchStallSeconds: 7500
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m
   recoveryFor: 15m
@@ -183,12 +421,14 @@ balanceMonitoring:
     jobRegex: ".*withdrawal-processor.*"
   ethereum:
     feeOracle:
+      enabled: true
       minimumEth: 5
       address: ""
       # Fee oracle submits to its configured L2 RPC. Override for another chain.
       rpcUrl: http://l2-rpc:8545
       expectedChainId: ""
     ethDaSubmitter:
+      enabled: true
       minimumEth: 0.1
       address: ""
       rpcUrl: ""
@@ -304,6 +544,22 @@ alloy:
     interval: 15s
 
 kube-prometheus-stack:
+  # Replaced by cluster-wide scroll-monitor rules; avoid duplicate notifications.
+  defaultRules:
+    disabled:
+      TargetDown: true
+      CPUThrottlingHigh: true
+      NodeCPUHighUsage: true
+      NodeMemoryHighUtilization: true
+      NodeFilesystemSpaceFillingUp: true
+      NodeFilesystemAlmostOutOfSpace: true
+      NodeFilesystemAlmostOutOfFiles: true
+      KubePersistentVolumeFillingUp: true
+      KubePersistentVolumeInodesFillingUp: true
+      KubePodCrashLooping: true
+      KubeDeploymentReplicasMismatch: true
+      KubeStatefulSetReplicasMismatch: true
+      KubeJobFailed: true
   enabled: true
   nameOverride: prometheus
   fullnameOverride: prometheus
@@ -319,18 +575,24 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 50Gi
-      alerting:
-        alertmanagers:
-          - name: alertmanager-main
-            namespace: default
-            port: web
       serviceMonitorSelector:
         matchExpressions:
           - key: app.kubernetes.io/instance
             operator: Exists
-      # Scope discovery to the Helm release namespace without requiring
-      # monitoring-specific labels on application ServiceMonitors.
+      # Discover application and default dstack controller ServiceMonitors.
+      # The generated dstack overlay selects a custom controller namespace.
       serviceMonitorNamespaceSelector:
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: In
+            values: ['{{ .Release.Namespace }}', dstack-system]
+      # Blockscout frontend exports through a PodMonitor, without a `release`
+      # label. Use the same namespace-scoped discovery contract as Services.
+      podMonitorSelector:
+        matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: Exists
+      podMonitorNamespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: '{{ .Release.Namespace }}'
 
@@ -354,3 +616,38 @@ kube-prometheus-stack:
   kube-state-metrics:
     nameOverride: kube-state-metrics
     fullnameOverride: kube-state-metrics
+
+# The bundled Dstack/GPU dashboard is always available, even without metrics.
+# Internal dstack alerts and log collection are enabled by default.
+# For another controller namespace, apply the generated scroll-monitor-dstack.yaml overlay.
+dstack:
+  enabled: true
+  namespace: dstack-system
+  # Must match the controller Deployment name (prefer fullnameOverride).
+  controllerName: dstack-controller
+  alerts:
+    enabled: true
+    unavailableFor: 2m
+    failedRunsThreshold: 3
+  # Optional always-on host Alloy collectors; empty inventory permits autoscaling to zero.
+  # Stable host IDs, explicitly retired from this list on decommission.
+  gpuHosts:
+    enabled: false
+    expectedHosts: []
+    staleAfterSeconds: 180
+    unavailableFor: 5m
+    diskAvailableRatio: 0.1
+
+# EKS exposes managed scheduler/controller-manager metrics through the API server.
+# Also disable kubeScheduler.serviceMonitor.enabled and
+# kubeControllerManager.serviceMonitor.enabled in kube-prometheus-stack when
+# enabling this profile. Keep their enabled/defaultRules switches on.
+eksControlPlane:
+  enabled: false
+
+# Receiver credentials remain in your existing Alertmanager configuration/Secret.
+# Set true to reject upgrades whose inline configuration still drops all alerts.
+# With alertmanagerSpec.useExistingSecret=true, verify the referenced Secret
+# separately; Helm cannot inspect it during an offline render.
+infrastructureAlerts:
+  requireReceiver: false

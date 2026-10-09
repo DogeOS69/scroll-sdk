@@ -16,3 +16,11 @@ Runtime command, ports, probes and the small cursor/scratch PVC default are in
 identity; `/metrics` is optional Prometheus monitoring. Readiness failure must
 not restart the process. Missing or invalid bundles cause coordinator fallback;
 the producer is never a correctness or availability dependency.
+
+The SDK production values example enables the application-owned ServiceMonitor
+on the named `http` port at `/metrics` every 30 seconds. The base chart leaves
+it disabled for standalone installations without Prometheus Operator CRDs.
+scroll-monitor discovers it in the same deployment namespace; do not add a second
+supplemental monitor. A custom compiler listener port must also match the Service.
+These metrics diagnose the optional optimization; materializer failure alone
+must not mark Deposits, Withdrawals or Node Sync as unavailable.

@@ -1,0 +1,63 @@
+name: Test status page
+
+on:
+  pull_request:
+    paths:
+      - charts/scroll-monitor/**
+      - charts/status-page-probe/**
+      - examples/values/scroll-monitor-production.yaml
+      - examples/values/status-page-probe-production.yaml
+      - .github/workflows/test-status-page.yaml
+  push:
+    paths:
+      - charts/scroll-monitor/**
+      - charts/status-page-probe/**
+      - examples/values/scroll-monitor-production.yaml
+      - examples/values/status-page-probe-production.yaml
+      - .github/workflows/test-status-page.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chart-delivery-and-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+      - name: Validate supplemental WebSocket RPC checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/status-ws-test" --ignore-scripts ws@8.18.3
+          STATUS_WS_TEST_PACKAGE="$RUNNER_TEMP/status-ws-test/package.json" node --test charts/scroll-monitor/tests/test_status_page_websocket.mjs
+      - name: Install test dependencies
+        run: |
+          pip install PyYAML==6.0.2 playwright==1.55.0 websocket-client==1.8.0
+          playwright install --with-deps chromium
+          helm dependency build charts/scroll-monitor
+      - name: Validate evaluator rules, component provisioning and durable delivery
+        env:
+          SCROLL_STATUS_RUNTIME_TEST: '1'
+        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_status_page*.py' -v
+      - name: Validate core snapshot compatibility and Grafana migrations
+        env:
+          SCROLL_STATUS_RUNTIME_TEST: '1'
+          PYTHONPATH: charts/scroll-monitor/tests
+        run: python -m unittest test_snapshot_promql test_bridge_health_prometheus test_seed_grafana_alerts test_monitoring_templates test_alert_notifications -v
+      - name: Validate DogeOS dashboard queries and panel wiring
+        run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_dogeos_dashboards.py' -v
+      - name: Validate independent probes with a real browser
+        env:
+          STATUS_PROBE_BROWSER_TEST: '1'
+        run: python -m unittest discover -s charts/status-page-probe/tests -p 'test_*.py' -v
+      - name: Lint independent probe chart
+        run: helm lint --strict charts/status-page-probe

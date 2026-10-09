@@ -9,7 +9,7 @@ groups:
           service: fee-oracle
         annotations:
           summary: Fee oracle account balance is below __FEE_ORACLE_MIN_ETH__ ETH.
-          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value }} ETH (native units at 1e18 wei). Fund the account on the chain used for oracle update transactions.'
+          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf "%.4f" }} ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.'
       - alert: EthDASubmitterAccountBalanceLow
         expr: scroll_account_balance_eth{account="eth-da-submitter"} < __ETH_DA_MIN_ETH__
         labels:
@@ -17,7 +17,7 @@ groups:
           service: eth-da-submitter
         annotations:
           summary: Ethereum DA submitter account balance is below __ETH_DA_MIN_ETH__ ETH.
-          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value }} ETH. Replenish funds for blob publication and transaction replacement.'
+          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf "%.4f" }} ETH. Blob publication stops when it cannot pay fees. Replenish funds for blob publication and transaction replacement.'
       - alert: AccountBalanceCollectionFailed
         expr: scroll_account_balance_scrape_success == 0 or (time() - scroll_account_balance_last_success_timestamp_seconds > 180)
         for: 5m

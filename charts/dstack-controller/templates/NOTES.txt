@@ -1,0 +1,9 @@
+dstack controller: http://{{ include "dstack-controller.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+
+Required existing Secrets: {{ .Values.serverConfig.existingSecret }} ({{ .Values.serverConfig.key }}), {{ .Values.auth.existingSecret }} ({{ .Values.auth.key }}).
+Configuration/credential Secret changes require a controller rollout.
+
+This release does not submit fleets or tasks. A restored database may resume existing work.
+Stopping/uninstalling the controller does not stop billing for remote GPU instances.
+Stop tasks, delete fleets and verify provider-side cleanup before retiring a controller.
+Back up both the database/state volume and the encryption keys in the config Secret.

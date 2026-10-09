@@ -24,6 +24,8 @@ with tempfile.TemporaryDirectory(prefix="scroll-monitor-tests-") as directory:
     (root / "rules.yaml").write_text(yaml.safe_dump(rules, sort_keys=False))
     files = []
     for source in sorted((CHART / "tests").glob("*.test.yaml")):
+        if source.name == "dstack-alerts.test.yaml":
+            continue  # Covered by check_dstack_alerts.py with its required inventory.
         data = yaml.safe_load(source.read_text())
         data["rule_files"] = ["rules.yaml"]
         (root / source.name).write_text(yaml.safe_dump(data, sort_keys=False))

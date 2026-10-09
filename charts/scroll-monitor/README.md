@@ -36,6 +36,28 @@ The default service endpoints assume every component is in the same namespace.
 They are configurable under `monitoring.datasources` and
 `alloy`.
 
+## Instatus status page
+
+Prometheus supplies core and probe facts to the chart's Python health evaluator.
+One process owns evaluation, confirmation windows and durable Instatus delivery;
+Grafana consumes metrics for visualization and internal alerts. Runtime policy lives
+in `scripts/status_page_health.py`, not in CLI-generated PromQL. Runtime credentials
+are scoped component/heartbeat webhooks; no Instatus management API key is needed.
+
+Production profiles keep status-page automation disabled until configured. When
+enabled, components default to automatic, requiring reviewed inputs and bindings.
+CLI emits deployment parameters and exact cleanup of previous managed Grafana
+public publishers. See the two-stage migration in the architecture guide.
+See the [configuration and Secret inventory](../../examples/scroll-monitor-configuration.md#instatus-native-webhook-configuration)
+and [architecture](../../docs/status-page-architecture.md).
+
+The evaluator's container resources are configurable through
+`statusPage.publication.delivery.resources`. Defaults request `100m` CPU and
+`64Mi` memory, with limits of `1000m` CPU and `256Mi` memory. The CPU limit allows
+short concurrent query bursts even when average usage is low. Sizing changes do
+not require regenerating status-page bindings. Resource changes
+recreate the single delivery Pod; its existing PVC retains the delivery journal.
+
 ## Dashboard and alert assets
 
 Dashboard ConfigMaps are controlled by `dashboards.bundled.enabled` and are
@@ -44,7 +66,7 @@ sidecar to discover them.
 
 Application alerts are **Grafana-managed**. The original business, funding,
 progress, and log rules are enabled by default. The extended service diagnostic
-catalog starts **paused**. A Helm
+catalog is **enabled by default**. A Helm
 post-install/post-upgrade Job seeds the rules into **Scroll Monitor Alerts**
 using the HTTP API with `X-Disable-Provenance: true`. You can edit and
 pause/resume them directly in **Alerting > Alert rules**, without making copies.
@@ -57,26 +79,155 @@ Changes to bundled defaults apply to new rules; existing rules remain UI-owned.
 Known shipped query defects can carry an exact-expression migration. These
 migrate only matching managed rules; customized queries remain untouched.
 
-### Extended service diagnostics (paused by default)
+### Workload and resource alert policy (enabled by default)
 
-`serviceAlerts.enabled: true` imports 107 additional rules for
+The chart supplies 35 active workload/resource rules in three configuration sections,
+independently of the paused service diagnostic catalog. They use `alert_scope` for
+routing and `alert_category` for classification. These are starting thresholds for
+this deployment, not universal SLOs; tune them against workload baselines and the
+time needed to recover or expand capacity.
+
+| Category | Warning | Critical |
+| --- | --- | --- |
+| `pod-health` | Any observed restart/abnormal exit/failed non-Job pod; three restarts in 10m; crash-loop evidence with continuously unready pod for 5m; other unready pods for 10m | Controller availability rules below |
+| `availability` | Deployment, StatefulSet or DaemonSet has some ready replicas but fewer than desired for 10m | Desired replicas >0 and no available/ready replicas for 2m |
+| `job-health` | Job condition Failed=true, without an extra pending period | Classify business-critical job outcomes separately |
+| `disk-capacity` | Node filesystem/PVC usage >=80% for 5m; or predicted exhaustion in 4–24h for 30m | Usage >=95% for 5m; or predicted exhaustion in <4h for 5m |
+| `disk-inodes` | Inodes >=90% used for 5m | Inodes >=95% used for 5m |
+| `disk-health` | — | Persistent node filesystem read-only for 2m |
+| `memory` | Node unavailable memory >=90%, container working set/limit >=85%, for 10m | Either ratio >=95% for 5m |
+| `cpu` | Node or container CPU >=90%, or container throttled periods >=25%, for 15m | Use service availability, latency and backlog to identify urgent impact |
+| `node-pressure` | — | Kubernetes MemoryPressure or DiskPressure for 2m |
+
+Warning and critical bands for the same utilization/forecast metric are mutually
+exclusive. A transition starts the new severity's pending period. Capacity and
+forecast checks can both fire; notification grouping combines their symptoms.
+Pod failures and memory/CPU pressure can also be related; grouping does not infer
+root cause or inhibit alerts across different categories.
+
+#### Scope and prerequisites
+
+- `businessPodAlerts`: Running-Pod readiness, crash loops, Deployment/StatefulSet
+  availability and terminal Job failures are checked throughout the cluster.
+  Pod restart/failure events, including init containers, retain the release
+  namespace and `podNameRegex` / `excludePodNameRegex` selectors. DaemonSet checks
+  retain the release namespace and `workloadNameRegex`. Desired replicas of zero
+  are excluded. Jobs are excluded from individual pod-failure rules; their
+  terminal Failed condition is monitored instead of failed attempts. Pod
+  readiness checks exclude terminating pods. Disruptive controller rollouts may
+  still cause availability alerts; use an appropriate maintenance mute.
+- `diskAlerts`: Node filesystems and PVCs throughout the collected cluster.
+  `excludeMountpointRegex` excludes intentionally read-only or unmanaged node
+  mounts; it does not filter PVCs. Memory/pseudo filesystems and zero capacities
+  are excluded. Read-only filesystems use their own fault rule.
+- `resourceAlerts`: Node memory, CPU, pressure and container CPU throttling
+  throughout the collected cluster. Container CPU/memory utilization retains
+  the release namespace and pod selectors above. Utilization ratios cover
+  regular application/sidecar containers with positive limits; absent/zero limits
+  are excluded. Init-container failure remains covered by pod-health rules, but
+  init-container limit ratios are not included.
+
+Node metrics require node-exporter, container utilization requires kubelet cAdvisor,
+and workload/limit/pressure metrics require kube-state-metrics. The bundled stack
+collects these by default. These rules do not depend on kube-prometheus recording
+rules, so Grafana and Prometheus fallback use the same expressions.
+
+Node memory uses `1 - MemAvailable / MemTotal`, allowing for reclaimable cache.
+Container memory uses working set divided by **that container's limit**, not its
+request and not the node's total memory. This is a headroom heuristic, not an exact
+OOM predictor; recent OOM exits are additionally covered by pod-health rules.
+Container CPU uses a five-minute CPU rate divided by its CPU limit. CPU throttling
+is the fraction of scheduling periods with throttling, not percent CPU time lost.
+High CPU alone is warning-level, since batch/proof/sync work can legitimately
+saturate CPU. Scrape replicas are deduplicated before container/limit joins.
+
+Node disk usage is `100 * (size - available) / size`, including reserved space
+unavailable to applications. PVC usage is `100 * used / capacity`. Compute each
+kubelet ratio before taking the maximum per PVC to avoid double-counting mounts.
+Forecasts use current available bytes divided by the negative six-hour slope;
+they require declining free space, <40% available, a sample six hours ago, at
+least 60 samples in the window, and unchanged capacity throughout that window.
+Expansion suppresses forecasts until a stable history returns. Static capacity
+alerts clear as soon as the reported ratio falls below the threshold.
+
+PVC capacity/inode/forecast coverage requires mounted filesystem volumes and a
+storage driver exposing the respective kubelet volume statistics. Raw block
+volumes, unmounted disks and unsupported metrics need storage-specific collectors.
+Missing metrics do not mean healthy storage and do not fire capacity rules; retain
+collector/target-health monitoring. External dstack GPU hosts retain their own
+optional host rules and configured thresholds.
+
+Single observed restarts/abnormal exits remain warning notifications even after
+recovery, with a ten-minute observation window. Successful process exits followed
+by a restart count as restarts. Crash-loop alerts also require current unready
+status for the pending period, so a recovered pod does not trigger a delayed
+crash-loop alert just because a historical event remains in the lookback window.
+These are incident alerts, not a durable event stream: scrapes may miss very short
+lived pods and multiple failures may be grouped into one incident.
+
+#### Grafana Slack routing
+
+Both production profiles set `businessPodAlerts.contactPoint`,
+`diskAlerts.contactPoint` and `resourceAlerts.contactPoint` to `slack-alerts`.
+The seed Job creates the configured empty `slack-alerts` destination by default;
+add its Slack integration and webhook in the Grafana UI when ready. Other named
+Slack contacts must already exist. Webhook credentials are not stored in values.
+
+The seed Job adds three narrowly scoped notification-policy branches, matching
+`managed_by=scroll-monitor` and a folder/scope-specific `scroll_monitor_route`
+label attached only to these new rules. It reads and preserves the existing root
+and all unrelated branches; previously created branches and UI edits are preserved
+on later upgrades. The seeder account needs notification-policy read/write access.
+Grafana 11 per-rule notification settings require grouping by alert name, so these
+rules use policy routing to group by category, severity and resource identity. For example, restart and abnormal-exit symptoms for the same pod
+UID share a group. Different PVCs, workloads and container resources remain
+separate. Warnings wait 30s to collect related symptoms; critical groups add no
+initial grouping delay. Group updates are spaced 5m apart and ongoing incidents
+repeat every 4h. Severity is part of the group key so a critical incident does not
+wait behind a warning's group interval. The shared Slack template displays all
+included alert summaries and their resource labels.
+
+Actual detection also waits for scraping and rule evaluation (normally 1m), plus
+the pending period above. Existing Grafana routing, labels and pause state remain
+UI-owned on upgrades; existing rules need their category/severity/routing updated
+in the UI if created with a previous policy. Rules with an older direct contact
+need to switch to policy routing and carry the matching `scroll_monitor_route`
+label to use the new grouped policy. Untouched chart-managed expressions
+and pending periods reconcile using the seeder's stored baseline. An empty contact
+point (chart defaults) inherits Grafana policies. These scoped routes are independent
+of the infrastructure Alertmanager's default null receiver. With Grafana alerting
+disabled, configure Prometheus/Alertmanager notification receivers separately.
+If both systems notify overlapping infrastructure alerts, choose one notification
+owner or configure appropriate suppression to avoid duplicate incidents.
+
+Offline tests verify expression behavior and routing configuration, not live Slack
+delivery. Validate delivery in the deployed Grafana; mutes and contact failures
+still apply. No automatic escalation from warning to a paging system is implied
+by a severity label alone.
+
+References: [node-exporter defaults](https://github.com/prometheus/node_exporter/blob/master/docs/node-mixin/config.libsonnet),
+[Kubernetes resource limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/),
+[Job metrics](https://github.com/kubernetes/kube-state-metrics/blob/main/docs/metrics/workload/job-metrics.md).
+
+### Extended service diagnostics (enabled by default)
+
+`serviceAlerts.enabled: true` includes 91 additional rules for
 withdrawal-processor, tso-service, proof-coordinator, l2-reth nodes, l1-interface,
-eth-da-submitter, cubesigner-signer, and fee-oracle. `serviceAlerts.paused: true`
-makes every new rule in this catalog start paused. Review and resume individual
-rules directly in Grafana; upgrades preserve your choices. Existing business,
-balance, progress, and log rules retain their prior defaults.
+eth-da-submitter, cubesigner-signer, and fee-oracle. `serviceAlerts.paused: false`
+is the default: new Grafana rules start active and the Prometheus backend
+includes the catalog. Existing explicit per-rule pause overrides remain effective.
 
-See [the service alert review](SERVICE_ALERT_REVIEW.md) for the complete catalog,
-source commits, thresholds, and implementation prerequisites. In particular,
-the complete proof-coordinator metrics endpoint is on an observability branch
-that is not yet merged into the reviewed dogeos-core mainline. Rules depending
-on that endpoint need an image containing its implementation before activation.
-Service metric definitions and exposition examples belong in the service source
-repositories; this chart maintains alert queries and their behavior tests.
+For an existing Grafana installation, changing the default does not overwrite
+saved UI pause states. Resume those rules explicitly or configure per-rule
+`grafanaAlerting.pauseRules` overrides. On Prometheus, remove or set false any
+legacy per-rule pause overrides when enabling this catalog. Setting
+`serviceAlerts.paused: true` explicitly still omits the whole catalog there.
 
-Prometheus has no rule pause state. The native fallback omits this catalog while
-`serviceAlerts.paused` is true. Set it to false explicitly to activate the catalog
-in that backend. Changing the value does not overwrite saved Grafana pause states.
+See [the service alert review](SERVICE_ALERT_REVIEW.md) for source requirements,
+thresholds and the historical implementation review. Validate metric availability
+against the running images; missing series do not establish healthy operation.
+Service metrics belong in the application repositories, while this chart owns
+alert expressions and their behavior tests.
 
 The Job uses the Grafana admin Secret (including `grafana.admin.existingSecret`).
 Its credentials must match the running Grafana database; changing the Helm
@@ -97,20 +248,44 @@ to use Prometheus/Alertmanager and are not editable Grafana rules.
 
 1. Sign in to Grafana as an administrator, open **Alerting > Contact points**,
    and select the built-in **Grafana** Alertmanager.
-2. Create a contact point, for example `scroll-ops`. Add a **Slack** integration
+2. Edit the bootstrapped `slack-alerts` contact point. Add a **Slack** integration
    with a webhook URL for the desired channel, or a Slack bot token and channel
    recipient. Add integrations for additional channels as needed.
-3. Add an **Email** integration to the same contact point. Enter the recipient
+3. Optionally add an **Email** integration to the same contact point. Enter the recipient
    list separated by semicolons or newlines. Slack and email can receive the same
    alert. Use **Test** for each integration and save the contact point.
-4. In **Alerting > Notification policies**, add a policy matching
-   `managed_by = scroll-monitor` and select `scroll-ops`, or change the default
-   policy's contact point if it should receive all Grafana alerts.
+4. In **Alerting > Notification policies**, verify the default selects
+   `slack-alerts`. Existing custom defaults are preserved. If using a different
+   contact point, select it in the default or a matching child policy.
 
-The chart does not provision contact points or notification policies, so they
-remain editable and Helm upgrades preserve them. Creating a contact point alone
-does not route application alerts to it; complete step 4. Existing external
-Alertmanager receivers are not copied to Grafana automatically.
+By default, `grafanaAlerting.defaultContactPoint` enables a UI-editable empty
+contact point named `slack-alerts`. The existing seeder creates it before scoped
+notification policies and rules, and switches only Grafana's built-in
+`grafana-default-email` default to it. Add a Slack integration/webhook to
+`slack-alerts` in the UI to start delivery. Until then this destination sends
+nothing; rules still evaluate. Set `defaultContactPoint.enabled: false` to opt out,
+or configure `defaultContactPoint.name` for a different destination name.
+
+On each install or upgrade, the seeder binds blank Slack Title and Text Body
+fields in `defaultContactPoint.name` to `scroll-monitor.slack.title` and
+`scroll-monitor.slack.text`. After adding a Slack integration in the UI, run
+another chart upgrade to bind it, or enter these template calls in the UI:
+`{{ template "scroll-monitor.slack.title" . }}` and
+`{{ template "scroll-monitor.slack.text" . }}`. This is an install/upgrade hook,
+not a continuous watcher of UI changes. Set
+`grafanaAlerting.notificationTemplate.bindDefaultContactPoint: false` to opt out
+of new bindings; this does not remove existing bindings. Disabling the shared
+notification template also disables automatic binding.
+
+Custom nonblank Title/Text Body fields, webhook secrets, other integrations,
+custom default receivers and child policies are preserved. Untouched chart
+templates follow chart upgrades; UI-edited templates are preserved. A custom default is
+never replaced automatically; change it explicitly in Notification policies if
+needed. The bootstrap uses the Grafana UI configuration API, which supports empty
+receivers and requires organization-admin access, with the seeder's existing
+credentials. File-provisioned resources remain subject to Grafana's ownership
+guards. The optional Instatus contact point is independent and is not made the
+default. External Prometheus Alertmanager receivers are not copied to Grafana.
 
 Grafana OSS needs an SMTP transport before it can send email. Configure the
 transport once at deployment time; manage recipient lists in the UI afterward:
@@ -304,15 +479,16 @@ already supplies the same account metrics and labels.
 | --- | --- | --- |
 | `ProtocolStateWFTxNumberStalled` | Protocol State WF Tx Number | l1-interface and withdrawal-processor |
 | `ReplayHeadWFTxNumberStalled` | Replay Head WF Tx Number | withdrawal-processor |
-| `L2BatchHeightStalled` | L2 Batch Height | l1-interface and withdrawal-processor |
+| `L2BatchHeightStalled` | L2 Batch Height — no increase for `businessAlerts.l2BatchStallSeconds` (default 7500 seconds / 125 minutes); shared with Withdrawals health | l1-interface and withdrawal-processor |
 
 These critical alerts fire when the gauge has no positive step in a rolling
-60-minute window, sampled every minute. They evaluate independently per
+window, sampled every minute: 60 minutes for WF/replay progress and
+`businessAlerts.l2BatchStallSeconds` for L2 batches. They evaluate independently per
 `namespace` and `job`, using the maximum across replicas of each service.
 Decreases are not progress, and resumed growth clears the condition at the next
-evaluation. An hour of history and a currently present series are required;
-there is no additional pending hour. This also alerts during a traffic-free
-hour, as it does not depend on a backlog. Missing metrics are not classified as
+evaluation. A full window of history and a currently present series are required;
+there is no additional pending window. This also alerts during a traffic-free
+window, as it does not depend on a backlog. Missing metrics are not classified as
 stalled progress; existing readiness/up alerts cover service availability.
 
 ### Error and panic log alerts
@@ -383,7 +559,7 @@ production stack:
 
 | Dashboard coverage | Services | Source |
 | --- | --- | --- |
-| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `proof-coordinator`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
+| Native application metrics | `tso-service`, `withdrawal-processor`, `l1-interface`, `eth-da-submitter`, `cubesigner-signer`, `fee-oracle-0` | Prometheus ServiceMonitor or operator-managed scrape target |
 | External native application metrics | `attestation-signer` | Operator-managed Prometheus scrape target |
 | Exporter-backed application metrics | `dogecoin` | Prometheus metrics exporter |
 | Runtime health and logs | All Kubernetes workloads | kube-state-metrics, cAdvisor, and Loki |
@@ -393,7 +569,8 @@ Dedicated dashboards cover `attestation-signer`, `proof-coordinator`, and
 `withdrawal-processor`, which owns and exports the durable work-item gauges;
 the coordinator dashboard does not manufacture a second queue authority.
 
-The three dashboards select application metrics through Prometheus `job` and
+The signer dashboards and the coordinator's optional application panels select
+application metrics through Prometheus `job` and
 `instance` labels instead of Kubernetes-only labels. This lets the same panels
 work for in-cluster ServiceMonitors and for Attestation Signers on external EC2
 hosts. External scrape targets are deliberately not configured by this chart:
@@ -421,14 +598,25 @@ those host addresses to this chart. After Prometheus reloads successfully, the
 Attestation Signer dashboard discovers the job and all three `instance` values
 and shows their individual `up` status.
 
-The Attestation Signer exports latency and payload-size observations as
-Prometheus summaries. Its dashboard reads the exported `quantile` series
-directly and preserves the `instance` label because summary quantiles cannot be
-aggregated across signers. The `_sum / _count` series remain available for
-average calculations. The CubeSigner and coordinator dashboards use their own
-native metric types. The dashboards also expose bounded request, worker,
-signing, callback, replay, and policy outcome counters as rates so throughput
-and failure-volume changes remain visible.
+The current dogeos-core metrics initializer exports Rust time histograms ending
+in `_seconds` or `_latency_ms` as Prometheus buckets. Latency panels use
+`histogram_quantile()` over bucket rates, with seconds and milliseconds kept in
+their original units. Non-time distributions still need their exporter checked:
+DA batch sizes use per-instance summary quantiles; Attestation Signer artifact
+sizes use summaries in the current baseline and buckets in
+[dogeos-core #1007](https://github.com/DogeOS69/dogeos-core/pull/1007). The artifact
+size panel supports both without combining summary quantiles across instances.
+
+The extended Attestation Signer queue/freshness panels and Proof Coordinator
+application panels require #1007 and an image exposing its metrics. They remain
+in clearly labelled collapsed rows. The coordinator's always-visible panels use
+Kubernetes runtime state and WP-owned queues; Pod readiness is not claim-plane
+readiness. Request-lifetime and work-attempt panels describe their different
+timing boundaries explicitly.
+
+See [the dashboard source review](DASHBOARD_REVIEW.md) for the per-dashboard
+findings, source revisions, verification and remaining rollout requirements.
+Service metric exposition examples belong in dogeos-core, not this repository.
 The CubeSigner dashboard follows the metric contract merged in dogeos-core
 #1009: it shows proof-fallback signs, policy denials, live policy evaluations,
 the observed policy rule identity, and the two integrity counters that must
@@ -470,9 +658,9 @@ monitoring-specific labels or version bumps in application charts.
 An absent ServiceMonitor produces no `up` series at all; changing the Prometheus
 selector cannot create a missing monitor. When an application's chart does not
 provide one, `additionalServiceMonitors` can supply a monitor owned by this chart.
-The bundled TSO entry is disabled by default to avoid duplicating a monitor
-already managed by the application. For a deployment with a `tso-service`
-Service on the named `http` port and no TSO monitor, merge this into its values:
+The bundled TSO entry is enabled by default because the TSO chart does not
+create its own monitor. Disable this supplemental entry when TSO is intentionally
+absent or another owner already scrapes it. The default is:
 
 ```yaml
 additionalServiceMonitors:
@@ -497,3 +685,81 @@ Alloy limits pod-log discovery to the release namespace by default. Set
 The chart does not install an ingress controller or a dynamic volume
 provisioner. The configured Grafana ingress requires nginx, and persistent
 components require a usable StorageClass.
+
+## Public health rules and collection coverage
+
+See [the public status health design](../../docs/status-page-health-rules.md) for
+the eight implemented component contracts, configurable failure/recovery windows,
+missing-data handling, source inventory, and activation tests. Existing internal alert rules are not
+implicitly suitable for public status or automatic recovery.
+
+PodMonitor discovery now follows ServiceMonitor discovery: Helm instance labels
+in the release namespace. This includes Blockscout's existing frontend
+`/node-api/metrics` PodMonitor, which has no `release=scroll-monitor` label.
+The eager-materializer production example enables its application-owned
+ServiceMonitor; no supplemental duplicate is added here. These collection fixes
+provide telemetry, not an end-to-end proof of user-facing availability.
+
+The historical proof-coordinator review inspected a revision without a production
+metrics endpoint. Verify the currently deployed image and scrape target; a
+ServiceMonitor cannot add an application endpoint.
+External public RPC/browser probes and monitor-loss detection remain prerequisites
+for reliable public automation. None of this requires exposing private monitoring.
+
+
+Component publication generation is available through `statusPage.publication`.
+Each component defaults to automatic and may explicitly use manual or observe
+mode. See [the publication configuration guide](../../docs/status-page-publication.md)
+for the health-expression contract, private component bindings, evaluator publication,
+verified recovery, private probe collection and independent heartbeat. No public rule is activated merely by
+installing the default values.
+
+## Dstack and GPU monitoring
+
+Internal controller alerts, controller logs and ServiceMonitor discovery in
+`dstack-system` are enabled by default. Apply the CLI-generated
+`scroll-monitor-dstack.yaml` after production values to select a different
+controller namespace. Set `dstack.enabled: false` to disable this integration. The Dstack/GPU dashboard is included with bundled dashboards,
+even when dstack monitoring is disabled; unconnected panels show No data.
+See [the integration guide](../../examples/dstack-monitoring/README.md).
+This does not configure public status-page routing.
+
+## Bridge health metrics adapter
+
+The optional `bridgeHealth` adapter consumes core signing snapshot v1 through
+Prometheus, with explicit target completeness and freshness checks. It supplies
+read-only signing evidence and does not publish a global bridge status. See
+[configuration, contract and tests](BRIDGE_HEALTH_ADAPTER.md).
+
+### Core PR #1358 compatibility
+
+Chart `0.1.41-dogeos` targets the core metrics contract at `7e3ee2877`.
+Cached WP/TSO facts are filtered by source validity and success time before use;
+removed historical totals and terminal inventory are no longer queried. See
+[DASHBOARD_REVIEW.md](DASHBOARD_REVIEW.md#pr-1358-snapshot-contract-2026-10-02)
+for the source mapping. The signing adapter still consumes schema v1 from
+Prometheus. No new URL, credential or scroll-sdk-cli parameter is needed.
+
+Run the semantic tests as well as the chart and Python checks:
+
+```sh
+SCROLL_STATUS_RUNTIME_TEST=1 python3 -m unittest discover -s charts/scroll-monitor/tests
+python3 charts/scroll-monitor/tests/run-alert-tests.py
+python3 charts/scroll-monitor/tests/check_dstack_alerts.py
+helm lint charts/scroll-monitor
+```
+
+## Independent Alertmanager backend
+
+Use `alerting.backend: prometheus` to evaluate metric rules in Prometheus and
+forward Grafana LogQL alerts to the independent Alertmanager. See the
+[migration and Secret configuration guide](../../docs/alertmanager-backend.md)
+and [example overlay](../../examples/values/scroll-monitor-alertmanager.yaml).
+Existing Grafana rules require a controlled ownership migration; changing the
+value alone does not delete or pause previously provisioned rules.
+
+## Alert ownership
+
+Duplicate service checks and upstream rule families have one retained owner.
+See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
+cluster-wide replacements, and distinct conditions that remain monitored.

@@ -1,29 +1,8 @@
-# Reviewed service-specific diagnostics. New Grafana rules are paused by default.
+# Reviewed service-specific diagnostics. Enabled by default.
 groups:
 - name: dogeos.services.tso-service
   interval: 1m
   rules:
-  - alert: TsoServiceMetricsTargetDown
-    expr: up{job=~".*tso-service.*"} == 0
-    for: 5m
-    labels:
-      severity: critical
-      service: tso-service
-    annotations:
-      summary: A tso-service metrics target cannot be scraped.
-      description: Inspect target {{ $labels.instance }} in job {{ $labels.job }}, the metrics listener, ServiceMonitor,
-        and network policy. A removed target requires the Kubernetes workload alerts.
-  - alert: TsoServicePodNotReady
-    expr: kube_pod_status_ready{condition="true",pod=~".*tso-service.*"} == 0 and on (namespace, pod) kube_pod_status_phase{phase=~"Pending|Running"}
-      == 1
-    for: 10m
-    labels:
-      severity: critical
-      service: tso-service
-    annotations:
-      summary: A tso-service pod is not ready.
-      description: Inspect pod {{ $labels.pod }} readiness, startup, configuration, and dependency health. Completed
-        Job pods are excluded.
   - alert: TSOSigningCycleSlow
     expr: sum by (namespace, job, instance) (rate(tso_core_signing_cycle_latency_seconds_sum[10m])) / sum by (namespace,
       job, instance) (rate(tso_core_signing_cycle_latency_seconds_count[10m])) > 120 and sum by (namespace, job,
@@ -33,7 +12,7 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 120 seconds.
+      summary: TSO signing cycles average more than two minutes.
       description: Completed signing cycles average more than two minutes. Check signer response paths and quorum
         latency.
   - alert: TSOSignerResponseSlow
@@ -46,7 +25,7 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 60 seconds.
+      summary: A TSO signer takes more than one minute on average to respond.
       description: Signer {{ $labels.signer_pubkey }} responses average more than one minute. Check network and
         signer backend latency.
   - alert: TSORoleQuorumSlow
@@ -59,12 +38,12 @@ groups:
       severity: warning
       service: tso-service
     annotations:
-      summary: tso-service mean operation latency exceeds 120 seconds.
+      summary: TSO {{ $labels.role }} quorum takes more than two minutes on average.
       description: Role {{ $labels.role }} takes more than two minutes on average to complete its required input
-        thresholds.
+        thresholds. Check readiness and response latency of this role's signers.
   - alert: TSOSigningQueueLarge
-    expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"})
-      > 100
+    previousExpr: "sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~\"proposed|collecting_signatures|collecting_p2pkh\"}) > 100"
+    expr: sum by (namespace, job, instance) (tso_core_transactions_by_status{status=~"proposed|collecting_signatures|collecting_p2pkh"} and on (namespace, job, instance) __TSO_STATUS_VALID__) > 100
     for: 15m
     labels:
       severity: warning

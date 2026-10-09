@@ -21,6 +21,17 @@ data:
         isDefault: true
         jsonData:
           timeInterval: 30s
+          manageAlerts: true
+      {{- if eq .Values.alerting.backend "prometheus" }}
+      - name: Alertmanager
+        uid: {{ .Values.alerting.alertmanager.datasourceUID | quote }}
+        type: alertmanager
+        url: {{ .Values.alerting.alertmanager.url | quote }}
+        access: proxy
+        jsonData:
+          implementation: prometheus
+          handleGrafanaManagedAlerts: false
+      {{- end }}
       {{- if .Values.monitoring.datasources.loki.enabled }}
       - name: {{ .Values.monitoring.datasources.loki.name | quote }}
         uid: {{ .Values.monitoring.datasources.loki.uid | quote }}
@@ -28,6 +39,8 @@ data:
         url: {{ .Values.monitoring.datasources.loki.url | quote }}
         access: proxy
         jsonData:
+          # Log alerts are evaluated by Grafana; Loki's local ruler is not API-managed.
+          manageAlerts: false
           maxLines: 5000
           httpHeaderName1: X-Scope-OrgID
         secureJsonData:

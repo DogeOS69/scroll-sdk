@@ -27,7 +27,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -38,15 +39,18 @@
         "y": 0
       },
       "id": 1,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(tso_core_registered_signers_count{namespace=~\"$namespace\"})",
-          "legendFormat": "registered signers",
-          "refId": "A"
+          "expr": "max by (namespace, instance) ((tso_core_registered_signers_count{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{instance}} registered signers",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Registered Signers",
@@ -59,7 +63,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "ops"
+          "unit": "ops",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -76,8 +81,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (event_type) (rate(tso_core_signer_transaction_events_total{namespace=~\"$namespace\"}[$__rate_interval]))",
-          "legendFormat": "{{event_type}}",
+          "expr": "sum by (namespace, event_type) (rate(tso_core_signer_transaction_events_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "legendFormat": "{{namespace}} {{event_type}}",
           "refId": "A"
         }
       ],
@@ -91,7 +96,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -108,8 +114,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum by (le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
-          "legendFormat": "p99 {{outcome}}",
+          "expr": "histogram_quantile(0.99, sum by (namespace, le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p99 {{outcome}}",
           "refId": "A"
         },
         {
@@ -117,8 +123,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.90, sum by (le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
-          "legendFormat": "p90 {{outcome}}",
+          "expr": "histogram_quantile(0.90, sum by (namespace, le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p90 {{outcome}}",
           "refId": "B"
         },
         {
@@ -126,8 +132,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.50, sum by (le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
-          "legendFormat": "p50 {{outcome}}",
+          "expr": "histogram_quantile(0.50, sum by (namespace, le, outcome) (rate(tso_core_signer_response_latency_seconds_bucket{namespace=~\"$namespace\"}[$__rate_interval])))",
+          "legendFormat": "{{namespace}} p50 {{outcome}}",
           "refId": "C"
         }
       ],
@@ -142,7 +148,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -153,15 +160,18 @@
         "y": 0
       },
       "id": 4,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(tso_core_registered_signers_by_role{namespace=~\"$namespace\",role=\"Attestation\"})",
-          "legendFormat": "attestation",
-          "refId": "A"
+          "expr": "max by (namespace, instance) ((tso_core_registered_signers_by_role{namespace=~\"$namespace\",role=\"Attestation\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{instance}} attestation",
+          "refId": "A",
+          "instant": true,
+          "range": false
         }
       ],
       "title": "Attestation Signers",
@@ -174,7 +184,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -185,14 +196,15 @@
         "y": 12
       },
       "id": 5,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (role) (tso_core_registered_signers_by_role{namespace=~\"$namespace\"})",
-          "legendFormat": "{{role}}",
+          "expr": "max by (namespace, instance, role) ((tso_core_registered_signers_by_role{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{instance}} {{role}}",
           "refId": "A"
         }
       ],
@@ -206,7 +218,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -217,14 +230,15 @@
         "y": 12
       },
       "id": 6,
+      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data.",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (status) (tso_core_transactions_by_status{namespace=~\"$namespace\"})",
-          "legendFormat": "{{status}}",
+          "expr": "max by (namespace, instance, status) ((tso_core_transactions_by_status{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_metrics_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_observation_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "legendFormat": "{{namespace}} {{instance}} {{status}}",
           "refId": "A"
         }
       ],
@@ -238,7 +252,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "none",
+          "noValue": "No data"
         },
         "overrides": []
       },
@@ -255,13 +270,14 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (role, public_key) (tso_core_registered_signer_info{namespace=~\"$namespace\"})",
-          "legendFormat": "{{role}} {{public_key}}",
+          "expr": "max by (namespace, instance, role, public_key) ((tso_core_registered_signer_info{namespace=~\"$namespace\"} and on (namespace, job, instance) (tso_core_registry_snapshot_valid{namespace=~\"$namespace\"} == 1 and on (namespace, job, instance) (tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} <= time() and time() - tso_core_registry_snapshot_timestamp_seconds{namespace=~\"$namespace\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))) == 1)",
+          "legendFormat": "{{namespace}} {{instance}} {{role}} {{public_key}}",
           "refId": "A"
         }
       ],
       "title": "Registered Signer Info",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Currently registered signers only. Retired signer identities are omitted from the current snapshot. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data."
     }
   ],
   "refresh": "30s",
@@ -337,7 +353,7 @@
   "timezone": "",
   "title": "DogeOS TSO Service",
   "uid": "eenhawvlxsi68e",
-  "version": 3,
+  "version": 4,
   "weekStart": "",
   "description": "TSO service transaction, signer inventory, event-rate, and signer-latency telemetry. Metrics are emitted by tso_service through the tso_core namespace."
 }

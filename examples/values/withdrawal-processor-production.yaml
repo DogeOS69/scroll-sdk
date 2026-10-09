@@ -17,7 +17,7 @@ global:
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: TODO_TAG_TO_REPLACE
+  tag: v0.3.0-beta.5c
 
 # The image entrypoint is retained; args select the checked-in native config.
 command: []
@@ -110,12 +110,6 @@ env:
   # setup prep-charts replaces the proof-system entries together.
   # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
   # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__MODE
-    value: "disabled"
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_SCROLL_EXECUTION
-    value: "false"
-  - name: DOGEOS_WITHDRAWAL_PROOF_SYSTEM__REQUIRE_BRIDGE_STATE
-    value: "false"
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"
@@ -233,7 +227,9 @@ resources:
     memory: "512Mi"
     cpu: "500m"
   limits:
-    memory: "2Gi"
+    # Temporary real-proof catch-up sizing; revisit after backlog drains.
+    # Core #1313 tracks peak memory growth; 4Gi is not a proven upper bound.
+    memory: "4Gi"
     cpu: "1500m"
 
 serviceMonitor:

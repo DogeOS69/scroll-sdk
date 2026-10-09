@@ -77,7 +77,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "short"
         },
         "overrides": []
       },
@@ -109,7 +111,7 @@
           "editorMode": "code",
           "expr": "dogecoin_synced_headers_total{namespace=~\"$namespace\"}",
           "interval": "",
-          "legendFormat": "header",
+          "legendFormat": "{{namespace}} header",
           "range": true,
           "refId": "A"
         }
@@ -173,7 +175,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "none"
         },
         "overrides": []
       },
@@ -203,9 +207,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg(dogecoin_difficulty{namespace=~\"$namespace\"})",
+          "expr": "avg by (namespace) (dogecoin_difficulty{namespace=~\"$namespace\"})",
           "interval": "",
-          "legendFormat": "difficulty",
+          "legendFormat": "{{namespace}} difficulty",
           "range": true,
           "refId": "A"
         }
@@ -228,27 +232,17 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "green",
                 "value": 1
-              },
-              {
-                "color": "semi-dark-orange",
-                "value": 2
-              },
-              {
-                "color": "red",
-                "value": 3
-              },
-              {
-                "color": "dark-red",
-                "value": 5
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "none"
         },
         "overrides": []
       },
@@ -284,15 +278,17 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "dogecoin_errors_total{namespace=~\"$namespace\"}",
+          "expr": "min by (namespace, instance) (up{namespace=~\"$namespace\",job=~\".*metrics-exporter.*\"})",
           "interval": "",
-          "legendFormat": "cumulative errors",
-          "range": true,
-          "refId": "A"
+          "legendFormat": "{{namespace}} {{instance}}",
+          "range": false,
+          "refId": "A",
+          "instant": true
         }
       ],
-      "title": "Cumulative Node Errors",
-      "type": "stat"
+      "title": "Metrics Exporter Scrape Up",
+      "type": "stat",
+      "description": "Prometheus can scrape the exporter. This does not prove that Dogecoin RPC polling succeeded. getinfo.errors is a warning string, not a numeric error counter, so the old Cumulative Node Errors panel was removed."
     },
     {
       "datasource": {
@@ -350,7 +346,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "short"
         },
         "overrides": []
       },
@@ -382,7 +380,7 @@
           "editorMode": "code",
           "expr": "dogecoin_chain_block_height{namespace=~\"$namespace\"}",
           "interval": "",
-          "legendFormat": "height",
+          "legendFormat": "{{namespace}} height",
           "range": true,
           "refId": "A"
         }
@@ -446,7 +444,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "short"
         },
         "overrides": []
       },
@@ -478,7 +478,7 @@
           "editorMode": "code",
           "expr": "dogecoin_peer_connections_total{namespace=~\"$namespace\"}",
           "interval": "",
-          "legendFormat": "peers",
+          "legendFormat": "{{namespace}} peers",
           "range": true,
           "refId": "A"
         }
@@ -542,7 +542,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -575,7 +577,7 @@
           "expr": "dogecoin_size_on_disk_bytes{namespace=~\"$namespace\"}",
           "instant": true,
           "interval": "",
-          "legendFormat": "size_on_disk_bytes",
+          "legendFormat": "{{namespace}} size_on_disk_bytes",
           "range": true,
           "refId": "A"
         }
@@ -639,7 +641,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "Hs"
         },
         "overrides": []
       },
@@ -669,9 +673,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg(dogecoin_network_hash_ps{namespace=~\"$namespace\"})",
+          "expr": "avg by (namespace) (dogecoin_network_hash_ps{namespace=~\"$namespace\"})",
           "interval": "",
-          "legendFormat": "avg hash ps",
+          "legendFormat": "{{namespace}} avg hash ps",
           "range": true,
           "refId": "A"
         }
@@ -734,7 +738,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -764,15 +770,16 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_mempool_bytes_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "expr": "dogecoin_mempool_bytes_total{namespace=~\"$namespace\"}",
           "interval": "",
-          "legendFormat": "total bytes rate",
+          "legendFormat": "{{namespace}} {{instance}} mempool bytes",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Mempool Byte Counter Rate",
-      "type": "timeseries"
+      "title": "Mempool Transaction Bytes",
+      "type": "timeseries",
+      "description": "getmempoolinfo.bytes is a current byte-size gauge. The legacy metric suffix _total does not make it a counter."
     },
     {
       "datasource": {
@@ -830,7 +837,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "short"
         },
         "overrides": []
       },
@@ -862,13 +871,14 @@
           "editorMode": "code",
           "expr": "dogecoin_mempool_size_bytes{namespace=~\"$namespace\"}",
           "interval": "",
-          "legendFormat": "size bytes",
+          "legendFormat": "{{namespace}} {{instance}} transactions",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Mempool Size (bytes)",
-      "type": "timeseries"
+      "title": "Mempool Transaction Count",
+      "type": "timeseries",
+      "description": "getmempoolinfo.size is a transaction count. The exporter retains the legacy metric name dogecoin_mempool_size_bytes."
     },
     {
       "datasource": {
@@ -925,7 +935,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "Bps"
         },
         "overrides": []
       },
@@ -955,9 +967,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_bytes_recv_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "expr": "sum by (namespace) (rate(dogecoin_bytes_recv_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "bytes received per second",
+          "legendFormat": "{{namespace}} bytes received per second",
           "range": true,
           "refId": "A"
         }
@@ -1021,7 +1033,9 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "unit": "Bps"
         },
         "overrides": []
       },
@@ -1051,9 +1065,9 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(dogecoin_bytes_sent_total{namespace=~\"$namespace\"}[$__rate_interval]))",
+          "expr": "sum by (namespace) (rate(dogecoin_bytes_sent_total{namespace=~\"$namespace\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "bytes sent per second",
+          "legendFormat": "{{namespace}} bytes sent per second",
           "range": true,
           "refId": "A"
         }
@@ -1134,8 +1148,8 @@
   "timezone": "browser",
   "title": "DogeOS Dogecoin Node",
   "uid": "aen2u88pbyy2oa",
-  "version": 2,
+  "version": 3,
   "weekStart": "",
-  "description": "Dogecoin node chain, peer, mempool, storage, network, and error telemetry exported by the metrics-exporter integration.",
+  "description": "Dogecoin chain, peers, mempool, storage and network observations from the configured JSON-RPC metrics exporter. Legacy metric names are interpreted according to their RPC fields.",
   "refresh": "30s"
 }

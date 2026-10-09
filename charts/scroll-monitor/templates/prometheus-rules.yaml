@@ -1,4 +1,4 @@
-{{- if and .Values.prometheusRules.enabled (not (and .Values.grafana.enabled .Values.grafanaAlerting.enabled)) }}
+{{- if and .Values.prometheusRules.enabled (or (eq .Values.alerting.backend "prometheus") (not (and .Values.grafana.enabled .Values.grafanaAlerting.enabled))) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule

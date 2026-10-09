@@ -1,0 +1,839 @@
+{
+  "uid": "dogeos-dstack",
+  "title": "DogeOS / Dstack and GPU fleets",
+  "schemaVersion": 39,
+  "version": 2,
+  "editable": true,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "tags": [
+    "dogeos",
+    "dstack",
+    "gpu",
+    "internal"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Coverage and interpretation",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Native metrics show the controller’s latest cached observation. **A successful scrape does not establish GPU reachability or freshness.** Fleet GPU counts are allocated capacity, not a hardware health check. Empty job panels can mean no active tasks. Hardware panels require DCGM support. Host panels require the optional always-on Alloy collector. Proof completion is monitored separately in the proof-coordinator / worker dashboards."
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Native endpoint scrape",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_source=\"native\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Native scrape duration",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "scrape_duration_seconds{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_source=\"native\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Allocated fleet GPUs (not health)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name,dstack_fleet_name,dstack_gpu) (dstack_instance_gpu_count{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_fleet_name}} {{dstack_gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Estimated fleet price / hour",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (dstack_instance_price_dollars_per_hour{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"})",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Failed runs / 10m",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (increase(dstack_run_count_failed_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "Increase of the controller-exported run-count counter, grouped by project. These counters are reconstructed from retained run records; deleting records or resetting state can affect the estimate."
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Completed runs / 10m",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (dstack_namespace,dstack_controller,dstack_project_name) (increase(dstack_run_count_done_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[10m]))",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "Increase of the controller-exported run-count counter, grouped by project. These counters are reconstructed from retained run records; deleting records or resetting state can affect the estimate."
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Task GPU utilization (cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "dstack_job_gpu_usage_ratio{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Task GPU memory used (cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "dstack_job_gpu_memory_usage_bytes{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Task CPU usage (cores)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(dstack_job_cpu_time_seconds_total{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}[5m])",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Task memory working set (cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "dstack_job_memory_working_set_bytes{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "GPU temperature (native DCGM, cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_GPU_TEMP{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "GPU power (native DCGM, cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_POWER_USAGE{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "GPU XID code (diagnostic, cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_XID_ERRORS{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Uncorrected volatile ECC errors (cached)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_ECC_DBE_VOL_TOTAL{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_project_name=~\"$project\"}",
+          "legendFormat": "{{dstack_namespace}} {{dstack_controller}} {{dstack_project_name}} {{dstack_run_name}} {{dstack_job_name}} {{dstack_gpu_num}} {{gpu}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Host observation age (optional Alloy)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 53
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - node_time_seconds{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_host!=\"\"}",
+          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Host available filesystem space",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 53
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_filesystem_avail_bytes{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_host!=\"\",fstype!~\"tmpfs|overlay|squashfs\"}",
+          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Host available memory",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 60
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "node_memory_MemAvailable_bytes{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_host!=\"\"}",
+          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Direct host GPU temperature (optional DCGM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 60
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "DCGM_FI_DEV_GPU_TEMP{dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\",dstack_source=\"host\",dstack_host!=\"\"}",
+          "legendFormat": "{{dstack_fleet_name}} {{dstack_job_name}} {{dstack_host}} {{dstack_gpu_num}} {{gpu}} {{mountpoint}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "noValue": "No data",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "scroll-prometheus"
+        }
+      },
+      {
+        "name": "dstack_namespace",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(up{dstack_source=\"native\"}, dstack_namespace)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "controller",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(up{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\"}, dstack_controller)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "project",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "query": "label_values(dstack_instance_gpu_count{dstack_source=\"native\",dstack_namespace=~\"$dstack_namespace\",dstack_controller=~\"$controller\"}, dstack_project_name)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  }
+}

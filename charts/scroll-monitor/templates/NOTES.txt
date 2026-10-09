@@ -1,0 +1,37 @@
+TSO metrics are collected by scroll-monitor by default. Disable the supplemental
+monitor only when another chart already owns it or TSO is intentionally absent.
+
+{{- if eq .Values.alerting.backend "prometheus" }}
+Metric rules are evaluated by Prometheus. Grafana LogQL rules forward to the
+independent Alertmanager. Select Alertmanager in Grafana's Silences page.
+Slack credentials come from alerting.alertmanager.slack.existingSecret.
+{{- if not .Values.alerting.alertmanager.slack.existingSecret }}
+WARNING: no Slack Secret is configured; the default receiver sends no messages.
+{{- end }}
+Existing Grafana metric rules must be migrated explicitly; see
+docs/alertmanager-backend.md. Python status-page publication remains independent.
+{{- else }}
+Grafana application contact points do not receive the bundled Prometheus alerts
+automatically. Configure kube-prometheus-stack.alertmanager.config (or an existing
+Alertmanager Secret) for infrastructure notifications. Set
+infrastructureAlerts.requireReceiver=true to validate the inline default receiver.
+{{- $stack := index .Values "kube-prometheus-stack" }}
+{{- if and $stack.enabled $stack.alertmanager.enabled }}
+{{- if $stack.alertmanager.alertmanagerSpec.useExistingSecret }}
+The Alertmanager configuration comes from an existing Secret. Verify its routes
+and receivers separately; an offline Helm render cannot validate Secret contents.
+{{- else if eq $stack.alertmanager.config.route.receiver "null" }}
+WARNING: infrastructure alerts still default to the null receiver. They are
+visible in Prometheus/Alertmanager but this route sends no notifications.
+{{- end }}
+{{- end }}
+
+The Grafana seeder preserves UI edits and logs DRIFT for conflicting values.
+{{- if and .Values.grafana.enabled .Values.grafanaAlerting.enabled .Values.grafanaAlerting.defaultContactPoint.enabled }}
+Default destination {{ .Values.grafanaAlerting.defaultContactPoint.name }} is bootstrapped if missing.
+Add its Slack integration/webhook in Grafana Contact points to enable delivery.
+An empty contact point sends no messages. Existing custom defaults are preserved.
+{{- end }}
+{{- end }}
+Explicit grafanaAlerting.pauseRules entries also apply to existing managed rules.
+See examples/scroll-monitor-configuration.md for upgrade and preview instructions.

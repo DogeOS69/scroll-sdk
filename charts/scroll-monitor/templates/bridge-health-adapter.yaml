@@ -1,0 +1,96 @@
+{{- $health := .Values.bridgeHealth }}
+{{- if $health.enabled }}
+{{- if not (has $health.environment (list "devnet" "testnet" "mainnet")) }}{{ fail "bridgeHealth.environment must be explicit devnet, testnet or mainnet" }}{{ end }}
+{{- if not (regexMatch "^[0-9]+$" (toString $health.chainId)) }}{{ fail "bridgeHealth.chainId must be an explicit numeric L2 chain ID" }}{{ end }}
+{{- if or (lt (int $health.expectedTargets) 1) (gt (int $health.expectedTargets) 32) }}{{ fail "bridgeHealth.expectedTargets must be 1..32" }}{{ end }}
+{{- if empty $health.tsoJob }}{{ fail "bridgeHealth.tsoJob is required" }}{{ end }}
+{{- if or (lt (int $health.intervalSeconds) 5) (gt (int $health.intervalSeconds) 300) (lt (int $health.timeoutSeconds) 1) (gt (int $health.timeoutSeconds) 30) (ge (int $health.timeoutSeconds) (int $health.intervalSeconds)) }}{{ fail "bridgeHealth requires interval 5..300 and timeout 1..30 below interval" }}{{ end }}
+{{- if or (lt (int $health.freshnessSeconds) (mul 2 (int $health.intervalSeconds))) (gt (int $health.freshnessSeconds) 3600) }}{{ fail "bridgeHealth freshness must be >= 2 * interval and <= 3600 seconds" }}{{ end }}
+{{- if .Values.statusPage.enabled }}
+{{- if or (ne $health.environment .Values.statusPage.environment) (ne (toString $health.chainId) (toString ((.Values.statusPage.catalog | default dict).chainId | default ""))) }}{{ fail "bridgeHealth environment/chainId must match generated Status Page catalog" }}{{ end }}
+{{- end }}
+{{- $name := printf "%s-bridge-health" .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- $config := dict "prometheusUrl" .Values.monitoring.datasources.prometheus.url "environment" $health.environment "chainId" (toString $health.chainId) "namespace" ($health.sourceNamespace | default .Release.Namespace) "job" $health.tsoJob "expectedTargets" $health.expectedTargets "intervalSeconds" $health.intervalSeconds "freshnessSeconds" $health.freshnessSeconds "timeoutSeconds" $health.timeoutSeconds }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+data:
+  adapter.json: {{ $config | toJson | quote }}
+  adapter.py: |
+{{ .Files.Get "scripts/bridge-health-prometheus.py" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: scroll-bridge-health, app.kubernetes.io/instance: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: scroll-bridge-health, app.kubernetes.io/instance: {{ .Release.Name }}}
+      annotations:
+        checksum/config: {{ $config | toJson | sha256sum }}
+        checksum/script: {{ .Files.Get "scripts/bridge-health-prometheus.py" | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: adapter
+          image: {{ $health.image | quote }}
+          command: [python3, /config/adapter.py, --config, /config/adapter.json, --serve]
+          ports: [{name: metrics, containerPort: 9112}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 250m, memory: 128Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: {{ $name }}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {app.kubernetes.io/name: scroll-bridge-health, app.kubernetes.io/instance: {{ .Release.Name }}}
+spec:
+  selector: {app.kubernetes.io/name: scroll-bridge-health, app.kubernetes.io/instance: {{ .Release.Name }}}
+  ports: [{name: metrics, port: 9112, targetPort: metrics}]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $name }}
+  labels: {release: {{ .Release.Name }}, app.kubernetes.io/instance: {{ .Release.Name }}}
+spec:
+  namespaceSelector:
+    matchNames: [{{ .Release.Namespace }}]
+  selector:
+    matchLabels: {app.kubernetes.io/name: scroll-bridge-health, app.kubernetes.io/instance: {{ .Release.Name }}}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}

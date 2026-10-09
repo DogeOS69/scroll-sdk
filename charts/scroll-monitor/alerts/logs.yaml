@@ -28,4 +28,4 @@ groups:
           severity: critical
         annotations:
           summary: 'ERROR or panicked logs detected in {{ $labels.service }}.'
-          description: '{{ $value }} matching log lines in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate.'
+          description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate.'

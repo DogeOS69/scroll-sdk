@@ -1,0 +1,4 @@
+{
+  "selector": "{__name__=~\"(l1_interface|withdrawal_processor)_protocol_state_l2_batch_height\"}",
+  "expr": "clamp_max(max_over_time((max by (__LABELS__) (__SELECTOR__) > bool max by (__LABELS__) (__SELECTOR__ offset 1m))[__WINDOW__:1m]) + (max by (__LABELS__) (__SELECTOR__) > bool max by (__LABELS__) (__SELECTOR__ offset __WINDOW__)), 1) and max by (__LABELS__) (__SELECTOR__ offset __WINDOW__) and max by (__LABELS__) (__SELECTOR__)"
+}
