@@ -139,3 +139,33 @@ The 16 preparation regression cases cover state/resume, command boundaries,
 private output handling, funding validation and early destination checks. The
 container rehearsal above passed with the same candidate and a mock/observe
 proof fixture. No chart defaults were changed by the preparation orchestration.
+
+## Reviewed example defaults and S3 read URL follow-up
+
+CLI follow-up [`05719d10009eef5302f26d3ee53ea15d5d675c34`](https://github.com/DogeOS69/scroll-sdk-cli/commit/05719d10009eef5302f26d3ee53ea15d5d675c34)
+lets an enabled AWS blob archive omit `publicBaseUrl`: bucket and region determine
+the default read origin, while an explicit CDN/gateway URL still takes precedence.
+The generated doge-config and direct service values now agree. The SDK and CLI
+spec fee examples also match the existing SDK policy: 0.1 DOGE withdrawal fee and
+1 DOGE minimum, encoded using L2's 18 decimals.
+
+The revised SDK starter selects two sequencers, two bootnodes, AWS KMS identities
+for eth-da-submitter and fee-oracle, independent 2-of-3 attestation/recovery
+cohorts, 6 funding confirmations and the CLI's existing Sepolia RPC defaults.
+It includes all node identities, three descriptor paths and three recovery public
+key placeholders. Sequencer signers remain local.
+
+Validation of this follow-up passed:
+
+- CLI build and 165 targeted configuration/projection/identity/preparation tests.
+- Changed-file lint: 0 errors, 5 warnings.
+- SDK example environment coverage, rejection of unfilled placeholders, filled
+  schema validation and all 17 preparation steps. Only the identities step was
+  classified as a cloud mutation; no broadcast step was selected.
+- Assertions for both node counts, both KMS backends, the 2-of-3 attestation
+  selection, three descriptor inputs, 6 confirmations and both withdrawal fees.
+
+No apply against AWS or the three-signer cohort was run in this follow-up. The
+container rehearsal above describes the earlier local-identity variant. The TEE
+public key remains an operator input obtained from CubeSigner before planning;
+role/key lookup and hosted session provisioning are not yet part of plan/apply.

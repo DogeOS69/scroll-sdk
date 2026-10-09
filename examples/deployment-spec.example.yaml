@@ -17,7 +17,8 @@ templates:
   sdkRevision: c8f7871b6f6ad0d19504342558d96b7e39608d4d
 
 # Reference existing infrastructure; this spec does not create a cluster.
-# Local identity backends below do not create AWS KMS keys.
+# Apply creates AWS KMS keys and IAM/IRSA resources for the two service signers.
+# Sequencer transaction signers and all P2P nodekeys below remain local.
 infrastructure:
   provider: aws
   aws:
@@ -26,8 +27,8 @@ infrastructure:
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     secretsPrefix: dogeos-testnet
   namespace: dogeos-testnet
-  sequencerCount: 1
-  bootnodeCount: 1
+  sequencerCount: 2
+  bootnodeCount: 2
 
 network:
   l1ChainName: DOGE
@@ -42,14 +43,19 @@ accounts:
   # setup apply creates a private deployer account if one is not supplied.
 
 identities:
-  ethDaSubmitter: {action: create, backend: local}
-  feeOracle: {action: create, backend: local}
+  ethDaSubmitter: {action: create, backend: aws_kms}
+  feeOracle: {action: create, backend: aws_kms}
   sequencers:
     - index: 0
       nodekey: {action: create}
       signer: {action: create, backend: local}
+    - index: 1
+      nodekey: {action: create}
+      signer: {action: create, backend: local}
   bootnodes:
     - index: 0
+      nodekey: {action: create}
+    - index: 1
       nodekey: {action: create}
 
 # Existing PostgreSQL used by SDK applications. Keep credentials in the env file.
@@ -79,8 +85,9 @@ dogecoin:
 ethereumDa:
   chain: sepolia
   chainId: 11155111
-  l1RpcUrl: https://ethereum-sepolia.example.invalid
-  beaconRpcUrl: https://beacon-sepolia.example.invalid
+  # Same Sepolia defaults as the CLI; override with deployment-specific endpoints if needed.
+  l1RpcUrl: https://gateway.tenderly.co/public/sepolia
+  beaconRpcUrl: https://ethereum-sepolia-beacon-api.publicnode.com
   confirmationDepth: 1
   finalizationDepth: 64
   # Existing DA blob bucket. This is NOT the proof artifact bucket below.
@@ -90,7 +97,10 @@ ethereumDa:
       bucket: replace-with-unique-dogeos-blob-bucket
       region: us-west-2
       keyPrefix: dogeos-testnet/blobs
-      publicBaseUrl: https://replace-with-unique-dogeos-blob-bucket.s3.us-west-2.amazonaws.com
+      # Omit publicBaseUrl for AWS S3: derived from bucket + region.
+      # Set it only to override the HTTP read base (for example a CDN/gateway).
+      # Keep keyPrefix separate; the reader appends it.
+      # publicBaseUrl: https://blob-gateway.example.invalid
 
 proofArtifacts:
   s3:
@@ -99,12 +109,15 @@ proofArtifacts:
     keyPrefix: dogeos-testnet/proofs
 
 bridge:
-  # One partner is a rehearsal policy, not a mainnet quorum recommendation.
-  thresholds: {attestation: 1, recovery: 1}
-  keyCounts: {attestation: 1, recovery: 1}
+  # Independent 2-of-3 cohorts for attestation and recovery.
+  thresholds: {attestation: 2, recovery: 2}
+  keyCounts: {attestation: 3, recovery: 3}
   initialAttestationKeyset:
-    signerIds: [partner-a]
-    threshold: 1
+    signerIds: [partner-a, partner-b, partner-c]
+    threshold: 2
+  # Compressed SEC1 public key (02/03 + X) of the CubeSigner TEE signing key.
+  # Get it from cubesigner-init output; roleId/keyId are lookup/auth references,
+  # not public-key bytes. See deployment-spec.md for the acquisition procedure.
   teePubkey: REPLACE_WITH_COMPRESSED_TEE_PUBLIC_KEY
   # REQUIRED: replace 100 with a reviewed future Dogecoin block height (<500000000).
   # The production planner intentionally rejects this unfilled placeholder.
@@ -114,11 +127,11 @@ bridge:
     sequencer: 42069000  # Fixed protocol amount: exactly 0.42069 DOGE.
     feeWallet: 100000000  # Rehearsal funding budget; review before funding.
     bridge: 1000000000
-  confirmationsRequired: 2
+  confirmationsRequired: 6
   fees:
     depositFeeSats: "10000"
-    withdrawalFeeWei: "100000000000000"
-    minWithdrawalAmountWei: "1000000000000000"
+    withdrawalFeeWei: "100000000000000000" # 0.1 DOGE (L2 uses 18 decimals)
+    minWithdrawalAmountWei: "1000000000000000000" # 1 DOGE
   feeRecipient: "$ENV:OWNER_ADDRESS"
   # No seedString: production mode does not derive wallet or recovery keys.
 
@@ -226,6 +239,8 @@ preparation:
   # Put external inputs in its sibling 'inputs' directory or use absolute paths.
   attestationDescriptors:
     - ../inputs/partner-a/descriptor.json
+    - ../inputs/partner-b/descriptor.json
+    - ../inputs/partner-c/descriptor.json
   bridge:
     mode: production
     image: dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262
@@ -236,7 +251,9 @@ preparation:
       feeWalletPublicKey: REPLACE_WITH_COMPRESSED_DOGECOIN_FEE_WALLET_PUBLIC_KEY
       feeWalletKeyEnv: DOGECOIN_FEE_WALLET_KEY
       recoveryPublicKeys:
-        - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY
+        - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_1
+        - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_2
+        - REPLACE_WITH_COMPRESSED_RECOVERY_PUBLIC_KEY_3
       ethereumAnchor:
         # REQUIRED: choose the real Ethereum DA boundary; block 0 is illustrative.
         blockNumber: 0
@@ -252,4 +269,5 @@ preparation:
       destination: .data/compiler-identity.json
   # No archive/proofAws/secretUpload actions are selected in this example.
   # Existing bucket permissions and external runtime authentication are prerequisites.
-  # Optional cloud operations require explicit intent; see deployment-spec.md.
+  # KMS identity creation above is selected; other cloud operations are optional.
+  # See deployment-spec.md for the resource changes and required permissions.
