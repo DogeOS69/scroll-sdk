@@ -36,6 +36,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
       - run: pip install PyYAML==6.0.2
       - run: helm dependency build charts/tso-service
       - run: helm dependency build charts/withdrawal-processor

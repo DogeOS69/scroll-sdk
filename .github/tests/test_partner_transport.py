@@ -1,17 +1,16 @@
-"""Execute the documented partner phases with disposable transport keys."""
+"""Execute the partner scripts with disposable transport keys."""
+import hashlib
 import json
 import os
 from pathlib import Path
-import re
+import shutil
 import subprocess
 import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-PHASE_A, PHASE_B = re.findall(
-    r"^\(\n  set -eu\n[\s\S]*?^\)$",
-    (ROOT / "partner-kit/attestation-signer/README.md").read_text(), re.M,
-)
+SCRIPTS = ROOT / "partner-kit/attestation-signer/scripts"
+PHASE_A, PHASE_B = "phase-a.sh", "phase-b.sh"
 
 
 class PartnerTransportTests(unittest.TestCase):
@@ -19,6 +18,7 @@ class PartnerTransportTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory(prefix="partner-transport-")
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
+        shutil.copytree(SCRIPTS, self.root / "scripts")
         for name in ("signer-partner-a", "docker-compose", "signer-policy-bundle", "bin"):
             (self.root / name).mkdir()
         self.source = self.root / "signer-partner-a/transport.key"
@@ -48,9 +48,13 @@ fs.writeFileSync(process.argv[1], key.getPrivateKey('hex').padStart(64, '0') + '
 fs.writeFileSync(process.argv[2], JSON.stringify({transportPubkey: key.getPublicKey('hex', 'compressed')}));
 """, str(self.source), str(self.descriptor)], check=True, capture_output=True)
 
-    def run_phase(self, phase=PHASE_B):
-        return subprocess.run(["bash", "-c", phase], cwd=self.root, capture_output=True,
-                              env={**os.environ, "SIGNER_ID": "partner-a", "DOGE_NETWORK": "testnet",
+    def run_phase(self, phase=PHASE_B, preflight_flags=None):
+        env = dict(os.environ)
+        env.pop("PREFLIGHT_FLAGS", None)
+        if preflight_flags is not None:
+            env["PREFLIGHT_FLAGS"] = preflight_flags
+        return subprocess.run(["bash", str(self.root / "scripts" / phase)], cwd=self.root.parent, capture_output=True,
+                              env={**env, "SIGNER_ID": "partner-a", "DOGE_NETWORK": "testnet",
                                    "CALLS_LOG": str(self.log),
                                    "PATH": f"{self.root / 'bin'}{os.pathsep}{os.environ['PATH']}"})
 
@@ -101,6 +105,43 @@ fs.writeFileSync(process.argv[2], JSON.stringify({transportPubkey: key.getPublic
             self.assertEqual(self.runtime.stat().st_mode & 0o777, 0o600)
         self.assertIn("up -d", self.log.read_text())
         self.assertIn("signer preflight", self.log.read_text())
+
+    def test_production_preflight_is_the_default(self):
+        self.assertEqual(self.run_phase().returncode, 0)
+        self.assertIn("--require-production-ready", self.log.read_text())
+
+    def test_observe_preflight_requires_an_explicit_empty_override(self):
+        self.assertEqual(self.run_phase(preflight_flags="").returncode, 0)
+        self.assertIn("signer preflight", self.log.read_text())
+        self.assertNotIn("--require-production-ready", self.log.read_text())
+
+    def test_bundle_verification_checks_manifest_files_and_descriptor(self):
+        bundle = self.root / "signer-policy-bundle"
+        descriptor = {**json.loads(self.descriptor.read_text()), "id": "partner-a",
+                      "network": "testnet", "publicKey": "PUBLIC_KEY_PLACEHOLDER"}
+        self.descriptor.write_text(json.dumps(descriptor))
+        policy = bundle / "signer-policy.json"
+        policy.write_text(json.dumps({"contract": "attestation_evidence_v2",
+                                     "network": "testnet", "signers": [descriptor]}))
+        manifest = bundle / "signer-policy-manifest.json"
+        manifest.write_text(json.dumps({"files": [{"file": policy.name,
+                            "sha256": "sha256:" + hashlib.sha256(policy.read_bytes()).hexdigest()}]}))
+        expected = hashlib.sha256(manifest.read_bytes()).hexdigest()
+
+        def verify(digest=expected):
+            return subprocess.run(["bash", str(self.root / "scripts/verify-bundle.sh")],
+                                  cwd=self.root.parent, capture_output=True,
+                                  env={**os.environ, "SIGNER_ID": "partner-a",
+                                       "EXPECTED_MANIFEST_SHA256": digest}).returncode
+
+        self.assertEqual(verify(), 0)
+        self.assertNotEqual(verify("00" * 32), 0)
+        self.assertNotEqual(verify("invalid"), 0)
+        descriptor["transportPubkey"] = "DIFFERENT_PUBLIC_KEY_PLACEHOLDER"
+        self.descriptor.write_text(json.dumps(descriptor))
+        self.assertNotEqual(verify(), 0)
+        policy.write_text("{}")
+        self.assertNotEqual(verify(), 0)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@
 #   attestation-signer.toml — partner-owned V2 RPC trust domains and rotation
 #                             allowlists; generated once by signer init
 #   transport.key           — SECRET 32-byte hex transport key (mode 0600),
-#                             `umask 077; openssl rand -hex 32 > transport.key`;
+#                             created once by Phase A in ../README.md;
 #                             signs every request this signer sends to the TSO
 #   signer-policy.env       — post-genesis policy bundle from the bridge
 #                             operator (mode, context, artifact origin, verifier)
