@@ -11,7 +11,7 @@ KUBE_CONTEXT ?=
 # Must match dstackController.monitoring.namespace and the published Secrets.
 DSTACK_NAMESPACE ?= dstack-system
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.2
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.3
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades, including install-all.

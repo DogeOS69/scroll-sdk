@@ -11,6 +11,10 @@ image:
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
+# Explicit opt-in for cloud SDK credential chains (for example AWS IRSA).
+# Also enables automatic backend discovery; configure the native projects Secret.
+defaultCredentialsEnabled: false
+
 # Create these Secrets separately, or use External Secrets to populate them.
 # config.yml contains native dstack projects/backends and encryption.keys.
 serverConfig:

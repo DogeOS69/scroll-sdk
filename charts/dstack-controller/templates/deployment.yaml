@@ -43,10 +43,11 @@ spec:
           env:
             - name: DSTACK_SERVER_DIR
               value: /root/.dstack/server
-            # Do not discover cloud credentials from the controller host.
-            # Explicit backends may still opt into their native default creds.
+            {{- if not .Values.defaultCredentialsEnabled }}
+            # Blocks both automatic discovery and explicit default credentials.
             - name: DSTACK_DEFAULT_CREDS_DISABLED
               value: "1"
+            {{- end }}
             - name: DSTACK_SERVER_ADMIN_TOKEN
               valueFrom:
                 secretKeyRef:

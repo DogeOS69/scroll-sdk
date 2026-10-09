@@ -43,6 +43,8 @@ class ControllerTemplates(unittest.TestCase):
         self.assertFalse(pod["automountServiceAccountToken"])
         self.assertNotIn("initContainers", pod)
         container = pod["containers"][0]
+        env = {e["name"]: e for e in container["env"]}
+        self.assertEqual(env["DSTACK_DEFAULT_CREDS_DISABLED"]["value"], "1")
         self.assertIn("@sha256:", container["image"])
         self.assertNotIn("nvidia.com/gpu", str(container["resources"]))
         self.assertNotIn("command", container)
@@ -51,6 +53,19 @@ class ControllerTemplates(unittest.TestCase):
         pvc = resource(docs, "PersistentVolumeClaim")
         self.assertEqual(pvc["metadata"]["annotations"]["helm.sh/resource-policy"], "keep")
         self.assertNotIn("storageClassName", pvc["spec"])
+
+    def test_default_credentials_opt_in_preserves_irsa_and_no_kubernetes_token(self):
+        role = "arn:aws:iam::123456789012:role/test-dstack"
+        docs = resources({
+            "defaultCredentialsEnabled": True,
+            "serviceAccount": {"annotations": {"eks.amazonaws.com/role-arn": role}},
+        })
+        pod = resource(docs, "Deployment")["spec"]["template"]["spec"]
+        env = {e["name"]: e for e in pod["containers"][0]["env"]}
+        self.assertNotIn("DSTACK_DEFAULT_CREDS_DISABLED", env)
+        self.assertFalse(pod["automountServiceAccountToken"])
+        self.assertEqual(resource(docs, "ServiceAccount")["metadata"]["annotations"],
+                         {"eks.amazonaws.com/role-arn": role})
 
     def test_config_and_credentials_reference_secrets_without_rendering_values(self):
         docs = resources({
@@ -105,6 +120,8 @@ class ControllerTemplates(unittest.TestCase):
             ({"image": {"digest": "sha256:bad"}}, "digest"),
             ({"image": {"digest": "", "tag": ""}}, "image.tag"),
             ({"serviceAccount": {"automountServiceAccountToken": "false"}}, "boolean"),
+            ({"defaultCredentialsEnabled": "true"}, "boolean"),
+            ({"extraEnv": [{"name": "DSTACK_DEFAULT_CREDS_DISABLED", "value": "0"}]}, "reserved"),
             ({"extraEnv": [{"name": "DSTACK_DATABASE_URL", "value": "sqlite://"}]}, "reserved"),
             ({"extraEnv": [{"name": "HOME", "value": "/tmp"}]}, "reserved"),
             ({"extraEnv": [{"name": "A", "value": "1"}, {"name": "A", "value": "2"}]}, "duplicate"),

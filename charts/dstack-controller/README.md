@@ -101,9 +101,37 @@ The Secret must contain `service-account.json`. All its keys are mounted
 read-only under `/etc/dstack/credentials/gcp`. Other file-based credentials use
 the same mechanism. `extraEnv` accepts Kubernetes `EnvVar` objects including
 `valueFrom.secretKeyRef` for supported dstack environment variables. Configure
-workload identity using `serviceAccount.annotations` and explicit native backend
-default credentials when appropriate. Automatic backend credential discovery
-is disabled; no Kubernetes API permissions are granted by this chart.
+workload identity using `serviceAccount.annotations`. Default credentials and
+automatic backend discovery are disabled by default. dstack 0.21.5 also rejects
+an explicit `creds.type: default` while `DSTACK_DEFAULT_CREDS_DISABLED` is set.
+Opt in when using a cloud SDK credential chain, for example AWS IRSA:
+
+```yaml
+defaultCredentialsEnabled: true
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/your-dstack-role
+extraEnv:
+  - name: AWS_EC2_METADATA_DISABLED
+    value: "true"
+```
+
+Configure the AWS backend with `creds.type: default` in the existing native
+projects Secret, and scope the role's trust to this release's service account.
+The opt-in omits `DSTACK_DEFAULT_CREDS_DISABLED` entirely; setting it to `0`
+would still disable credentials. It also allows dstack's automatic backend
+discovery. Keep explicit project/backend configuration and only grant the
+controller its intended provider permissions. IRSA's projected token is
+separate from Kubernetes API token automount, which can remain disabled.
+No Kubernetes API permissions are granted by this chart.
+For IRSA, retain the metadata-disable entry so a missing web identity
+configuration cannot use the node's instance role. A configured web identity
+provider that fails to obtain credentials propagates that failure. Deployments
+intentionally using an EC2 instance role can omit this IRSA-specific entry.
+
+Apply this overlay after CLI-generated values; the CLI's existing configuration
+model does not expose `defaultCredentialsEnabled`. `extraEnv` cannot override
+the chart's reserved credential flag.
 
 For provider options, refer to the [dstack backend documentation](https://dstack.ai/docs/concepts/backends/)
 and the schema for the pinned server version. The controller needs outbound
@@ -167,7 +195,7 @@ python3 -m unittest discover -s charts/dstack-controller/tests -p 'test_*.py' -v
 The dedicated GitHub workflow runs these offline checks without cloud
 credentials or a cluster. Tests cover lifecycle defaults, multiple credential
 mounts, external PostgreSQL/PVC/ServiceAccount, Ingress/TLS and rejection of
-invalid combinations.
+invalid combinations, and default credential opt-in with IRSA annotations.
 
 Optional local container smoke test (requires Docker, Helm and PyYAML):
 
