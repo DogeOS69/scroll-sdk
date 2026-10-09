@@ -24,6 +24,14 @@ def render(service, overlay=None):
 
 
 class Beta6CompatibilityTests(unittest.TestCase):
+    def test_partner_compose_publishes_only_loopback_ports(self):
+        compose = yaml.safe_load((ROOT / "partner-kit/attestation-signer/docker-compose/docker-compose.yml").read_text())
+        signer = compose["services"]["attestation-signer"]
+        for port in signer["ports"]:
+            self.assertTrue(port.startswith("127.0.0.1:"), "Partner port exposed beyond loopback")
+        self.assertIn("127.0.0.1:4040:4040", signer["ports"])
+        self.assertIn("127.0.0.1:9100:9100", signer["ports"])
+
     def documents(self, result):
         self.assertEqual(result.returncode, 0, result.stderr)
         return [doc for doc in yaml.safe_load_all(result.stdout) if doc]

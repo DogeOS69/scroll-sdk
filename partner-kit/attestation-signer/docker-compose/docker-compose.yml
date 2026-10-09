@@ -29,7 +29,8 @@ services:
       # Pull delivery: the signer dials out to the TSO and accepts nothing
       # inbound. 4040 stays on loopback for local preflight only.
       - "127.0.0.1:4040:4040"
-      - "9100:9100"
+      # Local monitoring by default; remote scrapes are an explicit private-network choice.
+      - "127.0.0.1:9100:9100"
     volumes:
       - signer-data:/app/data
       - ./attestation-signer.toml:/etc/dogeos-partner/attestation-signer.toml:ro

@@ -1,10 +1,18 @@
 # Prometheus scrape contract
 
 The reference Compose deployment sets
-`ATTESTATION_SIGNER_METRICS_PORT=9100` and publishes host port `9100`. Configure
-an authorized Prometheus server to pull `GET /metrics` from that port. Keep the
-API port (`4040`) on loopback; do not expose it merely to enable monitoring. The partner is responsible for private routing, firewall or
-allowlist rules between Prometheus and the metrics port.
+`ATTESTATION_SIGNER_METRICS_PORT=9100` and publishes only
+`127.0.0.1:9100:9100`. A monitoring process on the signer host can scrape
+`http://127.0.0.1:9100/metrics`. No remotely accessible port is required for
+the signer or for local monitoring.
+
+If an authorized Prometheus server must scrape over a private network or VPN,
+explicitly replace the existing metrics port mapping with
+`<private-monitoring-IP>:9100:9100` in the deployment's Compose file and restrict
+access to that server. Replace the mapping rather than adding a second one.
+Keep `127.0.0.1:4040:4040` unchanged for local preflight. Do not publish either
+listener to all interfaces merely to operate the signer. These are optional
+monitoring network rules, separate from the signer's outbound TSO connection.
 
 The exposition provides these metric families:
 

@@ -71,8 +71,14 @@ surfaces for preflight:
 
 Prometheus uses a separate metrics-only listener:
 
-- `GET /metrics` is exposed on port `9100` by the reference Compose file.
+- `GET /metrics` is published only at `127.0.0.1:9100` on the signer host.
 - Other routes are not served on port `9100`.
+
+Both published ports are loopback-only by default. No public signer DNS name,
+TLS certificate, inbound security-group rule, or port forwarding is required.
+`4040` supports local preflight; `9100` supports local monitoring. Optional
+remote monitoring is configured separately on a private network; it is not a
+requirement for signing.
 
 Permit the outbound paths selected by this deployment:
 

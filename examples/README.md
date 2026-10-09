@@ -285,7 +285,8 @@ make reconcile-proof-services
 
 Before bridge genesis, give each external signer operator the complete
 `partner-kit/attestation-signer/` directory, collect the descriptor produced by
-their `scrollsdk signer init`, and import the descriptors with
+its Phase A script (`signer init`, `--print-identity`, then `signer init --identity`),
+and import the descriptors with
 `scrollsdk setup attestation-signer`. After genesis, send every partner the
 complete `signer-policy-bundle/` produced by
 `scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
@@ -293,6 +294,9 @@ protocol context in every signer mode, so partners start the service and run
 `signer preflight` only after installing that bundle. Production partners use
 `--require-production-ready` and keep their own RPC source sets and rotation
 allowlists in the generated `attestation-signer.toml`.
+External signers initiate signed polling and callbacks to TSO; they do not
+provide a reachable signer endpoint. The kit publishes local preflight and
+metrics ports only on host loopback by default.
 
 For a deployment that will later use real proving, import the software
 identities and Bridge-bound material before selecting `generation = real`.

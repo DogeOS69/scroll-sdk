@@ -33,6 +33,14 @@ transport key, export its `--print-identity` descriptor, and register the
 descriptor before enabling pull delivery. Use the
 [partner runbook](../partner-kit/attestation-signer/README.md).
 
+Partners do not provide a signer endpoint or open an inbound signing port.
+The reference Compose deployment binds both local preflight (`4040`) and
+metrics (`9100`) to host loopback. Optional remote monitoring needs its own
+explicit private-network configuration; TSO never calls those listeners.
+The runtime must set `ATTESTATION_SIGNER_TSO_DELIVERY=pull` and provide its
+transport key. Replacing an old image alone does not migrate push delivery;
+the binary still supports the legacy push default.
+
 The public TSO Ingress exposes exactly `/health` (Exact) and `/signer` (Prefix).
 Legacy callbacks, registration, proposals, status and metrics stay on the
 internal Service. Coordinate signer migration with that route change;

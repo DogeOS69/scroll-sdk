@@ -1,5 +1,12 @@
 # TSO callback ingress body limit
 
+This is the beta.3g/nginx incident procedure, retained as historical context.
+For beta.6, use the [current signer workflow](../partner-kit/attestation-signer/README.md)
+and [public edge configuration](../examples/core-beta6-configuration.md).
+External signers now dial out to TSO with transport-signed `/signer/*` requests;
+they do not publish a signer endpoint. The unprefixed public callback and curl
+example below do not apply to beta.6, whose production example selects ALB.
+
 The TSO production example values set this per-Ingress limit without modifying
 the chart defaults:
 
