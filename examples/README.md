@@ -83,9 +83,9 @@ For a fresh chain, copy `config.toml.example` to the deployment's `config.toml`.
   it also feeds the synthetic L1 interface and does not set the L2 floor.
 
 These new gas-limit and overhead inputs require **rebuilt gen-configs and deploy
-images containing the corresponding scroll-contracts changes**. The rc.2 pins in
-the existing release configuration below predate these inputs; select the new
-release for mainnet. Merely adding keys while using an older image will not
+images containing the corresponding scroll-contracts changes**. Use the matching
+images listed in [Contracts images](#contracts-images) below.
+Merely adding keys while using an older image will not
 activate them. Check the generated genesis gas limit and the initialized
 `L2SystemConfig.baseFeeOverhead` before launch.
 
@@ -116,9 +116,8 @@ policy with its own defaults.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.5c**, with contracts
-**deploy-dogeos-v0.3.0-rc.3** and CLI genesis generator
-**gen-configs-dogeos-v0.3.0-rc.3**. Upgrading **beta.5b to beta.5c** preserves
+The core service examples target **v0.3.0-beta.5c**.
+Upgrading **beta.5b to beta.5c** preserves
 the existing databases and proof identities after removing the retired WP
 finality fields and updating image/build pins. Follow the
 [beta.5c configuration and upgrade checklist](core-beta5c-configuration.md).

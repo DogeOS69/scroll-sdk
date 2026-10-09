@@ -2,8 +2,7 @@
 
 The eight core service values examples select `v0.3.0-beta.5c`. The external
 attestation-signer Compose example in `partner-kit/attestation-signer` selects
-the same release. Contracts use `deploy-dogeos-v0.3.0-rc.3`, and the CLI
-genesis generator uses `gen-configs-dogeos-v0.3.0-rc.3`.
+the same release.
 
 Release instructions:
 [dogeos-core #1284](https://github.com/DogeOS69/dogeos-core/issues/1284#issuecomment-5904045604).
