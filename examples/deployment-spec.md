@@ -41,7 +41,7 @@ and minimum withdrawal values already use L2 wei.
 
 Core service images are beta.6, with `v0.3.0-beta.6-kms` for withdrawal-processor.
 That image supports KMS sequencing; its fee wallet still uses a local key.
-The CLI genesis default is contracts rc.4, and
+The CLI genesis default is contracts rc.5, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Reth has its own release lineage; its tag must be selected explicitly. Plan
 resolves the committed HEAD of `--sdk-dir` and freezes its full commit in

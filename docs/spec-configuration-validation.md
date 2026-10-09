@@ -1,5 +1,10 @@
 # Spec configuration candidate validation
 
+> Current contracts default (2026-10-10): `dogeos-v0.3.0-rc.5`
+> (`be94674ec64383c1cea61770e64d3b1586bd298e`). The rc.4 references below
+> retain the original audit and rehearsal baseline; they do not certify an rc.5
+> container rehearsal. Current image selections are in [the examples](../examples/README.md).
+
 This records local validation of the candidate following the
 [beta.6 input audit](spec-configuration-audit.md). The audit's original JSON
 remains evidence for the old baseline, not the repaired candidate.

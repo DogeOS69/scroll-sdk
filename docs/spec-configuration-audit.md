@@ -1,5 +1,10 @@
 # DeploymentSpec configuration coverage audit
 
+> Current contracts default (2026-10-10): `dogeos-v0.3.0-rc.5`
+> (`be94674ec64383c1cea61770e64d3b1586bd298e`). The rc.4 references below
+> retain the original audit and rehearsal baseline; they do not certify an rc.5
+> container rehearsal. Current image selections are in [the examples](../examples/README.md).
+
 Audit date: 2026-10-09. Scope: a new deployment using core beta.6 and contracts
 rc.4, with explicit local/KMS and proof disabled/active, mock/real,
 observe/enforce choices. Existing-bridge upgrades are a separate lifecycle.

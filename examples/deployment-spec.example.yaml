@@ -9,7 +9,7 @@ version: "1.0"
 metadata:
   name: dogeos-testnet
   environment: testnet
-  description: "beta.6 / rc.4 preparation with production Bridge initialization"
+  description: "beta.6 / rc.5 preparation with production Bridge initialization"
 
 # Plan locks the committed HEAD of --sdk-dir automatically.
 # Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
