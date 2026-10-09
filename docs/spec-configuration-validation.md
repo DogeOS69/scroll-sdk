@@ -226,3 +226,65 @@ partner policy acceptance was performed. The previous container rehearsal covers
 the earlier local/mock variant. Importing returned partner validation references
 and regenerating their bound configuration remains outside current plan/apply;
 without that evidence the final enforcing proof check rejects completion.
+
+## Derived spec facts and partner evidence import (2026-10-09)
+
+CLI follow-up [`1ef956d`](https://github.com/DogeOS69/scroll-sdk-cli/commit/1ef956d)
+replaces the remaining operator-facing derived inputs:
+
+- `dogecoin.network` is the only Dogecoin network selector. The removed
+  `network.l1ChainId` field is rejected; mainnet/testnet/regtest derive the same
+  protocol constants across TOML, protocol seed, contract and frontend values.
+- Plan resolves committed SDK HEAD by default and freezes it. A full-commit
+  `templates.sdkRevision` override remains supported. Apply uses the locked
+  commit after checkout changes and ignores dirty template files.
+- CubeSigner role/key references are queried read-only, checked for membership
+  and Dogecoin key type/network, and normalized into the frozen TEE public key.
+  Provider sessions/private fields are not copied. Runtime authorization remains
+  owner-managed; lookup tests use provider adapters rather than a live account.
+- `proofAws.action` selects `create` or read-only `reuse`. Both generate resource
+  records; the example no longer imports `proof-aws.json` or hand-enters IRSA
+  ARNs. Reuse checks account, bucket region, EKS trust and current Secret metadata.
+  AWS discovery tests assert the exact read-only operations; no live AWS
+  provisioning was performed for this change.
+- Enforce plans wait for partner policy-validation receipts in an editable inbox,
+  validate their bindings and import the exact bytes into managed state, then
+  regenerate charts with the publication receipt before the final proof check.
+  Tests cover missing/partial evidence and wrong keys, bundle/revision, policy
+  mode, result, duplicate signer identity and invalid timestamp. Receipts in
+  these tests are synthetic and do not demonstrate real partner acceptance.
+  Beta.6 does not emit this receipt itself; the partner's actual validation
+  process must produce it, as described in the CLI evidence contract.
+
+Validation: build and generated field inventory passed; changed TypeScript lint
+passed with zero errors (existing complexity/style warnings remain). Full suite:
+**980 passing, 15 pending, 1 failing**. The remaining failure is the previously
+recorded `bootnode-public-p2p`/Reth-chart compatibility test; those implementation
+files are unchanged by this candidate. A stable-build rerun excludes an earlier
+run interrupted by simultaneous rebuilding of `dist`. The focused preparation,
+CubeSigner, AWS and evidence suites passed **43 tests**.
+
+The current SDK example passed temporary-directory validation, including schema,
+placeholder rejection, four KMS identities, separate buckets, fee conversion,
+CubeSigner resolution through an adapter, default SDK revision locking and all
+**25 preparation steps**. Its cloud steps are identities, proof AWS preparation
+and program publication; production Bridge includes no CLI broadcast step.
+
+Actual beta.6 proof-release experiment:
+
+- Branch `feat/proof-release-beta6` integrates core #1335 onto beta.6 without
+  changing beta.6 circuits/protocol/prover source.
+- Experimental revision: `5c2e9e05ddf4fe17e471b8a02a0cefa2e7d7dec8`.
+- Temporary tag: `v0.3.0-beta.6-proofexp.20261009.1`.
+- [Publication workflow](https://github.com/DogeOS69/dogeos-core/actions/runs/37938858630):
+  standard coordinator, topology compiler and publisher images plus image
+  revision checks have passed. Producer build was still running at this update.
+- The actual coordinator image
+  `dogeos69/proof-coordinator@sha256:9d638a2d5bc062793ff3b176f3f4f9f16ff39505da2977a01ef1be55494afa87`
+  passed CLI revision verification and exported both real materializer binaries.
+  An isolated Docker daemon stores experimental images outside the nearly-full
+  shared Docker disk.
+- `scripts/test-proof-release-e2e.mjs` in the CLI provides the complete actual
+  release-consumption rehearsal once the manifest and CUDA image are published.
+  Full producer baking, actual release lookup/consumption and real partner
+  acceptance are **not yet recorded as passed**.

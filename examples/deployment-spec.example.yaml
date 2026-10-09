@@ -1,7 +1,7 @@
 # Deployment intent for a TESTNET with active / real / enforce proofs.
 # See deployment-spec.md and copy deployment.env.example outside this checkout.
 # Bridge uses the beta.6 production outpoint flow. Real material/evidence handoffs
-# are required; see deployment-spec.md for the current enforce orchestration limit.
+# are required; apply waits for partner validation after exporting the policy.
 # Replace REPLACE_WITH_*, TODO_*, *.example.invalid and the marked numeric inputs.
 # This file contains no private keys, signer sessions or working credentials.
 version: "1.0"
@@ -11,11 +11,8 @@ metadata:
   environment: testnet
   description: "beta.6 / rc.4 preparation with production Bridge initialization"
 
-# The current CLI requires a full commit. This is the reviewed beta.6 template
-# baseline, already present in v0.3.0-develop; no manual SHA lookup is needed.
-# The proposed automatic SDK HEAD selection is not implemented yet.
-templates:
-  sdkRevision: c8f7871b6f6ad0d19504342558d96b7e39608d4d
+# Plan locks the committed HEAD of --sdk-dir automatically.
+# Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
 
 # Reference existing infrastructure; this spec does not create a cluster.
 # Apply creates AWS KMS keys and IAM/IRSA resources for all four signing identities:
@@ -34,9 +31,6 @@ infrastructure:
 network:
   l1ChainName: DOGE
   l2ChainName: DogeOS Testnet
-  # Fixed Dogecoin network mapping: mainnet=1, testnet=111111, regtest=5555555.
-  # Must match dogecoin.network; this is separate from ethereumDa.chainId.
-  l1ChainId: 111111
   l2ChainId: 221122
   tokenSymbol: DOGE
 
@@ -73,6 +67,7 @@ database:
     vpcPort: 5432
 
 dogecoin:
+  # Choose mainnet, testnet or regtest; the protocol L1 chain ID is derived automatically.
   network: testnet
   externalRpc:
     url: https://dogecoin.example.invalid
@@ -120,10 +115,6 @@ bridge:
   initialAttestationKeyset:
     signerIds: [partner-a, partner-b, partner-c]
     threshold: 2
-  # Compressed SEC1 public key (02/03 + X) of the CubeSigner TEE signing key.
-  # Get it from cubesigner-init output; roleId/keyId are lookup/auth references,
-  # not public-key bytes. See deployment-spec.md for the acquisition procedure.
-  teePubkey: REPLACE_WITH_COMPRESSED_TEE_PUBLIC_KEY
   # REQUIRED: replace 100 with a reviewed future Dogecoin block height (<500000000).
   # The production planner intentionally rejects this unfilled placeholder.
   timelock: 100
@@ -143,8 +134,12 @@ bridge:
 signing:
   cubesigner:
     mode: transport_only
-  # This prepares files without provisioning a hosted TEE key/session or proving
-  # control of teePubkey. Supply the actual CubeSigner role/session before runtime.
+    # Read-only query during plan; the public key and role metadata are frozen.
+    identity:
+      roleId: REPLACE_WITH_CUBESIGNER_ROLE_ID
+      # Optional when the role contains exactly one key.
+      # keyId: REPLACE_WITH_CUBESIGNER_KEY_ID
+  # Authenticate cs before plan. Runtime session provisioning remains operator-owned.
   # External attestation signers dial out to the TSO; no signer endpoint is required.
 
 feeOracle:
@@ -208,12 +203,8 @@ proofCoordinator:
     keyPrefix: dogeos-testnet/proofs
   serviceAccount:
     name: proof-coordinator
-    annotations:
-      eks.amazonaws.com/role-arn: REPLACE_WITH_PROOF_COORDINATOR_IRSA_ROLE_ARN
   withdrawalProcessorServiceAccount:
     name: withdrawal-processor
-    annotations:
-      eks.amazonaws.com/role-arn: REPLACE_WITH_WITHDRAWAL_PROCESSOR_IRSA_ROLE_ARN
 
 proofTopology:
   mode: active
@@ -287,11 +278,15 @@ preparation:
     mode: real
   # Explicitly request publication using the same pinned release manifest.
   proofPublication: {}
-  inputs:
-    # Existing artifact-store/IRSA receipt, matching the bucket and identities above.
-    - source: ../inputs/proof/proof-aws.json
-      destination: .data/proof-aws.json
-  # Apply creates KMS identities and publishes the verified proof program bundle.
-  # No archive/proofAws/secretUpload actions are selected; the proof store, access
-  # permissions and proof-aws receipt must already exist. External CUDA Worker
-  # launch and partner enforcing-policy validation remain separate handoffs.
+  # Apply creates/reconciles the proof bucket, workload IAM/IRSA roles and token
+  # secret, then generates .data/proof-aws.json. No ARN or receipt transcription.
+  proofAws:
+    action: create
+    publicReadMode: direct-s3
+  # To reuse resources without changing them: action: reuse with
+  # publicReadMode: existing-public-s3 (or existing-gateway + publicEndpointUrl).
+  # Optional coordinatorRoleName, withdrawalRoleName and secretName select
+  # nonstandard existing resource names; otherwise names derive from alias/cluster.
+  # Apply waits for partner receipts in .scrollsdk/inputs/signer-receipts/,
+  # verifies them, then regenerates config before the final enforcing check.
+  # No archive creation, Secret upload or paid Worker launch is selected.

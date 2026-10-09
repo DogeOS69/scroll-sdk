@@ -19,9 +19,11 @@ generates this deployment's Bridge-bound compiler identity; no hand-written
 compiler identity or mock proof hashes are accepted. This is a testnet policy;
 CubeSigner remains explicitly `transport_only`.
 
-`network.l1ChainId` must match the fixed Dogecoin network mapping: mainnet `1`,
-testnet `111111`, regtest `5555555`. The CLI rejects mismatches. This is separate
-from `ethereumDa.chainId`, which is `11155111` for Sepolia.
+Select only `dogecoin.network`: `mainnet`, `testnet` or `regtest`. The CLI derives
+the fixed L1 chain ID (`1`, `111111` or `5555555`) for every generated consumer.
+`network.l1ChainId` is not a spec input; remove it from older specs.
+`network.l2ChainId` is still operator-selected. The Ethereum DA chain ID is
+separate: `ethereumDa.chainId` is `11155111` for Sepolia.
 
 The beta.6 eth-da-submitter still consumes `ethereumDa.confirmationDepth` and
 `finalizationDepth`. The example explicitly selects `1` and `64`, matching core's
@@ -38,16 +40,19 @@ and minimum withdrawal values already use L2 wei.
 
 Core service images are beta.6, the CLI genesis default is contracts rc.4, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
-Reth has its own release lineage; its tag must be selected explicitly. The SDK
-commit in `templates.sdkRevision` is the reviewed template baseline. The current
-CLI still requires that field; automatic selection of SDK HEAD is not implemented.
+Reth has its own release lineage; its tag must be selected explicitly. Plan
+resolves the committed HEAD of `--sdk-dir` and freezes its full commit in
+the saved intent. Working-tree edits do not affect template selection. Advanced
+users may override it with `templates.sdkRevision: <full-commit>`; normal specs
+omit `templates`. Apply keeps the frozen revision even if the checkout advances.
 
 Use a CLI build containing `setup plan` and `setup apply`. Check `scrollsdk setup
 plan --help` before starting. AWS, Kubernetes, PostgreSQL and the external RPCs
 referenced here already exist. Apply creates the four declared AWS KMS signing identities
 and their IAM/IRSA resources using the configured region, EKS cluster and
-namespace. It also publishes the real proof program bundle to the existing proof
-bucket. It selects no bucket creation or Secret upload operations. Plan itself
+namespace. It also creates/reconciles the declared proof bucket, its workload
+roles and token Secret, and publishes the real proof program bundle. Secret
+upload into Kubernetes and blob bucket creation are not selected. Plan itself
 does not provision resources;
 generated configuration does not establish runtime access.
 
@@ -64,8 +69,6 @@ private-instance/
     partner-a/descriptor.json
     partner-b/descriptor.json
     partner-c/descriptor.json
-    proof/
-      proof-aws.json
   deployment/                 # created by setup plan
 ```
 
@@ -87,51 +90,38 @@ placeholders, not working identities or credentials.
 | Environment file | Fill the six base spec variables, both `DOGECOIN_*_KEY` wallet variables and `VASTAI_API_KEY`. The KMS-signer/SQLite example does not use `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`; remove those optional entries. |
 | Owner and deployment salt | Select the owner address and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
-| Bridge public keys | Supply the TEE public key, independently managed sequencer/fee-wallet public keys and three distinct recovery public keys. Wallet keys in the env file must match their declared public keys. Do not derive recovery/TEE keys from a helper seed. |
+| Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Supply independently managed sequencer/fee-wallet public keys and three distinct recovery public keys. Wallet keys in the env file must match their declared public keys. Do not derive recovery/TEE keys from a helper seed. |
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
 | Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
 | Partner descriptor | Obtain three public beta.6 descriptors and place them at `inputs/partner-a/descriptor.json`, `inputs/partner-b/descriptor.json` and `inputs/partner-c/descriptor.json`. Their actual signer IDs must match `bridge.initialAttestationKeyset.signerIds`; update the sample IDs if necessary. Descriptors include signing/transport public keys; no publicly reachable signer endpoint is required. |
 | Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
-| Existing proof store | Supply the actual `proof-aws.json` receipt for the existing bucket/IRSA configuration. Its bucket, region, key prefix and service accounts must match the spec. Supply matching role ARNs in `proofCoordinator`. This is a resource-provisioning receipt, not an identity file to invent. |
+| Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
-| Blob/proof buckets | Select two distinct existing buckets. Keep `proofArtifacts.s3` and `proofTopology.active.artifactStore` on the proof bucket, and `ethereumDa.blobArchive.s3` on the blob bucket. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
+| Blob/proof buckets | Select two distinct bucket names; the blob bucket already exists and apply prepares the proof bucket as selected by `proofAws`. Keep `proofArtifacts.s3` and `proofTopology.active.artifactStore` on the proof bucket, and `ethereumDa.blobArchive.s3` on the blob bucket. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
 External file paths in `preparation` are relative to the **output deployment
 directory**. With the layout above, `../inputs/...` resolves to the correct sibling
 directory. Absolute paths are also supported. Plan needs read access to the official
 GitHub proof release; optional `GH_TOKEN` / `GITHUB_TOKEN` supports private
 repository access and authenticated API limits. Keep tokens outside source control.
-Descriptor and existing proof-store receipt files may
+Descriptor files may
 arrive later; apply waits when a declared file is missing. Missing environment
 credentials also produce an actionable wait.
 
-## Obtain the TEE public key
+## Select the CubeSigner TEE identity
 
-`bridge.teePubkey` is the compressed SEC1 secp256k1 public key of the single
-CubeSigner TEE signing key: 33 bytes, encoded as 66 hex characters starting with
-`02` or `03`. Bridge construction consumes these bytes. A CubeSigner role ID
-identifies the authorization role; a key ID identifies the provider key. Neither
-is a substitute for the public key.
+Set `signing.cubesigner.identity.roleId` to the existing role ID. If the role has
+more than one key, also select `keyId`. Authenticate the `cs` CLI before planning.
+Plan queries role membership and key metadata, converts the public key to valid
+compressed SEC1 secp256k1 bytes and freezes both the role metadata and Bridge TEE
+public key. Apply reuses that resolved identity without querying CubeSigner again.
+No private key is exported, and no session is copied into the spec.
 
-For an existing configured CubeSigner role, the CLI's separate
-`setup cubesigner-init --roles <role-name> --doge-config <private-doge-config>`
-command queries the role and its key, normalizes the provider's public key, and
-writes `tee_pubkey` to `.data/setup_defaults.toml` under the current working
-directory. Use that public value
-in the spec. Run this command in the private CubeSigner preparation workspace
-before planning a fresh deployment. The role must select the single intended
-TEE key. `--roles` takes a role **name**, not a role ID.
-
-If the CubeSigner operator provides the key instead, ask for its compressed
-public key and the matching role/key references. The existing CLI uses
-`cs role get --role-id=...` and `cs key get --key-id=... --role-id=...` to retrieve
-provider metadata. Provider output may contain an uncompressed `04...` public
-key; use the normalized `tee_pubkey` from `cubesigner-init` for this production
-spec. No private key needs to be exported.
-
-The current `plan/apply` flow requires the public key up front. It does not yet
-resolve a role/key ID through CubeSigner or provision a hosted session. Runtime
-role/session configuration and hosted signer policy approval remain required.
+The normal example omits `bridge.teePubkey` and `signing.cubesigner.roles`. An
+explicit public key remains an advanced input; if combined with an identity
+lookup it must match the queried key. Explicit full `roles` and `identity` are
+mutually exclusive. Creating the hosted key and authorizing runtime signing
+sessions remain CubeSigner owner operations.
 
 ## Plan, apply and fund
 
@@ -178,18 +168,18 @@ a guarantee that enforcing preparation finishes in four commands.
 Successful completion reports `prepared`: service configuration, genesis, Bridge
 artifacts, Secrets and signer policy are prepared. It does not mean Helm releases
 have been installed or that a running chain has passed acceptance. Owner-managed
-CubeSigner authorization/session material and partner policy approval are separate
-runtime prerequisites. This example intentionally does not fabricate them.
+CubeSigner authorization/session material remains operator-owned. Partner policy
+approval is a required handoff that apply waits for and imports before completion.
 
 ## Other deployment choices
 
 The example already selects KMS identity creation for eth-da-submitter, fee-oracle
 and both sequencers.
-The CLI supports additional explicit preparation operations (`archive`, `proofAws`,
-`databases`, `secretUpload`). Adding them authorizes further resource changes during apply. See the matching CLI's `docs/spec-preparation.md` for their
-input contracts and required destinations; the complete example above leaves them
-unselected. Use the standard AWS credential provider chain for the selected KMS
-operations; do not put cloud credentials in the spec.
+The example also selects `proofAws.action: create`. Optional `archive`,
+`databases` and `secretUpload` operations authorize further resource changes during
+apply. See the matching CLI's `docs/spec-preparation.md` for their input contracts
+and required destinations. Use the standard AWS credential provider chain for
+selected KMS operations; do not put cloud credentials in the spec.
 
 ## Real proof generation and completion limits
 
@@ -226,22 +216,33 @@ After generating this deployment's `.data/protocol_context.json`, apply:
    checks the CUDA Worker image against the baked identities without a GPU.
 3. Imports the validated real material into `.data/proof-materials/`, builds the
    full real topology and prepares the service configuration.
-4. Publishes the verified program bundle using the selected release and existing
+4. Publishes the verified program bundle using the selected release and generated
    proof-store receipt, then exports the enforcing signer-policy bundle.
 
 The legacy coordinator chunk/batch/bundle collection timers are removed: they
 belong to retired Scroll services, not beta.6 Proof Coordinator. Native proof
 materialization policy remains owned by the pinned core compiler/templates.
 
-**Current completion limit:** partner operators must validate the exported
-policy and return real signer-validation receipts. The current plan/apply flow
-exports that bundle but does not yet import the returned validation references
-and regenerate their bound configuration. Without this evidence, the final
-`proof-config-check` rejects `enforce`; this example must not be presented as a
-verified unattended path to `prepared`. The matching CLI
-`docs/proof-config-transactions.md` describes that evidence and generation handoff.
-External CUDA Worker startup, actual proving and deployment acceptance are also
-separate operations. No proof mode is silently downgraded to mock or observe.
+Apply then pauses at `signer-receipts` and writes
+`.scrollsdk/inputs/signer-receipts/request.json`. Send `signer-policy-bundle/` to
+the partners. Each partner validates their final enforce configuration against
+the selected release and returns a `dogeos/attestation-signer-policy-validation/v1`
+receipt from that verification. The beta.6 signer itself does not emit this
+receipt; the partner validation process must produce it. See the matching CLI
+`docs/proof-config-transactions.md` for its required bindings. The request file maps signer IDs to numbered receipt filenames. Save the
+returned files there and rerun the same `setup apply` command.
+
+Apply computes the hashes and verifies the active signer set, keys, bundle hash,
+core revision, enforce policy mode, passed result and validation timestamp before
+copying accepted evidence into `.data/signer-policy-validation/`. It then
+regenerates the configuration with the publication receipt and runs the final
+check. Wrong or stale evidence is rejected; completed AWS/proving/publication
+steps are not replayed. Do not edit generated TOML or the saved plan.
+
+This integration is covered by synthetic receipt tests. It does not establish
+acceptance by real partner operators. External CUDA Worker startup, actual proving
+and deployment acceptance remain separate operations. No proof mode is silently
+downgraded to mock or observe.
 
 ## Validation
 
