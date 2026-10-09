@@ -288,3 +288,13 @@ Actual beta.6 proof-release experiment:
   release-consumption rehearsal once the manifest and CUDA image are published.
   Full producer baking, actual release lookup/consumption and real partner
   acceptance are **not yet recorded as passed**.
+
+
+The current CLI commit was also rerun through
+`scripts/test-preparation-e2e.mjs` using actual rc.4 genesis and beta.6 Bridge and
+compiler containers. SDK revision was omitted from the input spec, exercising
+HEAD selection. The run waited at `production-wallets`, then
+`production-funding`, reached `prepared`, and remained `prepared` on a subsequent
+apply without repeating completed work. RPC responses and funding transactions
+were synthetic; proof mode was mock/observe. This is a current preparation-flow
+regression result, not evidence for the pending real-release consumer rehearsal.
