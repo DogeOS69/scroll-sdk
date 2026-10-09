@@ -603,3 +603,14 @@ defaultProbes:
 # However, the DOGEOS_WITHDRAWAL_DATABASE_URL in this production file is currently set for PostgreSQL.
 # If you intend to use SQLite with this PVC in production, update the
 # DOGEOS_WITHDRAWAL_DATABASE_URL to 'sqlite:///app/data/withdrawal_processor.db'.
+
+# Configure deployment peers before enabling ingress isolation.
+networkPolicy:
+  enabled: false
+  apiPort: 3000
+  proofWorkPort: 9300
+  allowFrom:
+    tso: []                   # required when enabled: tso-service pods
+    operators: []             # optional: who may call the rotation routes
+    monitoring: []            # optional: Prometheus, scrapes /metrics
+    proofCoordinator: []      # optional: proof-coordinator pods (proof-work port)

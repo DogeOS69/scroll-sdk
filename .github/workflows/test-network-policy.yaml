@@ -1,0 +1,35 @@
+name: Test ingress NetworkPolicy
+on:
+  pull_request:
+    paths:
+      - charts/tso-service/**
+      - charts/withdrawal-processor/**
+      - examples/values/tso-service-production.yaml
+      - examples/values/withdrawal-processor-production.yaml
+      - .github/tests/test_network_policy.py
+      - .github/workflows/test-network-policy.yaml
+  push:
+    paths:
+      - charts/tso-service/**
+      - charts/withdrawal-processor/**
+      - examples/values/tso-service-production.yaml
+      - examples/values/withdrawal-processor-production.yaml
+      - .github/tests/test_network_policy.py
+      - .github/workflows/test-network-policy.yaml
+permissions:
+  contents: read
+jobs:
+  chart-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install PyYAML==6.0.2
+      - run: helm dependency build charts/tso-service
+      - run: helm dependency build charts/withdrawal-processor
+      - run: python3 -m unittest discover -s .github/tests -p 'test_network_policy.py' -v

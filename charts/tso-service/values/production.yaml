@@ -41,3 +41,12 @@ serviceMonitor:
 
 defaultProbes:
   enabled: false
+# Configure deployment peers before enabling ingress isolation.
+networkPolicy:
+  enabled: false
+  port: 3000
+  allowFrom:
+    withdrawalProcessor: []   # e.g. [{podSelector: {matchLabels: {app.kubernetes.io/name: <wp>}}}]
+    signers: []               # signer pods that post signature callbacks
+    operators: []             # optional: operator tooling / ad-hoc port-forward source
+    monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port

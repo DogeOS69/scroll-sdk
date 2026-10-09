@@ -83,3 +83,23 @@ serviceMonitor:
 
 # Application env/config is intentionally supplied by deployment values such as
 # examples/values/withdrawal-processor-production.yaml.
+
+# Ingress NetworkPolicy for the withdrawal-processor. The API routes are
+# unauthenticated by design (see the dogeos-core withdrawal_processor README,
+# "Trust boundary"); this policy is the access control. Disabled by default so
+# an upgrade cannot cut TSO callbacks or metrics scraping before the selectors
+# below are set. Enable it in every deployment that runs on a
+# NetworkPolicy-enforcing CNI. All lists hold NetworkPolicyPeer entries
+# (podSelector / namespaceSelector). Callbacks, rotation routes, health and
+# /metrics share apiPort, so every peer listed for it reaches every route.
+# proofCoordinator opens proofWorkPort (bearer-token auth is enforced by the
+# application there); leave it empty to keep that port closed.
+networkPolicy:
+  enabled: false
+  apiPort: 3000
+  proofWorkPort: 9300
+  allowFrom:
+    tso: []                   # required when enabled: tso-service pods
+    operators: []             # optional: who may call the rotation routes
+    monitoring: []            # optional: Prometheus, scrapes /metrics
+    proofCoordinator: []      # optional: proof-coordinator pods (proof-work port)
