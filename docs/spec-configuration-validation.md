@@ -298,3 +298,62 @@ HEAD selection. The run waited at `production-wallets`, then
 apply without repeating completed work. RPC responses and funding transactions
 were synthetic; proof mode was mock/observe. This is a current preparation-flow
 regression result, not evidence for the pending real-release consumer rehearsal.
+
+## Published beta.6 proof images: real consumer validation (2026-10-10)
+
+The previously pending publication and real-image consumer checks are now
+complete. The [publication workflow](https://github.com/DogeOS69/dogeos-core/actions/runs/37938858630)
+passed all jobs, including producer preparation, CUDA build, GPU-less smoke,
+promotion and manifest publication. The [experimental proof release](https://github.com/DogeOS69/dogeos-core/releases/tag/proof-release-v0.3.0-beta.6-proofexp.20261009.1)
+is selected in a spec as:
+
+```yaml
+preparation:
+  proofRelease:
+    version: v0.3.0-beta.6-proofexp.20261009.1
+```
+
+This is an explicit experiment version, not a replacement for the normal
+example's eventual production release. The CLI resolves the publisher's
+`proof-release-` tag prefix automatically.
+
+Evidence pins:
+
+- Core revision: `5c2e9e05ddf4fe17e471b8a02a0cefa2e7d7dec8`.
+- CLI fixes and rehearsal script: `7b29ce4` on `feat/spec-plan-apply`.
+- SDK templates: `87c1e048f59ca04f48cade903b6860cff033a643`.
+- Release manifest SHA-256: `ebcfeb792ea5231a04a543b8180a8411798cdfcc964681bac0ac004f6307f993`.
+- Protocol context SHA-256: `f2bf2b37ecf0269ebe0babf56501290388e5ed6511a5aeaf76c2e765dbbabccd`.
+- Installable topology bundle revision: `a84a79fdcb0e05fb9ac835ba9282c0b941693af3d0f018a538f744de464685f2`.
+
+The CLI consumer used actual published images and passed:
+
+1. Official release download, publisher checksum verification and digest locking.
+2. Source revision checks for all five release images.
+3. Network-disabled producer execution using the rehearsal deployment's protocol
+   context, including actual Bridge and Aggregation guest compilation.
+4. Export of the release coordinator's two materializer binaries.
+5. CUDA Worker revision and compiled Batch/Aggregation commitment checks against
+   the newly baked preparation receipt.
+6. Real material import and automatic compiler identity generation. The current
+   generated path is `.data/proof-materials/software/identity/worker-identity.json`;
+   operators do not supply a separate hand-written `compiler-identity.json`.
+7. Actual compiler-container generation of an installable `active / real / enforce`
+   bundle, with the Worker digest matching the imported material receipt.
+
+The run exposed a CLI cache-path bug on hosts with a symlinked cache directory.
+The fix resolves the configured cache root to its physical path while retaining
+symlink rejection inside the artifact cache. Build and 25 focused release,
+preparation and Worker tests passed; changed TypeScript lint had zero errors.
+
+The rehearsal script also lacked runtime compiler inputs: Ethereum/Dogecoin
+RPC context and a nonempty submitter allowlist. The compiler correctly rejected
+these omissions. After supplying nonfunctional endpoint fixtures and a public
+fixture submitter address, final compilation passed using the same previously
+generated materials. The script now supplies these inputs and asserts real,
+enforce, installable output and the pinned Worker digest.
+
+This validates image consumption and configuration generation. It does not
+exercise live AWS provisioning, S3 program publication, GPU proof generation,
+partner policy acceptance or complete `setup apply` readiness. Protocol context
+came from the earlier synthetic-funding Bridge rehearsal, not a funded network.
