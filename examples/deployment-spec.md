@@ -520,3 +520,14 @@ The previously recorded rc.4/beta.6 container rehearsal used a
 proof generation, live KMS, program publication or partner enforcing-policy
 acceptance for this revised example. See the
 [validation record](../docs/spec-configuration-validation.md) for exact scope.
+
+## Optional GPU capacity intent
+
+`proofWorkers` declares bounded Vast.ai capacity for the already configured dstack
+controller. The complete starter includes one RTX 3090, a two-hour run, $0.80 per
+instance-hour ceiling and $3 rental admission budget. Preparation validates and
+records this intent without renting a GPU. After deploying the coordinator and
+controller, use `setup proof-workers plan` and `setup proof-workers apply` from
+the generated runtime directory. See [GPU capacity and lifecycle](proof-workers.md)
+for the eight-hour example, status, cancellation, recovery and billing boundaries.
+The worker image and proof arguments come from the checked compiler contract.

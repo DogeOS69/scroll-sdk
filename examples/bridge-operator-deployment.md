@@ -191,12 +191,23 @@ cd "$WORKER_BUNDLE_DIR"
 ./prover-worker-compose up -d prover-worker
 ```
 
-For dstack/Vast, install the controller as above and submit a reviewed provider
-run derived from the same compiler contract. The CLI does **not** currently turn
-the spec into a rented GPU automatically. Select compatible CUDA architecture,
-unique worker IDs, resource/price/time limits and idle teardown; preserve artifact
-hash checks and keep bearer tokens in private provider Secrets. Do not reuse the
-rehearsal-specific task manifest as a deployment-independent default.
+For dstack/Vast, keep running from this same `runtime/` directory:
+
+```bash
+scrollsdk setup proof-workers plan
+scrollsdk setup proof-workers apply
+scrollsdk setup proof-workers status
+# Explicit cancellation; repeat until all owned fleets are terminated:
+scrollsdk setup proof-workers destroy
+```
+
+`plan` reads the saved spec intent and compiled Worker contract, locks the exact
+image/GPU/resources/limits, and shows the rental envelope without allocating.
+Only the separate GPU `apply` submits billable resources, after first starting
+an independent in-cluster cleanup watchdog. Closing the CLI does not remove that
+watchdog. See [GPU capacity and lifecycle](proof-workers.md) for defaults,
+an eight-hour example, safe recovery, and the limits of cost/deletion guarantees.
+Do not destroy the controller/cluster before confirming all rented resources are gone.
 
 Partner operators follow [the signer guide](../partner-kit/attestation-signer/README.md).
 Return receipts against the exact exported policy bundle to the original

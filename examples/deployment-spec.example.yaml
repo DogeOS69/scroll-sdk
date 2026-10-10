@@ -238,6 +238,24 @@ proofTopology:
       chunkWitnessSource: rpc
       chunkWitnessRpcUrl: http://l2-rpc:8545
 
+# Declares capacity only; setup apply does not rent GPUs during preparation.
+# After installing the coordinator/controller, run setup proof-workers plan/apply.
+proofWorkers:
+  backend: vastai
+  count: 1
+  gpu: RTX3090                  # sm_86; must match the checked release image.
+  cpu: 8
+  memoryGb: 64
+  diskGb: 200
+  regions: [us-texas, us-colorado, us-washington]
+  minReliability: 0.95
+  maxPricePerHourUsd: 0.80      # Per-instance ceiling, not a market quotation.
+  rentalBudgetUsd: 3           # 2h + startup/drain/idle/polling envelope: $2.27.
+  maxDurationHours: 2          # Maximum supported value: 8; never unlimited.
+  startupTimeoutMinutes: 30
+  stopTimeoutMinutes: 13       # Covers the compiler's 12-minute proof drain.
+  idleTimeoutMinutes: 5
+
 dstackController:
   enabled: true
   database: {type: sqlite}
