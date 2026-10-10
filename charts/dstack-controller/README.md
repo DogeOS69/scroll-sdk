@@ -129,9 +129,14 @@ configuration cannot use the node's instance role. A configured web identity
 provider that fails to obtain credentials propagates that failure. Deployments
 intentionally using an EC2 instance role can omit this IRSA-specific entry.
 
-Apply this overlay after CLI-generated values; the CLI's existing configuration
-model does not expose `defaultCredentialsEnabled`. `extraEnv` cannot override
-the chart's reserved credential flag.
+With the matching CLI, set `dstackController.defaultCredentialsEnabled: true`
+and the service-account annotation in the source spec (or doge-config TOML), then
+regenerate values. The CLI emits the IRSA metadata-disable entry automatically
+when both are selected. An AWS cluster or role annotation alone does not opt in.
+For older CLI builds, apply the overlay above after generated values on every
+installation/upgrade. `extraEnv` cannot override the chart's reserved credential
+flag. Native AWS backend configuration and IAM permissions remain separate inputs;
+the CLI's Vast.ai/GCP credential importer does not create an AWS backend.
 
 For provider options, refer to the [dstack backend documentation](https://dstack.ai/docs/concepts/backends/)
 and the schema for the pinned server version. The controller needs outbound

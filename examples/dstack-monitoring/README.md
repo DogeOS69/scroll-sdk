@@ -88,7 +88,7 @@ an explicit empty value skips the overlay. To disable an existing integration,
 regenerate an overlay with monitoring disabled rather than just omitting it.
 
 `install-dstack-controller` installs the independent OCI chart, pinned to version
-`0.1.2`, and creates its namespace if needed. `DSTACK_NAMESPACE` defaults to
+`0.1.3`, and creates its namespace if needed. `DSTACK_NAMESPACE` defaults to
 `dstack-system`; it must match `dstackController.monitoring.namespace` and the
 namespace containing the controller Secrets. Override `DSTACK_CONTROLLER_CHART`,
 `DSTACK_CONTROLLER_CHART_VERSION` or `DSTACK_CONTROLLER_VALUES` for a local chart,

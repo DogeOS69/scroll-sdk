@@ -426,6 +426,17 @@ after updating that Secret on an existing installation.
 
 ## Other deployment choices
 
+The starter uses Vast.ai workers and leaves dstack cloud SDK credentials disabled.
+Running the controller on EKS does not require enabling AWS worker credentials.
+For AWS workers authenticated through IRSA, chart 0.1.3 supports an explicit
+`dstackController.defaultCredentialsEnabled: true` with the controller's
+`serviceAccount.annotations.eks.amazonaws.com/role-arn`. The matching CLI emits
+`AWS_EC2_METADATA_DISABLED=true` for this combination and preserves disabled
+Kubernetes API token automount. Supply the native AWS backend (`creds.type:
+default`) in the controller projects Secret and the appropriate IAM permissions;
+this switch does not provision either. It also enables automatic backend
+credential discovery. See the [controller guide](../charts/dstack-controller/README.md).
+
 The example already selects KMS identity creation for eth-da-submitter, fee-oracle
 and both sequencers.
 The example also selects `proofAws.action: create`. Optional `archive`,
