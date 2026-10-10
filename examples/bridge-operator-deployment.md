@@ -27,19 +27,31 @@ records. Apply derives them. Grafana needs no initial password input: it generat
 one and puts it through the same external-secret-store flow as Dogecoin.
 See [the spec reference](deployment-spec.md) for field semantics and key custody.
 
-Use your actual paths and context in the commands below. `INSTANCE_DIR` is the
-private working directory; `SDK_DIR` is the normal SDK checkout. Set `AWS_PROFILE`,
+Run `plan` and `apply` from your private working directory. Keep the SDK checkout
+as its sibling `../scroll-sdk`, or override `--sdk-dir` once when planning. Set `AWS_PROFILE`,
 `AWS_REGION`, `KUBE_CONTEXT`, `NAMESPACE` and `SECRET_PREFIX` to the reviewed spec
 values. Do not source deployment.env: the CLI parses it as literal data.
 
 ## 2. Plan once; resume apply at external waits
 
 ```bash
-scrollsdk setup plan --spec "$INSTANCE_DIR/deployment-spec.yaml" \
-  --env-file "$INSTANCE_DIR/deployment.env" \
-  --sdk-dir "$SDK_DIR" --output "$INSTANCE_DIR/deployment"
-scrollsdk setup apply --dir "$INSTANCE_DIR/deployment"
+scrollsdk setup plan
+scrollsdk setup apply
 ```
+
+The conventional paths are relative to the current working directory:
+
+| Input/output | Default | Optional override |
+| --- | --- | --- |
+| Spec | `deployment-spec.yaml` | `plan --spec <file>` |
+| Private environment | `deployment.env`, when present | `plan --env-file <file>` |
+| SDK checkout | `../scroll-sdk` | `plan --sdk-dir <directory>` |
+| Preparation output | `deployment/` | `plan --output <directory>` |
+| Saved plan to apply | `deployment/` | `apply --dir <directory>` (also `--deployment-dir`) |
+
+Apply reuses the environment file recorded by plan. If the default file is absent,
+export the required variables in the process environment. An explicitly selected
+missing environment file is an error. Paths do not need to be repeated on resume.
 
 Review the plan's selected AWS operations before apply. Production mode does not
 sign or broadcast funding payments on the operator's behalf.
@@ -78,9 +90,9 @@ from modifying the preparation workflow's fingerprinted files. Create it only
 once; do not overwrite an existing runtime directory on resume:
 
 ```bash
-test ! -e "$INSTANCE_DIR/runtime"
-cp -a "$INSTANCE_DIR/deployment" "$INSTANCE_DIR/runtime"
-cd "$INSTANCE_DIR/runtime"
+test ! -e runtime
+cp -a deployment runtime
+cd runtime
 scrollsdk setup cubesigner-refresh -N --doge-config .data/doge-config.toml
 scrollsdk setup push-secrets -N --provider aws \
   --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
@@ -95,9 +107,10 @@ for Dogecoin. Dstack's generated controller credentials use its existing explici
 Kubernetes publication path, so the context/namespace flags are required.
 If `preparation.secretUpload` already completed, do not upload again needlessly.
 
-If Slack is enabled, also run `setup monitoring-secrets --env-file
-"$INSTANCE_DIR/deployment.env" --apply --kube-context "$KUBE_CONTEXT" --namespace
-"$NAMESPACE"`. This applies the Slack Secret only; Grafana still uses the store.
+If Slack is enabled, also run `scrollsdk setup monitoring-secrets --apply
+--kube-context "$KUBE_CONTEXT" --namespace "$NAMESPACE"`. It reads the environment
+file recorded in the copied plan. This applies the Slack Secret only; Grafana
+still uses the store.
 
 ## 4. Install base services, then contracts, then bridge services
 
@@ -162,9 +175,11 @@ this staged flow: it also installs optional components and invokes initializatio
 ## 5. Start the selected GPU worker and collect partner evidence
 
 ```bash
-scrollsdk setup proof-worker --deployment-dir "$INSTANCE_DIR/runtime"
+scrollsdk setup proof-worker
 ```
 
+`proof-worker`, `proof-config-check` and `monitoring-secrets` default to the
+current deployment directory (`.`); `--deployment-dir` is only an override.
 Use the exact bundle path, bundle ID and resource paths reported by this command.
 On a compatible GPU host, verify the transferred bundle, then use its launcher:
 
@@ -185,9 +200,9 @@ rehearsal-specific task manifest as a deployment-independent default.
 
 Partner operators follow [the signer guide](../partner-kit/attestation-signer/README.md).
 Return receipts against the exact exported policy bundle to the original
-preparation directory, then run `setup apply --dir "$INSTANCE_DIR/deployment"`
-again. Regeneration with accepted evidence does not automatically upgrade already
-installed runtime releases: review and reconcile the resulting runtime values.
+preparation directory. Return to the private working directory (`cd ..` from
+`runtime/`), then run `scrollsdk setup apply` again. Regeneration with accepted
+evidence does not automatically upgrade already installed runtime releases: review and reconcile the resulting runtime values.
 Never fabricate a receipt to turn `waiting` into `prepared`.
 
 ## 6. Acceptance criteria

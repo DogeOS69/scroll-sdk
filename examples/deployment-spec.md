@@ -262,14 +262,16 @@ and [dumpprivkey implementation](https://github.com/dogecoin/dogecoin/blob/v1.14
 ## Plan, apply and fund
 
 ```bash
-scrollsdk setup plan \
-  --spec /private/instance/deployment-spec.yaml \
-  --env-file /private/instance/deployment.env \
-  --output /private/instance/deployment \
-  --sdk-dir /path/to/scroll-sdk
-
-scrollsdk setup apply --dir /private/instance/deployment
+cd /private/instance
+scrollsdk setup plan
+scrollsdk setup apply
 ```
+
+The defaults are `deployment-spec.yaml`, optional `deployment.env`, preparation
+output `deployment/` and SDK checkout `../scroll-sdk`, relative to this working
+directory. If the SDK is elsewhere, pass `--sdk-dir /path/to/scroll-sdk` to plan.
+Custom paths remain optional overrides; apply uses the saved environment-file
+reference. See the [operator guide](bridge-operator-deployment.md) for the table.
 
 Plan validates and records the chosen inputs without provisioning resources or
 sending transactions. Apply prepares identities and genesis, then waits for
@@ -406,12 +408,14 @@ ordinary `push-secrets` step. Without automatic upload, use the dedicated comman
 or upgrading scroll-monitor:
 
 ```bash
-scrollsdk setup monitoring-secrets --env-file /private/deployment.env \
+scrollsdk setup monitoring-secrets \
   --apply --kube-context "$KUBE_CONTEXT" --namespace "$NAMESPACE"
 make install-scroll-monitor KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
 ```
 
-Run from the generated deployment directory. The command also prepares Grafana
+Run from the generated deployment directory. The environment file comes from the
+saved plan, or `./deployment.env` when no environment file was recorded; override
+with `--env-file` only when needed. The command also prepares Grafana
 ENV credentials; upload those with `push-secrets` as described above. Its `--apply`
 flag applies only the Slack Secret, never Grafana admin credentials. Enabling this integration enables
 alert delivery after the monitor upgrade; no test message is sent by secret
