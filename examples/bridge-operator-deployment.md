@@ -138,22 +138,12 @@ make install-l2-reth-bootnode
 make install-l2-reth-rpc
 ```
 
-For a reviewed PR build, the matching chart may already be published in the
-development OCI registry while the normal release registry does not contain it
-yet. For example, `0.1.44-dogeos` is available there before its PR is merged.
-Verify the selected version and use that registry explicitly:
-
-```bash
-helm show chart oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/scroll-monitor --version 0.1.44-dogeos
-make install-scroll-monitor \
-  SCROLL_MONITOR_CHART=oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/scroll-monitor \
-  SCROLL_MONITOR_CHART_VERSION=0.1.44-dogeos
-```
-
-The development registry is for reviewed development builds; use the normal
-release registry after publication. A missing release tag does not mean that
-the chart source or development artifact is missing. If neither registry has
-the matching build, build dependencies and install the local chart:
+A chart version introduced by an unmerged PR may not exist in the normal
+release registry yet. Wait for that PR to merge and its publication workflow
+to finish before using the normal installation command for that version.
+An already-running rehearsal does not need a chart-source change for this reason.
+For a rehearsal explicitly using an unpublished local chart, build dependencies
+and replace only the monitor installation command above with the local chart:
 
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
