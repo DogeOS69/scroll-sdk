@@ -133,9 +133,9 @@ kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" wait \
   --for=condition=Ready externalsecret/grafana-admin --timeout=120s
 make install-scroll-common
 make install-l1-interface
+make install-l2-reth-sequencer
 make install-l2-reth-bootnode
 make install-l2-reth-rpc
-make install-l2-reth-sequencer
 ```
 
 If the matching monitor chart has not been published yet, build its dependencies
@@ -151,6 +151,13 @@ make install-scroll-monitor SCROLL_MONITOR_CHART=../../scroll-sdk/charts/scroll-
 If the spec uses an already-running shadowfork, use that selected service; do not
 install another Dogecoin node and silently switch networks. If deploying a new
 Dogecoin node, install/bootstrap it first using its dedicated guide.
+Install sequencers before bootnodes and RPC nodes: generated trusted peers point
+to sequencer Services, and the current Reth image resolves those names at startup.
+After readiness, check `net_peerCount` on each non-sequencer node and confirm it
+has peers before deploying contracts. An open RPC port alone does not prove that
+submitted transactions can reach a sequencer. If a node started before its peer
+Services existed, preserve its PVC and transaction pool, then restart that node
+after the Services are available and check peer connectivity again.
 Verify all nodes agree on block zero and the selected chain ID. Required genesis
 predeploys must exist. Empty blocks remain disabled.
 
