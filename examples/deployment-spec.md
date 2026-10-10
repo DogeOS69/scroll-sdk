@@ -107,6 +107,18 @@ placeholders, not working identities or credentials.
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
+`bridge.timelock` is an absolute Dogecoin block height chosen for this deployment,
+not a duration or a fixed release constant. Core beta.6 separately defines
+[`MIN_RECOVERY_DELAY_BLOCKS = 259200`](https://github.com/DogeOS69/dogeos-core/blob/v0.3.0-beta.6/crates/bridge_script_utils/src/types.rs)
+and enforces `new timelock >= CLTV anchor height + 259200` when admitting and
+verifying a RotateKey transition. The bridge-generation tool accepts the supplied
+absolute height; it does not automatically add this delay. A future height that
+passes initial preparation does not by itself satisfy later rotation policy.
+Review the recovery horizon for production, and do not copy the builder's
+`525600` default as a live-network absolute height. Once funded, changing the
+script's timelock changes the Bridge address and requires the protocol's reviewed
+rotation process; editing the deployed spec does not update an existing Bridge.
+
 PostgreSQL settings can remain unconfigured while Blockscout is deferred and
 dstack uses SQLite. Do not select `preparation.databases: [blockscout]` until its
 database is ready. If the spec still references `$ENV:DB_ADMIN_PASSWORD`, keep

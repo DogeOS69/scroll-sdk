@@ -138,8 +138,22 @@ make install-l2-reth-bootnode
 make install-l2-reth-rpc
 ```
 
-If the matching monitor chart has not been published yet, build its dependencies
-and replace only the monitor installation command above with the local chart:
+For a reviewed PR build, the matching chart may already be published in the
+development OCI registry while the normal release registry does not contain it
+yet. For example, `0.1.44-dogeos` is available there before its PR is merged.
+Verify the selected version and use that registry explicitly:
+
+```bash
+helm show chart oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/scroll-monitor --version 0.1.44-dogeos
+make install-scroll-monitor \
+  SCROLL_MONITOR_CHART=oci://ghcr.io/dogeos69/scroll-sdk/helm/dev/scroll-monitor \
+  SCROLL_MONITOR_CHART_VERSION=0.1.44-dogeos
+```
+
+The development registry is for reviewed development builds; use the normal
+release registry after publication. A missing release tag does not mean that
+the chart source or development artifact is missing. If neither registry has
+the matching build, build dependencies and install the local chart:
 
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
@@ -183,6 +197,18 @@ make install-fee-oracle
 make install-dstack-controller
 make install-frontends
 ```
+
+The frontend generates `runtime-env.js` when its container starts. After changing
+frontend configuration on an existing deployment, run `make install-frontends`
+and restart the deployment so the browser receives the updated values:
+
+```bash
+kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" rollout restart deployment/frontends
+kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" rollout status deployment/frontends
+```
+
+Verify the page renders in a browser and that Connect Wallet opens; an HTTP 200
+response alone does not establish frontend readiness.
 
 The eager target requires an enabled generated eager contract; omit it when not
 selected. Provision transaction funds to the generated DA submitter address on
