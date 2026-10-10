@@ -46,11 +46,18 @@ capacity or successful proofs for every release.
 | --- | --- | --- |
 | `count` | 1 | Independent worker/fleet pairs, one GPU each; maximum 8 |
 | `maxPricePerHourUsd` | 0.80 | Per-instance offer ceiling, not a quoted current price |
-| `maxDurationHours` | 2 | Controller-enforced running time; supported range 0.25–48 hours |
+| `maxDurationHours` | 2 | Operator-selected running time in hours; no CLI policy upper limit |
 | `startupTimeoutMinutes` | 30 | Absolute submission/provisioning/pulling deadline |
 | `stopTimeoutMinutes` | 13 | Graceful stop window, covering the 12-minute compiler drain |
 | `idleTimeoutMinutes` | 5 | Fleet idle retention, with minimum fleet size zero |
 | `rentalBudgetUsd` | 3 | Admission budget against the rental envelope, not a provider billing cap |
+
+The CLI converts the configured duration to whole seconds for dstack and derives
+the watchdog deadline from that duration plus the configured allowances. There
+is no 48-hour cap or 15-minute minimum: any positive finite duration of at least
+one second is accepted, subject to the operator's declared rental budget. For
+example, `168` means seven days and `720` means thirty days. The default remains
+two hours when the field is omitted.
 
 An explicit eight-hour intent, with two workers:
 
@@ -122,7 +129,7 @@ To change capacity, use `--spec ../deployment-spec.yaml` with that new plan. The
 spec supplies resource intent only; current compiler artifacts still determine
 the exact deployment and image. This does not regenerate proof materials.
 
-For an explicitly authorized two-day session, set `proofWorkers.maxDurationHours`
+For a two-day session, set `proofWorkers.maxDurationHours`
 to `48`. With one worker and the default $0.80/hour ceiling, set
 `proofWorkers.rentalBudgetUsd` to at least `39.07` (for example, `40`). This
 includes the default startup, drain, idle and polling allowances. Keep the
