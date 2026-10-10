@@ -13,6 +13,8 @@ DSTACK_NAMESPACE ?= dstack-system
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
 DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.3
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
+SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.44-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades, including install-all.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
@@ -116,8 +118,8 @@ install-l1-devnet:
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n "$(NAMESPACE)" \
-		--version=0.1.43-dogeos \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor $(SCROLL_MONITOR_CHART) -n "$(NAMESPACE)" \
+		--version=$(SCROLL_MONITOR_CHART_VERSION) \
 		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
 
 # Independent release: prepare/publish dstack Secrets and install the monitor's

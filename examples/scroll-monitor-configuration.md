@@ -20,10 +20,17 @@ and does not create the complete monitor file from scratch.
 The CLI updates Grafana's ingress host, server domain and root URL; projects the
 configured Grafana admin Secret reference; and reconciles balance-monitoring
 addresses, RPC URLs and chain IDs. It supplies missing balance thresholds while
-preserving operator overrides and explicit Secret-owned RPC URLs. When
-`statusPage.enabled` is true, it also derives the status-page catalog and runtime
+preserving operator overrides and explicit Secret-owned RPC URLs. The production
+example defaults `statusPage.enabled` to true, so the CLI also derives the status-page catalog and runtime
 configuration from the selected service values. Remote Instatus changes still
 use the separate explicit `setup status-page --apply` workflow.
+
+Before installation, configure the status-page environment, effective source files,
+component rules and processing deadlines, and the heartbeat required by automatic
+Alloy publication. Restore or create the private Instatus bindings and install their
+referenced Secrets using the [status-page setup guide](../docs/status-page-automation.md).
+Enabling the switch alone does not establish provider delivery. A copied deployment
+that still has `statusPage.enabled: false` remains opted out until explicitly changed.
 
 Alert thresholds and routing, storage and resource sizing, EKS collection policy,
 and other monitoring choices come from the example or operator configuration.

@@ -1,0 +1,95 @@
+{
+  "cliRevision": "4dc29829f7ccbf7b575dbe842867e380645088a0",
+  "cliTree": "9b7a8802cf02651f615bd782bce7cff5576db1ee",
+  "checks": {
+    "domainProjection": {
+      "valid": true,
+      "configContainsHost": true,
+      "valuesContainHost": true
+    },
+    "dogecoinDiscovery": {
+      "valid": true,
+      "dogeConfigHasKubernetes": false,
+      "directValuesRpc": "http://custom-doge-audit:29999"
+    },
+    "daOverrides": {
+      "valid": true,
+      "basicConfigsUnchanged": true,
+      "directValuesChanged": true,
+      "directFinalizationDepth": "99"
+    },
+    "initialAttestationKeyset": {
+      "valid": true,
+      "allGeneratedOutputsUnchanged": true,
+      "impossibleThresholdAccepted": true
+    },
+    "tsoUrl": {
+      "valid": true,
+      "allGeneratedOutputsUnchanged": true
+    },
+    "unknownField": {
+      "valid": true,
+      "allGeneratedOutputsUnchanged": true
+    },
+    "sameBucket": {
+      "valid": true,
+      "generationSucceeded": true
+    },
+    "defaultImageTags": {
+      "withdrawal-processor": "v0.3.0-beta.5c",
+      "l1-interface": "v0.3.0-beta.5c",
+      "tso-service": "v0.3.0-beta.6",
+      "cubesigner-signer": "v0.3.0-beta.2",
+      "eth-da-submitter": "latest",
+      "fee-oracle": "TODO_TAG_TO_REPLACE",
+      "l2-reth-sequencer": "TODO_TAG_TO_REPLACE"
+    },
+    "outputFiles": [
+      "l2-reth-sequencer-production.yaml",
+      "l2-reth-bootnode-production.yaml",
+      "l2-reth-rpc-production.yaml",
+      "l2-reth-rpc-public-production.yaml",
+      "l1-devnet-production.yaml",
+      "l1-interface-production.yaml",
+      "eth-da-submitter-production.yaml",
+      "dogecoin-production.yaml",
+      "tso-service-production.yaml",
+      "withdrawal-processor-production.yaml",
+      "cubesigner-signer-production.yaml",
+      "fee-oracle-production.yaml",
+      "frontends-production.yaml",
+      "frontends-config.yaml",
+      "blockscout-production.yaml",
+      "contracts-production.yaml"
+    ],
+    "launchDefaults": {
+      "rethGasLimit": "10000000",
+      "rethBlockTimeMs": "3000",
+      "rethPayloadBuildingDurationMs": "800",
+      "genesisGasLimitPresent": false,
+      "baseFeeOverheadPresent": false,
+      "feeOracleWriteModePresent": false
+    },
+    "dstack": {
+      "valid": true,
+      "dogeConfigHasController": true,
+      "controllerValues": true,
+      "monitorOverlay": true,
+      "baseMonitor": false
+    },
+    "proofHandoff": {
+      "actualCliSucceeded": true,
+      "specCopiedToOutput": false,
+      "dogeConfigHasProof": false,
+      "implicitSourceFound": false,
+      "explicitSource": "deployment-spec",
+      "conventionalNameSource": "deployment-spec"
+    },
+    "nativeServiceFiles": {
+      "wp": false,
+      "pc": false,
+      "genesis": false,
+      "monitor": false
+    }
+  }
+}

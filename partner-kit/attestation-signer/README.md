@@ -4,17 +4,35 @@ This kit is for a partner that operates one Rust `attestation-signer` outside
 the bridge operator's cluster. The signer dials out to the bridge operator's
 TSO over HTTPS, so no inbound signer API, static IP, or TLS certificate is
 required for the TSO connection. Monitoring has its own access rules below.
-The bridge operator receives only the signer's descriptor: its
-compressed attestation public key and its transport public key. It never
+The bridge operator receives only the signer's public identity: its stable
+name, compressed attestation public key and transport public key. For the spec
+workflow these are copied from the approved Governance record into
+`attestationSigners`; no descriptor file is required. It never
 receives the WIF, KMS credentials, the transport key, private RPC credentials,
 or the partner's trust policy.
+
+**To create two local keys and register their public keys in Governance**, use
+the [Docker-only key initialization guide](docs/key-initialization.md):
+
+```bash
+bash scripts/init-keys.sh --name signer-a --network testnet \
+  --out "$HOME/dogeos-signer-a/docker-compose"
+```
+
+This standalone entry point needs only Docker and Bash on the operator's host.
+It writes both private keys into the files used by the signer, displays both
+public keys, and reuses a complete existing identity. No scroll-sdk-cli, host
+OpenSSL/Python/Node.js, RPC connection, or bridge configuration bundle is needed
+for this step. The CLI-assisted Phase A/B workflow below remains available for
+existing deployments and KMS onboarding; do not run its key initializer over
+the Docker-only output.
 
 The reference Compose image defaults to `v0.3.0-beta.6`. Update the selected
 image and binary approval pins together. Preserve both signer keys and the
 partner-owned trust policy; regenerate the proof-policy bundle from the
 selected beta.6 proof artifacts. Follow the
 [beta.6 configuration checklist](../../examples/core-beta6-configuration.md).
-Use a CLI build containing [scroll-sdk-cli #77](https://github.com/DogeOS69/scroll-sdk-cli/pull/77),
+For the CLI-assisted workflow below, use a CLI build containing [scroll-sdk-cli #77](https://github.com/DogeOS69/scroll-sdk-cli/pull/77),
 including the transport-key installation fix `6e5668a` or its successor. Check
 `scrollsdk signer init --help` for `--identity` and
 `scrollsdk signer network-check --help` before onboarding. A previously installed
@@ -30,6 +48,11 @@ CLI package may predate this workflow.
 | Bridge handoff | Bridge operator | All descriptors, selected keyset/threshold, canonical context and proof materials | Versioned signer policy bundle and its agreed manifest hash |
 | Phase B / Step 3 | Partner | Original keys/descriptor, reviewed TOML, verified bundle | Running signer with the selected policy |
 | Acceptance / Step 4 | Both | Local readiness plus TSO polling and a real request | Confirmed end-to-end signing path |
+
+For a planned attestation key replacement, follow the standalone Docker
+[rotation inspection and approval guide](docs/rotation.md). Current operators
+approve the exact target locally; new identities use independent directories
+and databases.
 
 For an existing signer, start with [Operations](#operations--restart-upgrade-and-recovery)
 and preserve its registered identity and volume.
@@ -194,6 +217,12 @@ to rerun after an interruption while retaining the original key files. If a
 descriptor or runtime key already exists, a missing source key stops the block;
 restore the registered key instead of generating a replacement. An existing
 descriptor must match the transport key before it is installed.
+
+Phase A creates `docker-compose/policy/` as the partner operator before the
+first container invocation. This prevents Docker from creating a root-owned
+bind directory that blocks Phase B. If an older run left it unwritable, restore
+operator ownership of that directory before retrying; the script does not
+change ownership of existing deployment files.
 
 1. `signer init` creates the signing key and env once (pull delivery and the
    transport key file are selected there).

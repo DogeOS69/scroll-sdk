@@ -8,6 +8,16 @@ For additional, more robust helper scripts, checkout the [scroll-sdk-cli](https:
 1. `Makefile.example`: A basic makefile for quickly installing and deleting the charts necessary for the Scroll SDK.
 2. `config.toml.example`: A template config.toml file for new deployments. A good starting point for filling out chain-specific details or using the Scroll SDK CLI tool.
 
+For the CLI spec `plan`/`apply` workflow, use the complete
+[deployment-spec.example.yaml](deployment-spec.example.yaml), the companion
+[deployment.env.example](deployment.env.example), and the
+[step-by-step operator guide](deployment-spec.md). Copy the YAML and env file
+outside the checkout, fill the marked deployment inputs, and pass them to
+`setup plan --spec ... --env-file ...`. The example selects testnet production-Bridge preparation with active/real/enforce
+proof intent; the guide records the outstanding partner-evidence handoff. Comments identify base
+variables, wallet keys and optional signer/database imports. Keep completed inputs
+private; the output deployment directory starts empty.
+
 Production service overlays are intentionally operator-readable and repeat all
 runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
@@ -28,6 +38,12 @@ For monitoring inputs, see the [scroll-monitor generation contract](scroll-monit
 and [production values example](values/scroll-monitor-production.yaml). They
 identify the public signer addresses, RPC URLs, expected chain IDs, optional
 Secret keys and ServiceMonitor ownership that must follow the deployment.
+
+For the beta.6/rc.4 configuration sources, DeploymentSpec coverage and known
+differences from individual setup commands, see the
+[spec configuration audit](../docs/spec-configuration-audit.md). It includes
+a diagnostic probe and separates generated configuration from deployment
+acceptance.
 
 ### Keep deployment fixes and examples synchronized
 
@@ -51,7 +67,7 @@ constants from the start of a fresh mainnet deployment.
 | Setting | Target | Example / authority |
 | --- | --- | --- |
 | Block interval / payload build window | 2000 / 1400 ms | `values/l2-reth-sequencer-production.yaml` |
-| Empty blocks / fee recipient | enabled / `0x5300000000000000000000000000000000000005` | Sequencer values; CLI derives recipient from `contracts.overrides.L2_TX_FEE_VAULT` |
+| Empty blocks / fee recipient | disabled initially / `0x5300000000000000000000000000000000000005` | Set `reth.sequencer.allowEmptyBlocks: true` when continuous production is desired; CLI derives recipient from `contracts.overrides.L2_TX_FEE_VAULT` |
 | Builder / genesis gas limit | 30,000,000 | Reth values set the builder; `genesis.GAS_LIMIT` sets the genesis header |
 | L2 base fee overhead | 420,000,000,000 wei | `contracts.L2_BASE_FEE_OVERHEAD`, applied during L2 contract initialization |
 | RPC `--gpo.maxprice` | 420,000,000,000,000 wei | Internal and public RPC `reth.extraArgs` |
@@ -59,7 +75,7 @@ constants from the start of a fresh mainnet deployment.
 | Penalty factor | 10,000 | `config.toml.example` |
 | Ethereum priority fee | 100,000,000 wei | Submitter and fee-oracle values |
 | DA batch | `auto`, 2h, 512 blocks/chunk, 64 chunks/batch | Submitter values |
-| DA chunk limits | 30,000,001 gas; 122,880 uncompressed bytes | Submitter values |
+| DA chunk limits | 30,000,001 gas; 123,011 uncompressed bytes | Submitter values; a full 122,880-byte block plus 131 bytes of chunk overhead (core #1497) |
 | DA publish | target/max 6 blobs; batch wait/liveness delay 1h | Submitter values; fee-oracle target also 6 |
 | Fee-oracle writes | `live` | Fee-oracle values |
 | Withdrawal fee rate | 1,000,000 sat/kvB | `withdrawal-processor/WithdrawalProcessor.toml` |
@@ -104,15 +120,18 @@ back to an old node binary.
 
 `scrollsdk setup prep-charts` preserves template-owned batch/publish/fee policies,
 Reth timing/gas settings and `reth.extraArgs`; it fills deployment facts such as
-RPC URLs, signer references and the fee-vault recipient. Keep these policies in
-`values/` when using the normal example-based flow. The optional
-`generate-from-spec --with-values` / `--values-only` path regenerates files from
-DeploymentSpec and does not merge existing values. Keep using the full production
-templates for runtime policy. In particular, `max_open_l2_time` and
-`max_uncompressed_chunk_bytes_size` belong only in the submitter values; the CLI
-does not model or generate them. Legacy spec fields can still supply explicit
-overrides, but the CLI does not fill missing batch, publish or minimum-priority-fee
-policy with its own defaults.
+RPC URLs, signer references and the fee-vault recipient. Spec generation uses the
+same committed SDK templates for `--bootstrap`, `--with-values` and `--values-only`
+(default checkout: `../scroll-sdk`; override with `--sdk-dir`). Existing output
+values supply operator policy overrides before spec inputs are projected. The
+complete Reth argument list, timing, resource requests and empty-block choice are
+retained on regeneration; new deployments start with `allowEmptyBlocks: false`.
+Explicit spec inputs such as chain ID, genesis gas limit and RPC URLs still update.
+Use `--force` when regenerating existing files and review the resulting values.
+In particular, `max_open_l2_time` and `max_uncompressed_chunk_bytes_size` belong
+only in the submitter values; the CLI does not model them in spec. Explicit spec
+policy fields can supply overrides, but missing batch, publish and minimum-priority-fee
+policy comes from SDK templates rather than a second set of CLI defaults.
 
 ## Core release configuration
 
@@ -136,17 +155,17 @@ instructions describe beta.5 to beta.5a only.
 
 ## Contracts images
 
-Use the matching `dogeos69/scroll-stack-contracts` rc.4 images for the three
+Use the matching `dogeos69/scroll-stack-contracts` rc.5 images for the three
 contracts operations:
 
 | Operation | Image tag |
 | --- | --- |
-| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.4` |
-| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.4` |
-| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.4` |
+| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.5` |
+| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.5` |
+| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.5` |
 
 The deployment example pins `image.tag`. The CLI selects the generation and
-verification images separately; use a CLI release configured for rc.4 or supply
+verification images separately; use a CLI release configured for rc.5 or supply
 the matching explicit `--image-tag` to `setup gen-l2-artifacts` and
 `setup verify-contracts`.
 
@@ -336,8 +355,12 @@ with the complete compiler-rendered topology without scaling PC.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-Use `scrollsdk setup proof-config-check` for byte-for-byte immutable
-CI artifacts.
+`scrollsdk setup proof-config-check` and `setup export-signer-policy` currently
+skip the whole input configuration file's hash comparison. This check is
+temporarily disabled in the CLI so edits such as Grafana account configuration
+do not block signer bundle export. The original source hash is still recorded.
+Proof mode/generation/enforcement, generated proof artifacts, selected materials,
+and protocol-context integrity checks remain enabled.
 
 The remaining proof-related Makefile variables are only Kubernetes deployment
 overrides: `NAMESPACE`, `PROOF_COORDINATOR_CHART`,
@@ -350,3 +373,8 @@ For the authoritative end-to-end order, partner descriptor/policy handoff,
 activation gates, mock-versus-production behavior, and lifecycle acceptance,
 follow the
 [DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).
+
+For attestation key replacement after deployment, follow the
+[bridge operator rotation workflow](attestation-rotation.md) and start with
+[rotation-spec.example.yaml](rotation-spec.example.yaml). The signer side uses
+the independent Docker tools in `partner-kit/attestation-signer`.
