@@ -46,7 +46,7 @@ capacity or successful proofs for every release.
 | --- | --- | --- |
 | `count` | 1 | Independent worker/fleet pairs, one GPU each; maximum 8 |
 | `maxPricePerHourUsd` | 0.80 | Per-instance offer ceiling, not a quoted current price |
-| `maxDurationHours` | 2 | Controller-enforced running time; supported range 0.25–8 hours |
+| `maxDurationHours` | 2 | Controller-enforced running time; supported range 0.25–48 hours |
 | `startupTimeoutMinutes` | 30 | Absolute submission/provisioning/pulling deadline |
 | `stopTimeoutMinutes` | 13 | Graceful stop window, covering the 12-minute compiler drain |
 | `idleTimeoutMinutes` | 5 | Fleet idle retention, with minimum fleet size zero |
@@ -122,6 +122,28 @@ To change capacity, use `--spec ../deployment-spec.yaml` with that new plan. The
 spec supplies resource intent only; current compiler artifacts still determine
 the exact deployment and image. This does not regenerate proof materials.
 
+For an explicitly authorized two-day session, set `proofWorkers.maxDurationHours`
+to `48`. With one worker and the default $0.80/hour ceiling, set
+`proofWorkers.rentalBudgetUsd` to at least `39.07` (for example, `40`). This
+includes the default startup, drain, idle and polling allowances. Keep the
+default two-hour setting for short rehearsals. Changing the spec does not extend
+an existing run or its watchdog. Once the old run has finished, confirm destruction
+and submit a new session with the updated spec:
+
+```bash
+scrollsdk setup proof-workers status
+scrollsdk setup proof-workers destroy
+# Repeat status/destroy until destroy reports destroyed.
+scrollsdk setup proof-workers plan --new-session two-day --spec ../deployment-spec.yaml
+scrollsdk setup proof-workers apply
+scrollsdk setup proof-workers status
+```
+
+The replacement receives a fresh absolute watchdog deadline. Do not edit the
+saved plan, controller database or old watchdog to bypass expiry. There is a
+capacity gap while the old instance is released and its replacement starts;
+pending proof jobs remain in the coordinator.
+
 An interrupted mutation may leave `operation.lock`. Verify that its recorded PID
 is no longer the CLI process before removing only that lock; then inspect status
 and reconcile. Never delete the saved plan/state to force another allocation.
@@ -139,3 +161,11 @@ The pinned API behavior is documented by dstack's
 [0.21.5 duration fields](https://github.com/dstackai/dstack/blob/0.21.5/src/dstack/_internal/core/models/profiles.py)
 and [fleet lifetime model](https://github.com/dstackai/dstack/blob/0.21.5/src/dstack/_internal/core/models/fleets.py).
 This adapter does not assume newer Core capacity-manager APIs.
+
+For native dstack operations, see the official [run status commands](https://dstack.ai/docs/reference/cli/dstack/ps/),
+[run logs](https://dstack.ai/docs/reference/cli/dstack/logs/),
+[fleet lifecycle](https://dstack.ai/docs/concepts/fleets/), and
+[task duration and price settings](https://dstack.ai/docs/reference/dstack.yml/task/).
+The live documentation may describe a newer version than the pinned 0.21.5
+controller. Use the commands above for SDK-owned worker lifecycle operations so
+the saved plan and independent cleanup watchdog remain consistent.
