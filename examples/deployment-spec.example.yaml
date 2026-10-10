@@ -161,6 +161,8 @@ feeOracle:
 
 frontend:
   protocol: https
+  # walletConnectProjectId is optional: uses the same public default as setup domains.
+  # Set your own WalletConnect project ID here to override that default.
   # Set the deployment domain once; service hosts, proof URL and dstack derive from it.
   baseDomain: dogeos.example.invalid
   externalUrls:
