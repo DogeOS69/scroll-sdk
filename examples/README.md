@@ -352,8 +352,12 @@ with the complete compiler-rendered topology without scaling PC.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-Use `scrollsdk setup proof-config-check` for byte-for-byte immutable
-CI artifacts.
+`scrollsdk setup proof-config-check` and `setup export-signer-policy` currently
+skip the whole input configuration file's hash comparison. This check is
+temporarily disabled in the CLI so edits such as Grafana account configuration
+do not block signer bundle export. The original source hash is still recorded.
+Proof mode/generation/enforcement, generated proof artifacts, selected materials,
+and protocol-context integrity checks remain enabled.
 
 The remaining proof-related Makefile variables are only Kubernetes deployment
 overrides: `NAMESPACE`, `PROOF_COORDINATOR_CHART`,
