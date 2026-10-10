@@ -31,6 +31,8 @@ Run `plan` and `apply` from your private working directory. Keep the SDK checkou
 as its sibling `../scroll-sdk`, or override `--sdk-dir` once when planning. Set `AWS_PROFILE`,
 `AWS_REGION`, `KUBE_CONTEXT`, `NAMESPACE` and `SECRET_PREFIX` to the reviewed spec
 values. Do not source deployment.env: the CLI parses it as literal data.
+Set `DSTACK_NAMESPACE` to `dstackController.monitoring.namespace`, whose default
+is `dstack-system`. This may differ from the business-service `NAMESPACE`.
 
 ## 2. Plan once; resume apply at external waits
 
@@ -94,9 +96,12 @@ test ! -e runtime
 cp -a deployment runtime
 cd runtime
 scrollsdk setup cubesigner-refresh -N --doge-config .data/doge-config.toml
+export DSTACK_NAMESPACE=dstack-system # Use your override if configured in the spec.
+kubectl --context "$KUBE_CONTEXT" create namespace "$DSTACK_NAMESPACE" \
+  --dry-run=client -o yaml | kubectl --context "$KUBE_CONTEXT" apply -f -
 scrollsdk setup push-secrets -N --provider aws \
   --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
-  --kube-context "$KUBE_CONTEXT" --namespace "$NAMESPACE"
+  --kube-context "$KUBE_CONTEXT" --namespace "$DSTACK_NAMESPACE"
 ```
 
 An authenticated CubeSigner owner authorizes the session. The command writes it
@@ -105,6 +110,9 @@ Grafana ENV credentials in AWS Secrets Manager. The chart's ExternalSecret
 creates the corresponding Kubernetes Secret. Configure store authentication as
 for Dogecoin. Dstack's generated controller credentials use its existing explicit
 Kubernetes publication path, so the context/namespace flags are required.
+For this combined upload, `--namespace` selects the dstack Secret destination;
+the other service secrets go to the selected AWS/Vault store. Create the dstack
+namespace before uploading, rather than waiting for the later Helm installation.
 If `preparation.secretUpload` already completed, do not upload again needlessly.
 
 If Slack is enabled, also run `scrollsdk setup monitoring-secrets --apply
@@ -119,7 +127,7 @@ passes it to each Makefile target. Check rollout/health at each stage and stop
 on failure; do not run this sequence unattended past failed checks.
 
 ```bash
-export KUBE_CONTEXT NAMESPACE
+export KUBE_CONTEXT NAMESPACE DSTACK_NAMESPACE
 make install-scroll-monitor
 kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" wait \
   --for=condition=Ready externalsecret/grafana-admin --timeout=120s
@@ -128,6 +136,16 @@ make install-l1-interface
 make install-l2-reth-bootnode
 make install-l2-reth-rpc
 make install-l2-reth-sequencer
+```
+
+If the matching monitor chart has not been published yet, build its dependencies
+and replace only the monitor installation command above with the local chart:
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm dependency build ../../scroll-sdk/charts/scroll-monitor
+make install-scroll-monitor SCROLL_MONITOR_CHART=../../scroll-sdk/charts/scroll-monitor
 ```
 
 If the spec uses an already-running shadowfork, use that selected service; do not
