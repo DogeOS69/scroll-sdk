@@ -651,3 +651,6 @@ eksControlPlane:
 # separately; Helm cannot inspect it during an offline render.
 infrastructureAlerts:
   requireReceiver: false
+
+# Optional external Secret stores; credentials must never be included in values.
+externalSecrets: {}

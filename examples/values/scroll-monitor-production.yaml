@@ -147,8 +147,8 @@ statusPage:
   # Neither API key, webhook URL nor integration ID belongs in this YAML.
 
 grafana:
-  # [OPERATOR] Provision this Secret in the release namespace before installation.
-  # Store the admin username/password outside Git; configure only their reference here.
+  # [GENERATED] gen-secrets writes secrets/grafana-admin.env; push-secrets uploads it.
+  # External Secrets synchronizes the admin credential from AWS Secrets Manager/Vault.
   admin:
     existingSecret: grafana-admin
     userKey: admin-user
@@ -521,3 +521,20 @@ kube-prometheus-stack:
   # Legacy fixed-address Scroll balance-checker rules were retired. Application
   # notifications are configured in Grafana; add only current custom rules here.
   additionalPrometheusRules: []
+
+# Same credential lifecycle as Dogecoin: secrets/*.env -> push-secrets -> store.
+# push-secrets fills the selected provider, region, prefix and authentication.
+externalSecrets:
+  grafana-admin:
+    provider: aws
+    serviceAccount: external-secrets
+    refreshInterval: 2m
+    data:
+      - remoteRef:
+          key: grafana-admin-env
+          property: admin-user
+        secretKey: admin-user
+      - remoteRef:
+          key: grafana-admin-env
+          property: admin-password
+        secretKey: admin-password

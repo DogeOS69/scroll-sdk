@@ -2,7 +2,7 @@
 apiVersion: v2
 description: Helm chart to deploy Grafana, Prometheus, Loki, and Alloy for Scroll SDK
 name: scroll-monitor
-version: 0.1.43-dogeos
+version: 0.1.44-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -25,3 +25,6 @@ dependencies:
     repository: "https://grafana.github.io/helm-charts"
     version: 1.0.2
     condition: alloy.enabled
+  - name: external-secrets-lib
+    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    version: 0.0.4

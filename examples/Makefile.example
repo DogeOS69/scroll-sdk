@@ -117,7 +117,7 @@ install-l1-devnet:
 
 install-scroll-monitor:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n "$(NAMESPACE)" \
-		--version=0.1.43-dogeos \
+		--version=0.1.44-dogeos \
 		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
 
 # Independent release: prepare/publish dstack Secrets and install the monitor's

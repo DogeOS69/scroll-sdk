@@ -134,7 +134,7 @@ bridge:
   timelock: 100
   feeRateSatsPerKvb: 1000000
   targetAmountsSats:
-    sequencer: 42069000  # Fixed protocol amount: exactly 0.42069 DOGE.
+    sequencer: 42069000  # Exactly 0.42069 DOGE; initial sequencer payment must be vout 0.
     feeWallet: 100000000  # Rehearsal funding budget; review before funding.
     bridge: 1000000000
   confirmationsRequired: 6
@@ -176,6 +176,9 @@ frontend:
 
 contracts:
   deploymentSalt: REPLACE_WITH_UNIQUE_DEPLOYMENT_SALT
+  # Dogecoin P2PKH address receiving fee-vault withdrawals, not an EVM address.
+  # Choosing the Bridge fee-wallet here is optional and must be deliberate.
+  feeVaultDogeRecipientAddress: REPLACE_WITH_DOGECOIN_P2PKH_ADDRESS
   l2BaseFeeOverheadWei: "420000000000"
   gasOracle:
     blobScalar: 7400000000
@@ -287,10 +290,19 @@ preparation:
   proofAws:
     action: create
     publicReadMode: direct-s3
+  # Create the separate raw-blob bucket and grant the DA submitter write access
+  # to it and to segmentation sidecars in the resolved proof bucket.
+  # Public blob GET supports external signers; anonymous writes stay denied.
+  archive: {action: create, publicRead: true}
   # To reuse resources without changing them: action: reuse with
   # publicReadMode: existing-public-s3 (or existing-gateway + publicEndpointUrl).
   # Optional coordinatorRoleName, withdrawalRoleName and secretName select
   # nonstandard existing resource names; otherwise names derive from alias/cluster.
   # Apply waits for partner receipts in .scrollsdk/inputs/signer-receipts/,
   # verifies them, then regenerates config before the final enforcing check.
-  # No archive creation, Secret upload or paid Worker launch is selected.
+  # No Secret upload or paid Worker launch is selected.
+
+# Enable after filling SLACK_WEBHOOK_URL in private deployment.env.
+monitoring:
+  slack:
+    enabled: false

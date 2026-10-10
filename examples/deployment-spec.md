@@ -7,6 +7,9 @@ Operator inputs, automatically generated artifacts and external approval handoff
 are described below. Enforcing-policy evidence remains a separate integration
 boundary; see the completion limits before using this starter.
 
+For the ordered command sequence and handoff checklist, see
+[Bridge operator deployment sequence](bridge-operator-deployment.md).
+
 ## Selected scope
 
 This example prepares a **testnet deployment** with the beta.6 production Bridge
@@ -60,7 +63,7 @@ preparing the chain. Apply creates the five declared AWS KMS signing identities
 and their IAM/IRSA resources using the configured region, EKS cluster and
 namespace. It also creates/reconciles the declared proof bucket, its workload
 roles and token Secret, and publishes the real proof program bundle. Secret
-upload into Kubernetes and blob bucket creation are not selected. Plan itself
+upload is a separate operator step in this example. The selected archive step creates the blob bucket and applies its reviewed public-read policy. Plan itself
 does not provision resources;
 generated configuration does not establish runtime access.
 
@@ -93,7 +96,7 @@ placeholders, not working identities or credentials.
 | --- | --- |
 | Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Sepolia execution/beacon URLs use the CLI defaults; override them if needed. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
 | Environment file | Fill the six base spec variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
-| Owner and deployment salt | Select the owner address and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
+| Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
 | Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
@@ -102,7 +105,7 @@ placeholders, not working identities or credentials.
 | Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
 | Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
-| Blob/proof buckets | Select two distinct bucket names; the blob bucket already exists and apply prepares the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
+| Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
 PostgreSQL settings can remain unconfigured while Blockscout is deferred and
 dstack uses SQLite. Do not select `preparation.databases: [blockscout]` until its
@@ -143,8 +146,7 @@ directory**. With the layout above, `../inputs/...` resolves to the correct sibl
 directory. Absolute paths are also supported. Plan needs read access to the official
 GitHub proof release; optional `GH_TOKEN` / `GITHUB_TOKEN` supports private
 repository access and authenticated API limits. Keep tokens outside source control.
-Descriptor files may
-arrive later; apply waits when a declared file is missing. Missing environment
+External receipts may arrive later; apply waits when a required receipt is missing. Missing environment
 credentials also produce an actionable wait.
 
 ## Select the CubeSigner TEE identity
@@ -282,7 +284,13 @@ only the actual outpoints in:
 No funding file is needed while writing the spec or running plan. Apply creates
 the file as `{}` at the funding step and prints a template for the required
 entries; replace its placeholder txids and output indices with actual facts. Populate the `sequencer` and `feeWallet` objects with
-`txid` and `vout`, then rerun the same apply command. The CLI checks network,
+`txid` and `vout`, then rerun the same apply command. For new deployments the
+sequencer payment must be output **0**; construct it first, put fee-wallet/change
+outputs after it, and decode the funded transaction before broadcasting. A wallet
+may reorder outputs or insert change, so verify the final signed transaction too.
+Nonzero sequencer outputs are rejected. Do not change an existing outpoint index
+to pretend it is zero: an existing nonzero deployment requires a reviewed recovery
+or migration, not this fresh-deployment procedure. The CLI checks network,
 unspent status, transaction bytes, scripts, amounts and confirmations before
 using the sequencer outpoint to generate the final Bridge address.
 
@@ -304,6 +312,113 @@ artifacts, Secrets and signer policy are prepared. It does not mean Helm release
 have been installed or that a running chain has passed acceptance. Owner-managed
 CubeSigner authorization/session material remains operator-owned. Partner policy
 approval is a required handoff that apply waits for and imports before completion.
+
+## Install the frontend and monitoring releases
+
+`setup apply` prepares files; it does not run Helm. From the generated deployment
+directory, install these two releases explicitly after reviewing their values
+and uploading the referenced Secrets:
+
+```bash
+make install-scroll-monitor KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
+make install-frontends KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
+```
+
+`install-scroll-monitor` uses `values/scroll-monitor-production.yaml` and adds
+`values/scroll-monitor-dstack.yaml` when present. Install monitoring early so
+Prometheus Operator CRDs and service monitoring are available for the remaining
+services. Ensure the Grafana admin Secret referenced by `grafana.admin` exists;
+the matching CLI prepares its private credentials during the `secrets` step,
+preserves them on resume, and generates `secrets/grafana-admin.env` for the
+default reference. Use the same external-store upload as Dogecoin:
+
+```bash
+scrollsdk setup push-secrets -N --provider aws \
+  --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
+  --secret-file secrets/grafana-admin.env \
+  --values-file values/scroll-monitor-production.yaml
+```
+
+A full `push-secrets` invocation already includes this file; the scoped command is
+for updating monitoring alone. The remote AWS secret is
+`<prefix>/grafana-admin-env`; the shared External Secrets integration creates
+`grafana-admin` with `admin-user` and `admin-password` in the release namespace.
+Vault uses the same ENV input and `--provider vault`. Configure External Secrets
+Operator and its store authentication as for Dogecoin before installation.
+Wait for the ExternalSecret to report Ready after installing scroll-monitor:
+
+```bash
+kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" wait \
+  --for=condition=Ready externalsecret/grafana-admin --timeout=120s
+```
+
+Use the corresponding names if the template selects a custom admin Secret.
+Do not apply a standalone Grafana admin Secret YAML. Credentials stay in private
+local state and the external store; values contain references only. The generated
+password is an initial admin credential, not a password-rotation mechanism for an
+existing Grafana database. An existing direct Secret can be adopted only after
+uploading its identical credentials and reviewing ExternalSecret ownership;
+do not delete or regenerate the live password to migrate it.
+This requires scroll-monitor chart **0.1.44-dogeos** (or the matching local chart).
+The OCI chart must be published before the new Makefile version can be installed.
+
+`install-frontends` consumes both `values/frontends-production.yaml` and
+`values/frontends-config.yaml`. Install it after contract addresses and public
+RPC endpoints are finalized. Verify the portal domain and TLS certificate;
+frontend availability alone does not establish Bridge transaction acceptance.
+Blockscout/explorer links require a separately configured Blockscout deployment.
+
+The Makefile also includes both releases in `install-all` (monitoring through
+`install-scroll-core`). Do not rerun `install-all` to add a missing release to an
+existing deployment: it also invokes contract deployment and other initialization
+steps. Use the individual targets above, then check each release's Pods and
+public endpoint. See [monitoring configuration](scroll-monitor-configuration.md)
+for collection and alerting details.
+
+## Slack notification configuration
+
+Declare notification intent in the spec and keep the webhook in the private env
+file. There is one fixed environment variable; do not copy the webhook into YAML:
+
+```yaml
+monitoring:
+  slack:
+    enabled: true
+```
+
+```dotenv
+SLACK_WEBHOOK_URL=REPLACE_WITH_SLACK_WEBHOOK_URL
+```
+
+Apply generates `secrets/scroll-monitor-slack.yaml` with private file permissions.
+Generated monitor values reference this Secret and provision the `slack-alerts`
+Grafana contact point. Missing or placeholder webhook inputs fail secret
+preparation without printing their values. Reruns preserve the Grafana admin
+identity. `monitoring.slack.enabled: false` removes only the spec-owned Slack
+integration; unrelated contact points remain intact. The existing values template selects the alerting backend: Grafana uses a
+Secret-backed contact point; Prometheus/Alertmanager uses its existing Slack
+Secret reference and mounted webhook file. Policies, resource limits, storage,
+channels and thresholds remain template-owned.
+
+When `preparation.secretUpload` supplies an explicit `kubeContext`, apply uploads
+Slack to Kubernetes; Grafana is uploaded to the selected external store by the
+ordinary `push-secrets` step. Without automatic upload, use the dedicated command before installing
+or upgrading scroll-monitor:
+
+```bash
+scrollsdk setup monitoring-secrets --env-file /private/deployment.env \
+  --apply --kube-context "$KUBE_CONTEXT" --namespace "$NAMESPACE"
+make install-scroll-monitor KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
+```
+
+Run from the generated deployment directory. The command also prepares Grafana
+ENV credentials; upload those with `push-secrets` as described above. Its `--apply`
+flag applies only the Slack Secret, never Grafana admin credentials. Enabling this integration enables
+alert delivery after the monitor upgrade; no test message is sent by secret
+preparation. A webhook change also requires a Grafana restart because the
+provisioned URL is read from an environment variable at startup. Use
+`kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" rollout restart deployment/grafana`
+after updating that Secret on an existing installation.
 
 ## Other deployment choices
 
