@@ -62,6 +62,9 @@
         ]
       }
     },
+    "defaultCredentialsEnabled": {
+      "type": "boolean"
+    },
     "serverConfig": {
       "type": "object",
       "additionalProperties": false,
@@ -413,6 +416,7 @@
     "replicaCount",
     "image",
     "imagePullSecrets",
+    "defaultCredentialsEnabled",
     "serverConfig",
     "auth",
     "database",
