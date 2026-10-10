@@ -1,6 +1,8 @@
-# Status-page automation. Default is offline/disabled; see docs/status-page-automation.md.
+# Status-page automation is enabled in this deployment template.
+# Complete the marked inputs and private bindings before installing scroll-monitor;
+# see docs/status-page-automation.md. Missing inputs must not silently disable it.
 statusPage:
-  enabled: false  # [OPERATOR] Set true before CLI generation.
+  enabled: true  # [DEFAULT] Generate and deploy status-page automation; false explicitly opts out.
   environment: ""  # [OPERATOR] Explicit testnet, mainnet or devnet; not the Dogecoin network.
   sources:
     frontends: frontends-production.yaml  # [OPERATOR] Filename in this values directory.

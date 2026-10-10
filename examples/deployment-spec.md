@@ -333,6 +333,22 @@ approval is a required handoff that apply waits for and imports before completio
 directory, install these two releases explicitly after reviewing their values
 and uploading the referenced Secrets:
 
+The SDK monitor template enables public status-page automation by default in
+`values/scroll-monitor-production.yaml`; it is not a second switch in the spec.
+Before installing monitoring, complete the
+[status-page setup](../docs/status-page-automation.md): choose the public environment
+and effective source files, configure component health deadlines and heartbeat,
+restore or reconcile the existing Instatus page/component bindings, and install
+the generated private webhook Secrets. Fill `INSTATUS_API_KEY` in the private
+`deployment.env`; `setup status-page --plan/--apply` loads it automatically from
+the saved preparation environment file, without an extra shell export.
+`setup apply` prepares the deployment;
+it does not perform the separate Instatus `setup status-page --apply` operation.
+Keep private bindings across rebuilds so existing incidents can be evaluated and
+recovered when fresh health evidence is available. Only set `statusPage.enabled`
+to false when deliberately opting out; otherwise a rebuild can leave old public
+incidents open with no service to update them.
+
 ```bash
 make install-scroll-monitor KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
 make install-frontends KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"

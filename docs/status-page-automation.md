@@ -3,6 +3,10 @@
 The SDK template and `scroll-sdk-cli` share the `statusPage` contract in
 [SDK production example](../examples/values/scroll-monitor-production.yaml).
 The chart defaults and chart production profile expose the same inputs.
+The SDK deployment example enables `statusPage` by default. Complete its marked
+inputs and private provider bindings before installation; the chart's standalone
+defaults remain disabled. Existing deployment copies retain their explicit value,
+so review `statusPage.enabled` when upgrading or rebuilding a deployment.
 DogeOS uses **one shared page with Mainnet, Testnet and Devnet groups**, each with
 eight components and no L2Scan. The selected workspace is `6wxpx` (DogeOS),
 and the existing public page is `dogeos.instatus.com`.
@@ -19,7 +23,7 @@ Run these commands from the deployment directory, using a CLI build containing
 scrollsdk setup status-page
 
 # Optional: read Instatus and print create/update/unchanged actions.
-# Does not modify local files or Instatus; requires INSTATUS_API_KEY in the environment.
+# Does not modify local files or Instatus; reads INSTATUS_API_KEY from the private deployment.env or process environment.
 scrollsdk setup status-page --plan
 
 # Explicit remote mutation; creates or reconciles the selected page and components.
@@ -61,7 +65,7 @@ credentials are scoped webhook URLs, never the management API key.
 
 | Field | Owner / source | Behavior |
 | --- | --- | --- |
-| `statusPage.enabled` | Operator, default `false` | Explicitly opt into generation and chart validation. |
+| `statusPage.enabled` | SDK deployment example: `true`; standalone chart: `false` | Generate and validate the status-page configuration. Set `false` only when intentionally opting out. |
 | `statusPage.environment` | Operator | `testnet`, `mainnet`, or `devnet`. Never inferred from a hostname or Dogecoin's network. Select the network owned by this deployment directory. |
 | Network name / chain ID | `config.toml`: `general.CHAIN_NAME_L2`, `general.CHAIN_ID_L2` | Recorded in the local catalog; does not change the shared page title. |
 | `sources.frontends` | Selected deployment frontend values | Read `ingress.main.hosts[].host`; append `sources.bridgePath` (default `/bridge`). |
@@ -145,7 +149,15 @@ page to a workspace. The DogeOS defaults always require the existing page inside
   `INSTATUS_GRAFANA_WEBHOOK_URL`; the generated receiver retains that literal
   environment reference. This URL is not an existing scroll-monitor URL.
 - **Management API key:** The CLI reads `INSTATUS_API_KEY` only for `--plan` and
-  `--apply`. Supply it through the shell/CI secret environment. It is not a CLI
+  `--apply`. Fill it in the private `deployment.env` from the environment example;
+  no extra `export` is required. The command uses the environment-file reference
+  saved in `.scrollsdk/plan.json`, or `deployment.env` in the deployment directory
+  when no reference was saved. `--env-file /private/custom.env` explicitly overrides
+  the file selection; a pre-existing shell/CI `INSTATUS_API_KEY` takes precedence
+  over file content. A missing saved/explicit file fails instead of silently
+  selecting another file. Only this variable is imported for status-page management;
+  unrelated deployment credentials are not loaded into the process. Offline
+  generation does not load the file or require the key. The key is not a CLI
   argument, not saved in YAML, and not injected into the running chart.
 
 Grafana holds the credential for the Instatus endpoint it pushes to. Instatus

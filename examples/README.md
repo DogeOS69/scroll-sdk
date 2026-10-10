@@ -67,7 +67,7 @@ constants from the start of a fresh mainnet deployment.
 | Setting | Target | Example / authority |
 | --- | --- | --- |
 | Block interval / payload build window | 2000 / 1400 ms | `values/l2-reth-sequencer-production.yaml` |
-| Empty blocks / fee recipient | enabled / `0x5300000000000000000000000000000000000005` | Sequencer values; CLI derives recipient from `contracts.overrides.L2_TX_FEE_VAULT` |
+| Empty blocks / fee recipient | disabled initially / `0x5300000000000000000000000000000000000005` | Set `reth.sequencer.allowEmptyBlocks: true` when continuous production is desired; CLI derives recipient from `contracts.overrides.L2_TX_FEE_VAULT` |
 | Builder / genesis gas limit | 30,000,000 | Reth values set the builder; `genesis.GAS_LIMIT` sets the genesis header |
 | L2 base fee overhead | 420,000,000,000 wei | `contracts.L2_BASE_FEE_OVERHEAD`, applied during L2 contract initialization |
 | RPC `--gpo.maxprice` | 420,000,000,000,000 wei | Internal and public RPC `reth.extraArgs` |
@@ -75,7 +75,7 @@ constants from the start of a fresh mainnet deployment.
 | Penalty factor | 10,000 | `config.toml.example` |
 | Ethereum priority fee | 100,000,000 wei | Submitter and fee-oracle values |
 | DA batch | `auto`, 2h, 512 blocks/chunk, 64 chunks/batch | Submitter values |
-| DA chunk limits | 30,000,001 gas; 122,880 uncompressed bytes | Submitter values |
+| DA chunk limits | 30,000,001 gas; 123,011 uncompressed bytes | Submitter values; a full 122,880-byte block plus 131 bytes of chunk overhead (core #1497) |
 | DA publish | target/max 6 blobs; batch wait/liveness delay 1h | Submitter values; fee-oracle target also 6 |
 | Fee-oracle writes | `live` | Fee-oracle values |
 | Withdrawal fee rate | 1,000,000 sat/kvB | `withdrawal-processor/WithdrawalProcessor.toml` |
@@ -120,15 +120,18 @@ back to an old node binary.
 
 `scrollsdk setup prep-charts` preserves template-owned batch/publish/fee policies,
 Reth timing/gas settings and `reth.extraArgs`; it fills deployment facts such as
-RPC URLs, signer references and the fee-vault recipient. Keep these policies in
-`values/` when using the normal example-based flow. The optional
-`generate-from-spec --with-values` / `--values-only` path regenerates files from
-DeploymentSpec and does not merge existing values. Keep using the full production
-templates for runtime policy. In particular, `max_open_l2_time` and
-`max_uncompressed_chunk_bytes_size` belong only in the submitter values; the CLI
-does not model or generate them. Legacy spec fields can still supply explicit
-overrides, but the CLI does not fill missing batch, publish or minimum-priority-fee
-policy with its own defaults.
+RPC URLs, signer references and the fee-vault recipient. Spec generation uses the
+same committed SDK templates for `--bootstrap`, `--with-values` and `--values-only`
+(default checkout: `../scroll-sdk`; override with `--sdk-dir`). Existing output
+values supply operator policy overrides before spec inputs are projected. The
+complete Reth argument list, timing, resource requests and empty-block choice are
+retained on regeneration; new deployments start with `allowEmptyBlocks: false`.
+Explicit spec inputs such as chain ID, genesis gas limit and RPC URLs still update.
+Use `--force` when regenerating existing files and review the resulting values.
+In particular, `max_open_l2_time` and `max_uncompressed_chunk_bytes_size` belong
+only in the submitter values; the CLI does not model them in spec. Explicit spec
+policy fields can supply overrides, but missing batch, publish and minimum-priority-fee
+policy comes from SDK templates rather than a second set of CLI defaults.
 
 ## Core release configuration
 
@@ -370,3 +373,8 @@ For the authoritative end-to-end order, partner descriptor/policy handoff,
 activation gates, mock-versus-production behavior, and lifecycle acceptance,
 follow the
 [DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).
+
+For attestation key replacement after deployment, follow the
+[bridge operator rotation workflow](attestation-rotation.md) and start with
+[rotation-spec.example.yaml](rotation-spec.example.yaml). The signer side uses
+the independent Docker tools in `partner-kit/attestation-signer`.

@@ -323,6 +323,9 @@ preparation:
   # No Secret upload or paid Worker launch is selected.
 
 # Enable after filling SLACK_WEBHOOK_URL in private deployment.env.
+# Public status-page automation is enabled separately by default in
+# values/scroll-monitor-production.yaml; complete its environment, health,
+# heartbeat and private Instatus bindings as described in deployment-spec.md.
 monitoring:
   slack:
     enabled: false
