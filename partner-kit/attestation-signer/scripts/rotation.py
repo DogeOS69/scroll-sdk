@@ -268,7 +268,7 @@ def policy_status(port, signer, network, require_rotation, require_normal=False)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['inspect', 'approve', 'check', 'receipt', 'container-check', 'ready'])
+    parser.add_argument('action', choices=['inspect', 'approve', 'check', 'receipt', 'container-check', 'ready', 'identity'])
     parser.add_argument('--proposal', required=True)
     parser.add_argument('--expected-sha256', required=True)
     parser.add_argument('--current-key-hash', required=True)
@@ -280,6 +280,16 @@ def main():
     parser.add_argument('--acknowledge-tso-connected', action='store_true')
     args = parser.parse_args()
     proposal, before, after = verify(read_json(args.proposal), args.expected_sha256, args.current_key_hash)
+    if args.action == 'identity':
+        identity = read_json('/identity.json')
+        require(identity.get('schema') == 'dogeos/attestation-signer-descriptor/v1', 'Use core --print-identity JSON')
+        require(identity.get('network') == proposal['network'], 'Identity network differs from proposal')
+        public_key(identity['publicKey'])
+        public_key(identity['transportPubkey'])
+        require(identity['publicKey'] != identity['transportPubkey'], 'Signing and transport keys must be distinct')
+        print(identity['publicKey'])
+        print(identity['transportPubkey'])
+        return
     if args.action == 'inspect':
         print(json.dumps({'proposalSha256': args.expected_sha256, 'name': proposal['name'],
                           'network': proposal['network'], 'protocolContextSha256': proposal['deployment']['protocolContextSha256'],

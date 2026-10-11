@@ -61,7 +61,7 @@ function readRegularFile(filename, secret = false) {
   } finally { fs.closeSync(fd) }
 }
 
-function readIdentity(out, name, network) {
+function readIdentity(out, name, network, pins) {
   const env = new Map()
   for (const line of readRegularFile(path.join(out, files[0]), true).split('\n')) {
     if (!line.trim() || line.trimStart().startsWith('#')) continue
@@ -69,6 +69,7 @@ function readIdentity(out, name, network) {
     requireValid(match && !env.has(match[1]))
     env.set(match[1], match[2])
   }
+  if (pins) for (const [field, value] of Object.entries(pins)) requireValid(env.get(field) === value)
   requireValid(env.get('ATTESTATION_SIGNER_BACKEND') === 'local')
   requireValid(env.get('ATTESTATION_SIGNER_NETWORK') === network)
   requireValid(env.get('ATTESTATION_SIGNER_TSO_DELIVERY') === 'pull')
@@ -90,7 +91,7 @@ function writePrivate(filename, contents) {
   try { fs.writeFileSync(fd, contents); fs.fsyncSync(fd) } finally { fs.closeSync(fd) }
 }
 
-function initialize(out, name, network) {
+function initialize(out, name, network, pins) {
   const stat = fs.lstatSync(out)
   requireValid(stat.isDirectory() && !stat.isSymbolicLink())
   const lock = path.join(out, '.key-init.lock')
@@ -100,7 +101,7 @@ function initialize(out, name, network) {
     const existing = files.filter(file => entries.includes(file))
     if (existing.length) {
       requireValid(existing.length === files.length)
-      return readIdentity(out, name, network)
+      return readIdentity(out, name, network, pins)
     }
     // Never initialize over an older deployment or interrupted write. A fresh
     // directory (or the kit's public Compose templates) is the only valid target.
@@ -117,10 +118,12 @@ function initialize(out, name, network) {
       `ATTESTATION_SIGNER_WIF=${encodeWif(attestation, network)}`,
       'ATTESTATION_SIGNER_TSO_DELIVERY=pull',
       'ATTESTATION_SIGNER_TSO_TRANSPORT_KEY_FILE=/etc/dogeos-partner/transport.key',
-      '# Approved beta.6 signer binary. Review these pins when changing the runtime image.',
-      'ATTESTATION_SIGNER_ALLOWED_RELEASE_VERSION=0.3.0',
-      'ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT=56007d3c413ad07f33d0e08b272004089c911f78',
-      'ATTESTATION_SIGNER_ALLOWED_SIGNING_POLICY_VERSION=1',
+      '# Approved signer binary. Review these pins together with the runtime image.',
+      ...Object.entries(pins ?? {
+        ATTESTATION_SIGNER_ALLOWED_RELEASE_VERSION: '0.3.0',
+        ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT: '56007d3c413ad07f33d0e08b272004089c911f78',
+        ATTESTATION_SIGNER_ALLOWED_SIGNING_POLICY_VERSION: '1',
+      }).map(([field, value]) => `${field}=${value}`),
       '',
     ].join('\n')
     // Exclusive, fsynced writes. A partial write blocks retries instead of
@@ -128,20 +131,29 @@ function initialize(out, name, network) {
     writePrivate(path.join(out, files[0]), env)
     writePrivate(path.join(out, files[1]), `${transport.toString('hex')}\n`)
     writePrivate(path.join(out, files[2]), `${JSON.stringify(identity, null, 2)}\n`)
-    return readIdentity(out, name, network)
+    return readIdentity(out, name, network, pins)
   } finally { fs.rmdirSync(lock) }
 }
 
 try {
-  const {values} = parseArgs({options: {name: {type: 'string'}, network: {type: 'string'}, out: {type: 'string'}}})
+  const {values} = parseArgs({options: {name: {type: 'string'}, network: {type: 'string'}, out: {type: 'string'}, 'release-version': {type: 'string'}, 'git-commit': {type: 'string'}, 'signing-policy-version': {type: 'string'}}})
   requireValid(typeof values.name === 'string' && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(values.name) && values.name.length <= 63)
   requireValid(Object.hasOwn(versions, values.network) && typeof values.out === 'string')
-  const identity = initialize(path.resolve(values.out), values.name, values.network)
+  const suppliedPins = ['release-version', 'git-commit', 'signing-policy-version'].filter(key => values[key] !== undefined)
+  requireValid(suppliedPins.length === 0 || suppliedPins.length === 3)
+  let pins
+  if (suppliedPins.length) {
+    requireValid(/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$/.test(values['release-version']))
+    requireValid(/^[0-9a-f]{40}$/.test(values['git-commit']))
+    requireValid(/^[1-9][0-9]*$/.test(values['signing-policy-version']) && Number.isSafeInteger(Number(values['signing-policy-version'])))
+    pins = {ATTESTATION_SIGNER_ALLOWED_RELEASE_VERSION: values['release-version'], ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT: values['git-commit'], ATTESTATION_SIGNER_ALLOWED_SIGNING_POLICY_VERSION: values['signing-policy-version']}
+  }
+  const identity = initialize(path.resolve(values.out), values.name, values.network, pins)
   console.log('Public identity — copy the name and paired public keys into Governance:')
   console.log(JSON.stringify(identity, null, 2))
   console.log('Private files: attestation-signer.env and transport.key. Existing identities are reused without rewriting.')
 } catch {
   // Never echo crypto/JSON/parser exceptions: they may include private input.
-  console.error('Key initialization failed. Check arguments, directory permissions and all three identity files. Existing files must be complete, match the requested name/network, and have private-key permissions 0600. Restore incomplete or mismatched files; keys are never overwritten. If .key-init.lock remains after an interrupted process, confirm no initializer is running before removing that empty lock directory.')
+  console.error('Key initialization failed. Check arguments, directory permissions and all three identity files. Existing files must be complete, match the requested name/network and any explicit binary pins, and have private-key permissions 0600. Restore incomplete or mismatched files; keys are never overwritten. If .key-init.lock remains after an interrupted process, confirm no initializer is running before removing that empty lock directory.')
   process.exitCode = 1
 }

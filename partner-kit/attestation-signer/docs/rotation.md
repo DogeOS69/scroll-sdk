@@ -1,5 +1,10 @@
 # Approving an attestation key rotation
 
+For the complete bridge/current/new operator sequence and input sources, use the
+[rotation walkthrough](rotation-walkthrough.md). This page is the approval
+reference. `approve` and `ready` also accept `--identity identity.json` from
+core `--print-identity`, instead of manually entering public keys.
+
 An attestation rotation replaces the entire attestation public-key set under
 core's current rules. Operators A and B can remain operators, but they must
 create fresh identities: `{A1, B1, C1}` becomes `{A2, B2, D1}`. Keeping A1 and B1

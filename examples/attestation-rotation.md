@@ -1,5 +1,12 @@
 # Attestation key rotation for bridge operators
 
+For a complete role-by-role local-key rehearsal, including how operators obtain
+tools, public identities, release pins and handoff materials, start with the
+[rotation walkthrough](../partner-kit/attestation-signer/docs/rotation-walkthrough.md).
+`bridge rotation init` imports authenticated core public identity records;
+`bridge rotation check` stops before WP preview/submission. Use a separate
+`--rotation-dir` for each rotation.
+
 The CLI implements an attestation-only rotation workflow against the current
 core rules. Every target attestation public key must be different from every
 current one. Operators may change from A/B/C to A/B/D, but A and B must generate

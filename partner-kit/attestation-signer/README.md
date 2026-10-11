@@ -49,8 +49,11 @@ CLI package may predate this workflow.
 | Phase B / Step 3 | Partner | Original keys/descriptor, reviewed TOML, verified bundle | Running signer with the selected policy |
 | Acceptance / Step 4 | Both | Local readiness plus TSO polling and a real request | Confirmed end-to-end signing path |
 
-For a planned attestation key replacement, follow the standalone Docker
-[rotation inspection and approval guide](docs/rotation.md). Current operators
+For a planned attestation key replacement, start with the
+[bridge and signer operator walkthrough](docs/rotation-walkthrough.md). It covers
+Docker-only local key creation, authenticated handoffs and a pre-submission
+rehearsal. The [rotation inspection and approval reference](docs/rotation.md)
+explains the detailed verification rules. Current operators
 approve the exact target locally; new identities use independent directories
 and databases.
 

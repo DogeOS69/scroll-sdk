@@ -29,8 +29,8 @@ class Beta6CompatibilityTests(unittest.TestCase):
         signer = compose["services"]["attestation-signer"]
         for port in signer["ports"]:
             self.assertTrue(port.startswith("127.0.0.1:"), "Partner port exposed beyond loopback")
-        self.assertIn("127.0.0.1:4040:4040", signer["ports"])
-        self.assertIn("127.0.0.1:9100:9100", signer["ports"])
+        self.assertIn("127.0.0.1:${SIGNER_HTTP_PORT:-4040}:4040", signer["ports"])
+        self.assertIn("127.0.0.1:${SIGNER_METRICS_PORT:-9100}:9100", signer["ports"])
 
     def documents(self, result):
         self.assertEqual(result.returncode, 0, result.stderr)

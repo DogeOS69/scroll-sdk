@@ -45,6 +45,8 @@ class DockerApprovalTest(unittest.TestCase):
             item = envelope()
             (root / 'proposal.json').write_text(json.dumps(item))
             (root / 'server.py').write_text(SERVER.replace(KEYS[0], KEYS[3]))
+            identity = root / 'identity.json'
+            identity.write_text(json.dumps({'schema': 'dogeos/attestation-signer-descriptor/v1', 'network': 'testnet', 'publicKey': KEYS[3], 'transportPubkey': KEYS[10]}))
             try:
                 self.run_command(['docker', 'run', '-d', '--name', name,
                                   '--mount', f'type=bind,src={root},dst=/fixture,readonly',
@@ -54,8 +56,7 @@ class DockerApprovalTest(unittest.TestCase):
                 before = self.run_command(['docker', 'inspect', '--format', '{{.State.StartedAt}}', name]).stdout
                 args = ['bash', str(WRAPPER), 'ready', str(root / 'proposal.json'),
                         '--expected-sha256', item['sha256'], '--current-key-hash', item['proposal']['current']['keyHash'],
-                        '--config', str(config), '--container', name, '--signer-public-key', KEYS[3],
-                        '--transport-public-key', KEYS[10], '--acknowledge-tso-connected']
+                        '--config', str(config), '--container', name, '--identity', str(identity), '--acknowledge-tso-connected']
                 self.run_command(args)
                 receipt = json.loads((root / ('rotation-readiness-' + item['sha256'] + '.json')).read_text())
                 self.assertEqual(receipt['signerAttestationPubkey'], KEYS[3])
@@ -75,6 +76,8 @@ class DockerApprovalTest(unittest.TestCase):
             item = envelope()
             (root / 'proposal.json').write_text(json.dumps(item))
             (root / 'server.py').write_text(SERVER)
+            identity = root / 'identity.json'
+            identity.write_text(json.dumps({'schema': 'dogeos/attestation-signer-descriptor/v1', 'network': 'testnet', 'publicKey': KEYS[0], 'transportPubkey': KEYS[10]}))
             alias = root / 'operator-alias'
             alias.symlink_to(root, target_is_directory=True)
             mounted_config = alias / config.name
@@ -87,7 +90,7 @@ class DockerApprovalTest(unittest.TestCase):
                 before = config.stat().st_ino
                 args = ['bash', str(WRAPPER), 'approve', str(root / 'proposal.json'),
                         '--expected-sha256', item['sha256'], '--current-key-hash', item['proposal']['current']['keyHash'],
-                        '--config', str(config), '--container', name, '--signer-public-key', KEYS[0]]
+                        '--config', str(config), '--container', name, '--identity', str(identity)]
                 self.run_command(args)
                 self.assertEqual(before, config.stat().st_ino)
                 receipt = json.loads((root / ('rotation-approval-' + item['sha256'] + '.json')).read_text())

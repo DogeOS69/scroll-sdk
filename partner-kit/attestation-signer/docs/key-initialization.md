@@ -101,3 +101,21 @@ the [main runbook](../README.md#ownership-boundary).
 The older CLI-based Phase A/B scripts remain a separate deployment workflow;
 this Docker-only entry point replaces local **key creation and Governance
 registration**, not all of their policy-import or runtime-preflight commands.
+
+
+## Selected release pins and core identity export
+
+When using a signer image other than the default beta.6 binary, obtain its
+approved release version, full Git commit and signing-policy version from the
+release coordinator. Supply all three to `init-keys.sh` with
+`--release-version`, `--git-commit` and `--signing-policy-version`. Partial pin
+sets and conflicting explicit pins on an existing identity fail without
+rewriting keys. This initializer does not upgrade existing instances.
+
+After explicitly pulling the reviewed signer image, export the core-format
+public identity with `bash scripts/identity.sh "$SIGNER_IMAGE" "$WORKSPACE"`.
+This runs the selected core `--print-identity` binary offline using the already
+created local files. Save its public JSON as `identity.json`; it is suitable for
+`bridge rotation init --identity NAME=FILE`. The helper's `public-identity.json`
+uses a different field name and is not a substitute for core output.
+See the [rotation walkthrough](rotation-walkthrough.md) for the full sequence.
