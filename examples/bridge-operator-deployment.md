@@ -210,8 +210,18 @@ the exported policy and live TSO. After contracts and bridge services are verifi
 make start-l1-sync
 ```
 
-Blockscout is optional and requires its database. Do not use `install-all` for
-this staged flow: it also installs optional components and invokes initialization.
+Blockscout is not installed by default, including by `install-all`. To opt in,
+prepare its database and `values/blockscout-production.yaml`, then run
+`make install-blockscout`. This installs both Blockscout and its contract verifier.
+Do not use `install-all` for this staged flow: it also installs optional
+components and invokes initialization.
+
+Grafana and Dogecoin have ingress disabled in the default values. Their services
+remain available inside the cluster; generating a hostname does not enable
+public access. Use `kubectl port-forward` for local operator access. If public
+access is explicitly required, configure and enable `grafana.ingress` in
+`values/scroll-monitor-production.yaml` or `ingress` in
+`values/dogecoin-production.yaml`. Generation preserves those operator choices.
 
 ## 5. Start the selected GPU worker and collect partner evidence
 
@@ -270,3 +280,10 @@ broadcasts on the selected RPC, and a worker bridge-verifier genesis profile
 mismatch for its existing vout-1 deployment. Fixes in SDK/CLI and vout-0 funding
 validation do not by themselves prove these runtime issues are resolved. A fresh
 end-to-end acceptance run remains required before declaring this path complete.
+
+## Network and IAM launch checks
+
+Follow [network and IAM preparation](network-and-iam.md) before chart preparation.
+Production TSO/WP values enable isolation; fill ALB subnet CIDRs and validate
+CNI enforcement. Configure ACM for enabled ALB ingresses with `setup tls`.
+Grafana and Dogecoin remain internal; Blockscout installation is optional.

@@ -9,8 +9,24 @@ when a proof-coordinator selector is supplied. Selectors come from values only.
 */ -}}
 {{- if .Values.networkPolicy.enabled }}
 {{- $from := .Values.networkPolicy.allowFrom }}
+{{- range $group, $peers := $from }}
+{{- range $peer := $peers }}
+{{- if hasKey $peer "ipBlock" }}
+{{- $cidr := default "" $peer.ipBlock.cidr }}
+{{- if or (not (regexMatch "^[0-9a-fA-F:.]+/[0-9]+$" $cidr)) (eq $cidr "0.0.0.0/0") (eq $cidr "::/0") }}
+{{- fail (printf "networkPolicy.allowFrom.%s requires explicit restricted CIDRs, not placeholders or all-address ranges" $group) }}
+{{- end }}
+{{- else if or (not (hasKey $peer "podSelector")) (and (empty $peer.podSelector.matchLabels) (empty $peer.podSelector.matchExpressions)) }}
+{{- fail (printf "networkPolicy.allowFrom.%s requires a nonempty podSelector; pair it with namespaceSelector for cross-namespace access" $group) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{- if empty $from.tso }}
 {{- fail "networkPolicy.allowFrom.tso must contain at least one peer" }}
+{{- end }}
+{{- if and (hasKey .Values.service.main.ports "proof-work") (index .Values.service.main.ports "proof-work").enabled (empty $from.proofCoordinator) }}
+{{- fail "networkPolicy.allowFrom.proofCoordinator must list the coordinator when proof-work is enabled" }}
 {{- end }}
 {{- $apiPeers := concat
       (required "networkPolicy.allowFrom.tso must list the tso-service pods (callbacks)" $from.tso)

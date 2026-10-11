@@ -28,7 +28,7 @@ PROOF_COORDINATOR_CHART_VERSION ?= 0.3.3
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.24
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.25
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.5
@@ -60,7 +60,6 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/prover-worker-production.yaml \
 	withdrawal-processor/WithdrawalProcessor.toml \
 	proof-coordinator/ProofCoordinator.toml \
-	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
 	values/testnet-activity-helper-production.yaml
@@ -203,7 +202,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.10 \
+		--version=0.1.11 \
 		--values values/tso-service-production.yaml \
 		--wait
 
@@ -241,6 +240,8 @@ reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
+# Optional: prepare the database and values, then invoke this target explicitly.
+# install-all does not install Blockscout or its contract verifier.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
 		--version=0.1.9-dogeos \
@@ -293,7 +294,6 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-blockscout
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync

@@ -200,10 +200,17 @@ grafana:
       domain: grafana.scrollsdk
       root_url: "https://grafana.scrollsdk"
   ingress:
-    enabled: true
-    ingressClassName: nginx
+    enabled: false
+    ingressClassName: alb
     hosts:
-      - ""
+    - ''
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/healthcheck-path: /api/health
+      alb.ingress.kubernetes.io/certificate-arn: <TODO>
+
   resources:
     requests:
       cpu: 200m

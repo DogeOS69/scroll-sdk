@@ -83,10 +83,7 @@ ingress:
     # config, security-group source rules and idle timeout. TLS from ACM;
     # optional WAF web ACL with a per-IP rate rule (oversize handling =
     # continue, see the chart README). ALB has no request-body limit of its
-    # own; the TSO's 4 MiB application limit applies. To use ingress-nginx instead, set
-    # ingressClassName: nginx, replace the alb.* annotations with
-    #   nginx.ingress.kubernetes.io/proxy-body-size: "16m"
-    # (plus cert-manager.io/cluster-issuer), and add tls[0].secretName.
+    # own; the TSO's application request-body limit applies.
     enabled: true
     primary: true
     annotations:
@@ -143,11 +140,11 @@ defaultProbes:
 
 # Restrict the unauthenticated TSO API port to the pods that legitimately call
 # it. Replace the placeholder selectors with your own labels.
-# Opt in after configuring monitoring and every ingress caller. Beta.6
+# Enabled by default; configure every ingress caller before installation. Beta.6
 # serves metrics on the API port; a monitoring peer can reach all API routes.
 
 networkPolicy:
-  enabled: false
+  enabled: true
   port: 3000
   allowFrom:
     withdrawalProcessor:
@@ -155,8 +152,9 @@ networkPolicy:
     signers:
       - podSelector: {matchLabels: {app.kubernetes.io/name: cubesigner-signer}}
     # ALB target-type ip: the ALB connects from its subnets. List each public
-    # subnet CIDR the ALB uses (ingress-nginx: its pods instead).
+    # subnet CIDR the ALB uses; never use the client IP allowlist here.
     edge:
       - ipBlock: {cidr: "<TODO>"}
     operators: []
-    monitoring: []   # Prometheus peers can reach every route on the API port
+    monitoring:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: prometheus}} # Same namespace by default

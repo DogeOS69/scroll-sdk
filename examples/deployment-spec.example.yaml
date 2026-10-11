@@ -264,7 +264,10 @@ dstackController:
   persistence: {size: 10Gi}
   ingress:
     enabled: true
-    className: nginx
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/healthcheck-path: /healthcheck
+      alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_DSTACK_ACM_CERTIFICATE_ARN
     # hosts defaults to [dstack.<frontend.baseDomain>]; set only to override.
   # SQLite matches the rehearsal. PostgreSQL requires initializeDatabase or
   # databaseUrlEnv in preparation.dstack, plus database.type: postgresql here.

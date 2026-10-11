@@ -92,17 +92,15 @@ timeout below 120 seconds. Bootstrap itself accepts placeholders so these
 operator-owned files can be prepared. Fill these values before chart preparation;
 if apply reaches this check first, complete the files and resume apply.
 ALB uses ACM, so generation removes stale cert-manager/nginx annotations and
-Kubernetes `tls` entries from these two ALB ingresses. TSO exposes only `/health`
+Kubernetes `tls` entries from ALB ingresses. TSO exposes only `/health`
 and `/signer/*`; its private management routes remain internal.
 
-An operator can explicitly select `ingressClassName: nginx` in these files.
-The CLI then removes ALB annotations, retains the operator's cert-manager issuer
-and TLS Secret, and updates the TLS hostname. Missing nginx settings default to
-`letsencrypt-prod` and a 16 MiB TSO request-body limit. This is an explicit
-controller choice, not a spec default. Other public services retain their own
-existing ingress templates; changing TSO and Proof Coordinator alone is not a
-complete ingress-nginx removal plan. Bootnode TCP P2P NLBs are unrelated to this
-HTTP ingress choice.
+All generated HTTP ingresses now use ALB. Explicit nginx/other controller
+selections are rejected until the operator updates the values. `setup tls
+--certificate-arn <issued-ACM-ARN> -N` configures certificates locally, without
+cert-manager. Bootnode TCP P2P NLBs remain separate. See
+[network and IAM preparation](network-and-iam.md) for the required TSO ALB
+subnet CIDRs, CNI enforcement checks and workload permission matrix.
 
 ## Prepare the private inputs
 
@@ -438,6 +436,14 @@ Bridge artifacts. Do not enter a static Bridge address in frontend values. See
 [frontend configuration](frontend-configuration.md) for identity sources, readiness
 requirements, cache handling and rotation behavior.
 Blockscout/explorer links require a separately configured Blockscout deployment.
+Blockscout and its contract verifier are excluded from `install-all`; after
+preparing the database and values, opt in with `make install-blockscout`.
+
+Grafana and Dogecoin ingress are disabled in the SDK example values. They remain
+accessible inside the cluster, with local operator access through
+`kubectl port-forward`. Their generated hostnames do not enable ingress.
+An operator can explicitly enable the corresponding ingress in the values;
+subsequent configuration generation preserves that choice.
 
 The Makefile also includes both releases in `install-all` (monitoring through
 `install-scroll-core`). Do not rerun `install-all` to add a missing release to an

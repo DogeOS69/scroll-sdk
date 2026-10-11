@@ -67,24 +67,25 @@ storage:
   existingClaim: ""
   size: 100Gi             # Should be > 200Gi for mainnet
   retainPvcOnUninstall: true
-# Enable ingress
+# Internal access by default. Enable ingress only for an explicit operator choice.
 ingress:
-  enabled: true
-  className: "nginx"
+  enabled: false
+  className: alb
+  tls: [] # Override the legacy packaged chart TLS Secret default.
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/backend-protocol: null # Remove inherited chart default.
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # JSON-RPC GET may return 400/401/405; 5xx and timeouts remain unhealthy.
+    alb.ingress.kubernetes.io/success-codes: "200-499"
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: <TODO>
   hosts:
-    - host: dogecoin.testnet.dogeos.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: dogecoin-tls
-      hosts:
-        - dogecoin.testnet.dogeos.com
+  - host: dogecoin.testnet.dogeos.com
+    paths:
+    - path: /
+      pathType: Prefix
 
- # RPC Password Configuration for Production
-# Option 1: Use External Secrets (Recommended for enterprise environments)
 externalSecrets:
   dogecoin-secret-env:
     provider: aws

@@ -178,8 +178,6 @@ ingress:
     # gives the coordinator its own ALB (no group.name), separate from the
     # TSO's, for independent config, security-group source rules and idle
     # timeout; bearer-token auth still applies.
-    # For ingress-nginx, set ingressClassName: nginx and drop the alb.*
-    # annotations.
     enabled: false
     ingressClassName: alb
     annotations:
