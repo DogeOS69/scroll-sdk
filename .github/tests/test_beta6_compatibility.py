@@ -68,7 +68,8 @@ class Beta6CompatibilityTests(unittest.TestCase):
                 self.assertIn(message, result.stderr)
 
     def test_tso_edge_exposes_only_health_and_signed_routes(self):
-        docs = self.documents(render("tso-service"))
+        docs = self.documents(render("tso-service", {"networkPolicy": {
+            "allowFrom": {"edge": [{"ipBlock": {"cidr": "192.0.2.0/24"}}]}}}))
         ingress = next(d for d in docs if d["kind"] == "Ingress")
         paths = ingress["spec"]["rules"][0]["http"]["paths"]
         self.assertEqual([(p["path"], p["pathType"]) for p in paths],

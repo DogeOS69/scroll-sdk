@@ -390,6 +390,8 @@ businessPodAlerts:
 
 # Extended service diagnostics are enabled by default; explicit pauses remain available.
 serviceAlerts:
+  # CLI derives this from CubeSigner mode; transport_only has no verifier-policy evaluations.
+  cubesignerPolicyMode: production_verifier_key_policy
   enabled: true
   paused: false
 
@@ -651,3 +653,6 @@ eksControlPlane:
 # separately; Helm cannot inspect it during an offline render.
 infrastructureAlerts:
   requireReceiver: false
+
+# Optional external Secret stores; credentials must never be included in values.
+externalSecrets: {}

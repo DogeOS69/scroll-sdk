@@ -1,0 +1,35 @@
+# Copy to rotation-spec.yaml inside a new, private per-rotation directory.
+# Select it with --rotation-dir for plan, stage, apply and status.
+# Existing deployment-spec.yaml/deployment.env/runtime remain the deployment source.
+# All three attestation public keys MUST differ from every current attestation key.
+name: attestation-rotation-002
+
+attestation:
+  threshold: 2
+  signers:
+    - name: signer-a-next
+      attestationPubkey: REPLACE_WITH_NEW_A_COMPRESSED_ATTESTATION_PUBLIC_KEY
+      transportPubkey: REPLACE_WITH_NEW_A_COMPRESSED_TRANSPORT_PUBLIC_KEY
+    - name: signer-b-next
+      attestationPubkey: REPLACE_WITH_NEW_B_COMPRESSED_ATTESTATION_PUBLIC_KEY
+      transportPubkey: REPLACE_WITH_NEW_B_COMPRESSED_TRANSPORT_PUBLIC_KEY
+    - name: signer-d
+      attestationPubkey: REPLACE_WITH_D_COMPRESSED_ATTESTATION_PUBLIC_KEY
+      transportPubkey: REPLACE_WITH_D_COMPRESSED_TRANSPORT_PUBLIC_KEY
+
+# Omit to use the committed protocol minimum. An explicit value must be at
+# least that minimum and at most core's 260000 WF ceiling.
+# graceWfTxs: 100
+
+# Default: preserve the current recovery height. If that height has less than
+# core's minimum 259200 blocks remaining, plan stops and requests an explicit
+# policy change. Review the resulting recovery date/height with all operators.
+timelock:
+  policy: preserve
+  # To refresh, change policy to refresh. The new height is the greater of the
+  # old height and max(live tip, confirmed anchor) + 259200 + marginBlocks.
+  # Default refresh margin is 10000 blocks; it allows time for offline review.
+  # marginBlocks: 10000
+
+# TEE, ordered recovery public keys/threshold and namespace are inherited from
+# the validated current bridge script. Never enter private keys in this file.

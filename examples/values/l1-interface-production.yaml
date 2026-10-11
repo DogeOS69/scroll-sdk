@@ -30,17 +30,23 @@ ingress:
   main:
     enabled: false
     primary: true
-    annotations: {}
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      # JSON-RPC GET may return 400/401/405; 5xx and timeouts remain unhealthy.
+      alb.ingress.kubernetes.io/success-codes: "200-499"
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: <TODO>
     labels: {}
-    ingressClassName: nginx
+    ingressClassName: alb
     hosts:
-      - host: ""
-        paths:
-          - path: /
-            pathType: Prefix
-            service:
-              name: l1-interface
-              port: 8545
+    - host: ''
+      paths:
+      - path: /
+        pathType: Prefix
+        service:
+          name: l1-interface
+          port: 8545
 
 probes:
   liveness:

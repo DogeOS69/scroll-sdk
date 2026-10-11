@@ -6,7 +6,7 @@ A Helm chart for the DOGEOS Withdrawal Processor
 
 ## Beta.6 signer configuration
 
-Chart 0.1.24 renders the beta.6 `[[tso_signers]]` format. Replace each legacy
+Chart 0.1.25 renders the beta.6 `[[tso_signers]]` format. Replace each legacy
 `role` with a single-entry `roles` list. Pull signers need `delivery: pull`,
 `publicKeyOverride` and `transportPubkey`, and must omit `uri`. Push signers
 retain their URI. The chart rejects the old format and incomplete delivery
@@ -126,3 +126,7 @@ in dogeos-core #1406 is not part of beta.6. Production values and examples
 leave the policy disabled until the deployment supplies all required peers;
 configure Prometheus namespace/pod selectors and any ingress proxy sources
 before enabling it, then verify callbacks and scrapes on an enforcing CNI.
+
+Production examples enable NetworkPolicy. Required peers, empty selectors and
+placeholder/all-address CIDRs are checked when it is enabled. See
+[deployment network and IAM preparation](../../examples/network-and-iam.md).

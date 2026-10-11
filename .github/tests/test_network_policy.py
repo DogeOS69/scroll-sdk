@@ -8,14 +8,19 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SERVICES = ("tso-service", "withdrawal-processor")
-MONITOR = {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "monitoring"}}}
+MONITOR = {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "monitoring"}},
+           "podSelector": {"matchLabels": {"app.kubernetes.io/name": "prometheus"}}}
+EDGE = {"ipBlock": {"cidr": "192.0.2.0/24"}}
 
 
 class NetworkPolicyTests(unittest.TestCase):
-    def render(self, service, overlay=None, example=True):
+    def render(self, service, overlay=None, example=True, supply_edge=True):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "overlay.yaml"
-            path.write_text(yaml.safe_dump(overlay or {}))
+            values = yaml.safe_load(yaml.safe_dump(overlay or {}))
+            if example and service == "tso-service" and supply_edge:
+                values.setdefault("networkPolicy", {}).setdefault("allowFrom", {}).setdefault("edge", [EDGE])
+            path.write_text(yaml.safe_dump(values))
             cmd = ["helm", "template", "review", str(ROOT / "charts" / service)]
             if example:
                 cmd += ["-f", str(ROOT / "examples/values" / f"{service}-production.yaml")]
@@ -26,12 +31,17 @@ class NetworkPolicyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return [d for d in yaml.safe_load_all(result.stdout) if d]
 
-    def test_default_and_example_require_explicit_opt_in(self):
+    def test_chart_defaults_are_opt_in_and_production_examples_enable_isolation(self):
         for service in SERVICES:
             for example in (False, True):
                 with self.subTest(service=service, example=example):
                     docs = self.documents(self.render(service, example=example))
-                    self.assertFalse(any(d["kind"] == "NetworkPolicy" for d in docs))
+                    self.assertEqual(any(d["kind"] == "NetworkPolicy" for d in docs), example)
+
+    def test_tso_example_requires_the_operator_to_supply_alb_cidrs(self):
+        result = self.render("tso-service", supply_edge=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("networkPolicy.allowFrom.edge", result.stderr)
 
     def test_monitoring_uses_the_beta6_api_port(self):
         for service in SERVICES:
@@ -65,13 +75,20 @@ class NetworkPolicyTests(unittest.TestCase):
     def test_proof_work_port_is_separate_and_opt_in(self):
         for enabled in (False, True):
             peers = [{"podSelector": {"matchLabels": {"app": "coordinator"}}}] if enabled else []
-            docs = self.documents(self.render("withdrawal-processor", {"networkPolicy": {
+            docs = self.documents(self.render("withdrawal-processor", {
+                "service": {"main": {"ports": {"proof-work": {"enabled": enabled}}}}, "networkPolicy": {
                 "enabled": True, "allowFrom": {"proofCoordinator": peers}}}))
             policy = next(d for d in docs if d["kind"] == "NetworkPolicy")
             rules = policy["spec"]["ingress"]
             self.assertEqual(len(rules), 2 if enabled else 1)
             if enabled:
                 self.assertEqual(rules[1], {"from": peers, "ports": [{"protocol": "TCP", "port": 9300}]})
+
+    def test_enabled_proof_work_requires_a_coordinator_peer(self):
+        result = self.render("withdrawal-processor", {"networkPolicy": {
+            "allowFrom": {"proofCoordinator": []}}})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("networkPolicy.allowFrom.proofCoordinator", result.stderr)
 
 
 if __name__ == "__main__":

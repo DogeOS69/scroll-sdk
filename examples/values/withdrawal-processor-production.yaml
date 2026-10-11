@@ -17,7 +17,7 @@ global:
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.6
+  tag: v0.3.0-beta.6-kms
 
 # The image entrypoint is retained; args select the checked-in native config.
 command: []
@@ -135,6 +135,8 @@ externalSecrets:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
+      # Local sequencer backend only. prep-charts removes this entry when the
+      # Bridge output selects sequencer_signer_kms; the fee wallet stays local.
       - remoteRef:
           key: dogeos/withdrawal-processor
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
@@ -271,17 +273,18 @@ defaultProbes:
 # Restrict the unauthenticated API port (TSO callbacks, rotation routes,
 # metrics) to the pods that legitimately call it. Replace the placeholder
 # selectors with your own labels.
-# Opt in after configuring monitoring and every ingress caller. Beta.6
+# Enabled by default; configure every ingress caller before installation. Beta.6
 # serves metrics on the API port; a monitoring peer can reach all API routes.
 
 networkPolicy:
-  enabled: false
+  enabled: true
   apiPort: 3000
   proofWorkPort: 9300
   allowFrom:
     tso:
       - podSelector: {matchLabels: {app.kubernetes.io/name: tso-service}}
     operators: []    # who may call /protocol-actions/*
-    monitoring: []   # e.g. a namespaceSelector for your Prometheus
+    monitoring:
+      - podSelector: {matchLabels: {app.kubernetes.io/name: prometheus}} # Same namespace by default
     proofCoordinator:
       - podSelector: {matchLabels: {app.kubernetes.io/name: proof-coordinator}}

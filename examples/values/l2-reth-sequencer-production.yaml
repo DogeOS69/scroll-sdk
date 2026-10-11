@@ -83,7 +83,7 @@ reth:
   sequencer:
     enabled: true
     autoStart: true
-    allowEmptyBlocks: true
+    allowEmptyBlocks: false
     blockTimeMs: "2000"
     payloadBuildingDurationMs: "1400"
     # DogeOS L1 Interface finalizes WF-backed synthetic blocks. Do not require

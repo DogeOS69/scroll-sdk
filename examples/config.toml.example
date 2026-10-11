@@ -48,6 +48,9 @@ CONNECT_WALLET_PROJECT_ID = "14efbaafcf5232a47d93a68229b71028"
 
 [genesis]
 
+# Fixed genesis timestamp; keep it unchanged when regenerating the same chain.
+TIMESTAMP = 0
+
 L2_MAX_NATIVE_DOGE_SUPPLY = "226156424291633194186662080095093570025917938800079226639565593765455331328"
 L2_DEPLOYER_INITIAL_BALANCE = 1000000000000000000
 # Fresh-chain targets; require the contracts generator that consumes GAS_LIMIT

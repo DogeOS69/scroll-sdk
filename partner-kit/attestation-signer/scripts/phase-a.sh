@@ -62,6 +62,9 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
     chmod 600 docker-compose/transport.key.new
     mv -f docker-compose/transport.key.new docker-compose/transport.key
   )
+  # Docker must not create this bind mount as root during identity export.
+  mkdir -p docker-compose/policy
+  [ -w docker-compose/policy ] || { echo "docker-compose/policy must be writable by the partner operator" >&2; exit 1; }
   # 3. Print the identity with the real backend, network and transport key
   #    (the same Compose service and mounts the runtime uses).
   docker compose --project-directory docker-compose run --rm --no-deps -T attestation-signer \

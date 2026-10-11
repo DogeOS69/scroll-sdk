@@ -18,8 +18,8 @@ tests:
         service: fee-oracle
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 2.5000 ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
-        summary: Fee oracle account balance is below 5 ETH.
+        description: Address 0xabc on chain 1234 has 2.5000 native tokens (DOGE on DogeOS L2). Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
+        summary: Fee oracle account balance is below 5 native tokens.
 - name: fee-oracle-equal
   interval: 1m
   input_series:
@@ -54,8 +54,8 @@ tests:
         service: fee-oracle
         severity: critical
       exp_annotations:
-        description: Address 0xabc on chain 1234 has 0.0000 ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
-        summary: Fee oracle account balance is below 5 ETH.
+        description: Address 0xabc on chain 1234 has 0.0000 native tokens (DOGE on DogeOS L2). Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.
+        summary: Fee oracle account balance is below 5 native tokens.
 - name: fee-oracle-rpc-failure-not-low-balance
   interval: 1m
   input_series:
@@ -530,7 +530,7 @@ tests:
     values: 2+0x15
   - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="eth-da-submitter"}
     values: 100+1x15
-  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter"}
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter",reason="execution_fee_cap_exceeded"}
     values: 0+1x15
   alert_rule_test:
   - eval_time: 10m
@@ -543,7 +543,7 @@ tests:
     values: 2+0x15
   - series: eth_da_publish_oldest_ready_age_seconds{namespace="monitoring",job="eth-da-submitter"}
     values: 4000+1x15
-  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter"}
+  - series: eth_da_publish_liveness_blocked_total{namespace="monitoring",job="eth-da-submitter",reason="execution_fee_cap_exceeded"}
     values: 0+1x15
   alert_rule_test:
   - eval_time: 10m
@@ -555,5 +555,5 @@ tests:
         service: eth-da-submitter
         severity: warning
       exp_annotations:
-        description: Publication has pending work older than the configured deadline and recurring liveness or replacement fee-cap blocks. Review the fee policy and account balance.
+        description: Publication has pending work older than the configured deadline and recurring execution/blob fee-cap or replacement fee-cap blocks. Pending transaction limits and unavailable fee samples are excluded. Review the fee policy and account balance.
         summary: Fee constraints are blocking Ethereum DA publication past its deadline.

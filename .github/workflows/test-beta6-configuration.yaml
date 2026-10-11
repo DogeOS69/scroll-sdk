@@ -8,6 +8,7 @@ on:
       - examples/values/**
       - partner-kit/attestation-signer/**
       - .github/tests/test_partner_transport.py
+      - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
   push:
@@ -18,6 +19,7 @@ on:
       - examples/values/**
       - partner-kit/attestation-signer/**
       - .github/tests/test_partner_transport.py
+      - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
 permissions:
@@ -45,3 +47,7 @@ jobs:
       - run: helm dependency build charts/proof-coordinator
       - run: python3 -m unittest discover -s .github/tests -p 'test_beta6_compatibility.py' -v
       - run: python3 -m unittest discover -s .github/tests -p 'test_partner_transport.py' -v
+      - name: Verify standalone key generation against the beta.6 signer
+        run: node --test .github/tests/test_signer_keygen.mjs
+        env:
+          SIGNER_KEYGEN_DOCKER_TEST: '1'

@@ -44,9 +44,18 @@ validator:
 
 ingress:
   main:
-    ingressClassName: "nginx"
+    # Internal devnet clients use the Service; enable only for public access.
+    enabled: false
+    ingressClassName: alb
     hosts:
-      - host: ""
-        paths:
-          - path: /
-            pathType: Prefix
+    - host: ''
+      paths:
+      - path: /
+        pathType: Prefix
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      # JSON-RPC GET may return 400/401/405; 5xx and timeouts remain unhealthy.
+      alb.ingress.kubernetes.io/success-codes: "200-499"
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: <TODO>

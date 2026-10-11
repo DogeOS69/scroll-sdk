@@ -20,10 +20,17 @@ and does not create the complete monitor file from scratch.
 The CLI updates Grafana's ingress host, server domain and root URL; projects the
 configured Grafana admin Secret reference; and reconciles balance-monitoring
 addresses, RPC URLs and chain IDs. It supplies missing balance thresholds while
-preserving operator overrides and explicit Secret-owned RPC URLs. When
-`statusPage.enabled` is true, it also derives the status-page catalog and runtime
+preserving operator overrides and explicit Secret-owned RPC URLs. The production
+example defaults `statusPage.enabled` to true, so the CLI also derives the status-page catalog and runtime
 configuration from the selected service values. Remote Instatus changes still
 use the separate explicit `setup status-page --apply` workflow.
+
+Before installation, configure the status-page environment, effective source files,
+component rules and processing deadlines, and the heartbeat required by automatic
+Alloy publication. Restore or create the private Instatus bindings and install their
+referenced Secrets using the [status-page setup guide](../docs/status-page-automation.md).
+Enabling the switch alone does not establish provider delivery. A copied deployment
+that still has `statusPage.enabled: false` remains opted out until explicitly changed.
 
 Alert thresholds and routing, storage and resource sizing, EKS collection policy,
 and other monitoring choices come from the example or operator configuration.
@@ -457,3 +464,26 @@ Metric rules then run in Prometheus; Grafana retains LogQL evaluation and forwar
 notifications to the independent Alertmanager. See
 [the migration guide](../docs/alertmanager-backend.md) before switching an existing
 installation. Preserve UI pause states and edited rules during the cutover.
+## Alert evidence and service modes
+
+`serviceAlerts.cubesignerPolicyMode` must match the CubeSigner runtime mode.
+The CLI derives it from the existing CubeSigner configuration in both spec
+generation and `prep-charts`; no additional spec input is required. The chart
+defaults to `production_verifier_key_policy`, preserving explain-tree checks.
+Explicit `transport_only` disables only `CubeSignerPolicyEvaluationMissing`:
+successful transport-only signing does not promise verifier-policy evaluations.
+Readiness, signing failures, policy denials and malformed telemetry remain monitored.
+
+`EthDAPublicationFeeBlocked` requires an execution/blob fee-cap reason or a
+replacement fee-cap rejection. A full pending-transaction window, unavailable
+fee samples or a window budget are not evidence of a fee-cap block. The independent
+`EthDAPublishBacklogStalled` still detects publication stalled for those reasons.
+
+An attestation signer's `/ready` covers all production capabilities. Missing
+rotation policy can make it return 503 while AdvanceL1/AdvanceL2 remain usable;
+inspect the capability details before concluding that signing quorum is lost.
+
+Fee-oracle balances are denominated in the transaction chain's native token
+(DOGE on DogeOS L2). The existing `minimumEth` values key and
+`scroll_account_balance_eth` metric retain their historical names and 18-decimal
+conversion; they do not imply that the L2 gas currency is ETH.

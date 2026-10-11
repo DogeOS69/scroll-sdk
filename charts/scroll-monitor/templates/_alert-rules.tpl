@@ -87,7 +87,12 @@
 {{- $grafanaManaged := and (eq .Values.alerting.backend "grafana") .Values.grafana.enabled .Values.grafanaAlerting.enabled -}}
 {{- if and .Values.serviceAlerts.enabled (or $grafanaManaged (not .Values.serviceAlerts.paused)) -}}
 {{- range $path, $_ := .Files.Glob "alerts/services/*.yaml" -}}
-{{- $serviceGroups := ($.Files.Get $path | fromYaml).groups -}}
+{{- $mode := $.Values.serviceAlerts.cubesignerPolicyMode -}}
+{{- if not (has $mode (list "transport_only" "production_verifier_key_policy")) -}}
+{{- fail "serviceAlerts.cubesignerPolicyMode must match the CubeSigner runtime mode" -}}
+{{- end -}}
+{{- $policyRequired := ternary "0" "1" (eq $mode "transport_only") -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}

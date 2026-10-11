@@ -11,8 +11,10 @@ KUBE_CONTEXT ?=
 # Must match dstackController.monitoring.namespace and the published Secrets.
 DSTACK_NAMESPACE ?= dstack-system
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.3
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.4
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
+SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.44-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades, including install-all.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
@@ -26,7 +28,7 @@ PROOF_COORDINATOR_CHART_VERSION ?= 0.3.3
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.24
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.25
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.5
@@ -58,7 +60,6 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/prover-worker-production.yaml \
 	withdrawal-processor/WithdrawalProcessor.toml \
 	proof-coordinator/ProofCoordinator.toml \
-	values/blockscout-production.yaml \
 	values/frontends-production.yaml \
 	values/frontends-config.yaml \
 	values/testnet-activity-helper-production.yaml
@@ -109,6 +110,7 @@ install-l1-interface:
 		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
+# Development only: requires ethereumDa.chain: devnet; not part of install-all.
 install-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
@@ -116,8 +118,8 @@ install-l1-devnet:
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor -n "$(NAMESPACE)" \
-		--version=0.1.43-dogeos \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor $(SCROLL_MONITOR_CHART) -n "$(NAMESPACE)" \
+		--version=$(SCROLL_MONITOR_CHART_VERSION) \
 		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
 
 # Independent release: prepare/publish dstack Secrets and install the monitor's
@@ -201,7 +203,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.10 \
+		--version=0.1.11 \
 		--values values/tso-service-production.yaml \
 		--wait
 
@@ -239,6 +241,8 @@ reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
+# Optional: prepare the database and values, then invoke this target explicitly.
+# install-all does not install Blockscout or its contract verifier.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
 		--version=0.1.9-dogeos \
@@ -291,7 +295,6 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-blockscout
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync

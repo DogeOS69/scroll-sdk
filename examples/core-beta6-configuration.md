@@ -7,7 +7,7 @@ revision and `GIT_COMMIT` metadata match that commit; its release version is
 `0.3.0`. All nine service image tags were available when these examples were
 updated. Resolve and record deployment digests before rollout.
 
-Contracts remain the separately released rc.4 images. Reth and dstack have
+Contracts remain the separately released rc.5 images. Reth and dstack have
 independent releases; this core upgrade does not change their application tags.
 
 ## Generate beta.6 configuration before selecting the images

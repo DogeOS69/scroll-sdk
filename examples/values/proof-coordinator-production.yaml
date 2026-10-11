@@ -178,8 +178,6 @@ ingress:
     # gives the coordinator its own ALB (no group.name), separate from the
     # TSO's, for independent config, security-group source rules and idle
     # timeout; bearer-token auth still applies.
-    # For ingress-nginx, set ingressClassName: nginx and drop the alb.*
-    # annotations.
     enabled: false
     ingressClassName: alb
     annotations:
@@ -188,7 +186,8 @@ ingress:
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
       alb.ingress.kubernetes.io/certificate-arn: "<TODO>"
-      alb.ingress.kubernetes.io/wafv2-acl-arn: "<TODO>"
+      # Optional: associate an existing regional WAF web ACL.
+      # alb.ingress.kubernetes.io/wafv2-acl-arn: "REPLACE_WITH_REGIONAL_WEB_ACL_ARN"
       alb.ingress.kubernetes.io/healthcheck-path: /healthz
       # The longest-held request is a Worker's result/fail POST: the
       # coordinator answers only after its WP prove call, bounded at 60 s

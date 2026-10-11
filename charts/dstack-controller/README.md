@@ -129,9 +129,14 @@ configuration cannot use the node's instance role. A configured web identity
 provider that fails to obtain credentials propagates that failure. Deployments
 intentionally using an EC2 instance role can omit this IRSA-specific entry.
 
-Apply this overlay after CLI-generated values; the CLI's existing configuration
-model does not expose `defaultCredentialsEnabled`. `extraEnv` cannot override
-the chart's reserved credential flag.
+With the matching CLI, set `dstackController.defaultCredentialsEnabled: true`
+and the service-account annotation in the source spec (or doge-config TOML), then
+regenerate values. The CLI emits the IRSA metadata-disable entry automatically
+when both are selected. An AWS cluster or role annotation alone does not opt in.
+For older CLI builds, apply the overlay above after generated values on every
+installation/upgrade. `extraEnv` cannot override the chart's reserved credential
+flag. Native AWS backend configuration and IAM permissions remain separate inputs;
+the CLI's Vast.ai/GCP credential importer does not create an AWS backend.
 
 For provider options, refer to the [dstack backend documentation](https://dstack.ai/docs/concepts/backends/)
 and the schema for the pinned server version. The controller needs outbound
@@ -161,6 +166,23 @@ escalation. Clusters enforcing non-root admission require a separately tested
 image and corresponding path/permission changes, not just `runAsNonRoot: true`.
 
 ## Updates, migration and retirement
+
+The pinned dstack 0.21.5 server logs its admin token at INFO during startup.
+To suppress that line using its native logging configuration, add this entry
+to the deployment's values (merge with any existing `extraEnv` entries):
+
+```yaml
+extraEnv:
+  - name: DSTACK_SERVER_LOG_LEVEL
+    value: WARNING
+```
+
+This suppresses all controller INFO logs while retaining WARNING and ERROR;
+worker application logs are separate. JSON log formatting alone does not hide
+the token. Apply the values through a reviewed controller upgrade. Existing log
+records are unaffected, and this setting does not rotate an exposed token.
+See the [dstack environment variable reference](https://dstack.ai/docs/reference/env/)
+and the [pinned startup implementation](https://github.com/dstackai/dstack/blob/0.21.5/src/dstack/_internal/server/app.py).
 
 - Secret contents are not read by Helm and do not trigger automatic rollouts.
   Restart the Deployment after a configuration or credential change. The

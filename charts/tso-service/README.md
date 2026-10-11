@@ -24,7 +24,7 @@ Kubernetes: `>=1.22.0-0`
 The Ingress routes only `/health` and the transport-signed `/signer/*` routes;
 every other TSO route stays in-cluster. With `networkPolicy.enabled`,
 `allowFrom.edge` admits the Ingress source (the ALB subnets for
-`ingressClassName: alb` with target-type ip, or the ingress-nginx pods) to the
+`ingressClassName: alb` with target-type ip) to the
 whole API port: a NetworkPolicy works at L4, so the path restriction is
 enforced only by the Ingress/ALB rules, not by the policy.
 
@@ -45,7 +45,7 @@ so a match or block action on oversize bodies would reject legitimate signers.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| networkPolicy.allowFrom.edge | list | `[]` | Public Ingress sources: ALB subnets (ipBlock) or ingress-nginx pods |
+| networkPolicy.allowFrom.edge | list | `[]` | Public Ingress sources: ALB subnet CIDRs (ipBlock) |
 | networkPolicy.allowFrom.monitoring | list | `[]` | Peers allowed to scrape /metrics (shared port) |
 | networkPolicy.allowFrom.operators | list | `[]` | Optional operator peers |
 | networkPolicy.allowFrom.signers | list | `[]` | Signer pods posting callbacks (required when enabled) |
@@ -110,3 +110,7 @@ in dogeos-core #1406 is not part of beta.6. Production values and examples
 leave the policy disabled until the deployment supplies all required peers;
 configure Prometheus namespace/pod selectors and any ingress proxy sources
 before enabling it, then verify callbacks and scrapes on an enforcing CNI.
+
+Production examples enable NetworkPolicy. Required peers, empty selectors and
+placeholder/all-address CIDRs are checked when it is enabled. See
+[deployment network and IAM preparation](../../examples/network-and-iam.md).

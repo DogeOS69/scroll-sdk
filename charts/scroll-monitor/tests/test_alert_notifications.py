@@ -75,7 +75,8 @@ class SlackTemplateTests(unittest.TestCase):
         for profile in (CHART / "values/production.yaml",
                         CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"):
             with self.subTest(profile=profile.name):
-                docs = render("-f", str(profile))
+                # This test covers alerting; status-page generation is tested separately.
+                docs = render("-f", str(profile), "--set", "statusPage.enabled=false")
                 config = json.loads(resource(docs, "ConfigMap", "scroll-monitor-grafana-alerts")["data"]["rules.json"])
                 self.assertEqual(config["defaultContactPoint"], {"name": "slack-alerts"})
                 template = config["notificationTemplate"]["template"]

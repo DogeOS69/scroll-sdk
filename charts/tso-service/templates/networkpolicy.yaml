@@ -1,13 +1,28 @@
 {{- /*
-Ingress allow-list for the TSO API port. The TSO routes (/propose,
-/register-signer, /register-script-pubkey, /reject-signatures,
-/submit-*-signatures) carry no caller authentication by design; access control
-is this policy. /health, /status and /metrics share the same port, so any peer
+Ingress allow-list for the TSO API port. The private TSO routes (/propose,
+/register-signer, /register-script-pubkey and unprefixed callbacks) rely on
+network access control. Public /signer/* uses transport signatures. /health, /status and /metrics share the same port, so any peer
 allowed here can reach every route. Edge peers admit the ingress proxy;
 only the Ingress paths limit public callers to /health and signed /signer/*.
 */ -}}
 {{- if .Values.networkPolicy.enabled }}
 {{- $from := .Values.networkPolicy.allowFrom }}
+{{- range $group, $peers := $from }}
+{{- range $peer := $peers }}
+{{- if hasKey $peer "ipBlock" }}
+{{- $cidr := default "" $peer.ipBlock.cidr }}
+{{- if or (not (regexMatch "^[0-9a-fA-F:.]+/[0-9]+$" $cidr)) (eq $cidr "0.0.0.0/0") (eq $cidr "::/0") }}
+{{- fail (printf "networkPolicy.allowFrom.%s requires explicit restricted CIDRs, not placeholders or all-address ranges" $group) }}
+{{- end }}
+{{- else if or (not (hasKey $peer "podSelector")) (and (empty $peer.podSelector.matchLabels) (empty $peer.podSelector.matchExpressions)) }}
+{{- fail (printf "networkPolicy.allowFrom.%s requires a nonempty podSelector; pair it with namespaceSelector for cross-namespace access" $group) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.ingress.main.enabled (empty $from.edge) }}
+{{- fail "networkPolicy.allowFrom.edge must list ALB subnet CIDRs when TSO ingress is enabled" }}
+{{- end }}
+
 {{- if empty $from.withdrawalProcessor }}
 {{- fail "networkPolicy.allowFrom.withdrawalProcessor must contain at least one peer" }}
 {{- end }}
