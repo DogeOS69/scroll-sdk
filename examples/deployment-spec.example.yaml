@@ -307,18 +307,15 @@ preparation:
   proofPublication: {}
   # Apply creates/reconciles the proof bucket, workload IAM/IRSA roles and token
   # secret, then generates .data/proof-aws.json. No ARN or receipt transcription.
-  # Proof/snapshot buckets stay private. beta.6a signer/Worker unsigned GETs
-  # require a controlled private read route, validated before activation.
-  # The EKS S3 Gateway endpoint alone does not connect external partners/Vast.
   proofAws:
     action: create
-    publicReadMode: private-s3
+    publicReadMode: direct-s3
   # Create the separate raw-blob bucket and grant the DA submitter write access
   # to it and to segmentation sidecars in the resolved proof bucket.
   # Public blob GET supports external signers; anonymous writes stay denied.
   archive: {action: create, publicRead: true}
   # To reuse resources without changing them: action: reuse with
-  # publicReadMode: private-s3; reuse checks AWS permissions and makes no changes.
+  # publicReadMode: existing-public-s3 (or existing-gateway + publicEndpointUrl).
   # Optional coordinatorRoleName, withdrawalRoleName and secretName select
   # nonstandard existing resource names; otherwise names derive from alias/cluster.
   # Apply waits for partner receipts in .scrollsdk/inputs/signer-receipts/,
