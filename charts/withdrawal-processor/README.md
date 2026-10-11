@@ -130,3 +130,8 @@ before enabling it, then verify callbacks and scrapes on an enforcing CNI.
 Production examples enable NetworkPolicy. Required peers, empty selectors and
 placeholder/all-address CIDRs are checked when it is enabled. See
 [deployment network and IAM preparation](../../examples/network-and-iam.md).
+
+`networkPolicy.allowFrom.capacityManager` grants the optional Core capacity
+manager access to the proof-work listener only (not the management API port).
+It shares that listener with proof control routes; the existing bearer token
+is not read-only scoped. The manager implementation uses the capacity summary.

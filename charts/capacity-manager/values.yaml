@@ -1,0 +1,48 @@
+fullnameOverride: capacity-manager
+# Zero pauses reconciliation; existing GPU runs continue billing.
+replicaCount: 1
+prepared: false
+image:
+  repository: ghcr.io/dogeos69/capacity-manager
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+manager:
+  workerIdPrefix: ""
+  workerImage: ""
+  workerCommand: ""
+  workerTokenSecret: ""
+  proofWorkBaseUrl: http://withdrawal-processor:9300
+  policy: ""
+  pollIntervalMs: 5000
+  provisioningTimeoutSeconds: 900
+  failureCooldownSeconds: 120
+  # False permits upgrades/restarts to adopt surviving remote workers.
+  # True requires enough termination grace for leases and provider cleanup.
+  scaleDownOnShutdown: false
+  dstack:
+    serverUrl: http://dstack-controller.dstack-system.svc:3000
+    project: ""
+    fleets: []
+    regions: []
+    instanceTypes: []
+    maxPricePerHourUsd: 0.8
+wpAuth:
+  existingSecret: proof-coordinator-secrets
+  key: proof-work-token
+dstackAuth:
+  existingSecret: capacity-manager-dstack-auth
+  key: token
+persistence:
+  existingClaim: ""
+  size: 1Gi
+  storageClass: null
+  retain: true
+terminationGracePeriodSeconds: 960
+podAnnotations: {}
+resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits: {memory: 512Mi}
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,18 @@
+# Generated worker command and policy come from setup capacity-manager prepare.
+# Installing this independent release can allocate paid GPUs; install-all excludes it.
+fullnameOverride: capacity-manager
+prepared: false
+image:
+  repository: ghcr.io/dogeos69/capacity-manager
+  digest: <PUBLISHED_CAPACITY_MANAGER_IMAGE_DIGEST>
+wpAuth:
+  existingSecret: proof-coordinator-secrets
+  key: proof-work-token
+dstackAuth:
+  existingSecret: capacity-manager-dstack-auth
+  key: token
+persistence:
+  size: 1Gi
+  retain: true
+manager:
+  scaleDownOnShutdown: false

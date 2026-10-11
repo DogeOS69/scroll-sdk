@@ -240,6 +240,8 @@ proofTopology:
       chunkWitnessSource: rpc
       chunkWitnessRpcUrl: http://l2-rpc:8545
 
+# For Core-managed long-running capacity, replace proofWorkers with the
+# fragment in capacity-manager-spec.example.yaml (see capacity-manager.md).
 # Declares capacity only; setup apply does not rent GPUs during preparation.
 # After installing the coordinator/controller, run setup proof-workers plan/apply.
 proofWorkers:

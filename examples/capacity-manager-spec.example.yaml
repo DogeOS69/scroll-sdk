@@ -1,0 +1,23 @@
+# Merge this section into deployment-spec.yaml and REMOVE proofWorkers.
+# The normal setup plan/apply prepares configuration; it does not rent GPUs.
+# Configure an isolated dstack project and provider fleet before credentials.
+capacityManager:
+  image:
+    repository: ghcr.io/dogeos69/capacity-manager
+    # Obtain the published digest from the Capacity Manager image workflow.
+    digest: REPLACE_WITH_PUBLISHED_SHA256_DIGEST
+  provider: aws
+  gpu: L4
+  project: dogeos-aws-provers
+  fleets: [dogeos-aws-l4]
+  regions: [us-east-1]
+  instanceTypes: [g6.4xlarge]
+  minWorkers: 1
+  maxWorkers: 2
+  targetDrainSeconds: 600
+  scaleDownTtlSeconds: 300
+  maxPricePerHourUsd: 1.50
+  maxHourlyCostUsd: 3.00
+# Vast alternative: provider: vastai, gpu: RTX4090, an isolated Vast project/fleet,
+# regions: [us-texas], instanceTypes: [], prices 0.80 / 1.60 respectively.
+# These prices are policy limits, not quotations or total-invoice guarantees.
