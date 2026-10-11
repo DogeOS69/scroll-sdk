@@ -44,6 +44,8 @@ validator:
 
 ingress:
   main:
+    # Internal devnet clients use the Service; enable only for public access.
+    enabled: false
     ingressClassName: alb
     hosts:
     - host: ''

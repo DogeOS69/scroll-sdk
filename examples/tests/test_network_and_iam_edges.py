@@ -27,6 +27,11 @@ def render(chart, config, success=True):
 
 
 class ProductionNetworkTests(unittest.TestCase):
+    def test_optional_l1_devnet_keeps_rpc_internal_by_default(self):
+        docs = render('l1-devnet', values('l1-devnet'))
+        self.assertTrue(any(doc['kind'] == 'Service' for doc in docs))
+        self.assertFalse(any(doc['kind'] == 'Ingress' for doc in docs))
+
     def tso(self):
         config = values('tso-service')
         config['networkPolicy']['allowFrom']['edge'] = [{'ipBlock': {'cidr': '10.0.10.0/24'}}]

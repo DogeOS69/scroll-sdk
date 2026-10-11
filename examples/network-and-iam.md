@@ -6,6 +6,12 @@ own static-file nginx server is unrelated and remains part of that image.
 Grafana and Dogecoin ingress are disabled by default; Blockscout is an explicit
 optional installation. Snapshot access is outside this change.
 
+L1 devnet is a development-only service, excluded from production preparation.
+Spec generation includes its values only for `ethereumDa.chain: devnet`;
+`prep-charts` skips any leftover L1 devnet values for external Ethereum networks.
+Private devnet clients use its in-cluster Service, with ingress disabled by
+default. Only enable its ingress when development requires public access.
+
 ## Prepare HTTPS edges
 
 After spec bootstrap, edit the generated `values/*-production.yaml` files.
@@ -116,7 +122,10 @@ namespace and service account, with `aud=sts.amazonaws.com`.
 Provisioning and read-only proof-resource reuse inspect other inline and
 attached IAM policies for S3 grants exceeding the intended workload scope.
 KMS role reconciliation additionally checks KMS grants against the selected
-key. Managed policy default versions are inspected, including URL-encoded IAM
+key. Identity-only preparation defers S3 auditing to archive preparation, where
+the full archive and sidecar scope is available; an existing archive grant is
+not rejected merely because the identity step is not configuring S3.
+Managed policy default versions are inspected, including URL-encoded IAM
 documents. An unreadable inventory, wildcard action, broad resource, or an
 unprovable prefix condition stops the operation with the role/policy name.
 Only the policy explicitly being replaced is excluded from this check.

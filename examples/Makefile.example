@@ -110,6 +110,7 @@ install-l1-interface:
 		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
+# Development only: requires ethereumDa.chain: devnet; not part of install-all.
 install-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
