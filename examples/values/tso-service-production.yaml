@@ -95,7 +95,8 @@ ingress:
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
       alb.ingress.kubernetes.io/certificate-arn: "<TODO>"
-      alb.ingress.kubernetes.io/wafv2-acl-arn: "<TODO>"
+      # Optional: associate an existing regional WAF web ACL.
+      # alb.ingress.kubernetes.io/wafv2-acl-arn: "REPLACE_WITH_REGIONAL_WEB_ACL_ARN"
       alb.ingress.kubernetes.io/healthcheck-path: /health
       # Optional source allowlist for this ALB's security group (comma-separated
       # CIDRs); unset = open. The TSO's security is the signed requests, not the

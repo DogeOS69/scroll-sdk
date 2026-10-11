@@ -390,6 +390,8 @@ businessPodAlerts:
 
 # Extended service diagnostics are enabled by default; explicit pauses remain available.
 serviceAlerts:
+  # CLI derives this from CubeSigner mode; transport_only has no verifier-policy evaluations.
+  cubesignerPolicyMode: production_verifier_key_policy
   enabled: true
   paused: false
 

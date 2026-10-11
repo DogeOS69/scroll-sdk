@@ -128,6 +128,7 @@ groups:
       summary: Stale WF specifications are not draining.
       description: Job {{ $labels.job }} has kept stale WF specifications across dispatch ticks for 5 minutes. Check external proposal reconciliation and replay cleanup.
   - alert: AttestationSignerNotReady
+    previousAnnotations: {"summary": "An attestation signer is not ready.", "description": "Attestation signer {{ $labels.instance }} has been unready for 2 minutes. Bridge transactions need enough ready attestation signers to reach quorum. Check its signing backend, namespace, and policy mode."}
     expr: attestation_signer_ready == 0
     for: 2m
     labels:
@@ -135,7 +136,7 @@ groups:
       service: attestation-signer
     annotations:
       summary: An attestation signer is not ready.
-      description: Attestation signer {{ $labels.instance }} has been unready for 2 minutes. Bridge transactions need enough ready attestation signers to reach quorum. Check its signing backend, namespace, and policy mode.
+      description: Attestation signer {{ $labels.instance }} has reported incomplete production readiness for 2 minutes. Inspect /ready capability details; missing rotation policy can block full readiness while AdvanceL1/AdvanceL2 remain usable. This does not by itself establish a signing outage or lost quorum.
   - alert: CubeSignerNotReady
     expr: min by (job, instance) ({__name__=~"cubesigner_signer_ready|cubesigner_signer_production_policy_ready"}) == 0
     for: 2m
@@ -172,7 +173,9 @@ groups:
       summary: An attestation signer cannot deliver TSO callbacks.
       description: Attestation signer {{ $labels.instance }} callback {{ $labels.path }} keeps ending with {{ $labels.result }}, so TSO does not receive these signatures. Check network reachability from the signer to TSO and the TSO callback endpoint.
   - alert: EthDAPublicationFeeBlocked
-    expr: max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) ((label_replace(increase(eth_da_publish_liveness_blocked_total[5m]), "error_counter", "eth_da_publish_liveness_blocked_total", "", "")
+    previousAnnotations: {"summary": "Fee constraints are blocking Ethereum DA publication past its deadline.", "description": "Publication has pending work older than the configured deadline and recurring liveness or replacement fee-cap blocks. Review the fee policy and account balance."}
+    previousExpr: "max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) ((label_replace(increase(eth_da_publish_liveness_blocked_total[5m]), \"error_counter\", \"eth_da_publish_liveness_blocked_total\", \"\", \"\") or label_replace(increase(eth_da_publish_replacement_fee_cap_blocked_total[5m]), \"error_counter\", \"eth_da_publish_replacement_fee_cap_blocked_total\", \"\", \"\"))) > 0"
+    expr: max by (namespace, job) (eth_da_publish_ready_backlog) > 0 and max by (namespace, job) (eth_da_publish_oldest_ready_age_seconds) > __PUBLICATION_DEADLINE__ and sum by (namespace, job) ((label_replace(increase(eth_da_publish_liveness_blocked_total{reason=~"execution_fee_cap_exceeded|blob_fee_cap_exceeded"}[5m]), "error_counter", "eth_da_publish_liveness_blocked_total", "", "")
       or label_replace(increase(eth_da_publish_replacement_fee_cap_blocked_total[5m]), "error_counter", "eth_da_publish_replacement_fee_cap_blocked_total", "", ""))) > 0
     for: 5m
     labels:
@@ -180,7 +183,7 @@ groups:
       service: eth-da-submitter
     annotations:
       summary: Fee constraints are blocking Ethereum DA publication past its deadline.
-      description: Publication has pending work older than the configured deadline and recurring liveness or replacement fee-cap blocks. Review the fee policy and account balance.
+      description: Publication has pending work older than the configured deadline and recurring execution/blob fee-cap or replacement fee-cap blocks. Pending transaction limits and unavailable fee samples are excluded. Review the fee policy and account balance.
   - alert: EthDACanonicalityAnomaly
     expr: sum by (namespace, job, stage, kind) (increase(eth_da_publish_canonicality_events_total[5m])) > 0
     for: 5m

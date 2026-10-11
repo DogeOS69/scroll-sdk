@@ -3,13 +3,14 @@ groups:
     interval: 1m
     rules:
       - alert: FeeOracleAccountBalanceLow
+        previousAnnotations: {"summary": "Fee oracle account balance is below __FEE_ORACLE_MIN_ETH__ ETH.", "description": "Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf \"%.4f\" }} ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions."}
         expr: scroll_account_balance_eth{account="fee-oracle"} < __FEE_ORACLE_MIN_ETH__
         labels:
           severity: critical
           service: fee-oracle
         annotations:
-          summary: Fee oracle account balance is below __FEE_ORACLE_MIN_ETH__ ETH.
-          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf "%.4f" }} ETH. Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.'
+          summary: Fee oracle account balance is below __FEE_ORACLE_MIN_ETH__ native tokens.
+          description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf "%.4f" }} native tokens (DOGE on DogeOS L2). Oracle updates stop when it cannot pay gas. Fund the account on the chain used for oracle update transactions.'
       - alert: EthDASubmitterAccountBalanceLow
         expr: scroll_account_balance_eth{account="eth-da-submitter"} < __ETH_DA_MIN_ETH__
         labels:

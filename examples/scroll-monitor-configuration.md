@@ -464,3 +464,26 @@ Metric rules then run in Prometheus; Grafana retains LogQL evaluation and forwar
 notifications to the independent Alertmanager. See
 [the migration guide](../docs/alertmanager-backend.md) before switching an existing
 installation. Preserve UI pause states and edited rules during the cutover.
+## Alert evidence and service modes
+
+`serviceAlerts.cubesignerPolicyMode` must match the CubeSigner runtime mode.
+The CLI derives it from the existing CubeSigner configuration in both spec
+generation and `prep-charts`; no additional spec input is required. The chart
+defaults to `production_verifier_key_policy`, preserving explain-tree checks.
+Explicit `transport_only` disables only `CubeSignerPolicyEvaluationMissing`:
+successful transport-only signing does not promise verifier-policy evaluations.
+Readiness, signing failures, policy denials and malformed telemetry remain monitored.
+
+`EthDAPublicationFeeBlocked` requires an execution/blob fee-cap reason or a
+replacement fee-cap rejection. A full pending-transaction window, unavailable
+fee samples or a window budget are not evidence of a fee-cap block. The independent
+`EthDAPublishBacklogStalled` still detects publication stalled for those reasons.
+
+An attestation signer's `/ready` covers all production capabilities. Missing
+rotation policy can make it return 503 while AdvanceL1/AdvanceL2 remain usable;
+inspect the capability details before concluding that signing quorum is lost.
+
+Fee-oracle balances are denominated in the transaction chain's native token
+(DOGE on DogeOS L2). The existing `minimumEth` values key and
+`scroll_account_balance_eth` metric retain their historical names and 18-decimal
+conversion; they do not imply that the L2 gas currency is ETH.

@@ -67,6 +67,43 @@ upload is a separate operator step in this example. The selected archive step cr
 does not provision resources;
 generated configuration does not establish runtime access.
 
+## Public TSO and proof worker ingress
+
+The SDK production templates select `ingressClassName: alb` for TSO and Proof
+Coordinator. Spec generation fills their public hostnames and routes; the
+controller, certificate, WAF, source allowlist and load-balancer settings stay in
+`values/tso-service-production.yaml` and
+`values/proof-coordinator-production.yaml`. Re-running generation preserves
+operator changes to these settings. It does not provision ACM certificates or
+migrate an existing load balancer or DNS record.
+
+Once bootstrap has populated the deployment values, set
+`ingress.main.annotations.alb.ingress.kubernetes.io/certificate-arn` in each
+public service's values file to an **issued ACM certificate in the ALB region**
+covering that service's hostname. A wildcard certificate may cover both hosts;
+each service still gets its own ALB. Do not set `alb.ingress.kubernetes.io/group.name`.
+An optional regional WAF web ACL ARN and inbound CIDRs belong in the same
+annotations block. Leave the WAF annotation absent if WAF is not used.
+
+`setup prep-charts` (including the chart preparation stage of `setup apply`)
+rejects an enabled ALB ingress with a missing/placeholder certificate, a shared
+ALB group, unresolved annotation placeholders, or a Proof Coordinator idle
+timeout below 120 seconds. Bootstrap itself accepts placeholders so these
+operator-owned files can be prepared. Fill these values before chart preparation;
+if apply reaches this check first, complete the files and resume apply.
+ALB uses ACM, so generation removes stale cert-manager/nginx annotations and
+Kubernetes `tls` entries from these two ALB ingresses. TSO exposes only `/health`
+and `/signer/*`; its private management routes remain internal.
+
+An operator can explicitly select `ingressClassName: nginx` in these files.
+The CLI then removes ALB annotations, retains the operator's cert-manager issuer
+and TLS Secret, and updates the TLS hostname. Missing nginx settings default to
+`letsencrypt-prod` and a 16 MiB TSO request-body limit. This is an explicit
+controller choice, not a spec default. Other public services retain their own
+existing ingress templates; changing TSO and Proof Coordinator alone is not a
+complete ingress-nginx removal plan. Bootnode TCP P2P NLBs are unrelated to this
+HTTP ingress choice.
+
 ## Prepare the private inputs
 
 Create an operator-owned directory outside both source repositories. Keep the
@@ -103,7 +140,7 @@ placeholders, not working identities or credentials.
 | Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
 | Attestation identities | Fill `attestationSigners` from approved Governance records: one `name`, `attestationPubkey` and `transportPubkey` per signer. Selected names must match `bridge.initialAttestationKeyset.signerIds`. No descriptor files or publicly reachable signer endpoints are required. |
 | Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
-| Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
+| Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `publicReadMode: private-s3`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, all four Public Access Block settings, bucket policy, EKS trust and current Secret metadata. Only the blob bucket may allow public reads. Proof/snapshot objects remain private. beta.6a signer/Worker unsigned GETs require a controlled private read route; the EKS Gateway endpoint alone does not connect external partners/Vast. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
@@ -396,6 +433,10 @@ The OCI chart must be published before the new Makefile version can be installed
 `values/frontends-config.yaml`. Install it after contract addresses and public
 RPC endpoints are finalized. Verify the portal domain and TLS certificate;
 frontend availability alone does not establish Bridge transaction acceptance.
+The CLI generates the dynamic deposit endpoint and protocol identity from local
+Bridge artifacts. Do not enter a static Bridge address in frontend values. See
+[frontend configuration](frontend-configuration.md) for identity sources, readiness
+requirements, cache handling and rotation behavior.
 Blockscout/explorer links require a separately configured Blockscout deployment.
 
 The Makefile also includes both releases in `install-all` (monitoring through

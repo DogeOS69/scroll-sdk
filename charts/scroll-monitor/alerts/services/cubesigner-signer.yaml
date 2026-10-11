@@ -81,10 +81,8 @@ groups:
       summary: CubeSigner metric recording failed.
       description: Instrumentation swallowed a fault; some metrics may be stale or missing. Inspect gateway diagnostics.
   - alert: CubeSignerPolicyEvaluationMissing
-    expr: sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason="success"}[10m]))
-      > 0 and (sum by (namespace, job, instance) (increase(cubesigner_signer_policy_evaluations_total{outcome="Permitted"}[10m]))
-      or sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason="success"}[10m]))
-      * 0) == 0
+    previousExpr: "sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason=\"success\"}[10m])) > 0 and (sum by (namespace, job, instance) (increase(cubesigner_signer_policy_evaluations_total{outcome=\"Permitted\"}[10m])) or sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason=\"success\"}[10m])) * 0) == 0"
+    expr: "(sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason=\"success\"}[10m])) > 0 and (sum by (namespace, job, instance) (increase(cubesigner_signer_policy_evaluations_total{outcome=\"Permitted\"}[10m])) or sum by (namespace, job, instance) (increase(cubesigner_signer_sign_outcome_total{reason=\"success\"}[10m])) * 0) == 0) and on () (vector(__CUBESIGNER_POLICY_REQUIRED__) == 1)"
     for: 10m
     labels:
       severity: critical

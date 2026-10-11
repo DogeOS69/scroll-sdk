@@ -205,8 +205,12 @@ that final per-signer evidence is not yet implemented. Status explicitly reports
 `acceptance.newSignerSignatures: manual_verification_required`; the tool does
 not mark full acceptance complete on the operator’s behalf.
 
-After activation, publish the new deposit address through the deployment's
-normal frontend/Governance update process. The rotation command does not
+After activation, verify that the dynamically configured frontend resolves the
+new current deposit address from validated L1 Interface replay. Its protocol
+identity remains unchanged; no static frontend address edit or restart is needed
+for a rotation. Publish any required Governance notice separately. See
+[frontend configuration](frontend-configuration.md) for the required image,
+identity and backend readiness contract. The rotation command does not
 rewrite genesis context or automatically restart frontend services. Keep old
 instances until the WF overlap has expired, old bridge funds are handled and
 in-flight requests are resolved; retirement is intentionally separate.

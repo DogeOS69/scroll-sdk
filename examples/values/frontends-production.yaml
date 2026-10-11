@@ -1,7 +1,11 @@
 image:
   repository: dogeos69/scroll-sdk-frontends
   pullPolicy: IfNotPresent
-  tag: 0.3.0-dogeos
+  tag: 0.3.0-test.20261011.4
+
+# Container-only proxy upstream; never an Ethereum RPC or public browser URL.
+env:
+  L1_INTERFACE_UPSTREAM: l1-interface:9090
 
 persistence:
   frontends:
@@ -11,13 +15,11 @@ persistence:
     name: frontends-config
 
 command:
-  - /bin/bash
-  - -cx
+  - /bin/sh
+  - -ec
   - |
     grep -v '^#' /app/conf/frontend-config | awk -F' = ' 'NF==2 {printf "export %s=\"%s\"\n", $1, $2}' | sed 's/""/"/g' > /usr/share/nginx/html/.env
-    cat /usr/share/nginx/html/.env
-    source /usr/share/nginx/html/.env
-    sed -i "s|src=\"/runtime-env.js\"|src=\"/runtime-env.js?rand=$RANDOM\"|" index.html
+    . /usr/share/nginx/html/.env
     exec /usr/local/bin/entrypoint.sh
 
 ingress:
