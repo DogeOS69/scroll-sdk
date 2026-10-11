@@ -23,6 +23,9 @@ Verify `capacity-manager --help` exposes `--dstack-max-price-usd` before publish
 The manager image is independent of the existing proof worker/circuit release:
 keep the compiler-checked worker image and published program bundle unchanged.
 Selecting L4 requires the worker image check to report CUDA architecture 89.
+WP must expose `GET /v1/proof-work/capacity/summary` on its proof-work listener
+and accept the deployment's proof-work bearer token. Qualify this API against the
+selected WP image; the manager image alone does not add the endpoint to WP.
 
 Configure stock dstack 0.21.5 with a **dedicated project and existing fleet** for
 this deployment. Core's `docs/engineering/aws-gpu-dstack.md` and
