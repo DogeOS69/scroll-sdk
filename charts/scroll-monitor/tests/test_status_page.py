@@ -219,13 +219,20 @@ class StatusPageTests(unittest.TestCase):
         self.assertNotIn("INSTATUS_API_KEY", result.stdout)
         self.assertFalse(any("publisher" in doc["metadata"]["name"] for doc in docs))
 
-    def test_defaults_are_disabled_and_examples_match(self):
+    def test_chart_defaults_are_disabled_and_deployment_example_enables_status_page(self):
         defaults = yaml.safe_load((CHART / "values.yaml").read_text())["statusPage"]
         self.assertFalse(defaults["enabled"])
         self.assertTrue(all(c["mode"] == "automatic" for c in defaults["publication"]["components"].values()))
         self.assertEqual(defaults["publication"]["health"], {})
-        for profile in [CHART / "values/production.yaml", CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"]:
-            self.assertEqual(yaml.safe_load(profile.read_text())["statusPage"], defaults)
+        production = yaml.safe_load((CHART / "values/production.yaml").read_text())["statusPage"]
+        self.assertEqual(production, defaults)
+        example_path = CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"
+        example = yaml.safe_load(example_path.read_text())["statusPage"]
+        self.assertEqual(example, dict(defaults, enabled=True))
+        # The operator-facing example requires real generated bindings before installation.
+        result = self.render({"statusPage": example})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("statusPage.enabled requires generated configuration", result.stderr)
         result = self.render({})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("catalog.json:", result.stdout)

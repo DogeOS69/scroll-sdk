@@ -33,7 +33,8 @@ class PodAlertTests(unittest.TestCase):
     def test_production_routes_new_rules_directly_to_existing_slack(self):
         for profile in (CHART / "values/production.yaml",
                         CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"):
-            docs = render("-f", str(profile))
+            # This test covers alerting; status-page generation is tested separately.
+            docs = render("-f", str(profile), "--set", "statusPage.enabled=false")
             config = json.loads(resource(docs, "ConfigMap", "scroll-monitor-grafana-alerts")["data"]["rules.json"])
             self.assertEqual(config["businessPodContactPoint"], "slack-alerts")
             for group in config["groups"]:

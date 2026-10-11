@@ -169,7 +169,8 @@ class DefaultContactPointTests(unittest.TestCase):
 
     def test_examples_use_existing_seeder_without_inline_code_or_an_extra_job(self):
         profile = CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"
-        docs = render("-f", str(profile))
+        # This test covers alerting; status-page generation is tested separately.
+        docs = render("-f", str(profile), "--set", "statusPage.enabled=false")
         jobs = [d["metadata"]["name"] for d in docs if d["kind"] == "Job"]
         self.assertNotIn("grafana-slack-bootstrap", jobs)
         self.assertNotIn("import base64", profile.read_text())

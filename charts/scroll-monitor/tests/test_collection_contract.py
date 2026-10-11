@@ -35,7 +35,8 @@ class CollectionContractTests(unittest.TestCase):
         for profile in [None, SDK / 'charts/scroll-monitor/values/production.yaml',
                         SDK / 'examples/values/scroll-monitor-production.yaml']:
             args = ('-f', str(profile)) if profile else ()
-            prometheus = next(doc for doc in render('scroll-monitor', 'monitor', *args)
+            prometheus = next(doc for doc in render('scroll-monitor', 'monitor', *args,
+                                                    '--set', 'statusPage.enabled=false')
                               if doc['kind'] == 'Prometheus')['spec']
             self.assertTrue(matches(prometheus['podMonitorSelector'], frontend['metadata']['labels']))
             self.assertFalse(matches(prometheus['podMonitorSelector'], {}))

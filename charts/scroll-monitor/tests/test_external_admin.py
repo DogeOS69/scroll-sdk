@@ -13,7 +13,8 @@ class ExternalAdminTest(unittest.TestCase):
     def render(self, *flags):
         result = subprocess.run(
             ['helm', 'template', 'monitor-test', str(CHART), '-n', 'test',
-             '-f', str(EXAMPLE), *flags],
+             # Credential wiring is independent of status-page generation.
+             '-f', str(EXAMPLE), '--set', 'statusPage.enabled=false', *flags],
             check=True, capture_output=True, text=True,
         )
         return [item for item in yaml.safe_load_all(result.stdout) if item]
