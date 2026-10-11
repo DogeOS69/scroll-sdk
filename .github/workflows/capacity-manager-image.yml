@@ -1,0 +1,50 @@
+name: Capacity Manager image
+on:
+  workflow_dispatch:
+    inputs:
+      core_revision:
+        description: Reviewed full dogeos-core commit (native dstack price ceiling required)
+        required: true
+        default: 350508c1cd068230fc731747a3b5bbfbb44b81cf
+permissions:
+  contents: read
+  packages: write
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate immutable source
+        env:
+          CORE_REVISION: ${{ inputs.core_revision }}
+        run: '[[ "$CORE_REVISION" =~ ^[0-9a-f]{40}$ ]]'
+      - uses: actions/checkout@v4
+        with:
+          repository: DogeOS69/dogeos-core
+          ref: ${{ inputs.core_revision }}
+          path: core-source
+          token: ${{ secrets.CORE_SOURCE_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: core-source
+          file: docker/capacity-manager/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/dogeos69/capacity-manager:core-${{ inputs.core_revision }}
+          build-args: CORE_REVISION=${{ inputs.core_revision }}
+      - name: Verify published executable interface
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker run --rm ghcr.io/dogeos69/capacity-manager@"$DIGEST" --help > /tmp/capacity-manager-help
+          grep -q -- --dstack-max-price-usd /tmp/capacity-manager-help
+          grep -q -- --provisioner-state-dir /tmp/capacity-manager-help
+          echo "Image: ghcr.io/dogeos69/capacity-manager@$DIGEST" >> "$GITHUB_STEP_SUMMARY"

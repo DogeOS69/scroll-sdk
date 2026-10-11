@@ -292,5 +292,6 @@ networkPolicy:
     operators: []    # who may call /protocol-actions/*
     monitoring:
       - podSelector: {matchLabels: {app.kubernetes.io/name: prometheus}} # Same namespace by default
+    capacityManager: []  # Filled only when Core capacity-manager is selected.
     proofCoordinator:
       - podSelector: {matchLabels: {app.kubernetes.io/name: proof-coordinator}}

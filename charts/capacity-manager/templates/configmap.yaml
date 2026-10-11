@@ -1,0 +1,12 @@
+{{- if not .Values.prepared }}{{ fail "Run scrollsdk setup capacity-manager prepare before installing" }}{{ end }}
+{{- if not (regexMatch "^sha256:[a-f0-9]{64}$" .Values.image.digest) }}{{ fail "capacity-manager requires a published image.digest" }}{{ end }}
+{{- if not (regexMatch "@sha256:[a-f0-9]{64}$" .Values.manager.workerImage) }}{{ fail "capacity-manager requires a digest-pinned workerImage" }}{{ end }}
+{{- if or (lt (int .Values.replicaCount) 0) (gt (int .Values.replicaCount) 1) }}{{ fail "capacity-manager permits only zero or one replica (single state writer)" }}{{ end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.fullnameOverride }}-policy
+  labels:
+    {{- include "capacity-manager.labels" . | nindent 4 }}
+data:
+  capacity-policy.toml: {{ required "manager.policy must be generated" .Values.manager.policy | quote }}

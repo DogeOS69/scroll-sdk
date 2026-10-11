@@ -102,4 +102,5 @@ networkPolicy:
     tso: []                   # required when enabled: tso-service pods
     operators: []             # optional: who may call the rotation routes
     monitoring: []            # optional: Prometheus, scrapes /metrics
+    capacityManager: []      # optional: Core manager (proof-work summary on the same port)
     proofCoordinator: []      # optional: proof-coordinator pods (proof-work port)
