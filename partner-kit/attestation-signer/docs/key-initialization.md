@@ -115,7 +115,11 @@ rewriting keys. This initializer does not upgrade existing instances.
 After explicitly pulling the reviewed signer image, export the core-format
 public identity with `bash scripts/identity.sh "$SIGNER_IMAGE" "$WORKSPACE"`.
 This runs the selected core `--print-identity` binary offline using the already
-created local files. Save its public JSON as `identity.json`; it is suitable for
-`bridge rotation init --identity NAME=FILE`. The helper's `public-identity.json`
+created local files. Save its public JSON as `identity.json` for local bundle
+membership checks and rotation receipts. Register the name and paired public
+keys in DogeOS Governance Portal; no separate identity file transfer is required.
+The bridge operator can fill `rotation-spec.yaml` from that record. Core JSON
+also supports the optional `bridge rotation init --identity NAME=FILE` import
+workflow. The helper's `public-identity.json`
 uses a different field name and is not a substitute for core output.
 See the [rotation walkthrough](rotation-walkthrough.md) for the full sequence.

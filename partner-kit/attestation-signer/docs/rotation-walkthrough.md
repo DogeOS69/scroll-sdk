@@ -24,8 +24,8 @@ file transfers and receipt senders through the organization's agreed channel.
 | SDK tool revision, signer image digest, release version, full Git commit and signing-policy version | Bridge release coordinator supplies the approved release; each signer team verifies it against the release/build evidence | SDK scripts, key initialization, runtime image and binary pins |
 | CLI revision | Bridge tool maintainer; use a build including `bridge rotation init` and `check` | Bridge host only |
 | Network | Existing deployment / approved Governance record; CLI also checks it against runtime configuration | New identity creation |
-| New signer name | Operator and coordinator agree a unique name for this key generation, e.g. `team-a-r3` | Governance record and `init --identity NAME=FILE` |
-| New public key pair | Signer generates keys locally and exports core `--print-identity` JSON | Governance, rotation intent and TSO registration |
+| New signer name | Operator and coordinator agree a unique name for this key generation, e.g. `team-a-r3` | Governance record and `rotation-spec.yaml` |
+| New public key pair | Signer generates keys locally and registers the pair in DogeOS Governance Portal | Governance, rotation intent and TSO registration |
 | Current bridge key hash | Independently accepted deployment/last activation record, corroborated by the bridge operator's validated replay state | Current and new operator proposal inspection |
 | Proposal digest | Approved frozen proposal revision, obtained through the authenticated channel | All operators inspect the same proposal |
 | Bundle manifest digest | Bridge `stage` output, communicated through the authenticated channel | New operators verify their handoff bundle |
@@ -97,37 +97,55 @@ its identity; restore it or coordinate a new identity with the bridge operator.
 The second script invokes the **actual selected core binary** with
 `--print-identity`. It emits core's public JSON schema with `publicKey` and
 `transportPubkey`. This is distinct from the helper's `public-identity.json`
-(which uses `attestationPubkey`). Publish the two public keys as a paired
-Governance record under the agreed name; send `identity.json` through the same
-authenticated handoff. Never send either private file, your environment file,
-or your database. Governance need not accept file uploads: the coordinator can
-save its authenticated public record in the same core JSON schema.
+(which uses `attestationPubkey`). Register the agreed signer name and the two
+public keys as a paired record in the **DogeOS Governance Portal** (the trial
+uses <https://gov-staging.dogeos.com/>). Copy `publicKey` into the attestation
+public-key field and `transportPubkey` into the transport public-key field.
+The bridge operator obtains this pair and its team ownership from Governance;
+**no separate identity file transfer is required**.
+
+Keep `identity.json` locally: later steps use it to verify bundle membership
+and generate receipts. Never send either private key file, your environment
+file, or your database. These scripts do not register keys through a Governance
+API; the operator enters the public record in the portal.
 
 ## 2. Bridge operator imports identities and freezes the proposal
 
-Save the authenticated records as `incoming/team-a-r3.json`, `team-b-r3.json`
-and `team-c-r3.json` in the private deployment workspace. Verify their owners
-and pairing against Governance. Choose a **new directory for every rotation**:
+Read each target signer's record in DogeOS Governance Portal and verify its
+team ownership and public-key pairing. Choose a **new directory for every
+rotation** and copy the SDK intent template into the private deployment
+workspace:
 
 ```bash
 ROTATION=rotations/rotation-003
-scrollsdk bridge rotation init --rotation-dir "$ROTATION" \
-  --identity team-a-r3=incoming/team-a-r3.json \
-  --identity team-b-r3=incoming/team-b-r3.json \
-  --identity team-c-r3=incoming/team-c-r3.json
+mkdir -m 700 -p rotations
+mkdir -m 700 "$ROTATION"
+cp "$SDK/examples/rotation-spec.example.yaml" "$ROTATION/rotation-spec.yaml"
+```
+
+Edit `rotation-spec.yaml`: set its proposal `name` to `rotation-003`, and fill
+each signer's `name`, `attestationPubkey` and `transportPubkey` from the paired
+Governance record. Review the quorum (the template uses 2-of-3), target members
+and timelock intent before running:
+
+```bash
 scrollsdk bridge rotation plan --rotation-dir "$ROTATION"
 ```
 
-`init` writes `rotation-spec.yaml` and refuses an existing directory. It checks
-core identity schema, network, distinct key pairs and names. It does not create
-keys or access the cluster. Review the intent before `plan`.
+For an optional file-import workflow, `bridge rotation init --identity NAME=FILE`
+can create the intent in a new directory from authenticated core public identity
+JSON records. It is not required for the Governance/manual-entry workflow and
+does not require signer operators to send files. Do not run `init` in the
+directory already created above.
 
 `plan` reads current validated bridge state and produces `proposal.json`,
-`summary.md` and `rotation-policy.toml`. It inherits the threshold, namespace,
+`summary.md` and `rotation-policy.toml`. It uses the intent's attestation quorum
+(or preserves the current quorum when omitted), and inherits the namespace,
 TEE key and ordered recovery keys/threshold. Operators do not manually re-enter
 those keys. The default timelock intent is `preserve`; if the existing recovery
-height is too close, explicitly review `--timelock refresh` when initializing
-a new proposal. Never silently change the frozen proposal's timelock or keyset.
+height is too close, explicitly review setting `timelock.policy: refresh` in
+the intent before freezing a new proposal. Never silently change the frozen
+proposal's timelock or keyset.
 
 Review current/target members, quorum, recovery height, network, deployment
 binding and overlap. Distribute the frozen proposal and its authenticated digest

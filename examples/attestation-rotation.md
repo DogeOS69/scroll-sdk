@@ -3,7 +3,8 @@
 For a complete role-by-role local-key rehearsal, including how operators obtain
 tools, public identities, release pins and handoff materials, start with the
 [rotation walkthrough](../partner-kit/attestation-signer/docs/rotation-walkthrough.md).
-`bridge rotation init` imports authenticated core public identity records;
+The bridge operator fills the rotation intent from Governance public records;
+`bridge rotation init` optionally imports authenticated core public identity files.
 `bridge rotation check` stops before WP preview/submission. Use a separate
 `--rotation-dir` for each rotation.
 
@@ -51,12 +52,17 @@ instances, databases or historical requests.
 
 Ask all target operators to generate fresh attestation and transport identities
 with the [standalone key initialization tool](../partner-kit/attestation-signer/docs/key-initialization.md).
-They send only their name and two public keys through your authenticated
-Governance/operator channel. Private keys remain with each operator.
+They register their name, attestation public key and transport public key as a
+paired record in DogeOS Governance Portal (the trial uses
+<https://gov-staging.dogeos.com/>). Verify each record's team ownership and key
+pairing in the portal. No separate `identity.json` transfer is required; private
+keys remain with each operator.
 
 Copy [rotation-spec.example.yaml](rotation-spec.example.yaml) into your
 private `rotations/attestation-rotation-002/` directory as
-`rotation-spec.yaml`, then replace the public-key placeholders. Choose a new
+`rotation-spec.yaml`, then set the proposal name and fill each signer's name and
+both public keys from its Governance record. Review the quorum; the example
+uses 2-of-3. Choose a new
 directory for each rotation; keep previous directories for audit and recovery. Do not put TEE/recovery keys, redeem scripts, addresses, request
 IDs or credentials into the intent.
 
