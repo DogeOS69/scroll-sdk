@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'charts/**'
+      # Unit tests run in dedicated workflows and are excluded from chart packages.
+      - '!charts/**/tests/**'
 
 env:
   HELM_REGISTRY: ghcr.io/dogeos69/scroll-sdk/helm/dev
