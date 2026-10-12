@@ -84,7 +84,8 @@ start_block = 0
 artifact_metadata_sqlite_path = "/app/data/eth-da-artifact-metadata.sqlite"
 artifact_store_root = "/app/data/eth-da-blob-artifacts"
 indexer_sqlite_path = "/app/data/eth-da-indexer.sqlite"
-l1_rpc_url = "<TODO>"
+# Nonfunctional fallback; the service Secret must supply the real endpoint.
+l1_rpc_url = "http://ethereum-rpc.invalid"
 
 [ethereum_da.inbox_worker]
 cursor_id = "eth_da_inbox"
@@ -103,7 +104,8 @@ writer_id = "withdrawal-processor"
 timeout_ms = 10000
 
 [ethereum_da.blob_source.beacon_node]
-url = "<TODO>"
+# Nonfunctional fallback; the service Secret must supply the real endpoint.
+url = "http://ethereum-beacon.invalid"
 
 # Optional production fallbacks. Uncomment only the providers this deployment
 # operates; the resolver tries Beacon, BlobScan, BlockNative, then S3.

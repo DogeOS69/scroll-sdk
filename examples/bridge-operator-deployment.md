@@ -15,10 +15,10 @@ there as `deployment-spec.yaml` and `deployment.env`. Keep permissions private.
 | Location | What the bridge operator supplies |
 | --- | --- |
 | spec: infrastructure | Instance name, AWS account/region, existing EKS cluster, namespace, two distinct blob/proof bucket names, create/reuse choices |
-| spec: network and endpoints | Dogecoin network, reachable external RPC and matching internal Kubernetes route, L2 chain ID, base domain/DNS, reviewed compatible Reth images; review Sepolia RPC defaults for actual blob-broadcast support |
+| spec: network and endpoints | Dogecoin network, reachable external RPC and matching internal Kubernetes route, L2 chain ID, base domain/DNS, reviewed compatible Reth images; review the private environment's Sepolia RPC defaults for actual blob-broadcast support |
 | spec: identities and custody | KMS create/reuse intent, CubeSigner role/key reference, three paired attestation/transport public identities from Governance, three recovery public keys |
 | spec: bridge and contracts | Future block-height timelock, thresholds, fees, unique deployment salt, independent Dogecoin fee-vault recipient address |
-| deployment.env | Owner public address, external/internal Dogecoin RPC credentials, local fee-wallet WIF, Vast.ai API key; database password only when referenced, optional Slack webhook |
+| deployment.env | Owner public address, external/internal Dogecoin RPC credentials, Ethereum execution/beacon and Fee Oracle sampling URLs, local fee-wallet WIF, Vast.ai API key; database password only when referenced, optional Slack webhook |
 | Existing tools/accounts | AWS profile, kube context, Docker, CLI/SDK, authenticated CubeSigner CLI, GitHub release access; EKS, ingress/DNS/certificate and External Secrets Operator infrastructure |
 
 Do not hand-fill KMS-derived addresses/public keys, fee-wallet public key,
@@ -105,8 +105,9 @@ scrollsdk setup push-secrets -N --provider aws \
 ```
 
 An authenticated CubeSigner owner authorizes the session. The command writes it
-under `secrets/`; it is not a spec value. Full push includes Dogecoin RPC and
-Grafana ENV credentials in AWS Secrets Manager. The chart's ExternalSecret
+under `secrets/`; it is not a spec value. Full push includes Dogecoin RPC, Ethereum
+execution/beacon and Fee Oracle sampling URLs, monitor balance RPC, and Grafana
+ENV credentials in AWS Secrets Manager. The chart's ExternalSecret
 creates the corresponding Kubernetes Secret. Configure store authentication as
 for Dogecoin. Dstack's generated controller credentials use its existing explicit
 Kubernetes publication path, so the context/namespace flags are required.

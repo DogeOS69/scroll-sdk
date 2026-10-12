@@ -124,9 +124,9 @@ configMaps:
       # DOGEOS_L1_INTERFACE_EVENT_PLANE_ARTIFACT_PATH: /data/event-plane.sqlite
       # DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "<TODO>"
 
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL: "<TODO>"
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL is supplied by the service Secret below.
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000"
-      DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL: "<TODO>"
+      # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL is supplied by the service Secret below.
       # Optional provider-local timeout; otherwise the parent timeout is used.
       # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__TIMEOUT_MS: "10000"
       # Additional production providers may be configured alongside Beacon.
@@ -150,6 +150,14 @@ externalSecrets:
     provider: aws
     secretRegion: "<TODO>" # Set the AWS Secrets Manager region before installation.
     data:
+      - remoteRef:
+          key: dogeos/l1-interface-secret-env
+          property: DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL
+        secretKey: DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL
+      - remoteRef:
+          key: dogeos/l1-interface-secret-env
+          property: DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+        secretKey: DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
       - remoteRef:
           key: dogeos/l1-interface-secret-env
           property: DOGEOS_L1_INTERFACE_DOGECOIN_RPC__USER

@@ -243,7 +243,7 @@ prometheusRules:
   enabled: true  # Fallback when Grafana alerting is disabled.
 
 # Balance settings consumed by the configuration generator. Public addresses
-# and RPC URLs become SCROLL_BALANCE_* environment variables in the exporter.
+# and Secret-backed RPC URLs become SCROLL_BALANCE_* environment variables in the exporter.
 # No private key is required. Replace <TODO> before deployment.
 # Generator input sources and Secret keys: examples/scroll-monitor-configuration.md.
 balanceMonitoring:
@@ -260,15 +260,15 @@ balanceMonitoring:
       minimumEth: 5
     ethDaSubmitter:
       address: "<TODO>"  # Canonical l1CommitSender public signer address.
-      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com"  # Sepolia example; generate from ethereumDa.submitterRpcUrl.
+      rpcUrl: ""  # Secret-owned; CLI exports the DA endpoint through the external store.
       expectedChainId: "<TODO>"  # doge-config ethereumDa.chainId; keep as a string.
       minimumEth: 0.1
   exporter:
     enabled: true
-    # For credentialed RPCs, set this to an existing Secret name and explicitly
-    # set the corresponding ethereum.<account>.rpcUrl to "" (not <TODO>).
-    # Keys: SCROLL_BALANCE_FEE_ORACLE_RPC_URL and/or SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL.
-    envFromSecret: ""
+    # The CLI generates secrets/scroll-monitor-balance.env for push-secrets.
+    # Keep the DA account rpcUrl empty so it cannot override this Secret.
+    # Fee Oracle balance checks use the L2 RPC, not its Ethereum fee-sampling RPC.
+    envFromSecret: scroll-monitor-balance-env
     intervalSeconds: 60
     rpcTimeoutSeconds: 10
 
@@ -549,3 +549,13 @@ externalSecrets:
           key: grafana-admin-env
           property: admin-password
         secretKey: admin-password
+
+  scroll-monitor-balance-env:
+    provider: aws
+    serviceAccount: external-secrets
+    refreshInterval: 2m
+    data:
+      - remoteRef:
+          key: scroll-monitor-balance-env
+          property: SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL
+        secretKey: SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL

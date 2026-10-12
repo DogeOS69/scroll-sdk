@@ -83,9 +83,9 @@ dogecoin:
 ethereumDa:
   chain: sepolia
   chainId: 11155111
-  # Same Sepolia defaults as the CLI; override with deployment-specific endpoints if needed.
-  l1RpcUrl: https://gateway.tenderly.co/public/sepolia
-  beaconRpcUrl: https://ethereum-sepolia-beacon-api.publicnode.com
+  # Full URLs may contain provider credentials; keep their values in deployment.env.
+  l1RpcUrl: "$ENV:ETHEREUM_RPC_URL"
+  beaconRpcUrl: "$ENV:ETHEREUM_BEACON_RPC_URL"
   # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
   # These do not replace Ethereum safe/finalized block-tag checks.
   confirmationDepth: 1
@@ -158,6 +158,8 @@ signing:
 
 feeOracle:
   contractWriteMode: live
+  # Fee sampling can use Ethereum mainnet even when DA publication uses Sepolia.
+  ethereumRpcUrl: "$ENV:FEE_ORACLE_ETHEREUM_RPC_URL"
 
 frontend:
   protocol: https

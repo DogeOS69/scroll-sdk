@@ -29,6 +29,35 @@ the fixed L1 chain ID (`1`, `111111` or `5555555`) for every generated consumer.
 `network.l2ChainId` is still operator-selected. The Ethereum DA chain ID is
 separate: `ethereumDa.chainId` is `11155111` for Sepolia.
 
+Ethereum provider URLs can contain API keys. Keep complete execution and beacon
+URLs in private `deployment.env`, referenced by `ethereumDa.l1RpcUrl` and
+`ethereumDa.beaconRpcUrl` as `$ENV:ETHEREUM_RPC_URL` and
+`$ENV:ETHEREUM_BEACON_RPC_URL`. The environment example supplies public Sepolia
+defaults; replace them for your selected network/provider. Configure
+`feeOracle.ethereumRpcUrl` independently through `$ENV:FEE_ORACLE_ETHEREUM_RPC_URL`.
+Its mainnet default samples Ethereum mainnet fees even when this rehearsal's DA
+publication runs on Sepolia; it does not change the DA chain or the Fee Oracle's
+L2 transaction destination.
+
+The matching CLI exports these URLs to private `secrets/*.env`, uploads them with
+`push-secrets`, and projects ExternalSecret references into the service values.
+eth-da-submitter, l1-interface, withdrawal-processor and fee-oracle receive URLs
+from their existing service Secret flow. The proof coordinator uses the separate
+`proof-coordinator-rpc-env` Secret for its bridge and scroll-batch materializers;
+its compiler-owned proof tokens stay in their existing store. The scroll-monitor
+balance exporter uses `scroll-monitor-balance-env`. KMS signing does not remove these RPC Secrets.
+Keep provider URLs out of ConfigMaps, Helm values, shared plans and deployment
+reports. A frontend/browser RPC is visible to its users and must use an endpoint
+intended for public clients; this server-side secret flow does not conceal it.
+External attestation-signer RPC configuration is managed separately.
+
+After changing an endpoint, regenerate and upload the service secrets. External
+Secrets refreshes the Kubernetes Secret, but running processes keep their old
+environment until their Pods restart. Update the release values to remove any old
+plaintext RPC entries, wait for ExternalSecret readiness, and restart the affected
+workloads as part of the endpoint change. A Helm upgrade alone may not restart a
+Pod when only an external secret's contents changed.
+
 The beta.6 eth-da-submitter still consumes `ethereumDa.confirmationDepth` and
 `finalizationDepth`. The example explicitly selects `1` and `64`, matching core's
 submitter `.env.example`. These depths use Ethereum tip height minus transaction
@@ -129,8 +158,8 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Sepolia execution/beacon URLs use the CLI defaults; override them if needed. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
-| Environment file | Fill the six base spec variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
+| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Set execution/beacon URLs in private `deployment.env`; the example supplies public Sepolia defaults. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
 | Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
