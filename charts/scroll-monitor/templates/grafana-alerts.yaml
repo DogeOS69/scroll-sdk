@@ -17,6 +17,7 @@
 {{- with .Values.grafanaAlerting.defaultContactPoint }}
 {{- if .enabled }}
 {{- $_ := set $config "defaultContactPoint" (dict "name" .name) }}
+{{- $_ := set $config "serviceContactPoint" .name }}
 {{- end }}
 {{- end }}
 {{- if and .Values.businessPodAlerts.enabled .Values.businessPodAlerts.contactPoint }}

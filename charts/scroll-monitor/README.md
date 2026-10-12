@@ -493,15 +493,16 @@ stalled progress; existing readiness/up alerts cover service availability.
 
 ### Error and panic log alerts
 
-`ServiceErrorOrPanickedLogs` checks **every service** whose logs reach Loki in
-the Alloy namespace allowlist (`alloy.logs.namespaces`, defaulting to the release
-namespace), except the retired `rollup-explorer-backend`. Every minute it counts
-JSON `level`/`severity` and logfmt level fields set to `error`, `fatal`, or `panic`,
-plus plain error/fatal prefixes and Go/Rust panic headers, ignoring case, over
-the last 5 minutes. ANSI colors are removed before matching; timestamp-prefixed
-Rust tracing and geth-style `ERROR[...]` lines are supported. One matching line fires
-the critical alert with no pending period. Notification delivery also follows
-the notification policy's group wait and repeat interval.
+`ServiceErrorLogs` (warning) and `ServicePanicOrFatalLogs` (critical) check
+**every service** whose logs reach Loki in the Alloy namespace allowlist
+(`alloy.logs.namespaces`, defaulting to the release namespace), except the retired
+`rollup-explorer-backend`. Every minute they count matching lines over the last
+5 minutes. One matching line fires with no pending period. JSON `level`/`severity`
+and logfmt level fields distinguish ordinary errors from fatal/panic events;
+plain error/fatal prefixes and Go/Rust panic headers are also recognized.
+A fatal/panic line is excluded from the ordinary ERROR rule, including conflicting
+JSON severity fields. ANSI colors are stripped and timestamp prefixes supported.
+Notification delivery still follows the notification policy's wait/repeat timers.
 
 Words inside INFO/WARN messages, query expressions, URLs and recovery messages
 do not establish an error level. In particular, Grafana and Loki's successful
@@ -517,20 +518,41 @@ polling module belonged to the separate `metrics-exporter` chart and is no longe
 generated as of its version 0.1.9. This exclusion also covers installations still
 running older exporter charts; changing the alert alone does not stop a poller.
 
-Instances are grouped by `namespace`, `service`, `pod`, and `container` so the
-notification identifies the affected workload. The same `managed_by =
-scroll-monitor` policy routes these alerts to Slack and email. The alert clears
-once the matching logs leave the window. Set `grafanaAlerting.logs.enabled:
-false` to skip installing it; disabling the Loki datasource also skips it. For
-rules already stored in Grafana, pause them in the UI. External services need
-their logs shipped to Loki with these labels before this rule can cover them.
+Alert instances retain `namespace`, `service`, `pod`, and `container` so each
+affected workload is listed. Notifications group business/log rules by folder,
+environment, cluster, namespace, alert name, service and job. `job` separates
+metric producers when a service label is absent; replicas share a notification.
+The service fallback applies only to this chart's managed rules in its folder,
+excludes resource scopes, and follows existing custom/resource routes. Existing
+resource grouping and critical wait overrides remain unchanged. The fallback
+uses the enabled `grafanaAlerting.defaultContactPoint.name` destination, waits
+30 seconds, groups updates at 5 minutes, and repeats at 4 hours. Once created,
+its routing and timing are UI-owned. A team-specific route that also matches
+this folder does not prevent creation of the fallback for other services.
+Review custom routes if they already combine services. Independent Alertmanager
+groups include the same service/job, environment and cluster boundaries.
 
-On upgrade, the seeding Job replaces the previous broad whole-word query only
-when its stable rule UID, `managed_by=scroll-monitor`, datasource UID and exact
-previous expression match. It changes only query A's expression, preserving
-pause state, notification settings, labels, annotations and group interval.
-Operator-customized queries are left intact and need manual review. A paused
-rule remains paused after migration. Repeated upgrades do not rewrite it.
+Resolved notifications state that the alert cleared instead of repeating its
+firing description. A cleared log rule may mean its matching lines left the
+5-minute window. `NoData` or `MissingSeries` does not prove service recovery;
+notification text makes this explicit. Rule `noDataState` remains `OK` because
+healthy filtering expressions normally return no series.
+
+Set `grafanaAlerting.logs.enabled: false` to skip installing the log rules;
+disabling the Loki datasource also skips them. Pause already-stored rules in
+Grafana. External services need logs shipped with the workload labels above.
+
+On upgrade the warning rule reuses the old `ServiceErrorOrPanickedLogs` UID.
+Exactly known shipped queries, title, annotations and the former default
+critical severity migrate to the new warning definition. A separate critical
+panic/fatal rule is added. Operator-edited queries, titles or severities are
+preserved and may need manual review; other labels, pause state, notification
+settings and group interval remain operator-owned. Repeated upgrades are
+idempotent. When splitting an existing rule, the new panic/fatal rule inherits
+its pause state, custom routing labels and explicit notification settings.
+Explicit pause overrides and backend selection take precedence; the new
+critical severity is retained. With no predecessor, it starts enabled. After
+creation, both rules can be edited independently.
 
 Upgrades from native Prometheus application rules remove that chart resource
 and seed Grafana rules. If an older installation still mounts alert provisioning

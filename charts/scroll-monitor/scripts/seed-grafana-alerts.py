@@ -214,6 +214,16 @@ def notification_routes(config):
             "routes": [{"receiver": config[key], "object_matchers": [["severity", "=", "critical"]],
                         "group_wait": "0s", "continue": False}],
         }
+    if config.get("serviceContactPoint"):
+        routes["services"] = {
+            "receiver": config["serviceContactPoint"],
+            "object_matchers": [["managed_by", "=", "scroll-monitor"],
+                                ["grafana_folder", "=", config["folderTitle"]],
+                                ["alert_scope", "!~", "business-pods|disks|resources"]],
+            "group_by": ["grafana_folder", "environment", "cluster", "namespace", "alertname", "service", "job"],
+            "group_wait": "30s", "group_interval": "5m", "repeat_interval": "4h",
+            "continue": False,
+        }
     return routes
 
 
@@ -228,30 +238,39 @@ def seed_notification_policies(client, config, dry_run=False):
         raise RuntimeError("Cannot read existing Grafana notification policy tree; refusing to replace it")
     updated = copy.deepcopy(current)
     existing = updated.get("routes", [])
-    def contains_route(route, marker):
-        if marker in route.get("object_matchers", []):
+    def contains_route(route, matchers):
+        if all(matcher in route.get("object_matchers", []) for matcher in matchers):
             return True
-        return any(contains_route(child, marker) for child in route.get("routes", []))
+        return any(contains_route(child, matchers) for child in route.get("routes", []))
     added = []
+    service_added = []
     for scope, route in desired.items():
-        marker = ["scroll_monitor_route", "=", notification_route_id(config, scope)]
-        if contains_route(updated, marker):
+        # The service fallback needs no per-rule labels, including on existing rules.
+        # Use the full scope identity: an unrelated team route may also match this folder.
+        matchers = (route["object_matchers"] if scope == "services"
+                    else [["scroll_monitor_route", "=", notification_route_id(config, scope)]])
+        if contains_route(updated, matchers):
             continue  # Policy changes after first creation remain UI-owned.
-        added.append(route)
-    if not added:
+        (service_added if scope == "services" else added).append(route)
+    if not added and not service_added:
         return
     # Match only our route identity before broader policies; preserve their order.
-    updated["routes"] = added + existing
+    # Existing resource and operator routes retain precedence over the service fallback.
+    updated["routes"] = added + existing + service_added
     if dry_run:
-        print(f"PLAN notification policies: add {len(added)} scoped branches", flush=True)
+        print(f"PLAN notification policies: add {len(added) + len(service_added)} scoped branches", flush=True)
         return
     client.request("PUT", path, updated)
-    print(f"Seeded notification policies: {len(added)} scoped branches", flush=True)
+    print(f"Seeded notification policies: {len(added) + len(service_added)} scoped branches", flush=True)
+
+
+def rule_uid(config, group, name):
+    identity = f'{config["folderUID"]}/{group}/{name}'
+    return "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
 
 
 def alert_rule(source, config, group):
-    identity = f'{config["folderUID"]}/{group}/{source["alert"]}'
-    uid = "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+    uid = rule_uid(config, group, source.get("uidName", source["alert"]))
     datasource_type = source.get("datasourceType", "prometheus")
     datasource = config["lokiDatasourceUID"] if datasource_type == "loki" else config["datasourceUID"]
     annotations = {
@@ -365,6 +384,13 @@ def migrate_expression(existing, source, desired):
             updated["annotations"][key] = desired["annotations"][key]
     if "previousFor" in source and updated.get("for") == source["previousFor"]:
         updated["for"] = desired["for"]
+    # A renamed rule can reuse its old UID. Only migrate its shipped title and
+    # severity when the query also matches a known default; custom labels stay owned by the operator.
+    if updated.get("title") == source.get("previousTitle"):
+        updated["title"] = desired["title"]
+    for label, previous in source.get("previousLabels", {}).items():
+        if updated.get("labels", {}).get(label) == previous:
+            updated["labels"][label] = desired["labels"][label]
     for field in ("id", "updated", "provenance"):
         updated.pop(field, None)
     return updated
@@ -460,6 +486,21 @@ def seed(client, config, dry_run=False):
             )
         existing_uids = {rule["uid"] for rule in rules}
         desired = [(source, alert_rule(source, config, group["name"])) for source in group["rules"]]
+        for source, rule in desired:
+            # A split must not silently bypass the old rule's operator pause or destination.
+            # Apply this only on creation; later edits to either rule remain independent.
+            predecessor = source.get("inheritOperatorSettingsFrom")
+            if not predecessor or rule["uid"] in existing_uids:
+                continue
+            predecessor_uid = rule_uid(config, group["name"], predecessor)
+            previous = next((r for r in rules if r["uid"] == predecessor_uid), None)
+            if not previous or previous.get("labels", {}).get("managed_by") != "scroll-monitor":
+                continue
+            rule["labels"] = {**previous.get("labels", {}), **rule["labels"]}
+            if source["alert"] not in config.get("pauseRules", {}):
+                rule["isPaused"] = previous.get("isPaused", False)
+            if "notification_settings" not in rule and "notification_settings" in previous:
+                rule["notification_settings"] = copy.deepcopy(previous["notification_settings"])
         additions = [rule for _, rule in desired if rule["uid"] not in existing_uids]
         migrations = []
         for source, rule in desired:

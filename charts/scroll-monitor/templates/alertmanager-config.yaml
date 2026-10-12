@@ -15,7 +15,7 @@ stringData:
       resolve_timeout: 5m
     route:
       receiver: slack-alerts
-      group_by: [alertname, namespace, job, service]
+      group_by: [environment, cluster, alertname, namespace, job, service]
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h

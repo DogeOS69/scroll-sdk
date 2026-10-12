@@ -53,6 +53,15 @@ jobs:
           SCROLL_STATUS_RUNTIME_TEST: '1'
           PYTHONPATH: charts/scroll-monitor/tests
         run: python -m unittest test_snapshot_promql test_bridge_health_prometheus test_seed_grafana_alerts test_monitoring_templates test_alert_notifications -v
+      - name: Validate log severity and notification compatibility
+        env:
+          PYTHONPATH: charts/scroll-monitor/tests
+          SCROLL_MONITOR_LOKI_TEST: '1'
+          AMTOOL_BINARY: ${{ runner.temp }}/scroll-monitor-amtool
+        run: |
+          docker run --rm --entrypoint /bin/cat prom/alertmanager:v0.27.0 /bin/amtool > "$AMTOOL_BINARY"
+          chmod u+x "$AMTOOL_BINARY"
+          python -m unittest test_notification_policies test_log_alerts test_alertmanager_slack_render test_alertmanager_backend -v
       - name: Validate DogeOS dashboard queries and panel wiring
         run: python -m unittest discover -s charts/scroll-monitor/tests -p 'test_dogeos_dashboards.py' -v
       - name: Validate independent probes with a real browser

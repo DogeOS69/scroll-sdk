@@ -1,23 +1,24 @@
 {{ define "scroll-monitor.slack.summary" -}}
-{{- if eq .Labels.alertname "ServiceErrorOrPanickedLogs" -}}
-{{- if eq .Status "resolved" }}Log error alert resolved for {{ else }}ERROR or panicked logs detected in {{ end -}}
-{{- if .Labels.service }}{{ .Labels.service }}{{ else if .Labels.pod }}{{ .Labels.pod }}{{ else }}the monitored service{{ end }}.
+{{- if eq .Status "resolved" -}}
+Alert {{ .Labels.alertname }} cleared for {{ if .Labels.service }}{{ .Labels.service }}{{ else if .Labels.job }}{{ .Labels.job }}{{ else if .Labels.pod }}{{ .Labels.pod }}{{ else }}the monitored target{{ end }}.
 {{- else if and .Annotations.summary (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .Annotations.summary)) -}}
 {{ .Annotations.summary }}
+{{- else if match `^Service(ErrorLogs|PanicOrFatalLogs|ErrorOrPanickedLogs)$` .Labels.alertname -}}
+{{ if eq .Labels.alertname "ServiceErrorLogs" }}ERROR{{ else if eq .Labels.alertname "ServicePanicOrFatalLogs" }}Panic or FATAL{{ else }}ERROR or panicked{{ end }} logs detected in {{ if .Labels.service }}{{ .Labels.service }}{{ else if .Labels.pod }}{{ .Labels.pod }}{{ else }}the monitored service{{ end }}.
 {{- else -}}
 {{ .Labels.alertname }}
 {{- end -}}
 {{- end }}
 {{ define "scroll-monitor.slack.description" -}}
-{{- if and (eq .Labels.alertname "ServiceErrorOrPanickedLogs") (eq .Status "resolved") -}}
-The log alert for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else }}the monitored service{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }} is resolved.
-{{ if eq .Annotations.grafana_state_reason "MissingSeries" }}Grafana no longer receives this alert series. This can happen when matching logs leave the query window or a workload disappears; it does not by itself confirm service recovery.
+{{- if eq .Status "resolved" -}}
+The alert condition is no longer firing for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else if .Labels.job }}{{ .Labels.job }}{{ else }}the monitored target{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }}.
+{{ if or (eq .Annotations.grafana_state_reason "MissingSeries") (eq .Annotations.grafana_state_reason "NoData") }}Grafana no longer receives matching alert data ({{ .Annotations.grafana_state_reason }}); this does not by itself confirm service recovery.
 {{ else }}{{ with .Annotations.grafana_state_reason }}{{ if not (match `\{\{|\$(labels|values|value)\b` .) }}Grafana state reason: {{ . }}.
-{{ end }}{{ end }}{{ end }}Open the service logs in Explore to review the recovery context.
+{{ end }}{{ end }}{{ end }}{{ if match `^Service(ErrorLogs|PanicOrFatalLogs|ErrorOrPanickedLogs)$` .Labels.alertname }}This rule checks matching logs in the last 5 minutes. Logs leaving that window or a workload disappearing can clear the alert without confirming service health. Open the service logs in Explore to review the context.{{ else }}Check the current metrics and alert state before concluding that the service has recovered.{{ end }}
 {{- else if and .Annotations.description (not (match `\{\{|\$(labels|values|value)\b|<no value>|\[no value\]` .Annotations.description)) -}}
 {{ .Annotations.description }}
-{{- else if eq .Labels.alertname "ServiceErrorOrPanickedLogs" -}}
-Matching ERROR or panicked logs were detected for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else }}the monitored service{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }}. Open the service logs in Explore to investigate.
+{{- else if match `^Service(ErrorLogs|PanicOrFatalLogs|ErrorOrPanickedLogs)$` .Labels.alertname -}}
+Matching {{ if eq .Labels.alertname "ServiceErrorLogs" }}ERROR{{ else if eq .Labels.alertname "ServicePanicOrFatalLogs" }}panic or FATAL{{ else }}ERROR or panicked{{ end }} logs were detected for {{ if .Labels.namespace }}{{ .Labels.namespace }}/{{ end }}{{ if .Labels.pod }}{{ .Labels.pod }}{{ else if .Labels.service }}{{ .Labels.service }}{{ else }}the monitored service{{ end }}{{ with .Labels.container }} (container {{ . }}){{ end }}. Open the service logs in Explore to investigate.
 {{- else if .Annotations.description -}}
 Open the alert in Grafana to inspect its current state.
 {{- end -}}

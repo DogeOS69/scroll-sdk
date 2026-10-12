@@ -210,6 +210,76 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(rule["data"][0]["model"]["queryType"], "instant")
         self.assertEqual(rule["for"], "0s")
 
+    def test_split_log_upgrade_reuses_legacy_uid_and_is_idempotent(self):
+        sources = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"]
+        self.config["lokiDatasourceUID"] = "loki"
+        self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
+        legacy_source = {**sources[0], "alert": sources[0]["previousTitle"],
+                         "expr": sources[0]["previousExpr"][-1], "labels": {"severity": "critical"},
+                         "annotations": sources[0]["previousAnnotations"]}
+        legacy = SEED.alert_rule(legacy_source, self.config, "dogeos.logs")
+        legacy["isPaused"] = True
+        legacy["labels"]["team"] = "operator"
+        legacy["notification_settings"] = {"receiver": "custom"}
+        self.client.group = {"interval": 120, "rules": [legacy]}
+        SEED.seed(self.client, self.config)
+        self.assertEqual(len(self.client.group["rules"]), 2)
+        warning = self.client.group["rules"][0]
+        self.assertEqual(warning["uid"], legacy["uid"])
+        self.assertEqual(warning["title"], "ServiceErrorLogs")
+        self.assertEqual(warning["labels"], {"severity": "warning", "team": "operator", "managed_by": "scroll-monitor"})
+        self.assertTrue(warning["isPaused"])
+        self.assertEqual(warning["notification_settings"], {"receiver": "custom"})
+        self.assertEqual(self.client.group["interval"], 120)
+        self.assertEqual(warning["noDataState"], "OK")
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
+    def test_split_new_rule_inherits_operator_pause_and_routing(self):
+        sources = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"]
+        self.config["lokiDatasourceUID"] = "loki"
+        self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
+        legacy = SEED.alert_rule(sources[0], self.config, "dogeos.logs")
+        legacy["isPaused"] = True
+        legacy["labels"]["team"] = "platform"
+        legacy["notification_settings"] = {"receiver": "operator-slack", "repeat_interval": "12h"}
+        self.client.group = {"interval": 60, "rules": [legacy]}
+        SEED.seed(self.client, self.config)
+        added = next(r for r in self.client.group["rules"] if r["title"] == "ServicePanicOrFatalLogs")
+        self.assertTrue(added["isPaused"])
+        self.assertEqual(added["labels"]["team"], "platform")
+        self.assertEqual(added["labels"]["severity"], "critical")
+        self.assertEqual(added["notification_settings"], legacy["notification_settings"])
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+        # An explicit chart override has priority over inherited pause state.
+        self.client.group["rules"] = [legacy]
+        self.config["pauseRules"] = {"ServicePanicOrFatalLogs": False}
+        SEED.seed(self.client, self.config)
+        added = next(r for r in self.client.group["rules"] if r["title"] == "ServicePanicOrFatalLogs")
+        self.assertFalse(added["isPaused"])
+
+    def test_split_migration_preserves_custom_query_title_and_severity(self):
+        source = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"][0]
+        self.config["lokiDatasourceUID"] = "loki"
+        desired = SEED.alert_rule(source, self.config, "dogeos.logs")
+        existing = copy.deepcopy(desired)
+        existing.update(title="Operator log rule")
+        existing["labels"]["severity"] = "info"
+        existing["data"][0]["model"]["expr"] = source["previousExpr"][-1]
+        migrated = SEED.reconcile_rule(existing, source, desired)
+        self.assertEqual(migrated["title"], "Operator log rule")
+        self.assertEqual(migrated["labels"]["severity"], "info")
+        existing["data"][0]["model"]["expr"] = "custom query"
+        existing["title"] = source["previousTitle"]
+        existing["labels"]["severity"] = "critical"
+        result = SEED.reconcile_rule(existing, source, desired) or existing
+        self.assertEqual(result["data"][0]["model"]["expr"], "custom query")
+        self.assertEqual(result["title"], source["previousTitle"])
+        self.assertEqual(result["labels"]["severity"], "critical")
+
     def test_upgrade_preserves_edits_pause_and_interval_while_adding_rule(self):
         SEED.seed(self.client, self.config)
         edited = self.client.group["rules"][0]
@@ -375,11 +445,12 @@ class SeedTests(unittest.TestCase):
 
     def install_legacy_log_rule(self):
         group = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]
+        group["rules"] = group["rules"][:1]
         self.config["groups"] = [group]
         self.config["lokiDatasourceUID"] = "custom-loki"
         SEED.seed(self.client, self.config)
         rule = self.client.group["rules"][0]
-        rule["data"][0]["model"]["expr"] = group["rules"][0]["previousExpr"]
+        rule["data"][0]["model"]["expr"] = group["rules"][0]["previousExpr"][0]
         self.client.writes.clear()
         return rule
 
