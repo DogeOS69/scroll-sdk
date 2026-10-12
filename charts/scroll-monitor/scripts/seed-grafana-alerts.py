@@ -238,18 +238,18 @@ def seed_notification_policies(client, config, dry_run=False):
         raise RuntimeError("Cannot read existing Grafana notification policy tree; refusing to replace it")
     updated = copy.deepcopy(current)
     existing = updated.get("routes", [])
-    def contains_route(route, marker):
-        if marker in route.get("object_matchers", []):
+    def contains_route(route, matchers):
+        if all(matcher in route.get("object_matchers", []) for matcher in matchers):
             return True
-        return any(contains_route(child, marker) for child in route.get("routes", []))
+        return any(contains_route(child, matchers) for child in route.get("routes", []))
     added = []
     service_added = []
     for scope, route in desired.items():
         # The service fallback needs no per-rule labels, including on existing rules.
-        # Its folder matcher identifies it on subsequent runs, even after UI edits.
-        marker = (["grafana_folder", "=", config["folderTitle"]] if scope == "services"
-                  else ["scroll_monitor_route", "=", notification_route_id(config, scope)])
-        if contains_route(updated, marker):
+        # Use the full scope identity: an unrelated team route may also match this folder.
+        matchers = (route["object_matchers"] if scope == "services"
+                    else [["scroll_monitor_route", "=", notification_route_id(config, scope)]])
+        if contains_route(updated, matchers):
             continue  # Policy changes after first creation remain UI-owned.
         (service_added if scope == "services" else added).append(route)
     if not added and not service_added:
@@ -264,9 +264,13 @@ def seed_notification_policies(client, config, dry_run=False):
     print(f"Seeded notification policies: {len(added) + len(service_added)} scoped branches", flush=True)
 
 
+def rule_uid(config, group, name):
+    identity = f'{config["folderUID"]}/{group}/{name}'
+    return "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+
+
 def alert_rule(source, config, group):
-    identity = f'{config["folderUID"]}/{group}/{source.get("uidName", source["alert"])}'
-    uid = "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+    uid = rule_uid(config, group, source.get("uidName", source["alert"]))
     datasource_type = source.get("datasourceType", "prometheus")
     datasource = config["lokiDatasourceUID"] if datasource_type == "loki" else config["datasourceUID"]
     annotations = {
@@ -482,6 +486,21 @@ def seed(client, config, dry_run=False):
             )
         existing_uids = {rule["uid"] for rule in rules}
         desired = [(source, alert_rule(source, config, group["name"])) for source in group["rules"]]
+        for source, rule in desired:
+            # A split must not silently bypass the old rule's operator pause or destination.
+            # Apply this only on creation; later edits to either rule remain independent.
+            predecessor = source.get("inheritOperatorSettingsFrom")
+            if not predecessor or rule["uid"] in existing_uids:
+                continue
+            predecessor_uid = rule_uid(config, group["name"], predecessor)
+            previous = next((r for r in rules if r["uid"] == predecessor_uid), None)
+            if not previous or previous.get("labels", {}).get("managed_by") != "scroll-monitor":
+                continue
+            rule["labels"] = {**previous.get("labels", {}), **rule["labels"]}
+            if source["alert"] not in config.get("pauseRules", {}):
+                rule["isPaused"] = previous.get("isPaused", False)
+            if "notification_settings" not in rule and "notification_settings" in previous:
+                rule["notification_settings"] = copy.deepcopy(previous["notification_settings"])
         additions = [rule for _, rule in desired if rule["uid"] not in existing_uids]
         migrations = []
         for source, rule in desired:

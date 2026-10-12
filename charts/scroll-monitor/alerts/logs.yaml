@@ -54,6 +54,7 @@ groups:
       description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore
         to investigate.'
   - alert: ServicePanicOrFatalLogs
+    inheritOperatorSettingsFrom: ServiceErrorOrPanickedLogs
     datasourceType: loki
     expr: |-
       sum by (namespace, service, pod, container) (

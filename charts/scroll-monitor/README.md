@@ -527,9 +527,9 @@ excludes resource scopes, and follows existing custom/resource routes. Existing
 resource grouping and critical wait overrides remain unchanged. The fallback
 uses the enabled `grafanaAlerting.defaultContactPoint.name` destination, waits
 30 seconds, groups updates at 5 minutes, and repeats at 4 hours. Once created,
-its routing and timing are UI-owned. A pre-existing route matching this folder
-is preserved rather than adding an overlapping fallback. Review custom routes
-if they already combine services. Independent Alertmanager groups include the
+its routing and timing are UI-owned. A team-specific route that also matches
+this folder does not prevent creation of the fallback for other services.
+Review custom routes if they already combine services. Independent Alertmanager groups include the
 same service/job, environment and cluster boundaries.
 
 Resolved notifications state that the alert cleared instead of repeating its
@@ -548,8 +548,11 @@ critical severity migrate to the new warning definition. A separate critical
 panic/fatal rule is added. Operator-edited queries, titles or severities are
 preserved and may need manual review; other labels, pause state, notification
 settings and group interval remain operator-owned. Repeated upgrades are
-idempotent. The new panic/fatal rule starts enabled, independently of whether
-an operator paused the former combined rule; review both rules after upgrading.
+idempotent. When splitting an existing rule, the new panic/fatal rule inherits
+its pause state, custom routing labels and explicit notification settings.
+Explicit pause overrides and backend selection take precedence; the new
+critical severity is retained. With no predecessor, it starts enabled. After
+creation, both rules can be edited independently.
 
 Upgrades from native Prometheus application rules remove that chart resource
 and seed Grafana rules. If an older installation still mounts alert provisioning

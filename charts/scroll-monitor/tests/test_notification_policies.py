@@ -74,6 +74,17 @@ class NotificationPolicyTests(unittest.TestCase):
         SEED.seed_notification_policies(self.client, self.config)
         self.assertEqual(self.client.writes, [])
 
+    def test_team_specific_folder_route_does_not_disable_service_fallback(self):
+        custom = {"receiver": "team", "object_matchers": [["grafana_folder", "=", "DogeOS"], ["team", "=", "platform"]]}
+        self.client.policies["routes"] = [custom]
+        self.config = {"folderUID": "test", "folderTitle": "DogeOS", "serviceContactPoint": "slack-alerts"}
+        SEED.seed_notification_policies(self.client, self.config)
+        self.assertEqual(self.client.policies["routes"][0], custom)
+        self.assertEqual(len(self.client.policies["routes"]), 2)
+        self.client.writes.clear()
+        SEED.seed_notification_policies(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
     def test_empty_contacts_leave_routing_untouched(self):
         before = copy.deepcopy(self.client.policies)
         SEED.seed_notification_policies(self.client, {'folderUID': 'test'})

@@ -236,6 +236,31 @@ class SeedTests(unittest.TestCase):
         SEED.seed(self.client, self.config)
         self.assertEqual(self.client.writes, [])
 
+    def test_split_new_rule_inherits_operator_pause_and_routing(self):
+        sources = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"]
+        self.config["lokiDatasourceUID"] = "loki"
+        self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
+        legacy = SEED.alert_rule(sources[0], self.config, "dogeos.logs")
+        legacy["isPaused"] = True
+        legacy["labels"]["team"] = "platform"
+        legacy["notification_settings"] = {"receiver": "operator-slack", "repeat_interval": "12h"}
+        self.client.group = {"interval": 60, "rules": [legacy]}
+        SEED.seed(self.client, self.config)
+        added = next(r for r in self.client.group["rules"] if r["title"] == "ServicePanicOrFatalLogs")
+        self.assertTrue(added["isPaused"])
+        self.assertEqual(added["labels"]["team"], "platform")
+        self.assertEqual(added["labels"]["severity"], "critical")
+        self.assertEqual(added["notification_settings"], legacy["notification_settings"])
+        self.client.writes.clear()
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+        # An explicit chart override has priority over inherited pause state.
+        self.client.group["rules"] = [legacy]
+        self.config["pauseRules"] = {"ServicePanicOrFatalLogs": False}
+        SEED.seed(self.client, self.config)
+        added = next(r for r in self.client.group["rules"] if r["title"] == "ServicePanicOrFatalLogs")
+        self.assertFalse(added["isPaused"])
+
     def test_split_migration_preserves_custom_query_title_and_severity(self):
         source = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"][0]
         self.config["lokiDatasourceUID"] = "loki"
