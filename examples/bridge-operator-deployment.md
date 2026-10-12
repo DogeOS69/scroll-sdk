@@ -29,8 +29,7 @@ See [the spec reference](deployment-spec.md) for field semantics and key custody
 
 Run `plan` and `apply` from your private working directory. Keep the SDK checkout
 as its sibling `../scroll-sdk`, or override `--sdk-dir` once when planning. Set `AWS_PROFILE`,
-`AWS_REGION`, `KUBE_CONTEXT`, `NAMESPACE` and `SECRET_PREFIX` to the reviewed spec
-values. Do not source deployment.env: the CLI parses it as literal data.
+`AWS_REGION`, `KUBE_CONTEXT` and `NAMESPACE` to the reviewed spec values. Do not source deployment.env: the CLI parses it as literal data.
 Set `DSTACK_NAMESPACE` to `dstackController.monitoring.namespace`, whose default
 is `dstack-system`. This may differ from the business-service `NAMESPACE`.
 
@@ -100,7 +99,7 @@ export DSTACK_NAMESPACE=dstack-system # Use your override if configured in the s
 kubectl --context "$KUBE_CONTEXT" create namespace "$DSTACK_NAMESPACE" \
   --dry-run=client -o yaml | kubectl --context "$KUBE_CONTEXT" apply -f -
 scrollsdk setup push-secrets -N --provider aws \
-  --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
+  --aws-region "$AWS_REGION" \
   --kube-context "$KUBE_CONTEXT" --namespace "$DSTACK_NAMESPACE"
 ```
 

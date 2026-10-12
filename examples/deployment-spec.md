@@ -53,6 +53,20 @@ reports. A frontend/browser RPC is visible to its users and must use an endpoint
 intended for public clients; this server-side secret flow does not conceal it.
 External attestation-signer RPC configuration is managed separately.
 
+For spec deployments, the default AWS Secrets Manager prefix is
+`dogeos/<eksClusterName>/<namespace>/<metadata.name>`. This separates instances in
+different clusters or namespaces without another required input. The CLI saves
+that choice in the private deployment configuration; generated ExternalSecrets,
+`apply` uploads and a later standalone `push-secrets` use the same prefix. Do not
+repeat it as a command-line flag in the normal workflow.
+
+To reuse an existing store layout, set `infrastructure.aws.secretsPrefix` explicitly.
+An explicit `preparation.secretUpload.awsPrefix` is also honored; if both fields
+are set, they must agree or generation fails before upload. Explicit prefixes
+remain operator-owned, including nested paths. Reusing an explicit prefix across
+deployments intentionally shares those secret names; automatic isolation applies
+to the default prefix, not an explicit override.
+
 After changing an endpoint, regenerate and upload the service secrets. External
 Secrets refreshes the Kubernetes Secret, but running processes keep their old
 environment until their Pods restart. Update the release values to remove any old
@@ -430,7 +444,7 @@ default reference. Use the same external-store upload as Dogecoin:
 
 ```bash
 scrollsdk setup push-secrets -N --provider aws \
-  --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
+  --aws-region "$AWS_REGION" \
   --secret-file secrets/grafana-admin.env \
   --values-file values/scroll-monitor-production.yaml
 ```

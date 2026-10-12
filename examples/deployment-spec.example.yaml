@@ -23,7 +23,8 @@ infrastructure:
     accountId: REPLACE_WITH_AWS_ACCOUNT_ID
     region: us-west-2
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
-    secretsPrefix: dogeos-testnet
+    # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
+    # Optional: secretsPrefix: your-reviewed-existing-prefix
   namespace: dogeos-testnet
   sequencerCount: 2
   bootnodeCount: 2
