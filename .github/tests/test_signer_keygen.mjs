@@ -182,3 +182,72 @@ test('Docker-generated keys match the real beta.6 signer on every network', {ski
     assert.deepEqual(snapshots(root), before)
   }
 })
+
+
+test('explicit reviewed pins are installed once and conflicting reruns preserve both keys', t => {
+  const root = temporary(t)
+  const pins = ['--release-version', '0.3.0', '--git-commit', 'a'.repeat(40), '--signing-policy-version', '1']
+  const invoke = args => spawnSync(process.execPath, [path.join(scripts, 'init-keys.mjs'), '--name', 'partner-a', '--network', 'testnet', '--out', root, ...args], {encoding: 'utf8'})
+  assert.notEqual(invoke(pins.slice(0, 2)).status, 0)
+  assert.ok(files.every(file => !fs.existsSync(path.join(root, file))))
+  const first = invoke(pins)
+  assert.equal(first.status, 0, first.stderr)
+  noSecretOutput(root, first)
+  const before = snapshots(root)
+  assert.equal(invoke(pins).status, 0)
+  assert.notEqual(invoke(pins.map(value => value === 'a'.repeat(40) ? 'b'.repeat(40) : value)).status, 0)
+  assert.deepEqual(snapshots(root), before)
+  const env = fs.readFileSync(path.join(root, files[0]), 'utf8')
+  assert.ok(env.includes(`ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT=${'a'.repeat(40)}`))
+})
+
+
+test('explicit pins pass through Docker and identity.sh exports the selected core schema', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
+  const root = temporary(t)
+  const generated = spawnSync('bash', [path.join(scripts, 'init-keys.sh'), '--name', 'partner-r3', '--network', 'testnet', '--out', root,
+    '--release-version', '0.3.0', '--git-commit', '20746174e993a64e7edb132b9ecdbd989788d864', '--signing-policy-version', '1'], {encoding: 'utf8'})
+  assert.equal(generated.status, 0, generated.stderr)
+  const image = 'dogeos69/attestation-signer@sha256:b69b503511837cfa80eb427b41fcefc5e47dbc8f2cfece5a04437ef83653359b'
+  const before = snapshots(root)
+  const exported = spawnSync('bash', [path.join(scripts, 'identity.sh'), image, root], {encoding: 'utf8'})
+  noSecretOutput(root, exported)
+  assert.equal(exported.status, 0, 'Offline core identity export failed')
+  const actual = JSON.parse(exported.stdout)
+  const expected = JSON.parse(fs.readFileSync(path.join(root, files[2])))
+  assert.equal(actual.schema, 'dogeos/attestation-signer-descriptor/v1')
+  assert.equal(actual.publicKey, expected.attestationPubkey)
+  assert.equal(actual.transportPubkey, expected.transportPubkey)
+  assert.deepEqual(snapshots(root), before)
+})
+
+test('KMS identity validates key metadata, reuses transport and never writes a WIF', t => {
+  const root = temporary(t)
+  // A disposable key stands in for GetPublicKey; no AWS call or long-lived fixture.
+  const fixture = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    import {generateKeyPairSync} from 'node:crypto';
+    const {publicKey} = generateKeyPairSync('ec', {namedCurve: 'secp256k1'});
+    console.log(JSON.stringify({KeyId: 'arn:aws:kms:us-east-1:000000000000:key/test-only',
+      KeySpec: 'ECC_SECG_P256K1', KeyUsage: 'SIGN_VERIFY', SigningAlgorithms: ['ECDSA_SHA_256'],
+      PublicKey: publicKey.export({type: 'spki', format: 'der'}).toString('base64')}));
+  `], {encoding: 'utf8'})
+  assert.equal(fixture.status, 0)
+  const info = path.join(root, 'kms.json')
+  fs.writeFileSync(info, fixture.stdout)
+  const invoke = () => spawnSync(process.execPath, [path.join(scripts, 'init-keys.mjs'), '--name', 'kms-signer', '--network', 'testnet', '--out', root, '--kms-info', info, '--kms-region', 'us-east-1'], {encoding: 'utf8'})
+  assert.equal(invoke().status, 0)
+  const env = fs.readFileSync(path.join(root, 'attestation-signer.env'), 'utf8')
+  assert.ok(env.includes('ATTESTATION_SIGNER_BACKEND=aws_kms'))
+  assert.ok(!env.includes('ATTESTATION_SIGNER_WIF='))
+  const core = JSON.parse(fs.readFileSync(path.join(root, 'identity.json')))
+  assert.equal(core.schema, 'dogeos/attestation-signer-descriptor/v1')
+  assert.match(core.publicKey, /^0[23][0-9a-f]{64}$/)
+  assert.notEqual(core.publicKey, core.transportPubkey)
+  const before = snapshots(root)
+  assert.equal(invoke().status, 0)
+  assert.deepEqual(snapshots(root), before)
+  for (const change of [{KeySpec: 'ECC_NIST_P256'}, {KeyUsage: 'ENCRYPT_DECRYPT'}, {KeyId: 'arn:aws:kms:us-west-2:000000000000:key/test-only'}]) {
+    fs.writeFileSync(info, JSON.stringify({...JSON.parse(fixture.stdout), ...change}))
+    assert.notEqual(invoke().status, 0)
+    assert.deepEqual(snapshots(root), before)
+  }
+})

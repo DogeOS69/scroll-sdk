@@ -3,11 +3,17 @@
 set -euo pipefail
 usage() {
   echo 'Usage: init-keys.sh --name <signer-name> --network <mainnet|testnet|regtest> --out <private-directory>'
+  echo '  [--release-version VERSION --git-commit FULL_SHA --signing-policy-version NUMBER]'
+  echo 'Provide all three approved binary pins together, or retain the beta.6 defaults.'
 }
 signer_name='' signer_network='' output_dir=''
+pins=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
+    --release-version|--git-commit|--signing-policy-version|--kms-info|--kms-region)
+      [ "$#" -ge 2 ] || { usage >&2; exit 1; }
+      pins+=("$1" "$2"); shift 2 ;;
     --name|--network|--out)
       [ "$#" -ge 2 ] || { usage >&2; exit 1; }
       case "$1" in
@@ -55,4 +61,4 @@ exec docker run --rm --network none --read-only --cap-drop ALL \
   --mount "type=bind,src=$script_dir,dst=/keygen,readonly" \
   --mount "type=bind,src=$output_dir,dst=/output" \
   --entrypoint node "$image" /keygen/init-keys.mjs \
-  --name "$signer_name" --network "$signer_network" --out /output
+  --name "$signer_name" --network "$signer_network" --out /output "${pins[@]}"

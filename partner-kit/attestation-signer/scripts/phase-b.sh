@@ -2,6 +2,7 @@
 # Run from a private copy of the kit. The phase body matches scrollsdk's
 # generated PARTNER-COMMANDS.md; keep both implementations aligned.
 set -euo pipefail
+echo "Legacy CLI-assisted workflow: new operators should use ./signer.sh and the root README.md." >&2
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 : "${SIGNER_ID:?Set SIGNER_ID to the agreed signer ID}"
 # Production readiness by default; set PREFLIGHT_FLAGS empty only for observe.

@@ -1,7 +1,26 @@
-# Operator instances and secrets created by the runbook. Never commit them.
-# The tracked nonfunctional examples (docker-compose/.env.example,
-# attestation-signer.toml, signer-policy.env) stay visible.
+# Private runtime contents. Copy this kit outside Git before initialization.
+.env
+aws.env
+operator.env
+attestation-signer.env
+transport.key
+public-identity.json
+identity.json
+aws/
+.kms/
+*.log
+data/
+bundles/
+active-bundle
+.active-bundle.next
+.key-init.lock/
+.init.lock/
+received*/
+rotations/
+rotation-*.json
+*.bak*
+__pycache__/
+
+# Legacy operator outputs remain private.
 /signer-*/
-/docker-compose/attestation-signer.env
-/docker-compose/transport.key
 /docker-compose/transport.key.new

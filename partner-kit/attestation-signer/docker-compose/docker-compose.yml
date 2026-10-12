@@ -15,7 +15,8 @@
 #   policy/                 — canonical context and optional production AggVK
 services:
   attestation-signer:
-    image: dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.6}
+    # SIGNER_IMAGE accepts an approved immutable repo@sha256 reference.
+    image: ${SIGNER_IMAGE:-dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.6}}
     command: ["-c", "/etc/dogeos-partner/attestation-signer.toml"]
     restart: unless-stopped
     env_file:
@@ -29,9 +30,11 @@ services:
     ports:
       # Pull delivery: the signer dials out to the TSO and accepts nothing
       # inbound. 4040 stays on loopback for local preflight only.
-      - "127.0.0.1:4040:4040"
+      # Set these host ports to 0 for an OS-assigned port when old/new signers
+      # coexist. Discover it with `docker compose port attestation-signer 4040`.
+      - "127.0.0.1:${SIGNER_HTTP_PORT:-4040}:4040"
       # Local monitoring by default; remote scrapes are an explicit private-network choice.
-      - "127.0.0.1:9100:9100"
+      - "127.0.0.1:${SIGNER_METRICS_PORT:-9100}:9100"
     volumes:
       - signer-data:/app/data
       - ./attestation-signer.toml:/etc/dogeos-partner/attestation-signer.toml:ro

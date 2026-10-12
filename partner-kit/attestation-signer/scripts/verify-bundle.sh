@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Read-only verification before installing the operator's policy bundle.
 set -euo pipefail
+echo "Legacy CLI-assisted workflow: new operators should use ./signer.sh and the root README.md." >&2
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 : "${SIGNER_ID:?Set SIGNER_ID to the agreed signer ID}"
 : "${EXPECTED_MANIFEST_SHA256:?Set the manifest SHA-256 received from the operator}"
