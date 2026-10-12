@@ -29,11 +29,13 @@ groups:
           !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
           | json alert_json_level="level", alert_json_severity="severity"
           | drop __error__, __error_details__
-          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
-          | alert_json_level=~"(?i)error" or alert_json_severity=~"(?i)error" or alert_logfmt_level=~"(?i)error" or alert_plain_error!=""
+          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*level="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
+          | regexp `(?i)^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*severity="?(?P<alert_logfmt_severity>error|fatal|panic)"?(?:\s|$)`
+          | alert_json_level=~"(?i)error" or alert_json_severity=~"(?i)error" or alert_logfmt_level=~"(?i)error" or alert_logfmt_severity=~"(?i)error" or alert_plain_error!=""
           | alert_json_level!~"(?i)fatal|panic"
           | alert_json_severity!~"(?i)fatal|panic"
           | alert_logfmt_level!~"(?i)fatal|panic"
+          | alert_logfmt_severity!~"(?i)fatal|panic"
           | alert_plain_severe=""
           [5m])
       ) > 0
@@ -60,8 +62,9 @@ groups:
           !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
           | json alert_json_level="level", alert_json_severity="severity"
           | drop __error__, __error_details__
-          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
-          | alert_json_level=~"(?i)fatal|panic" or alert_json_severity=~"(?i)fatal|panic" or alert_logfmt_level=~"(?i)fatal|panic" or alert_plain_severe!=""
+          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*level="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
+          | regexp `(?i)^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*severity="?(?P<alert_logfmt_severity>error|fatal|panic)"?(?:\s|$)`
+          | alert_json_level=~"(?i)fatal|panic" or alert_json_severity=~"(?i)fatal|panic" or alert_logfmt_level=~"(?i)fatal|panic" or alert_logfmt_severity=~"(?i)fatal|panic" or alert_plain_severe!=""
           [5m])
       ) > 0
     labels:

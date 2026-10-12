@@ -40,6 +40,8 @@ CASES = [
     ("logfmt_escaped_message", "application", r'msg="escaped \"quote\"" level=error', 1),
     ("plain_fatal", "application", '2026-09-09T03:30:00Z FATAL exiting', 1),
     ("mixed_severity", "application", '{"level":"error","severity":"fatal","message":"failed"}', 1),
+    ("logfmt_mixed_level", "application", 'level=fatal severity=error msg="exiting"', 1),
+    ("logfmt_mixed_severity", "application", 'severity=fatal level=error msg="exiting"', 1),
     ("quoted_panic", "application", 'level=info msg="panic: recovered"', 0),
     ("fatal", "application", 'time=2026-09-09T03:30:00Z level=fatal msg="exiting"', 1),
     ("panic_level", "application", '{"level":"panic","message":"failed"}', 1),
@@ -135,7 +137,7 @@ analytics:
                    for case, service, line, _ in CASES]
         self.api("/loki/api/v1/push", {"streams": streams})
         rules = grafana_rules(render())
-        severe_cases = {"fatal", "panic_level", "rust_panic", "rust_panic_old", "go_panic", "plain_fatal", "mixed_severity"}
+        severe_cases = {"fatal", "panic_level", "rust_panic", "rust_panic_old", "go_panic", "plain_fatal", "mixed_severity", "logfmt_mixed_level", "logfmt_mixed_severity"}
         seen = set()
         for name, severity in (("ServiceErrorLogs", "warning"), ("ServicePanicOrFatalLogs", "critical")):
             rule = rules[name]
