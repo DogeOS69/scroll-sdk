@@ -90,7 +90,34 @@ use a credential method available to both, and arrange refresh for long-running
 service credentials. See the [official AWS CLI container documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-docker.html)
 for the container/host credential boundary.
 
-Choose one command:
+If your host already has a working AWS CLI profile (including an authenticated
+SSO profile), the shortest setup is to export **that selected identity** into
+this directory's `aws.env`. Run from the signer runtime directory:
+
+```bash
+# Use the host's currently selected/default AWS profile.
+(umask 077; aws configure export-credentials --format env-no-export > aws.env.new && mv aws.env.new aws.env)
+
+# OR select a specific existing profile:
+(umask 077; aws configure export-credentials --profile YOUR_PROFILE_NAME \
+  --format env-no-export > aws.env.new && mv aws.env.new aws.env)
+```
+
+`YOUR_PROFILE_NAME` is the same profile you use for your intended AWS account;
+check it on the host with `aws sts get-caller-identity --profile YOUR_PROFILE_NAME`
+if unsure. These commands write credentials directly to a private file, not the
+terminal. The temporary file is ignored by the kit and an existing `aws.env`
+is replaced only after a successful export. If your profile uses SSO and its
+login has expired, first renew it using `aws sso login --profile YOUR_PROFILE_NAME`.
+The exported file is a credential snapshot, not a live link to the host login.
+For temporary credentials, repeat the export before expiry and recreate the
+running signer with `./signer.sh start` to load the refreshed values.
+
+Host AWS CLI is an **optional convenience** for this export, not a signer-kit
+dependency. Without it, use the `aws.env.example` credential fields, the dedicated
+`aws/` profile files, or an accessible instance IAM role described above.
+
+Then choose one initialization command:
 
 ```bash
 # Read an EXISTING ECC_SECG_P256K1 / SIGN_VERIFY key:
@@ -113,6 +140,19 @@ key additionally needs `kms:CreateKey`; creation incurs AWS resource charges.
 The running signer needs `kms:GetPublicKey` and `kms:Sign` on **only its key**.
 Configure both IAM and the KMS key policy as necessary; do not grant signing
 access across all keys. Creation privilege is not required for normal operation.
+
+`Workspace ready` means local files are prepared; it does **not** mean a KMS key
+has been created. Initialization is complete when the two public keys and the
+`public-identity.json` / `identity.json` locations are printed.
+
+If the command reports **AWS authentication failed ... No KMS creation was
+attempted**, configure or refresh the container credentials, then rerun the
+same initialization command. Details are in private `.kms/auth-error.log`.
+The older message `KMS creation failed or its outcome is uncertain` can also
+have been caused by `Unable to locate credentials` in `.kms/provider-error.log`.
+The updated script recognizes that specific pre-request failure after AWS
+authentication succeeds, so it can retry without manual removal of records.
+It does not treat network timeouts or lost creation responses this way.
 
 A successful creation is recorded under `.kms/` before identity generation.
 Reruns reuse that key. If creation's response is lost, the command refuses an
