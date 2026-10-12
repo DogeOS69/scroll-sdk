@@ -199,6 +199,13 @@ class TemplateTests(unittest.TestCase):
     def test_production_values_expose_the_same_generator_contract(self):
         charts = yaml.safe_load((CHART / "values/production.yaml").read_text())
         examples = yaml.safe_load((CHART.parents[1] / "examples/values/scroll-monitor-production.yaml").read_text())
+        # The SDK's deployment flow now manages the DA RPC through ExternalSecret.
+        # This uses existing chart capabilities, so the packaged production profile
+        # need not change. All other balance policy must still match.
+        self.assertEqual(examples["balanceMonitoring"]["ethereum"]["ethDaSubmitter"]["rpcUrl"], "")
+        self.assertEqual(examples["balanceMonitoring"]["exporter"]["envFromSecret"], "scroll-monitor-balance-env")
+        charts["balanceMonitoring"]["ethereum"]["ethDaSubmitter"]["rpcUrl"] = ""
+        charts["balanceMonitoring"]["exporter"]["envFromSecret"] = "scroll-monitor-balance-env"
         self.assertEqual(charts["balanceMonitoring"], examples["balanceMonitoring"])
         self.assertEqual(charts["businessAlerts"], examples["businessAlerts"])
         self.assertEqual(charts["serviceAlerts"], examples["serviceAlerts"])
@@ -208,6 +215,19 @@ class TemplateTests(unittest.TestCase):
         self.assertEqual(charts["dstack"], examples["dstack"])
         self.assertEqual(charts["additionalServiceMonitors"], examples["additionalServiceMonitors"])
         self.assertEqual(charts["dogecoinIndexerAlerts"], examples["dogecoinIndexerAlerts"])
+
+    def test_sdk_example_delivers_da_rpc_only_through_external_secret(self):
+        profile = CHART.parents[1] / "examples/values/scroll-monitor-production.yaml"
+        docs = render("-f", str(profile), "--set", "statusPage.enabled=false")
+        container = resource(docs, "Deployment", "scroll-monitor-account-balances")["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(container["envFrom"], [{"secretRef": {"name": "scroll-monitor-balance-env"}}])
+        key = "SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL"
+        self.assertNotIn(key, [entry["name"] for entry in container["env"]])
+        external = resource(docs, "ExternalSecret", "scroll-monitor-balance-env")
+        self.assertEqual(external["spec"]["data"], [{
+            "remoteRef": {"key": "scroll-monitor-balance-env", "property": key},
+            "secretKey": key,
+        }])
 
     def test_indexer_stall_uses_two_minutes_without_confirmation_inputs(self):
         rule = grafana_rules(render())["DogecoinIndexerLag"]
