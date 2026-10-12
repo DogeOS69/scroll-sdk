@@ -43,8 +43,10 @@ The matching CLI exports these URLs to private `secrets/*.env`, uploads them wit
 `push-secrets`, and projects ExternalSecret references into the service values.
 eth-da-submitter, l1-interface, withdrawal-processor and fee-oracle receive URLs
 from their existing service Secret flow. The proof coordinator uses the separate
-`proof-coordinator-rpc-env` Secret for its bridge and scroll-batch materializers;
-its compiler-owned proof tokens stay in their existing store. The scroll-monitor
+`proof-coordinator-rpc-env` Secret for its bridge and scroll-batch materializers.
+Only materializer/provider sections present in the compiled configuration receive
+RPC overrides; absent or mock-only materializers do not acquire partial tables.
+Compiler-owned proof tokens stay in their existing store. The scroll-monitor
 balance exporter uses `scroll-monitor-balance-env`. KMS signing does not remove these RPC Secrets.
 Keep provider URLs out of ConfigMaps, Helm values, shared plans and deployment
 reports. A frontend/browser RPC is visible to its users and must use an endpoint

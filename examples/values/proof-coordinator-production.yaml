@@ -209,10 +209,11 @@ configMaps:
 
 # The compiler-generated ProofCoordinator.toml owns the native configuration,
 # including coordinator identity, S3 and token-file paths. Private RPC URLs are
-# supplied through the dedicated RPC Secret below. Figment
-# environment overrides take precedence and can replace strict nested tables;
-# do not duplicate proof activation settings here. RPC-only Secret overrides
-# are managed by the CLI and must preserve the remaining nested settings.
+# supplied through the dedicated RPC Secret below. Figment environment values
+# override matching native fields; do not duplicate proof activation settings.
+# The CLI must project RPC keys only for native materializer/provider sections
+# that exist: injecting keys into an absent section creates an invalid partial
+# configuration. The entries below describe the full real-materializer profile.
 # Configure proof intent/proof-aws inputs and rerun prep-charts instead.
 env:
   # Keep startup, proof verification and eager locate-hit telemetry available.
