@@ -1,0 +1,31 @@
+# Run from the private copy of this entire kit. See README.md.
+services:
+  attestation-signer:
+    image: ${SIGNER_IMAGE:?Run ./signer.sh init first}
+    command: ["-c", "/etc/dogeos-partner/attestation-signer.toml"]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    env_file:
+      - ./active-bundle/signer-policy.env
+      - ./attestation-signer.env
+      - ./aws.env
+    environment:
+      PORT: "4040"
+      ATTESTATION_SIGNER_METRICS_PORT: "9100"
+      ATTESTATION_SIGNER_DB_PATH: /app/data/attestation-signer.sqlite
+      AWS_CONFIG_FILE: /etc/signer-aws/config
+      AWS_SHARED_CREDENTIALS_FILE: /etc/signer-aws/credentials
+    ports:
+      - "127.0.0.1:${SIGNER_HTTP_PORT:-0}:4040"
+      - "127.0.0.1:${SIGNER_METRICS_PORT:-0}:9100"
+    volumes:
+      - ./data:/app/data
+      - ./attestation-signer.toml:/etc/dogeos-partner/attestation-signer.toml:ro
+      - ./transport.key:/etc/dogeos-partner/transport.key:ro
+      - ./active-bundle:/etc/dogeos:ro
+      - ./aws:/etc/signer-aws:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1:4040; printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; head -1 <&3 | grep -q ' 200 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

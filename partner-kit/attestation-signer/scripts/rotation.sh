@@ -11,6 +11,11 @@ Usage:
     --config FILE --container NAME --signer-public-key PUBKEY \
     --transport-public-key PUBKEY --acknowledge-tso-connected [--port 4040]
 
+For approve/ready, --identity FILE accepts core --print-identity JSON instead
+of typing --signer-public-key/--transport-public-key. --config defaults to
+./attestation-signer.toml. The expected digest/current hash remain independent
+review inputs; never copy them blindly out of the untrusted proposal.
+
 Use a digest received through the agreed approval channel and corroborate the
 current bridge hash independently. Approve changes local policy and restarts
 only the explicitly named Docker container. It does not submit a rotation.
@@ -21,7 +26,7 @@ EOF
 action=$1 proposal=$2
 shift 2
 case "$action" in inspect|approve|ready) ;; *) usage >&2; exit 1 ;; esac
-expected='' current='' config='' container='' signer='' port=4040 transport='' acknowledge=false
+expected='' current='' config='./attestation-signer.toml' container='' signer='' port=4040 transport='' acknowledge=false identity=''
 while [ "$#" -gt 0 ]; do
   if [ "$1" = --acknowledge-tso-connected ]; then acknowledge=true; shift; continue; fi
   [ "$#" -ge 2 ] || { usage >&2; exit 1; }
@@ -33,6 +38,7 @@ while [ "$#" -gt 0 ]; do
     --signer-public-key) signer=$2 ;;
     --port) port=$2 ;;
     --transport-public-key) transport=$2 ;;
+    --identity) identity=$2 ;;
     *) usage >&2; exit 1 ;;
   esac
   shift 2
@@ -53,25 +59,23 @@ args=(--proposal /proposal.json --expected-sha256 "$expected" --current-key-hash
 if [ "$action" = inspect ]; then
   exec "${base[@]}" --network none --entrypoint python "$image" /tool/rotation.py inspect "${args[@]}"
 fi
+if [ -n "$identity" ]; then
+  [ -z "$signer$transport" ] || { echo 'Use --identity or explicit public keys, not both.' >&2; exit 1; }
+  [ -f "$identity" ] && [ ! -L "$identity" ] || { echo 'Identity must be a regular core public JSON file.' >&2; exit 1; }
+  identity="$(cd -- "$(dirname -- "$identity")" && pwd -P)/$(basename -- "$identity")"
+  case "$identity" in *,*) echo 'Docker bind paths cannot contain commas.' >&2; exit 1 ;; esac
+  public_pair=$("${base[@]}" --network none --mount "type=bind,src=$identity,dst=/identity.json,readonly" \
+    --entrypoint python "$image" /tool/rotation.py identity "${args[@]}")
+  signer=${public_pair%%$'\n'*}
+  if [ "$action" = ready ]; then transport=${public_pair#*$'\n'}; fi
+fi
 [[ "$container" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ && "$signer" =~ ^0[23][0-9a-f]{64}$ && "$port" =~ ^[0-9]{1,5}$ ]] \
   || { echo 'Explicit container, signer public key and valid port are required.' >&2; exit 1; }
 [ -f "$config" ] && [ ! -L "$config" ] || { echo 'Config must be a regular, non-symlink file.' >&2; exit 1; }
 config_dir=$(cd -- "$(dirname -- "$config")" && pwd -P)
 config="$config_dir/$(basename -- "$config")"
-# Approval backups can contain RPC credentials. Refuse tracked/unignored outputs.
-ancestor=$config_dir
-while :; do
-  if [ -e "$ancestor/.git" ]; then
-    command -v git >/dev/null || { echo 'Git is needed to verify ignored private output.' >&2; exit 1; }
-    [ -z "$(git -C "$ancestor" ls-files -- "$config_dir")" ] \
-      || { echo 'Use a private directory outside Git or an entirely ignored directory.' >&2; exit 1; }
-    git -C "$ancestor" check-ignore --quiet -- "$config_dir/" \
-      || { echo 'Ignore the entire private configuration directory before approval.' >&2; exit 1; }
-    break
-  fi
-  [ "$ancestor" != / ] || break
-  ancestor=$(dirname -- "$ancestor")
-done
+# Backups may contain RPC credentials; ignore those files automatically.
+bash "$script_dir/protect-output.sh" "$config_dir"
 args+=(--signer-public-key "$signer" --port "$port")
 if [ "$action" = ready ]; then
   [[ "$transport" =~ ^0[23][0-9a-f]{64}$ ]] && [ "$acknowledge" = true ] \

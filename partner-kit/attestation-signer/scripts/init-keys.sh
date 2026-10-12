@@ -3,11 +3,17 @@
 set -euo pipefail
 usage() {
   echo 'Usage: init-keys.sh --name <signer-name> --network <mainnet|testnet|regtest> --out <private-directory>'
+  echo '  [--release-version VERSION --git-commit FULL_SHA --signing-policy-version NUMBER]'
+  echo 'Provide all three approved binary pins together, or retain the beta.6 defaults.'
 }
 signer_name='' signer_network='' output_dir=''
+pins=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
+    --release-version|--git-commit|--signing-policy-version|--kms-info|--kms-region)
+      [ "$#" -ge 2 ] || { usage >&2; exit 1; }
+      pins+=("$1" "$2"); shift 2 ;;
     --name|--network|--out)
       [ "$#" -ge 2 ] || { usage >&2; exit 1; }
       case "$1" in
@@ -28,23 +34,7 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 umask 077
 mkdir -p -- "$output_dir"
 output_dir=$(cd -- "$output_dir" && pwd -P)
-# Outside Git, Docker and Bash are sufficient. In an operator's Git workspace,
-# require Git to verify explicit ignore rules and reject any tracked output.
-ancestor=$output_dir
-while :; do
-  if [ -e "$ancestor/.git" ]; then
-    command -v git >/dev/null || { echo 'Git is required to verify an ignored output directory inside a checkout.' >&2; exit 1; }
-    [ -z "$(git -C "$ancestor" ls-files -- "$output_dir")" ] \
-      || { echo 'Output contains tracked files; choose an untracked private directory.' >&2; exit 1; }
-    for candidate in "$output_dir/" "$output_dir/attestation-signer.env" "$output_dir/transport.key" "$output_dir/public-identity.json"; do
-      git -C "$ancestor" check-ignore --quiet -- "$candidate" \
-        || { echo 'Choose an output directory outside Git, or explicitly ignore the entire private directory first.' >&2; exit 1; }
-    done
-    break
-  fi
-  [ "$ancestor" != / ] || break
-  ancestor=$(dirname -- "$ancestor")
-done
+bash "$script_dir/protect-output.sh" "$output_dir"
 case "$output_dir$script_dir" in *,*) echo 'Docker bind-mount paths must not contain commas.' >&2; exit 1 ;; esac
 
 # Multi-platform Docker Official Image, pinned so a mutable tag cannot change
@@ -55,4 +45,4 @@ exec docker run --rm --network none --read-only --cap-drop ALL \
   --mount "type=bind,src=$script_dir,dst=/keygen,readonly" \
   --mount "type=bind,src=$output_dir,dst=/output" \
   --entrypoint node "$image" /keygen/init-keys.mjs \
-  --name "$signer_name" --network "$signer_network" --out /output
+  --name "$signer_name" --network "$signer_network" --out /output "${pins[@]}"

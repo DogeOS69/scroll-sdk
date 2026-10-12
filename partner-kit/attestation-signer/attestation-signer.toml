@@ -1,0 +1,56 @@
+# PRIVATE operator-owned RPC trust and rotation policy. chmod 600 this file.
+# Fill the six RPC endpoints before startup. Never send this file to Governance.
+# Independently review sources: different names/URLs do not establish independent backends.
+# Core reads this TOML directly; do not set the three *_SOURCE_SET_JSON env overrides.
+
+[rotation_policy]
+# Empty until an actual target is reviewed and approved. Not needed for normal service.
+allowed_next_bridge_script_hashes = []
+allowed_next_sequencer_signers = []
+
+[advance_l1_policy.terminal_anchor_sources]
+posture = "quorum"
+required_agreement = 2
+
+[[advance_l1_policy.terminal_anchor_sources.sources]]
+trust_domain_id = "dogecoin-provider-a"
+rpc_url = "https://dogecoin-a.example.invalid"
+timeout_ms = 10000
+# Optional Basic Auth; fill both or omit both. Keep private, never put them in the URL.
+# rpc_user = "REPLACE_WITH_RPC_USERNAME"
+# rpc_password = "REPLACE_WITH_RPC_PASSWORD"
+
+[[advance_l1_policy.terminal_anchor_sources.sources]]
+trust_domain_id = "dogecoin-provider-b"
+rpc_url = "https://dogecoin-b.example.invalid"
+timeout_ms = 10000
+# rpc_user = "REPLACE_WITH_RPC_USERNAME"
+# rpc_password = "REPLACE_WITH_RPC_PASSWORD"
+
+[advance_l2_policy.ethereum_sources]
+posture = "quorum"
+required_agreement = 2
+
+[[advance_l2_policy.ethereum_sources.sources]]
+trust_domain_id = "ethereum-provider-a"
+rpc_url = "https://ethereum-a.example.invalid"
+timeout_ms = 10000
+
+[[advance_l2_policy.ethereum_sources.sources]]
+trust_domain_id = "ethereum-provider-b"
+rpc_url = "https://ethereum-b.example.invalid"
+timeout_ms = 10000
+
+[advance_l2_policy.l2_sources]
+posture = "quorum"
+required_agreement = 2
+
+[[advance_l2_policy.l2_sources.sources]]
+trust_domain_id = "l2-provider-a"
+rpc_url = "https://l2-a.example.invalid"
+timeout_ms = 10000
+
+[[advance_l2_policy.l2_sources.sources]]
+trust_domain_id = "l2-provider-b"
+rpc_url = "https://l2-b.example.invalid"
+timeout_ms = 10000

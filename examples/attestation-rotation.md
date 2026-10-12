@@ -1,5 +1,13 @@
 # Attestation key rotation for bridge operators
 
+Signer operators use the single manual for tools, local/KMS identities, release
+pins and handoff materials:
+[signer operation and rotation](../partner-kit/attestation-signer/README.md#rotatekey-prepare-the-new-signer).
+The bridge operator fills the rotation intent from Governance public records;
+`bridge rotation init` optionally imports authenticated core public identity files.
+`bridge rotation check` stops before WP preview/submission. Use a separate
+`--rotation-dir` for each rotation.
+
 The CLI implements an attestation-only rotation workflow against the current
 core rules. Every target attestation public key must be different from every
 current one. Operators may change from A/B/C to A/B/D, but A and B must generate
@@ -43,13 +51,18 @@ instances, databases or historical requests.
 ## 1. Collect target public identities and write the intent
 
 Ask all target operators to generate fresh attestation and transport identities
-with the [standalone key initialization tool](../partner-kit/attestation-signer/docs/key-initialization.md).
-They send only their name and two public keys through your authenticated
-Governance/operator channel. Private keys remain with each operator.
+with the [standalone key initialization tool](../partner-kit/attestation-signer/README.md#2-initialize-your-identity).
+They register their name, attestation public key and transport public key as a
+paired record in DogeOS Governance Portal (the trial uses
+<https://gov-staging.dogeos.com/>). Verify each record's team ownership and key
+pairing in the portal. No separate `identity.json` transfer is required; private
+keys remain with each operator.
 
 Copy [rotation-spec.example.yaml](rotation-spec.example.yaml) into your
 private `rotations/attestation-rotation-002/` directory as
-`rotation-spec.yaml`, then replace the public-key placeholders. Choose a new
+`rotation-spec.yaml`, then set the proposal name and fill each signer's name and
+both public keys from its Governance record. Review the quorum; the example
+uses 2-of-3. Choose a new
 directory for each rotation; keep previous directories for audit and recovery. Do not put TEE/recovery keys, redeem scripts, addresses, request
 IDs or credentials into the intent.
 
@@ -97,7 +110,7 @@ backup and stage log remain in the rotation directory. A rerun merges the same
 identities without duplication; conflicting name/key bindings are refused.
 
 Send each target operator that deployment bundle and the public proposal.
-Operators follow the [partner handoff guide](../partner-kit/attestation-signer/docs/bridge-handoff.md)
+Operators follow the [partner handoff guide](../partner-kit/attestation-signer/README.md#4-receive-the-bridge-bundle-and-configure-your-rpc-trust)
 and start independent containers/databases. The deployment bundle retains the
 immutable genesis protocol context; `rotation-reference.json` identifies this
 rotation's current/target keys. It never authorizes a rotation or overwrites
@@ -109,7 +122,7 @@ allowlist merely to make the global `/ready` endpoint green.
 
 ## 4. Collect approvals and readiness records
 
-Current operators follow the [independent inspect/approve guide](../partner-kit/attestation-signer/docs/rotation.md).
+Current operators follow the [independent inspect/approve guide](../partner-kit/attestation-signer/README.md#rotatekey-authorize-using-the-old-signer).
 They inspect both complete scripts, approve the exact target locally, restart
 and verify their existing signer, then return an approval receipt. The script
 preserves old keys, databases, RPC policies and sequencer-rotation policy.
