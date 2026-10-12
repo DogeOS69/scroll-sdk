@@ -127,7 +127,10 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BATCH_WAIT: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_LIVENESS_DELAY: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__HIGH_BACKLOG_THRESHOLD: "12"
-      DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS: "4"
+      # Mainnet: 8; all other deployment environments: 10 (core PR #1466).
+      # The spec workflow derives this from metadata.environment; manual values
+      # deployments must select the appropriate value here.
+      DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS: "8"
       # DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BLOBS_PER_WINDOW: "<TODO>" # Optional per-window budget; unset by default.
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__BUDGET_WINDOW: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__ALLOW_LIVENESS_BUDGET_OVERRIDE: "true"
