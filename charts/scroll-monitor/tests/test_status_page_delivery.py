@@ -1,9 +1,12 @@
+import http.client
 import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -213,6 +216,116 @@ class DeliveryTests(unittest.TestCase):
         self.config['components']['public-rpc']['componentId'] = 'different'
         with self.assertRaisesRegex(ValueError, 'target changed'):
             self.open()
+
+
+class DeliveryHTTPTests(unittest.TestCase):
+    def setUp(self):
+        self.delivery = module.Delivery({
+            'environment': 'testnet', 'chainId': '123', 'components': {},
+        }, ':memory:')
+        self.delivery.last_tick = time.time()
+
+        class FailingWriter:
+            """Keep real socket flush/close semantics while controlling write failure."""
+            def __init__(self, stream, failure):
+                self.stream, self.failure, self.writes = stream, failure, 0
+
+            def __getattr__(self, name):
+                return getattr(self.stream, name)
+
+            def write(self, data):
+                self.writes += 1
+                stage, error = self.failure
+                if self.writes == stage:
+                    raise error
+                return self.stream.write(data)
+
+        class Handler(module.handler_for(self.delivery)):
+            def setup(self):
+                super().setup()
+                failure = self.server.next_write_failure
+                self.server.next_write_failure = None
+                if failure:
+                    self.wfile = FailingWriter(self.wfile, failure)
+
+        class Server(module.ThreadingHTTPServer):
+            def handle_error(self, request, client_address):
+                # This is the production server's traceback boundary. Record it
+                # instead of printing so tests can distinguish suppressed faults.
+                self.errors.append(sys.exc_info()[1])
+
+        self.server = Server(('127.0.0.1', 0), Handler)
+        self.server.next_write_failure = None
+        self.server.errors = []
+        self.thread = threading.Thread(target=self.server.serve_forever, kwargs={'poll_interval': 0.01})
+        self.thread.start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join()
+        self.delivery.db.close()
+
+    def get(self, path):
+        connection = http.client.HTTPConnection(*self.server.server_address, timeout=3)
+        try:
+            connection.request('GET', path)
+            response = connection.getresponse()
+            return response.status, response.getheader('Content-Type'), response.read()
+        finally:
+            connection.close()
+
+    def failed_get(self, path):
+        # Header failure has no response; body failure leaves just the headers.
+        # Reading EOF waits until the server has finished handling the request.
+        try:
+            self.get(path)
+        except http.client.RemoteDisconnected:
+            pass
+
+    def test_http_contract_is_unchanged(self):
+        self.assertEqual(self.get('/healthz'), (200, 'text/plain; version=0.0.4', b'ok\n'))
+        status, content_type, body = self.get('/health')
+        self.assertEqual((status, content_type), (200, 'application/json'))
+        self.assertEqual(json.loads(body)['components'], {})
+        self.assertEqual(json.loads(body)['chainId'], '123')
+        self.assertIn(b'scroll_status_delivery_last_tick_seconds', self.get('/metrics')[2])
+        self.assertEqual(self.get('/missing'), (404, 'text/plain; version=0.0.4', b'not found\n'))
+        self.delivery.last_tick = 0
+        self.assertEqual(self.get('/health')[0], 503)
+        self.assertEqual(self.get('/healthz')[0], 503)
+        self.assertEqual(self.server.errors, [])
+
+    def test_disconnect_during_headers_or_body_does_not_report_server_error(self):
+        for path in ('/metrics', '/health', '/healthz', '/missing'):
+            for stage in (1, 2):  # end_headers flush, then response body
+                for error in (BrokenPipeError, ConnectionResetError):
+                    with self.subTest(path=path, stage=stage, error=error):
+                        self.server.errors.clear()
+                        self.server.next_write_failure = stage, error('client disconnected')
+                        self.failed_get(path)
+                        self.assertEqual(self.server.errors, [])
+                        self.assertEqual(self.get('/healthz')[0], 200)
+
+    def test_other_response_errors_are_still_reported(self):
+        for stage in (1, 2):
+            for error in (OSError('unexpected I/O error'), RuntimeError('response failure')):
+                with self.subTest(stage=stage, error=error):
+                    self.server.errors.clear()
+                    self.server.next_write_failure = stage, error
+                    self.failed_get('/healthz')
+                    self.assertEqual(self.server.errors, [error])
+                    self.assertEqual(self.get('/healthz')[0], 200)
+
+    def test_body_generation_errors_are_not_mistaken_for_client_disconnects(self):
+        for error in (BrokenPipeError('metrics error'), ConnectionResetError('metrics error'),
+                      RuntimeError('metrics error')):
+            with self.subTest(error=error):
+                self.server.errors.clear()
+                with patch.object(self.delivery, 'metrics', side_effect=error):
+                    self.failed_get('/metrics')
+                self.assertEqual(self.server.errors, [error])
+                self.assertEqual(self.get('/healthz')[0], 200)
 
 
 if __name__ == '__main__':
