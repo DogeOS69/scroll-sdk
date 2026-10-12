@@ -214,6 +214,16 @@ def notification_routes(config):
             "routes": [{"receiver": config[key], "object_matchers": [["severity", "=", "critical"]],
                         "group_wait": "0s", "continue": False}],
         }
+    if config.get("serviceContactPoint"):
+        routes["services"] = {
+            "receiver": config["serviceContactPoint"],
+            "object_matchers": [["managed_by", "=", "scroll-monitor"],
+                                ["grafana_folder", "=", config["folderTitle"]],
+                                ["alert_scope", "!~", "business-pods|disks|resources"]],
+            "group_by": ["grafana_folder", "environment", "cluster", "namespace", "alertname", "service", "job"],
+            "group_wait": "30s", "group_interval": "5m", "repeat_interval": "4h",
+            "continue": False,
+        }
     return routes
 
 
@@ -233,24 +243,29 @@ def seed_notification_policies(client, config, dry_run=False):
             return True
         return any(contains_route(child, marker) for child in route.get("routes", []))
     added = []
+    service_added = []
     for scope, route in desired.items():
-        marker = ["scroll_monitor_route", "=", notification_route_id(config, scope)]
+        # The service fallback needs no per-rule labels, including on existing rules.
+        # Its folder matcher identifies it on subsequent runs, even after UI edits.
+        marker = (["grafana_folder", "=", config["folderTitle"]] if scope == "services"
+                  else ["scroll_monitor_route", "=", notification_route_id(config, scope)])
         if contains_route(updated, marker):
             continue  # Policy changes after first creation remain UI-owned.
-        added.append(route)
-    if not added:
+        (service_added if scope == "services" else added).append(route)
+    if not added and not service_added:
         return
     # Match only our route identity before broader policies; preserve their order.
-    updated["routes"] = added + existing
+    # Existing resource and operator routes retain precedence over the service fallback.
+    updated["routes"] = added + existing + service_added
     if dry_run:
-        print(f"PLAN notification policies: add {len(added)} scoped branches", flush=True)
+        print(f"PLAN notification policies: add {len(added) + len(service_added)} scoped branches", flush=True)
         return
     client.request("PUT", path, updated)
-    print(f"Seeded notification policies: {len(added)} scoped branches", flush=True)
+    print(f"Seeded notification policies: {len(added) + len(service_added)} scoped branches", flush=True)
 
 
 def alert_rule(source, config, group):
-    identity = f'{config["folderUID"]}/{group}/{source["alert"]}'
+    identity = f'{config["folderUID"]}/{group}/{source.get("uidName", source["alert"])}'
     uid = "scroll-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     datasource_type = source.get("datasourceType", "prometheus")
     datasource = config["lokiDatasourceUID"] if datasource_type == "loki" else config["datasourceUID"]
@@ -365,6 +380,13 @@ def migrate_expression(existing, source, desired):
             updated["annotations"][key] = desired["annotations"][key]
     if "previousFor" in source and updated.get("for") == source["previousFor"]:
         updated["for"] = desired["for"]
+    # A renamed rule can reuse its old UID. Only migrate its shipped title and
+    # severity when the query also matches a known default; custom labels stay owned by the operator.
+    if updated.get("title") == source.get("previousTitle"):
+        updated["title"] = desired["title"]
+    for label, previous in source.get("previousLabels", {}).items():
+        if updated.get("labels", {}).get(label) == previous:
+            updated["labels"][label] = desired["labels"][label]
     for field in ("id", "updated", "provenance"):
         updated.pop(field, None)
     return updated

@@ -58,8 +58,8 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
 
     def test_resolved_raw_annotations_use_labels_without_a_log_count(self):
         text = self.render([self.alert()])
-        self.assertIn('RESOLVED: Log error alert resolved for grafana.', text)
-        self.assertIn('default/grafana-example (container grafana) is resolved.', text)
+        self.assertIn('RESOLVED: Alert ServiceErrorOrPanickedLogs cleared for grafana.', text)
+        self.assertIn('default/grafana-example (container grafana).', text)
         self.assertNotIn('matching log line(s)', text)
         self.assertNotIn('|Silence>', text)
 
@@ -67,7 +67,7 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
         alert = self.alert()
         alert['Annotations']['grafana_state_reason'] = 'MissingSeries'
         text = self.render([alert])
-        self.assertIn('no longer receives this alert series', text)
+        self.assertIn('no longer receives matching alert data', text)
         self.assertIn('does not by itself confirm service recovery', text)
 
     def test_resolved_rendered_annotation_does_not_reuse_a_stale_count(self):
@@ -79,7 +79,7 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
         alert = self.alert('firing', {'summary': 'Errors in grafana.',
                                     'description': '3 matching log line(s) in the last 5 minutes.'})
         text = self.render([alert])
-        self.assertIn('FIRING: ERROR or panicked logs detected in grafana.', text)
+        self.assertIn('FIRING: Errors in grafana.', text)
         self.assertIn('3 matching log line(s)', text)
         self.assertIn('|Silence>', text)
 
@@ -91,7 +91,24 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
     def test_missing_labels_have_readable_fallbacks(self):
         alert = self.alert()
         alert['Labels'] = {'alertname': 'ServiceErrorOrPanickedLogs'}
-        self.assertIn('resolved for the monitored service.', self.render([alert]))
+        self.assertIn('cleared for the monitored target.', self.render([alert]))
+
+    def test_resolved_business_alert_does_not_repeat_failure_claim(self):
+        alert = self.alert(annotations={"summary": "WF is stalled.", "description": "WF has not advanced."})
+        alert["Labels"]["alertname"] = "WFStalled"
+        text = self.render([alert])
+        self.assertIn("Alert WFStalled cleared", text)
+        self.assertNotIn("WF is stalled", text)
+        self.assertNotIn("WF has not advanced", text)
+
+    def test_split_rules_and_nodata_recovery(self):
+        for name in ("ServiceErrorLogs", "ServicePanicOrFatalLogs"):
+            alert = self.alert()
+            alert["Labels"]["alertname"] = name
+            alert["Annotations"]["grafana_state_reason"] = "NoData"
+            text = self.render([alert])
+            self.assertIn("last 5 minutes", text)
+            self.assertIn("does not by itself confirm service recovery", text)
 
     def test_other_alerts_preserve_valid_annotations_and_reject_raw_templates(self):
         alert = self.alert('firing', {'summary': 'Balance is low.', 'description': 'Balance is 3 DOGE.'})
@@ -133,8 +150,8 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
         resolved = copy.deepcopy(firing)
         resolved['Status'] = 'resolved'
         text = self.render([firing, resolved])
-        self.assertIn('FIRING: ERROR or panicked logs detected in grafana.', text)
-        self.assertIn('RESOLVED: Log error alert resolved for grafana.', text)
+        self.assertIn('FIRING: Errors in grafana.', text)
+        self.assertIn('RESOLVED: Alert ServiceErrorOrPanickedLogs cleared for grafana.', text)
         self.assertEqual(text.count('2 matching log line(s)'), 1)
         self.assertEqual(text.count('|Silence>'), 1)
 

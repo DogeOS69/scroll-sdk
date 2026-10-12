@@ -1,31 +1,72 @@
+# Reuse the old combined rule UID and migrate only known defaults, preserving operator edits.
 groups:
-  - name: dogeos.logs
-    interval: 1m
-    rules:
-      - alert: ServiceErrorOrPanickedLogs
-        datasourceType: loki
-        # Only migrate an existing rule whose query is still this old default.
-        # Operator edits, pause state and notification settings are preserved.
-        previousExpr: >-
-          sum by (namespace, service, pod, container) (
-            count_over_time({namespace=~"__NAMESPACES__"}
-              |~ `(?i)\b(error|panicked)\b` [5m])
-          ) > 0
-        # Parse JSON severity and recognize logfmt levels / plain error prefixes.
-        # Matching message text would alert on successful queries and recovery logs.
-        expr: >-
-          sum by (namespace, service, pod, container) (
-            count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
-              | decolorize
-              !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
-              | json alert_json_level="level", alert_json_severity="severity"
-              | drop __error__, __error_details__
-              | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?P<alert_plain_error>(?:ERROR|FATAL)\b|(?:[A-Za-z]+)?Error:|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at))`
-              | alert_json_level=~"(?i)error|fatal|panic" or alert_json_severity=~"(?i)error|fatal|panic" or alert_logfmt_level!="" or alert_plain_error!=""
-              [5m])
-          ) > 0
-        labels:
-          severity: critical
-        annotations:
-          summary: 'ERROR or panicked logs detected in {{ $labels.service }}.'
-          description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate.'
+- name: dogeos.logs
+  interval: 1m
+  rules:
+  - alert: ServiceErrorLogs
+    datasourceType: loki
+    previousExpr:
+    - |-
+      sum by (namespace, service, pod, container) (
+        count_over_time({namespace=~"__NAMESPACES__"}
+          |~ `(?i)\b(error|panicked)\b` [5m])
+      ) > 0
+    - |-
+      sum by (namespace, service, pod, container) (
+        count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
+          | decolorize
+          !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
+          | json alert_json_level="level", alert_json_severity="severity"
+          | drop __error__, __error_details__
+          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?P<alert_plain_error>(?:ERROR|FATAL)\b|(?:[A-Za-z]+)?Error:|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at))`
+          | alert_json_level=~"(?i)error|fatal|panic" or alert_json_severity=~"(?i)error|fatal|panic" or alert_logfmt_level!="" or alert_plain_error!=""
+          [5m])
+      ) > 0
+    expr: |-
+      sum by (namespace, service, pod, container) (
+        count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
+          | decolorize
+          !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
+          | json alert_json_level="level", alert_json_severity="severity"
+          | drop __error__, __error_details__
+          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
+          | alert_json_level=~"(?i)error" or alert_json_severity=~"(?i)error" or alert_logfmt_level=~"(?i)error" or alert_plain_error!=""
+          | alert_json_level!~"(?i)fatal|panic"
+          | alert_json_severity!~"(?i)fatal|panic"
+          | alert_logfmt_level!~"(?i)fatal|panic"
+          | alert_plain_severe=""
+          [5m])
+      ) > 0
+    labels:
+      severity: warning
+    annotations:
+      summary: ERROR logs detected in {{ $labels.service }}.
+      description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore
+        to investigate.'
+    uidName: ServiceErrorOrPanickedLogs
+    previousTitle: ServiceErrorOrPanickedLogs
+    previousLabels:
+      severity: critical
+    previousAnnotations:
+      summary: ERROR or panicked logs detected in {{ $labels.service }}.
+      description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore
+        to investigate.'
+  - alert: ServicePanicOrFatalLogs
+    datasourceType: loki
+    expr: |-
+      sum by (namespace, service, pod, container) (
+        count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
+          | decolorize
+          !~ `^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*module="?rollup-last-batch-indexes"?(?:\s|$)`
+          | json alert_json_level="level", alert_json_severity="severity"
+          | drop __error__, __error_details__
+          | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*(?:level|severity)="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
+          | alert_json_level=~"(?i)fatal|panic" or alert_json_severity=~"(?i)fatal|panic" or alert_logfmt_level=~"(?i)fatal|panic" or alert_plain_severe!=""
+          [5m])
+      ) > 0
+    labels:
+      severity: critical
+    annotations:
+      summary: Panic or FATAL logs detected in {{ $labels.service }}.
+      description: '{{ $value | printf "%.0f" }} matching log line(s) in the last 5 minutes for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore
+        to investigate.'

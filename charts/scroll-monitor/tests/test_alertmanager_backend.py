@@ -24,7 +24,7 @@ class BackendTests(unittest.TestCase):
         self.assertNotIn('AttestationSignerNotReady', names)
         self.assertNotIn('ServiceErrorOrPanickedLogs', names)
         config = json.loads(resource(docs, 'ConfigMap', 'scroll-monitor-grafana-alerts')['data']['rules.json'])
-        self.assertEqual([r['alert'] for g in config['groups'] for r in g['rules']], ['ServiceErrorOrPanickedLogs'])
+        self.assertEqual([r['alert'] for g in config['groups'] for r in g['rules']], ['ServiceErrorLogs', 'ServicePanicOrFatalLogs'])
         self.assertIn('forwardAlertmanager', config)
         self.assertNotIn('defaultContactPoint', config)
         ds = yaml.safe_load(resource(docs, 'ConfigMap', 'grafana-datasources-config')['data']['datasources.yaml'])

@@ -57,6 +57,23 @@ class NotificationPolicyTests(unittest.TestCase):
                 SEED.seed_notification_policies(self.client, self.config)
         self.assertEqual(self.client.writes, [])
 
+    def test_services_fallback_preserves_resources_custom_routes_and_timing(self):
+        SEED.seed_notification_policies(self.client, self.config)
+        before = copy.deepcopy(self.client.policies)
+        self.config.update(folderTitle="DogeOS", serviceContactPoint="slack-alerts")
+        SEED.seed_notification_policies(self.client, self.config)
+        self.assertEqual(self.client.policies["routes"][:-1], before["routes"])
+        route = self.client.policies["routes"][-1]
+        self.assertEqual(route["group_by"], ["grafana_folder", "environment", "cluster", "namespace", "alertname", "service", "job"])
+        self.assertNotIn("pod", route["group_by"])
+        self.assertEqual((route["group_wait"], route["group_interval"], route["repeat_interval"]), ("30s", "5m", "4h"))
+        self.assertIn(["alert_scope", "!~", "business-pods|disks|resources"], route["object_matchers"])
+        self.assertNotIn("routes", route)
+        route["group_interval"] = "10m"
+        self.client.writes.clear()
+        SEED.seed_notification_policies(self.client, self.config)
+        self.assertEqual(self.client.writes, [])
+
     def test_empty_contacts_leave_routing_untouched(self):
         before = copy.deepcopy(self.client.policies)
         SEED.seed_notification_policies(self.client, {'folderUID': 'test'})

@@ -143,7 +143,8 @@ class TemplateTests(unittest.TestCase):
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
         native = {rule["alert"]: rule for group in native for rule in group["rules"]}
         grafana = grafana_rules(render())
-        grafana.pop("ServiceErrorOrPanickedLogs")
+        grafana.pop("ServiceErrorLogs")
+        grafana.pop("ServicePanicOrFatalLogs")
         grafana = {name: rule for name, rule in grafana.items() if not rule.get("isPaused")}
         self.assertEqual(without_migration_metadata(grafana), native)
         self.assertEqual(len(native), 174)  # Includes the enabled service catalog.
@@ -187,7 +188,7 @@ class TemplateTests(unittest.TestCase):
 
     def test_exporter_and_alerts_can_be_disabled_together(self):
         docs = render("--set", "balanceMonitoring.enabled=false,businessAlerts.enabled=false,serviceAlerts.enabled=false")
-        self.assertEqual(len(grafana_rules(docs)), 54)  # Dstack alerts remain independent.
+        self.assertEqual(len(grafana_rules(docs)), 55)  # Dstack alerts remain independent.
         self.assertFalse(any(doc["metadata"]["name"] == "scroll-monitor-account-balances" for doc in docs))
 
     def test_external_exporter_keeps_balance_alerts(self):
@@ -242,11 +243,12 @@ class TemplateTests(unittest.TestCase):
         })
         self.assertNotIn("isPaused", rules["FeeWalletBalanceLow"])
         self.assertNotIn("isPaused", rules["ProtocolStateWFTxNumberStalled"])
-        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 84)
+        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 85)
 
     def test_default_activation_is_equivalent_across_backends(self):
         grafana = grafana_rules(render())
-        grafana.pop("ServiceErrorOrPanickedLogs")
+        grafana.pop("ServiceErrorLogs")
+        grafana.pop("ServicePanicOrFatalLogs")
         for rule in grafana.values():
             self.assertFalse(rule.pop("isPaused", False))
         native = resource(render("--set", "grafanaAlerting.enabled=false"),
