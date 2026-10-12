@@ -273,10 +273,10 @@ class Delivery:
             return "\n".join(lines) + "\n"
 
 
-def main():
-    with open("/config/delivery.json") as file:
-        config = json.load(file)
-    delivery = Delivery(config, "/state/delivery.sqlite3")
+def handler_for(delivery):
+    """Bind HTTP diagnostics to delivery without starting the background workers."""
+    config = delivery.config
+
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -294,10 +294,26 @@ def main():
                 body, code = b"ok\n", 200 if 0 <= time.time() - delivery.last_tick < 120 else 503
             else:
                 body, code = b"not found\n", 404
-            self.send_response(code)
-            self.send_header("Content-Type", "application/json" if self.path == "/health" else "text/plain; version=0.0.4")
-            self.end_headers()
-            self.wfile.write(body)
+            # Only response I/O can treat a disconnected client as routine.
+            # Keep evaluation/serialization above outside this boundary so their
+            # errors still reach the server's error reporting.
+            try:
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json" if self.path == "/health" else "text/plain; version=0.0.4")
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                # BaseHTTPRequestHandler uses an unbuffered socket writer, so
+                # neither its final flush nor finish retries a failed write.
+                self.close_connection = True
+
+    return Handler
+
+
+def main():
+    with open("/config/delivery.json") as file:
+        config = json.load(file)
+    delivery = Delivery(config, "/state/delivery.sqlite3")
 
     def worker():
         while True:
@@ -309,7 +325,7 @@ def main():
             time.sleep(1)
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=sender, daemon=True).start()
-    server = ThreadingHTTPServer(("0.0.0.0", 9110), Handler)
+    server = ThreadingHTTPServer(("0.0.0.0", 9110), handler_for(delivery))
     server.timeout = 10
     server.serve_forever()
 
