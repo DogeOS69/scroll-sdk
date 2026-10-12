@@ -15,10 +15,10 @@ there as `deployment-spec.yaml` and `deployment.env`. Keep permissions private.
 | Location | What the bridge operator supplies |
 | --- | --- |
 | spec: infrastructure | Instance name, AWS account/region, existing EKS cluster, namespace, two distinct blob/proof bucket names, create/reuse choices |
-| spec: network and endpoints | Dogecoin network, reachable external RPC and matching internal Kubernetes route, L2 chain ID, base domain/DNS, reviewed compatible Reth images; review Sepolia RPC defaults for actual blob-broadcast support |
+| spec: network and endpoints | Dogecoin network, reachable external RPC and matching internal Kubernetes route, L2 chain ID, base domain/DNS, reviewed compatible Reth images; review the private environment's Sepolia RPC defaults for actual blob-broadcast support |
 | spec: identities and custody | KMS create/reuse intent, CubeSigner role/key reference, three paired attestation/transport public identities from Governance, three recovery public keys |
 | spec: bridge and contracts | Future block-height timelock, thresholds, fees, unique deployment salt, independent Dogecoin fee-vault recipient address |
-| deployment.env | Owner public address, external/internal Dogecoin RPC credentials, local fee-wallet WIF, Vast.ai API key; database password only when referenced, optional Slack webhook |
+| deployment.env | Owner public address, external/internal Dogecoin RPC credentials, Ethereum execution/beacon and Fee Oracle sampling URLs, local fee-wallet WIF, Vast.ai API key; database password only when referenced, optional Slack webhook |
 | Existing tools/accounts | AWS profile, kube context, Docker, CLI/SDK, authenticated CubeSigner CLI, GitHub release access; EKS, ingress/DNS/certificate and External Secrets Operator infrastructure |
 
 Do not hand-fill KMS-derived addresses/public keys, fee-wallet public key,
@@ -29,8 +29,7 @@ See [the spec reference](deployment-spec.md) for field semantics and key custody
 
 Run `plan` and `apply` from your private working directory. Keep the SDK checkout
 as its sibling `../scroll-sdk`, or override `--sdk-dir` once when planning. Set `AWS_PROFILE`,
-`AWS_REGION`, `KUBE_CONTEXT`, `NAMESPACE` and `SECRET_PREFIX` to the reviewed spec
-values. Do not source deployment.env: the CLI parses it as literal data.
+`AWS_REGION`, `KUBE_CONTEXT` and `NAMESPACE` to the reviewed spec values. Do not source deployment.env: the CLI parses it as literal data.
 Set `DSTACK_NAMESPACE` to `dstackController.monitoring.namespace`, whose default
 is `dstack-system`. This may differ from the business-service `NAMESPACE`.
 
@@ -100,13 +99,14 @@ export DSTACK_NAMESPACE=dstack-system # Use your override if configured in the s
 kubectl --context "$KUBE_CONTEXT" create namespace "$DSTACK_NAMESPACE" \
   --dry-run=client -o yaml | kubectl --context "$KUBE_CONTEXT" apply -f -
 scrollsdk setup push-secrets -N --provider aws \
-  --aws-region "$AWS_REGION" --aws-prefix "$SECRET_PREFIX" \
+  --aws-region "$AWS_REGION" \
   --kube-context "$KUBE_CONTEXT" --namespace "$DSTACK_NAMESPACE"
 ```
 
 An authenticated CubeSigner owner authorizes the session. The command writes it
-under `secrets/`; it is not a spec value. Full push includes Dogecoin RPC and
-Grafana ENV credentials in AWS Secrets Manager. The chart's ExternalSecret
+under `secrets/`; it is not a spec value. Full push includes Dogecoin RPC, Ethereum
+execution/beacon and Fee Oracle sampling URLs, monitor balance RPC, and Grafana
+ENV credentials in AWS Secrets Manager. The chart's ExternalSecret
 creates the corresponding Kubernetes Secret. Configure store authentication as
 for Dogecoin. Dstack's generated controller credentials use its existing explicit
 Kubernetes publication path, so the context/namespace flags are required.

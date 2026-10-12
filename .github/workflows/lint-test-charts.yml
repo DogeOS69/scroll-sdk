@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "charts/**"
+      # Unit tests run in dedicated workflows and are excluded from chart packages.
+      - '!charts/**/tests/**'
 
 jobs:
   helm-chart-testing:

@@ -124,21 +124,29 @@ externalSecrets:
     secretRegion: "<TODO>" # Region of the service credentials, not the KMS key.
     data:
       - remoteRef:
-          key: dogeos/withdrawal-processor
+          key: dogeos/withdrawal-processor-secret-env
+          property: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL
+        secretKey: DOGEOS_WITHDRAWAL_ETHEREUM_DA__L1_RPC_URL
+      - remoteRef:
+          key: dogeos/withdrawal-processor-secret-env
+          property: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+        secretKey: DOGEOS_WITHDRAWAL_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+      - remoteRef:
+          key: dogeos/withdrawal-processor-secret-env
           property: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
         secretKey: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_USER
       - remoteRef:
-          key: dogeos/withdrawal-processor
+          key: dogeos/withdrawal-processor-secret-env
           property: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
         secretKey: DOGEOS_WITHDRAWAL_DOGECOIN_RPC_PASS
       - remoteRef:
-          key: dogeos/withdrawal-processor
+          key: dogeos/withdrawal-processor-secret-env
           property: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_FEE_SIGNER_KEY
       # Local sequencer backend only. prep-charts removes this entry when the
       # Bridge output selects sequencer_signer_kms; the fee wallet stays local.
       - remoteRef:
-          key: dogeos/withdrawal-processor
+          key: dogeos/withdrawal-processor-secret-env
           property: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
         secretKey: DOGEOS_WITHDRAWAL_SEQUENCER_SIGNER_KEY
     refreshInterval: 2m

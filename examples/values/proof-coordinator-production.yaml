@@ -207,17 +207,22 @@ configMaps:
     enabled: false
     data: {}
 
-# The compiler-generated ProofCoordinator.toml owns ALL runtime configuration,
-# including coordinator identity, endpoints, S3 and token-file paths. Figment
-# environment overrides take precedence and can replace strict nested tables;
-# do not duplicate DOGEOS_PROOF_COORDINATOR_* settings here. Configure proof
-# intent/proof-aws inputs and rerun prep-charts instead.
+# The compiler-generated ProofCoordinator.toml owns the native configuration,
+# including coordinator identity, S3 and token-file paths. Private RPC URLs are
+# supplied through the dedicated RPC Secret below. Figment environment values
+# override matching native fields; do not duplicate proof activation settings.
+# The CLI must project RPC keys only for native materializer/provider sections
+# that exist: injecting keys into an absent section creates an invalid partial
+# configuration. The entries below describe the full real-materializer profile.
+# Configure proof intent/proof-aws inputs and rerun prep-charts instead.
 env:
   # Keep startup, proof verification and eager locate-hit telemetry available.
   - name: RUST_LOG
     value: info
 
-envFrom: []
+envFrom:
+  - secretRef:
+      name: proof-coordinator-rpc-env
 
 externalSecrets:
   secrets:
@@ -234,3 +239,26 @@ externalSecrets:
           key: scroll/proof-coordinator-secrets
           property: prover-worker-token
         secretKey: prover-worker-token
+
+  proof-coordinator-rpc-env:
+    provider: aws
+    secretRegion: "<TODO>" # Ordinary service-secret store region.
+    refreshInterval: 2m
+    serviceAccount: external-secrets
+    data:
+      - remoteRef:
+          key: dogeos/proof-coordinator-rpc-env
+          property: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__BRIDGE__ETHEREUM_DA__L1_RPC_URL
+        secretKey: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__BRIDGE__ETHEREUM_DA__L1_RPC_URL
+      - remoteRef:
+          key: dogeos/proof-coordinator-rpc-env
+          property: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__BRIDGE__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+        secretKey: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__BRIDGE__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+      - remoteRef:
+          key: dogeos/proof-coordinator-rpc-env
+          property: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__L1_RPC_URL
+        secretKey: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__L1_RPC_URL
+      - remoteRef:
+          key: dogeos/proof-coordinator-rpc-env
+          property: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+        secretKey: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL

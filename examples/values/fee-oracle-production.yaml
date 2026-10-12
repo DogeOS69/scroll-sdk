@@ -73,7 +73,7 @@ configMaps:
       # signer material are filled by scrollsdk; these policy values remain
       # template-owned and are deliberately not rewritten by prep-charts.
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__CONTRACT_WRITE_MODE: live
-      DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL: "<TODO>"
+      # DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL is supplied by the service Secret below.
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__SAMPLE_INTERVAL_SECONDS: "30"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__SAMPLE_STALE_AFTER_SECONDS: "90"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__TARGET_BLOBS_PER_TX: "6"
@@ -120,8 +120,9 @@ configMaps:
       # DOGEOS_FEE_ORACLE_WALLET__KMS_ENDPOINT_URL: "<TODO>"
 
 # Local signer profile. For aws_kms, prep-charts creates this service account
-# with the managed signer's IRSA role and removes the private-key Secret and
-# envFrom reference below. The KMS key region may differ from the EKS region.
+# with the managed signer's IRSA role and removes only the private-key entry.
+# The RPC Secret remains required in both modes. The KMS key region may differ
+# from the EKS/Secrets Manager region.
 serviceAccount:
   create: false
   name: "" # Use the namespace default in local mode; prep-charts selects KMS SA.
@@ -138,6 +139,10 @@ externalSecrets:
     provider: aws
     secretRegion: "<TODO>" # Secrets Manager region, not necessarily KMS_REGION.
     data:
+      - remoteRef:
+          key: dogeos/fee-oracle-secret-env
+          property: DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL
+        secretKey: DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL
       - remoteRef:
           key: dogeos/fee-oracle-secret-env
           property: DOGEOS_FEE_ORACLE_PRIVATE_KEY

@@ -70,7 +70,7 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__CYCLE_INTERVAL_MS: "10000"
       DOGEOS_ETH_DA_SUBMITTER_PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
 
-      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL: "<TODO>"
+      # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL is supplied by the service Secret below.
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__BLOB_SIDECAR_WRAPPER: "eip7594"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SIGNER_BACKEND: "aws_kms" # local or aws_kms
       # Local signer mode only. Never commit a real private key; this field must
@@ -170,6 +170,8 @@ configMaps:
 envFrom:
   - configMapRef:
       name: eth-da-submitter-env
+  - secretRef:
+      name: eth-da-submitter-secret-env
 
 serviceAccount:
   create: true
@@ -221,5 +223,15 @@ serviceMonitor:
     endpoints:
       - {port: http, scheme: http, path: /metrics, interval: 1m, scrapeTimeout: 10s}
 
-# AWS KMS supplies the signer; no application Secret is mounted by this profile.
-externalSecrets: {}
+# RPC credentials remain secret even when AWS KMS supplies the signer.
+externalSecrets:
+  eth-da-submitter-secret-env:
+    provider: aws
+    secretRegion: "<TODO>" # Secrets Manager region, not necessarily the KMS region.
+    data:
+      - remoteRef:
+          key: dogeos/eth-da-submitter-secret-env
+          property: DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL
+        secretKey: DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL
+    refreshInterval: 2m
+    serviceAccount: external-secrets

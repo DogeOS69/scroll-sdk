@@ -5,10 +5,11 @@ as the operator-facing input/output example for the configuration generator.
 The matching chart production profile exposes the same monitoring fields.
 Replace `<TODO>` with deployment facts; do not copy testnet addresses, provider
 URLs or chain IDs from an investigation report into generic generated values.
-The Sepolia example explicitly uses the user-selected
-`https://ethereum-sepolia-rpc.publicnode.com`, matching
-`config.toml.example`'s `ethereumDa.submitterRpcUrl`. Other deployments must
-generate their own network's URL and chain ID.
+The DA balance RPC comes from the deployment's private Ethereum execution URL
+through `scroll-monitor-balance-env`; the example intentionally leaves its
+`rpcUrl` empty. Generate the matching network's chain ID. Fee Oracle balance
+checks still use its L2 account and L2 RPC, independently of the Ethereum mainnet
+RPC used by the Fee Oracle service to sample fees.
 
 ## CLI generation coverage
 
@@ -227,11 +228,11 @@ canonical signer configuration, `config.toml` and doge-config. The mapping is:
 | `balanceMonitoring.ethereum.feeOracle.rpcUrl` | `config.toml` `general.L2_RPC_ENDPOINT`, reachable from the exporter Pod. |
 | `balanceMonitoring.ethereum.feeOracle.expectedChainId` | `config.toml` `general.CHAIN_ID_L2`, serialized as a string. |
 | `balanceMonitoring.ethereum.ethDaSubmitter.address` | Canonical public address of the managed `l1CommitSender` signer. For KMS, use its validated expected address. |
-| `balanceMonitoring.ethereum.ethDaSubmitter.rpcUrl` | doge-config `ethereumDa.submitterRpcUrl`. It must allow `eth_chainId` and `eth_getBalance` from the deployment network. |
+| `balanceMonitoring.ethereum.ethDaSubmitter.rpcUrl` | Empty: `SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL` in the balance Secret receives the DA endpoint. It must allow `eth_chainId` and `eth_getBalance` from the deployment network. |
 | `balanceMonitoring.ethereum.ethDaSubmitter.expectedChainId` | doge-config `ethereumDa.chainId`, serialized as a string. |
 | `balanceMonitoring.ethereum.*.minimumEth` | Operator funding thresholds; preserve on regeneration. |
 | `balanceMonitoring.feeWallet.minimumDoge` / `jobRegex` | Operator funding threshold and the generated withdrawal-processor Prometheus job selection. |
-| `balanceMonitoring.exporter.envFromSecret` | User-supplied existing Secret name, when RPC URLs require credentials. |
+| `balanceMonitoring.exporter.envFromSecret` | `scroll-monitor-balance-env`, generated through `secrets/scroll-monitor-balance.env` → `push-secrets` → ExternalSecret. |
 
 Do not assume that a publicly reachable RPC permits automated balance reads.
 Verify the two read methods and chain ID using the deployment's network and
@@ -247,8 +248,10 @@ that account's URL to the Secret. The existing generator preserves this choice;
 it refreshes generated addresses and chain IDs and preserves operator thresholds.
 Nonempty values override the Secret, including an unreplaced `<TODO>`.
 
-For example, the user supplies the Secret name and creates its contents through
-their secret-management workflow; the generated values contain only the reference:
+The normal CLI path generates and uploads the DA balance RPC with the other
+service secrets. No manual Kubernetes Secret creation is required. If an operator
+also delegates the L2 balance RPC to a separately managed Secret, the chart supports
+this shape (that custom Secret must contain both keys):
 
 ```yaml
 balanceMonitoring:
@@ -267,7 +270,9 @@ balanceMonitoring:
 
 The Secret keys are `SCROLL_BALANCE_FEE_ORACLE_RPC_URL` and
 `SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL`. Supply only the keys delegated to it.
-Secret values must not be committed to the example. The example also makes
+The default generated Secret contains only `SCROLL_BALANCE_ETH_DA_SUBMITTER_RPC_URL`;
+the L2 balance URL remains in its existing configuration. Secret values must not
+be committed to the example. The example also makes
 `intervalSeconds: 60` and `rpcTimeoutSeconds: 10` explicit; valid chart ranges
 are 1–120 and 1–15 seconds respectively.
 
