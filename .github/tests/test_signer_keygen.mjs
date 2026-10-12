@@ -129,32 +129,36 @@ test('symlinks and concurrent initializers are refused', t => {
   assert.deepEqual(snapshots(root), original)
 })
 
-test('wrapper rejects Git checkouts before writing any secret', t => {
+test('wrapper rejects an already tracked private output before writing secrets', t => {
   const root = temporary(t)
   assert.equal(spawnSync('git', ['init', '--quiet', root]).status, 0)
   const out = path.join(root, 'output')
+  fs.mkdirSync(out)
+  fs.writeFileSync(path.join(out, 'attestation-signer.env'), '# NONSECRET_TEST_PLACEHOLDER\n')
+  assert.equal(spawnSync('git', ['-C', root, 'add', 'output/attestation-signer.env']).status, 0)
   const result = run(out, 'testnet', 'partner-a', true)
   assert.notEqual(result.status, 0)
-  assert.ok(files.every(file => !fs.existsSync(path.join(out, file))))
+  assert.ok(!fs.existsSync(path.join(out, 'transport.key')))
+  assert.ok(result.stderr.includes('Private output is already tracked'))
 })
 
-test('Docker wrapper permits ignored operator directories but rejects tracked output', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
+test('Docker initialization inside Git permits tracked public templates and ignores private outputs', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
   const root = temporary(t)
   assert.equal(spawnSync('git', ['init', '--quiet', root]).status, 0)
-  fs.appendFileSync(path.join(root, '.git/info/exclude'), '\n/private/\n')
-  const out = path.join(root, 'private')
+  const out = path.join(root, 'operator')
+  fs.mkdirSync(out)
+  fs.writeFileSync(path.join(out, 'docker-compose.yml'), '# PUBLIC_TEST_TEMPLATE\n')
+  assert.equal(spawnSync('git', ['-C', root, 'add', 'operator/docker-compose.yml']).status, 0)
   const result = run(out, 'testnet', 'partner-a', true)
   assert.equal(result.status, 0, result.stderr)
   noSecretOutput(out, result)
   const before = snapshots(out)
-  // Track only a nonsecret placeholder to verify that ignore rules cannot
-  // authorize writing into an already tracked output directory.
-  fs.writeFileSync(path.join(out, 'tracked.txt'), 'PUBLIC_TEST_PLACEHOLDER\n')
-  fs.appendFileSync(path.join(root, '.git/info/exclude'), '!/private/\n/private/*\n!/private/tracked.txt\n')
-  assert.equal(spawnSync('git', ['-C', root, 'add', 'private/tracked.txt']).status, 0)
-  fs.appendFileSync(path.join(root, '.git/info/exclude'), '/private/\n')
-  assert.notEqual(run(out, 'testnet', 'partner-a', true).status, 0)
+  assert.equal(run(out, 'testnet', 'partner-a', true).status, 0)
   assert.deepEqual(snapshots(out), before)
+  for (const name of ['attestation-signer.env', 'transport.key']) {
+    assert.equal(spawnSync('git', ['-C', root, 'check-ignore', '-q', 'operator/' + name]).status, 0)
+  }
+  assert.notEqual(spawnSync('git', ['-C', root, 'check-ignore', '-q', 'operator/']).status, 0)
 })
 
 test('Docker-generated keys match the real beta.6 signer on every network', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
@@ -208,6 +212,7 @@ test('explicit pins pass through Docker and identity.sh exports the selected cor
     '--release-version', '0.3.0', '--git-commit', '20746174e993a64e7edb132b9ecdbd989788d864', '--signing-policy-version', '1'], {encoding: 'utf8'})
   assert.equal(generated.status, 0, generated.stderr)
   const image = 'dogeos69/attestation-signer@sha256:b69b503511837cfa80eb427b41fcefc5e47dbc8f2cfece5a04437ef83653359b'
+  assert.equal(spawnSync('docker', ['pull', image], {encoding: 'utf8'}).status, 0, 'Could not preload reviewed signer image')
   const before = snapshots(root)
   const exported = spawnSync('bash', [path.join(scripts, 'identity.sh'), image, root], {encoding: 'utf8'})
   noSecretOutput(root, exported)

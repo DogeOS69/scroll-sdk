@@ -24,9 +24,12 @@ cp -a /path/to/reviewed-scroll-sdk/partner-kit/attestation-signer "$HOME/dogeos-
 cd "$HOME/dogeos-signer-a"
 ```
 
-Copy the clean template, never another running signer's directory. Prefer a
-location outside Git. In an operator Git checkout, exclude the **entire** new
-directory in `.git/info/exclude` before initialization; tracked files are refused.
+Copy the clean template, never another running signer's directory. The runtime
+directory may be inside your deployment Git repository. Initialization adds
+ignore rules for generated private keys, credentials, database and rotation
+backups automatically; tracked public templates/scripts do not block it.
+Only a private output file that is already tracked needs to be untracked first.
+Review your own TOML before any commit: ignore rules do not hide tracked files.
 
 The supplied `.env.example` pins the official beta.6a image and its matching
 binary identity. If your bridge uses another approved release, copy it to
@@ -100,7 +103,8 @@ Choose one command:
 ```
 
 The key ID/ARN and region come from your AWS account or its administrator.
-Initialization uses a pinned official AWS CLI image, validates the key's type,
+Initialization uses a pinned official AWS CLI image, first checks container
+credentials with STS, then validates the key's type,
 usage and curve, derives its compressed public key, and writes the correct
 runtime fields automatically. It does not ask you to type a matching public key.
 

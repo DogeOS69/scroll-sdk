@@ -74,20 +74,8 @@ fi
 [ -f "$config" ] && [ ! -L "$config" ] || { echo 'Config must be a regular, non-symlink file.' >&2; exit 1; }
 config_dir=$(cd -- "$(dirname -- "$config")" && pwd -P)
 config="$config_dir/$(basename -- "$config")"
-# Approval backups can contain RPC credentials. Refuse tracked/unignored outputs.
-ancestor=$config_dir
-while :; do
-  if [ -e "$ancestor/.git" ]; then
-    command -v git >/dev/null || { echo 'Git is needed to verify ignored private output.' >&2; exit 1; }
-    [ -z "$(git -C "$ancestor" ls-files -- "$config_dir")" ] \
-      || { echo 'Use a private directory outside Git or an entirely ignored directory.' >&2; exit 1; }
-    git -C "$ancestor" check-ignore --quiet -- "$config_dir/" \
-      || { echo 'Ignore the entire private configuration directory before approval.' >&2; exit 1; }
-    break
-  fi
-  [ "$ancestor" != / ] || break
-  ancestor=$(dirname -- "$ancestor")
-done
+# Backups may contain RPC credentials; ignore those files automatically.
+bash "$script_dir/protect-output.sh" "$config_dir"
 args+=(--signer-public-key "$signer" --port "$port")
 if [ "$action" = ready ]; then
   [[ "$transport" =~ ^0[23][0-9a-f]{64}$ ]] && [ "$acknowledge" = true ] \

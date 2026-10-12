@@ -29,19 +29,10 @@ EOF
 case "${1:---help}" in --help|-h) usage; exit 0 ;; esac
 command -v docker >/dev/null || fail 'Docker is required.'
 case "$root" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
-private_workspace() {
-  local ancestor=$root
-  while :; do
-    if [ -e "$ancestor/.git" ]; then
-      command -v git >/dev/null || fail 'Git is required to verify an ignored private workspace.'
-      [ -z "$(git -C "$ancestor" ls-files -- "$root")" ] && git -C "$ancestor" check-ignore -q -- "$root/" \
-        || fail 'Copy the kit outside Git, or ignore the entire private directory before use.'
-      break
-    fi
-    [ "$ancestor" != / ] || break
-    ancestor=$(dirname -- "$ancestor")
-  done
+protect_outputs() {
+  bash "$root/scripts/protect-output.sh" "$root"
 }
+
 py=(docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges
   --user "$(id -u):$(id -g)" --env PYTHONDONTWRITEBYTECODE=1
   --mount "type=bind,src=$root,dst=/workspace")
@@ -69,7 +60,7 @@ container_id() {
 action=$1; shift
 case "$action" in
   init)
-    private_workspace
+    protect_outputs
     name='' network='' backend=local region='' key_id='' create=false
     while [ "$#" -gt 0 ]; do
       if [ "$1" = --create-key ]; then create=true; shift; continue; fi
@@ -115,7 +106,7 @@ case "$action" in
         [ "$(setting ATTESTATION_SIGNER_KMS_REGION attestation-signer.env)" = "$region" ] || fail 'Existing KMS region differs.'
         if [ "$create" = true ]; then key_id=$(setting ATTESTATION_SIGNER_KMS_KEY_ID attestation-signer.env); create=false; fi
       fi
-      for record in .kms/created-key-id .kms/created-key-id.pending .kms/region .kms/create-pending .kms/public-key.json .kms/provider-error.log; do
+      for record in .kms/created-key-id .kms/created-key-id.pending .kms/region .kms/create-pending .kms/public-key.json .kms/provider-error.log .kms/auth-error.log; do
         [ ! -L "$record" ] || fail 'KMS records must not be symlinks.'
         [ ! -e "$record" ] || [ -f "$record" ] || fail 'KMS records must be regular files.'
       done
@@ -123,7 +114,17 @@ case "$action" in
         --user "$(id -u):$(id -g)" --env-file "$root/aws.env" --env AWS_PAGER=
         --env AWS_CONFIG_FILE=/etc/signer-aws/config --env AWS_SHARED_CREDENTIALS_FILE=/etc/signer-aws/credentials
         --mount "type=bind,src=$root/aws,dst=/etc/signer-aws,readonly" "$aws_image" --no-cli-pager --region "$region")
+      # Credentials must work before creating a pending cloud-operation record.
+      if ! "${aws[@]}" sts get-caller-identity --query Account --output text > /dev/null 2> .kms/auth-error.log; then
+        fail 'AWS authentication failed in the container. Configure aws.env or aws/config + aws/credentials, then retry. No KMS creation was attempted; details: .kms/auth-error.log.'
+      fi
       if [ "$create" = true ]; then
+        # Recover only the old tool's known pre-request credential failure.
+        # Network/timeouts remain uncertain and still require manual reconciliation.
+        if [ -f .kms/create-pending ] && [ ! -e .kms/created-key-id ] && \
+            [ -f .kms/provider-error.log ] && grep -q '^Unable to locate credentials' .kms/provider-error.log; then
+          rm -f .kms/create-pending .kms/created-key-id.pending .kms/region
+        fi
         if [ -f .kms/created-key-id ] && [ ! -L .kms/created-key-id ]; then
           [ "$(cat .kms/region)" = "$region" ] || fail 'Recorded KMS creation used another region.'
           key_id=$(cat .kms/created-key-id)
@@ -158,7 +159,7 @@ case "$action" in
     ;;
   import)
     [ "$#" = 2 ] || fail 'Usage: ./signer.sh import BUNDLE AUTHENTICATED_MANIFEST_SHA256'
-    private_workspace
+    protect_outputs
     assert_stopped
     bundle=$(cd -- "$1" && pwd -P)
     case "$bundle" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
@@ -166,7 +167,7 @@ case "$action" in
     ;;
   start)
     [ "$#" = 0 ] || fail 'start takes no arguments.'
-    private_workspace
+    protect_outputs
     [ -L active-bundle ] && [ -f identity.json ] && [ -d data ] || fail 'Initialize and import the approved bundle first.'
     # Parse resolved Compose in a container; never print credential-bearing config.
     docker compose config --format json | "${py[@]}" -i --network none --entrypoint python "$python_image" /workspace/scripts/runtime.py prestart
@@ -184,7 +185,7 @@ case "$action" in
     case "$op" in
       inspect) exec bash scripts/rotation.sh inspect "$@" ;;
       approve|ready)
-        private_workspace
+        protect_outputs
         container=$(container_id)
         exec bash scripts/rotation.sh "$op" "$@" --config "$root/attestation-signer.toml" --identity "$root/identity.json" --container "$container"
         ;;

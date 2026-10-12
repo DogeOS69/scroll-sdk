@@ -18,6 +18,9 @@ class KitDockerTests(unittest.TestCase):
         self.base = Path(self.tmp.name)
         self.root = self.base / 'operator'
         shutil.copytree(KIT, self.root, ignore=shutil.ignore_patterns('__pycache__'))
+        # The normal operator layout may contain tracked public templates.
+        subprocess.run(['git', 'init', '--quiet', str(self.root)], check=True)
+        subprocess.run(['git', '-C', str(self.root), 'add', 'docker-compose.yml', 'signer.sh'], check=True)
         self.env = dict(os.environ)
         self.docker = shutil.which('docker')
         self.bin = self.base / 'bin'
@@ -36,6 +39,10 @@ fs.writeFileSync(process.argv[1], JSON.stringify({KeyId: 'arn:aws:kms:us-east-1:
 import json, os, pathlib, sys
 if any(x.startswith('public.ecr.aws/aws-cli/aws-cli:') for x in sys.argv):
     root = pathlib.Path(os.environ['TEST_RECORDS'])
+    if 'sts' in sys.argv:
+        if os.environ.get('FAIL_AUTH'): sys.exit(1)
+        print('000000000000')
+        sys.exit(0)
     action = sys.argv[sys.argv.index('kms') + 1]
     with (root / 'aws-calls').open('a') as f: f.write(action + '\\n')
     if action == 'create-key':
@@ -123,3 +130,21 @@ os.execv(os.environ['REAL_DOCKER'], [os.environ['REAL_DOCKER'], *sys.argv[1:]])
         self.assertIn('Remove RPC JSON env overrides', blocked.stderr)
         self.assertNotIn('PRIVATE_VALUE_SENTINEL', blocked.stdout + blocked.stderr)
         self.assertFalse(any((self.root / 'data').iterdir()))
+
+    def test_missing_credentials_never_marks_creation_uncertain(self):
+        args = ['init', '--name', 'test-kms', '--network', 'testnet', '--backend', 'aws-kms', '--kms-region', 'us-east-1', '--create-key']
+        result = self.run_kit(*args, extra_env={'FAIL_AUTH': '1'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('No KMS creation was attempted', result.stderr)
+        self.assertFalse((self.root / '.kms/create-pending').exists())
+        self.assertFalse((self.base / 'aws-calls').exists())
+        self.assert_ok(self.run_kit(*args))
+
+    def test_known_legacy_missing_credentials_can_retry_after_authentication(self):
+        args = ['init', '--name', 'test-kms', '--network', 'testnet', '--backend', 'aws-kms', '--kms-region', 'us-east-1', '--create-key']
+        self.assertNotEqual(self.run_kit(*args, extra_env={'FAIL_AUTH': '1'}).returncode, 0)
+        (self.root / '.kms/create-pending').touch()
+        (self.root / '.kms/region').write_text('us-east-1\n')
+        (self.root / '.kms/provider-error.log').write_text('Unable to locate credentials. You can configure credentials by running aws configure.\n')
+        self.assert_ok(self.run_kit(*args))
+        self.assertEqual((self.base / 'aws-calls').read_text().splitlines().count('create-key'), 1)

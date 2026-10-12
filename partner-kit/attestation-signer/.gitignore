@@ -19,6 +19,7 @@ received*/
 rotations/
 rotation-*.json
 *.bak*
+*.before-rotation-*
 __pycache__/
 
 # Legacy operator outputs remain private.
