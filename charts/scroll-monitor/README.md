@@ -529,8 +529,8 @@ uses the enabled `grafanaAlerting.defaultContactPoint.name` destination, waits
 30 seconds, groups updates at 5 minutes, and repeats at 4 hours. Once created,
 its routing and timing are UI-owned. A team-specific route that also matches
 this folder does not prevent creation of the fallback for other services.
-Review custom routes if they already combine services. Independent Alertmanager groups include the
-same service/job, environment and cluster boundaries.
+Review custom routes if they already combine services. Independent Alertmanager
+groups include the same service/job, environment and cluster boundaries.
 
 Resolved notifications state that the alert cleared instead of repeating its
 firing description. A cleared log rule may mean its matching lines left the
