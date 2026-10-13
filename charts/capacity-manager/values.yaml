@@ -7,11 +7,16 @@ image:
   digest: ""
   pullPolicy: IfNotPresent
 imagePullSecrets: []
+serviceAccount:
+  create: true
+  name: ""
 manager:
   workerIdPrefix: ""
   workerImage: ""
   workerCommand: ""
   workerTokenSecret: ""
+  # Worker startup evidence; this is not a manager Pod readiness probe.
+  workerReadinessFile: ""
   proofWorkBaseUrl: http://withdrawal-processor:9300
   policy: ""
   pollIntervalMs: 5000
