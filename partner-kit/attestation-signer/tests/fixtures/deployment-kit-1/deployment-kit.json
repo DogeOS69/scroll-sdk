@@ -1,0 +1,35 @@
+{
+  "advance_l2_verifier": {
+    "agg_verifying_key_file": "advance-l2-agg-verifying-key.bin",
+    "agg_verifying_key_sha256": "sha256:da6233d381fa2ad5a2bb9297e9c5e67ad2d51305ada7e5a33e0860c2a3b94bc4",
+    "batch_program_commitment_hex": "0x22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222",
+    "l2_range_aggregation_program_commitment_hex": "0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "artifact_origins": [
+    "https://s3.us-east-1.amazonaws.com"
+  ],
+  "deployment": {
+    "generation_id": "1b4d462f2153a774c93b2c4aa48e455d067ac6bfb5876e27802492f82dd66cb9",
+    "inputs": {
+      "materials": {
+        "path": ".data/proof-materials-v1.json",
+        "sha256": "62910c83ac9e49928e69f76d9e550207b37a8a4a4b2a01ab2d43aea7e98f0a13"
+      },
+      "protocolContext": {
+        "path": ".data/protocol_context.json",
+        "sha256": "11eae7bb0a8ef1c3679e37da860f4e628c3d98bbe06d4dd3cf75eb3799f3d69f"
+      }
+    },
+    "topology_revision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "kit_version": "1",
+  "network": "testnet",
+  "policy_mode": "enforce",
+  "protocol_context": {
+    "file": "protocol_context.json",
+    "sha256": "sha256:11eae7bb0a8ef1c3679e37da860f4e628c3d98bbe06d4dd3cf75eb3799f3d69f"
+  },
+  "protocol_instance_id": "0x2a9dffc0d2ecbed48f6ccc16f2e9abd11dfbac38fe71d2c0cd6fbb0e8d24a6ce",
+  "schema": "dogeos/deployment-kit/v1",
+  "tso_url": "https://tso.example.com"
+}

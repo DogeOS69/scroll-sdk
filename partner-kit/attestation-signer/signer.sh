@@ -14,12 +14,10 @@ Run from a private copy of this kit (see README.md):
   ./signer.sh init --name signer-a --network testnet --backend aws-kms \
     --kms-region us-east-1 (--kms-key-id KEY | --create-key)
   ./signer.sh identity
-  ./signer.sh import RECEIVED_BUNDLE AUTHENTICATED_MANIFEST_SHA256
+  ./signer.sh import DEPLOYMENT_KIT_DIR AUTHENTICATED_MANIFEST_SHA256
   ./signer.sh start
   ./signer.sh check
-  ./signer.sh rotation inspect PROPOSAL --expected-sha256 SHA --current-key-hash HASH
-  ./signer.sh rotation approve PROPOSAL --expected-sha256 SHA --current-key-hash HASH
-  ./signer.sh rotation ready PROPOSAL --expected-sha256 SHA --current-key-hash HASH --acknowledge-tso-connected
+  ./signer.sh inspect ROTATION_EXPORT
   ./signer.sh stop
   ./signer.sh logs
 KMS creates cloud resources ONLY with explicit --create-key. Existing keys use GetPublicKey.
@@ -158,17 +156,19 @@ case "$action" in
     echo 'Upload format: ./identity.json (public only). Never upload the entire directory.'
     ;;
   import)
-    [ "$#" = 2 ] || fail 'Usage: ./signer.sh import BUNDLE AUTHENTICATED_MANIFEST_SHA256'
+    [ "$#" = 2 ] || fail 'Usage: ./signer.sh import DEPLOYMENT_KIT_DIR AUTHENTICATED_MANIFEST_SHA256'
     protect_outputs
     assert_stopped
-    bundle=$(cd -- "$1" && pwd -P)
-    case "$bundle" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
-    "${py[@]}" --network none --mount "type=bind,src=$bundle,dst=/bundle,readonly" --entrypoint python "$python_image" /workspace/scripts/runtime.py import "$2"
+    [ -d "$1" ] || fail 'Import the unpacked deployment kit directory, not an archive.'
+    kit=$(cd -- "$1" && pwd -P)
+    case "$kit" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
+    "${py[@]}" --network none --mount "type=bind,src=$kit,dst=/kit,readonly" --entrypoint python "$python_image" /workspace/scripts/runtime.py import "$2"
     ;;
   start)
     [ "$#" = 0 ] || fail 'start takes no arguments.'
     protect_outputs
-    [ -L active-bundle ] && [ -f identity.json ] && [ -d data ] || fail 'Initialize and import the approved bundle first.'
+    [ -L active-bundle ] && [ -f identity.json ] && [ -d data ] || fail 'Initialize and import the approved deployment kit first.'
+    # prestart re-verifies active-bundle/ against its manifest before anything starts.
     # Parse resolved Compose in a container; never print credential-bearing config.
     docker compose config --format json | "${py[@]}" -i --network none --entrypoint python "$python_image" /workspace/scripts/runtime.py prestart
     docker compose up -d --force-recreate attestation-signer
@@ -179,18 +179,24 @@ case "$action" in
     container=$(container_id)
     "${py[@]}" --network "container:$container" --entrypoint python "$python_image" /workspace/scripts/runtime.py check
     ;;
-  rotation)
-    [ "$#" -ge 2 ] || fail 'Provide rotation inspect, approve or ready and the proposal; see --help.'
-    op=$1; shift
-    case "$op" in
-      inspect) exec bash scripts/rotation.sh inspect "$@" ;;
-      approve|ready)
-        protect_outputs
-        container=$(container_id)
-        exec bash scripts/rotation.sh "$op" "$@" --config "$root/attestation-signer.toml" --identity "$root/identity.json" --container "$container"
-        ;;
-      *) fail 'Unknown rotation operation.' ;;
-    esac
+  inspect)
+    [ "$#" = 1 ] || fail 'Usage: ./signer.sh inspect ROTATION_EXPORT'
+    if [ ! -f "$1" ] || [ -L "$1" ]; then fail 'The rotation export must be a regular, non-symlink file.'; fi
+    if [ ! -L active-bundle ] || [ ! -f attestation-signer.env ] || [ ! -f transport.key ]; then
+      fail 'Initialize and import the approved deployment kit first.'
+    fi
+    export_file="$(cd -- "$(dirname -- "$1")" && pwd -P)/$(basename -- "$1")"
+    case "$export_file" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
+    # Offline and read-only, with the same config, env and mounts as the running signer.
+    docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+      --user "$(id -u):$(id -g)" \
+      --env-file "$root/active-bundle/deployment-kit.env" --env-file "$root/attestation-signer.env" \
+      --mount "type=bind,src=$root/attestation-signer.toml,dst=/etc/dogeos-partner/attestation-signer.toml,readonly" \
+      --mount "type=bind,src=$root/transport.key,dst=/etc/dogeos-partner/transport.key,readonly" \
+      --mount "type=bind,src=$root/active-bundle,dst=/etc/dogeos,readonly" \
+      --mount "type=bind,src=$export_file,dst=/rotation-export.json,readonly" \
+      --entrypoint /usr/local/bin/attestation_signer "$(setting SIGNER_IMAGE)" \
+      inspect-rotation /rotation-export.json -c /etc/dogeos-partner/attestation-signer.toml
     ;;
   stop) [ "$#" = 0 ] || fail 'stop takes no arguments.'; docker compose stop attestation-signer ;;
   logs) [ "$#" = 0 ] || fail 'logs takes no arguments.'; docker compose logs --tail=100 attestation-signer ;;
