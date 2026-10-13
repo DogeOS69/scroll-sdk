@@ -304,8 +304,13 @@ make reconcile-proof-services
 
 External signer operators follow the
 [signer kit README](../partner-kit/attestation-signer/README.md). Before bridge
-genesis, each runs `./signer.sh init` and sends you its `identity.json`; import
-them with `scrollsdk setup attestation-signer`.
+genesis, each runs `./signer.sh init` and sends you its public `identity.json`.
+Add the agreed signer ID (a DNS label) to each file, then import them:
+
+```bash
+jq --arg id signer-a '. + {id: $id}' signer-a/identity.json > descriptors/signer-a.json
+scrollsdk setup attestation-signer --descriptor-dir descriptors
+```
 
 After genesis, `scrollsdk setup apply` writes the signer **deployment kit**
 (the same output as `scrollsdk setup export-deployment-kit --kit-version <v>`).

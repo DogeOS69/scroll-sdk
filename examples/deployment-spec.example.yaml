@@ -1,7 +1,8 @@
 # Deployment intent for a TESTNET with active / real / enforce proofs.
 # See deployment-spec.md and copy deployment.env.example outside this checkout.
-# Bridge uses the beta.6 production outpoint flow. Real material/evidence handoffs
-# are required; apply waits for partner validation after exporting the policy.
+# Bridge uses the beta.6 production outpoint flow. Real material handoffs are
+# required; apply writes the signer deployment kit, then waits until it is
+# published and the configured signers poll the TSO.
 # Replace REPLACE_WITH_*, TODO_*, *.example.invalid and the marked numeric inputs.
 # This file contains no private keys, signer sessions or working credentials.
 version: "1.0"
