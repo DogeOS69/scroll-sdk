@@ -52,12 +52,14 @@ scrollsdk bridge rotation send     rotation-export.json --dir ./deployment
   signer to the WP `tsoSigners`, and upgrades the WP. It never removes entries.
 - `online` passes when every target key and at least M current keys polled the TSO in the last 60 s.
 - `send --preview` runs every check and builds the transaction; it stores nothing.
-- `send` submits once. On any HTTP error the intent may already be stored: re-run
-  `send`, which then only reports the stored intent and never resubmits.
+- `send` submits the rotation. On any HTTP error the intent may already be stored.
+  Re-running `send` with the same export reports a stored intent without
+  resubmitting; if nothing was stored, it checks again and **submits**.
 
 ## 5. Verify
 
-Re-run `send`; it prints the intent state (`completed` when done). Then read the WP status:
+Read the WP status (re-running `send` also prints the stored intent's state,
+but submits if nothing was stored):
 
 ```bash
 kubectl port-forward pod/withdrawal-processor-0 3000 &
