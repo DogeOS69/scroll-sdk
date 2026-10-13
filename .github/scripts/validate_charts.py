@@ -135,13 +135,15 @@ def validate_example_makefile():
 
 
 def validate_attestation_signer_partner_kit():
-    """Keep the partner-owned Compose handoff from being removed as unused."""
+    """Validate the standalone signer workflow documented for new operators."""
     root = Path("partner-kit/attestation-signer")
     required_files = [
         root / "README.md",
-        root / "docker-compose/.env.example",
-        root / "docker-compose/docker-compose.yml",
-        root / "docker-compose/signer-policy.env",
+        root / "signer.sh",
+        root / ".env.example",
+        root / "aws.env.example",
+        root / "attestation-signer.toml",
+        root / "docker-compose.yml",
     ]
     success = True
 
@@ -159,26 +161,28 @@ def validate_attestation_signer_partner_kit():
 
     readme = (root / "README.md").read_text(encoding="utf-8")
     for command in [
-        "scrollsdk signer init",
-        "scrollsdk signer preflight",
-        "docker compose --project-directory docker-compose",
-        "signer-policy-bundle/PARTNER-COMMANDS.md",
+        "./signer.sh init",
+        "./signer.sh identity",
+        "./signer.sh import",
+        "./signer.sh start",
+        "./signer.sh check",
     ]:
         if command not in readme:
             print(f"❌ Partner README is missing the canonical flow: {command}")
             success = False
 
-    compose, _ = load_yaml_file(root / "docker-compose/docker-compose.yml")
+    compose, _ = load_yaml_file(root / "docker-compose.yml")
     signer = (compose or {}).get("services", {}).get("attestation-signer", {})
     if signer.get("env_file") != [
-        "attestation-signer.env",
-        "signer-policy.env",
+        "./active-bundle/signer-policy.env",
+        "./attestation-signer.env",
+        "./aws.env",
     ]:
-        print("❌ Partner Compose must load operator key env before bridge policy env")
+        print("❌ Partner Compose must load bridge policy before operator identity and AWS env")
         success = False
 
     volumes = signer.get("volumes", [])
-    if "./policy:/etc/dogeos:ro" not in volumes:
+    if "./active-bundle:/etc/dogeos:ro" not in volumes:
         print("❌ Partner Compose must mount the generated policy directory read-only")
         success = False
 
