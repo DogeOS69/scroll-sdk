@@ -308,6 +308,7 @@ genesis, each runs `./signer.sh init` and sends you its public `identity.json`.
 Add the agreed signer ID (a DNS label) to each file, then import them:
 
 ```bash
+mkdir -p descriptors
 jq --arg id signer-a '. + {id: $id}' signer-a/identity.json > descriptors/signer-a.json
 scrollsdk setup attestation-signer --descriptor-dir descriptors
 ```
