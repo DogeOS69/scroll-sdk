@@ -188,16 +188,16 @@ case "$action" in
     network=$(setting ATTESTATION_SIGNER_NETWORK active-bundle/deployment-kit.env)
     context=$(setting ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON active-bundle/deployment-kit.env)
     image=$(setting SIGNER_IMAGE)
-    # Core inspect-rotation resolves only the network and the protocol context.
-    # No signing key, transport key or AWS credentials enter this container.
+    # Core inspect-rotation resolves only the network and the protocol context,
+    # and these env fields take precedence over the TOML. The TOML (which may
+    # hold RPC credentials), keys and AWS credentials stay out of this container.
     docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
       --user "$(id -u):$(id -g)" \
       --env "ATTESTATION_SIGNER_NETWORK=$network" --env "ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON=$context" \
-      --mount "type=bind,src=$root/attestation-signer.toml,dst=/etc/dogeos-partner/attestation-signer.toml,readonly" \
       --mount "type=bind,src=$root/active-bundle,dst=/etc/dogeos,readonly" \
       --mount "type=bind,src=$export_file,dst=/rotation-export.json,readonly" \
       --entrypoint /usr/local/bin/attestation_signer "$image" \
-      inspect-rotation /rotation-export.json -c /etc/dogeos-partner/attestation-signer.toml
+      inspect-rotation /rotation-export.json
     ;;
   stop) [ "$#" = 0 ] || fail 'stop takes no arguments.'; docker compose stop attestation-signer ;;
   logs) [ "$#" = 0 ] || fail 'logs takes no arguments.'; docker compose logs --tail=100 attestation-signer ;;

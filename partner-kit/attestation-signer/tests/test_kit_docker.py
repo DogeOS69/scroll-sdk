@@ -160,15 +160,15 @@ os.execv(os.environ['REAL_DOCKER'], [os.environ['REAL_DOCKER'], *sys.argv[1:]])
         self.assert_ok(self.run_kit('inspect', str(export)))
         args = json.loads((self.base / 'inspect-args').read_text())
         image = next(line.split('=', 1)[1] for line in (self.root / '.env').read_text().splitlines() if line.startswith('SIGNER_IMAGE='))
-        self.assertEqual(args[-5:], [image, 'inspect-rotation', '/rotation-export.json', '-c', '/etc/dogeos-partner/attestation-signer.toml'])
+        self.assertEqual(args[-3:], [image, 'inspect-rotation', '/rotation-export.json'])
         for flag in ['--network', '--read-only', '--cap-drop']:
             self.assertIn(flag, args)
         self.assertEqual(args[args.index('--network') + 1], 'none')
         mounts = [args[i + 1] for i, arg in enumerate(args) if arg == '--mount']
         self.assertIn(f'type=bind,src={export},dst=/rotation-export.json,readonly', mounts)
         self.assertTrue(all(mount.endswith(',readonly') for mount in mounts))
-        # Least privilege: only the TOML, the kit and the export; no keys or credentials.
-        self.assertEqual(sorted(mount.split(',dst=')[1].split(',')[0] for mount in mounts), ['/etc/dogeos', '/etc/dogeos-partner/attestation-signer.toml', '/rotation-export.json'])
+        # Least privilege: only the kit and the export; no TOML (it may hold RPC credentials), keys or AWS files.
+        self.assertEqual(sorted(mount.split(',dst=')[1].split(',')[0] for mount in mounts), ['/etc/dogeos', '/rotation-export.json'])
         self.assertNotIn('--env-file', args)
         envs = [args[i + 1] for i, arg in enumerate(args) if arg == '--env']
         self.assertEqual(envs, ['ATTESTATION_SIGNER_NETWORK=testnet', 'ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON=/etc/dogeos/protocol_context.json'])

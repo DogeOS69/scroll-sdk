@@ -295,9 +295,9 @@ signer's directory, check the rotation export the bridge operator sends you:
 ./signer.sh inspect ./rotation-export.json
 ```
 
-It runs the signer image's `inspect-rotation` offline with only this signer's
-TOML and the kit's network and protocol context; no key or credential enters
-that container. That subcommand needs a signer release that includes it; the
+It runs the signer image's `inspect-rotation` offline with only the active
+kit's network and protocol context; your keys, TOML and AWS files are not
+passed to it. That subcommand needs a signer release that includes it; the
 beta.6a image pinned in `.env.example` does not. It prints the decoded old/new
 sets, the grace and the exact `allowed_next_bridge_script_hashes` line. After
 your team's review, add that line to `attestation-signer.toml` and restart with
