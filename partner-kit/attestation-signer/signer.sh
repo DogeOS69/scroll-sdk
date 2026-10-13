@@ -182,20 +182,21 @@ case "$action" in
   inspect)
     [ "$#" = 1 ] || fail 'Usage: ./signer.sh inspect ROTATION_EXPORT'
     if [ ! -f "$1" ] || [ -L "$1" ]; then fail 'The rotation export must be a regular, non-symlink file.'; fi
-    if [ ! -L active-bundle ] || [ ! -f attestation-signer.env ] || [ ! -f transport.key ]; then
-      fail 'Initialize and import the approved deployment kit first.'
-    fi
+    [ -L active-bundle ] || fail 'Import the approved deployment kit first.'
     export_file="$(cd -- "$(dirname -- "$1")" && pwd -P)/$(basename -- "$1")"
     case "$export_file" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
-    # Offline and read-only, with the same config, env and mounts as the running signer.
+    network=$(setting ATTESTATION_SIGNER_NETWORK active-bundle/deployment-kit.env)
+    context=$(setting ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON active-bundle/deployment-kit.env)
+    image=$(setting SIGNER_IMAGE)
+    # Core inspect-rotation resolves only the network and the protocol context.
+    # No signing key, transport key or AWS credentials enter this container.
     docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
       --user "$(id -u):$(id -g)" \
-      --env-file "$root/active-bundle/deployment-kit.env" --env-file "$root/attestation-signer.env" \
+      --env "ATTESTATION_SIGNER_NETWORK=$network" --env "ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON=$context" \
       --mount "type=bind,src=$root/attestation-signer.toml,dst=/etc/dogeos-partner/attestation-signer.toml,readonly" \
-      --mount "type=bind,src=$root/transport.key,dst=/etc/dogeos-partner/transport.key,readonly" \
       --mount "type=bind,src=$root/active-bundle,dst=/etc/dogeos,readonly" \
       --mount "type=bind,src=$export_file,dst=/rotation-export.json,readonly" \
-      --entrypoint /usr/local/bin/attestation_signer "$(setting SIGNER_IMAGE)" \
+      --entrypoint /usr/local/bin/attestation_signer "$image" \
       inspect-rotation /rotation-export.json -c /etc/dogeos-partner/attestation-signer.toml
     ;;
   stop) [ "$#" = 0 ] || fail 'stop takes no arguments.'; docker compose stop attestation-signer ;;

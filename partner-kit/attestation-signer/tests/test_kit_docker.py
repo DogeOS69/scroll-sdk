@@ -167,6 +167,11 @@ os.execv(os.environ['REAL_DOCKER'], [os.environ['REAL_DOCKER'], *sys.argv[1:]])
         mounts = [args[i + 1] for i, arg in enumerate(args) if arg == '--mount']
         self.assertIn(f'type=bind,src={export},dst=/rotation-export.json,readonly', mounts)
         self.assertTrue(all(mount.endswith(',readonly') for mount in mounts))
+        # Least privilege: only the TOML, the kit and the export; no keys or credentials.
+        self.assertEqual(sorted(mount.split(',dst=')[1].split(',')[0] for mount in mounts), ['/etc/dogeos', '/etc/dogeos-partner/attestation-signer.toml', '/rotation-export.json'])
+        self.assertNotIn('--env-file', args)
+        envs = [args[i + 1] for i, arg in enumerate(args) if arg == '--env']
+        self.assertEqual(envs, ['ATTESTATION_SIGNER_NETWORK=testnet', 'ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON=/etc/dogeos/protocol_context.json'])
 
     def test_missing_credentials_never_marks_creation_uncertain(self):
         args = ['init', '--name', 'test-kms', '--network', 'testnet', '--backend', 'aws-kms', '--kms-region', 'us-east-1', '--create-key']
