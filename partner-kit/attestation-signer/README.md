@@ -26,8 +26,8 @@ cd "$HOME/dogeos-signer-a"
 
 Copy the clean template, never another running signer's directory. The runtime
 directory may be inside your deployment Git repository. Initialization adds
-ignore rules for generated private keys, credentials, database and rotation
-backups automatically; tracked public templates/scripts do not block it.
+ignore rules for generated private keys, credentials and database
+automatically; tracked public templates/scripts do not block it.
 Only a private output file that is already tracked needs to be untracked first.
 Review your own TOML before any commit: ignore rules do not hide tracked files.
 
@@ -194,7 +194,10 @@ signer's network, `enforce` mode, the verifier material, and that
 `deployment-kit.json`, `deployment-kit.env` and the files agree. It stores an
 immutable copy under `bundles/<manifest-sha256>/` and selects it with
 `active-bundle`. `start` verifies `active-bundle/` against its manifest again
-on every start and refuses to start on any mismatch.
+on every start and refuses to start on any mismatch. `signer.sh` uses only this
+kit's `docker-compose.yml`: a `docker-compose.override.yml` or `COMPOSE_FILE` is
+ignored, and `start` refuses a Compose file that changes the signer command or
+the `/etc/dogeos` mount.
 
 | Kit file | Meaning |
 | --- | --- |
@@ -295,8 +298,8 @@ signer's directory, check the rotation export the bridge operator sends you:
 ./signer.sh inspect ./rotation-export.json
 ```
 
-It runs the signer image's `inspect-rotation` offline with only the active
-kit's network and protocol context; your keys, TOML and AWS files are not
+It re-verifies the active kit, then runs the signer image's `inspect-rotation`
+offline with only the kit's network and protocol context; your keys, TOML and AWS files are not
 passed to it. That subcommand needs a signer release that includes it; the
 beta.6a image pinned in `.env.example` does not. It prints the decoded old/new
 sets, the grace and the exact `allowed_next_bridge_script_hashes` line. After

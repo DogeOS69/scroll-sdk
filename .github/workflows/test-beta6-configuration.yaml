@@ -7,7 +7,6 @@ on:
       - charts/proof-coordinator/**
       - examples/values/**
       - partner-kit/attestation-signer/**
-      - .github/tests/test_partner_transport.py
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
@@ -18,7 +17,6 @@ on:
       - charts/proof-coordinator/**
       - examples/values/**
       - partner-kit/attestation-signer/**
-      - .github/tests/test_partner_transport.py
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml

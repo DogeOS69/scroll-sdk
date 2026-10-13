@@ -375,6 +375,5 @@ follow the
 [DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).
 
 For attestation key replacement after deployment, follow the
-[bridge operator rotation workflow](attestation-rotation.md) and start with
-[rotation-spec.example.yaml](rotation-spec.example.yaml). The signer side uses
+[bridge operator rotation workflow](attestation-rotation.md). The signer side uses
 the independent Docker tools in `partner-kit/attestation-signer`.

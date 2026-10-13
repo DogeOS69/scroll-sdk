@@ -79,7 +79,7 @@ In the SDK checkout:
 
 ```bash
 python3 examples/tests/test_makefile_context.py
-bash -n partner-kit/attestation-signer/scripts/phase-a.sh
+bash -n partner-kit/attestation-signer/signer.sh
 ```
 
 ## Acceptance boundaries
