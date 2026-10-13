@@ -324,8 +324,8 @@ deployment's Governance record. Record it by saving
 Each signer runs `./signer.sh import <kit-dir> <manifest-sha256>`, fills its own
 RPC source sets in `attestation-signer.toml`, and runs `./signer.sh start`.
 There are no signer receipts. The deployment is not accepted until, after
-rollout, `scrollsdk setup proof-config-check --live` passes: every registered
-attestation signer polls the TSO.
+rollout, `scrollsdk setup proof-config-check --live --kube-context <context>
+--namespace <namespace>` passes: every registered attestation signer polls the TSO.
 
 External signers poll TSO outbound; they need no reachable endpoint. The kit
 binds its HTTP and metrics ports to host loopback by default.

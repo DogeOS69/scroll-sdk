@@ -615,7 +615,8 @@ deployment's Governance record. Save
 records the publication and runs the final check. Signers import the kit with
 that SHA-256 ([signer kit README](../partner-kit/attestation-signer/README.md)).
 There are no signer receipts. After rollout, `scrollsdk setup proof-config-check
---live` must pass: every registered attestation signer polls the TSO. Completed
+--live --kube-context <context> --namespace <namespace>` must pass: every
+registered attestation signer polls the TSO. Completed
 AWS/proving/publication steps are not replayed on resume. Do not edit generated
 TOML or the saved plan.
 
