@@ -122,8 +122,23 @@ groups:
       summary: The enabled L2 proof pipeline has no recent successful pass.
       description: Check its worker loop and proof-control storage. Disabled pipelines are excluded.
   - alert: WFBuildQueueStalled
-    previousExpr: "withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} > 1800"
-    expr: "(withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} and on (namespace, job, instance) __WP_JOBS_VALID__) > 1800"
+    previousExpr:
+      - "withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} > 1800"
+      - "(withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} and on (namespace, job, instance) __WP_JOBS_VALID__) > 1800"
+    # Fall back per target only if it exposes none of the head-aware series.
+    # Invalid head observations must not resurrect historical failures.
+    expr: >-
+      (
+        (withdrawal_processor_protocol_job_head_oldest_age_seconds{status=~"queued|building|built|failed_retryable|bug"}
+          and on (namespace, job, instance) __WP_JOB_HEAD_VALID__)
+        or
+        ((withdrawal_processor_protocol_job_oldest_age_seconds{status=~"queued|building|built|failed_retryable|bug"}
+          and on (namespace, job, instance) __WP_JOBS_VALID__)
+          unless on (namespace, job, instance)
+          (withdrawal_processor_protocol_job_head_oldest_age_seconds
+            or withdrawal_processor_protocol_snapshot_valid{source="job_head"}
+            or withdrawal_processor_protocol_snapshot_timestamp_seconds{source="job_head"}))
+      ) > 1800
     for: 10m
     labels:
       severity: critical

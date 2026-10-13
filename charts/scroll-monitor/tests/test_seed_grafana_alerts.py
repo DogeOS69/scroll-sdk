@@ -415,6 +415,39 @@ class SeedTests(unittest.TestCase):
                     SEED.seed(client, config)
                     self.assertEqual(client.writes, [])
 
+    def test_wf_head_age_migrates_both_legacy_queries_without_operator_changes(self):
+        from test_monitoring_templates import grafana_rules, render
+        source = grafana_rules(render())["WFBuildQueueStalled"]
+        self.assertEqual(len(source["previousExpr"]), 2)
+        self.assertNotIn("__WP_", str(source))
+        for previous in source["previousExpr"]:
+            with self.subTest(previous=previous):
+                client = MemoryGrafana()
+                config = copy.deepcopy(self.config)
+                config["groups"][0]["rules"] = [{**source, "expr": previous}]
+                SEED.seed(client, config)
+                saved = client.group["rules"][0]
+                # Legacy Grafana installations may predate managed-field baselines.
+                saved["annotations"].pop(SEED.BASELINE, None)
+                saved.update(isPaused=True, **{"for": "25m"})
+                saved["notification_settings"] = {"receiver": "operator-contact"}
+                saved["annotations"]["description"] = "Operator runbook"
+                saved["labels"]["team"] = "ops"
+                client.group["interval"] = 120
+                before = copy.deepcopy(saved)
+                config["groups"][0]["rules"] = [source]
+                client.writes.clear()
+                SEED.seed(client, config)
+                migrated = copy.deepcopy(client.group["rules"][0])
+                migrated["annotations"].pop(SEED.BASELINE, None)
+                before["data"][0]["model"]["expr"] = source["expr"]
+                self.assertEqual(migrated, before)
+                self.assertEqual(client.group["interval"], 120)
+                self.assertEqual(len(client.writes), 1)
+                client.writes.clear()
+                SEED.seed(client, config)
+                self.assertEqual(client.writes, [])
+
     def test_expression_migration_does_not_overwrite_custom_query_datasource_or_owner(self):
         source = {"alert": "NotReady", "expr": "ready < 1", "previousExpr": "ready < 1 or absent(ready)"}
         desired = SEED.alert_rule(source, self.config, "dogeos.metrics")
