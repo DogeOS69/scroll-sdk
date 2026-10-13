@@ -50,7 +50,12 @@ network:
 accounts:
   owner:
     address: "$ENV:OWNER_ADDRESS"
-  # setup apply creates a private deployer account if one is not supplied.
+  # Optional: supply your own deployer key before the first setup plan/apply.
+  # Uncomment this block and DEPLOYER_PRIVATE_KEY in deployment.env.
+  # The address is derived from the key; do not put the key itself in this file.
+  # If omitted, apply generates a random deployer and reuses the saved identity.
+  # deployer:
+  #   privateKey: "$ENV:DEPLOYER_PRIVATE_KEY"
 
 identities:
   ethDaSubmitter: {action: create, backend: aws_kms}
