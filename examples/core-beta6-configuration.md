@@ -92,13 +92,13 @@ Use `enforce` for production. `observe` requires a build with the
 `testnet-observe` feature and is testnet-only. `production_enforce` and
 `staging_scaffold` are retired. Neither supported mode removes the canonical
 protocol-context requirement: generate identities before genesis and start
-services after receiving the reviewed policy bundle.
+services after importing the published deployment kit.
 
 [Core #1486](https://github.com/DogeOS69/dogeos-core/pull/1486) records refreshed
 beta.6 bridge and aggregation guest identities. Do not reuse the historical
 beta.5b-to-beta.5c advice that proof identities are unchanged. Regenerate and
 cross-check the selected bridge/prover artifacts, compiler identity inputs,
-signer policy bundle and CubeSigner bindings from the beta.6 bake manifest.
+signer deployment kit and CubeSigner bindings from the beta.6 bake manifest.
 The recursive verification key remaining unchanged does not make the guest
 program commitments interchangeable. An existing bridge needs its separately
 reviewed identity/upgrade procedure before activating those new commitments.

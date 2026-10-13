@@ -69,24 +69,23 @@ sign or broadcast funding payments on the operator's behalf.
    marker printed by apply. Add the `bridge` outpoint to the same JSON file,
    preserving the wallet entries, then wait for confirmations.
 3. Run the same `setup apply` again. It generates genesis and Bridge-bound real
-   proof materials, publishes them, prepares Secrets and exports signer policy.
-4. At `signer-receipts`, deliver the versioned public policy bundle to each
-   selected operator. They keep their private keys and RPC policy, verify the
-   bundle, run their signer and return genuine validation evidence. Resume the
-   same apply after importing the returned files at its printed input paths.
-   A restricted/rotation-denied signer is not a full-capability receipt.
+   proof materials, publishes them, prepares Secrets and writes the signer
+   deployment kit.
+4. Publish the kit directory unchanged at an immutable URL and record its
+   manifest SHA-256 on the deployment's Governance record. Each signer imports
+   it with that SHA-256 and starts. Resume the same apply once the signers
+   poll the TSO.
 
 The two wallet/Bridge funding waits normally mean **one plan plus three apply
-invocations to reach the partner handoff**, then another apply for returned
-receipts. There can be further waits. Do not count these as a guarantee of five
+invocations to reach the signer handoff**, then another apply once the signers
+are online. There can be further waits. Do not count these as a guarantee of five
 commands to deploy the chain. Preserve the saved plan; changed intent needs a
 new reviewed plan, not edits to generated TOML or frozen state.
 
 ## 3. Prepare an installation directory and upload Secrets
 
-Partner validation may require live RPC/TSO services before the final receipt
-step can finish. After apply reaches `signer-receipts`, use a private runtime copy
-for installation. This keeps contract-address updates and provider reconciliation
+Signers need live RPC/TSO services before they can come online. Once apply
+waits for the signers, use a private runtime copy for installation. This keeps contract-address updates and provider reconciliation
 from modifying the preparation workflow's fingerprinted files. Create it only
 once; do not overwrite an existing runtime directory on resume:
 
@@ -260,12 +259,11 @@ watchdog. See [GPU capacity and lifecycle](proof-workers.md) for defaults,
 an eight-hour example, safe recovery, and the limits of cost/deletion guarantees.
 Do not destroy the controller/cluster before confirming all rented resources are gone.
 
-Partner operators follow [the signer guide](../partner-kit/attestation-signer/README.md).
-Return receipts against the exact exported policy bundle to the original
-preparation directory. Return to the private working directory (`cd ..` from
-`runtime/`), then run `scrollsdk setup apply` again. Regeneration with accepted
-evidence does not automatically upgrade already installed runtime releases: review and reconcile the resulting runtime values.
-Never fabricate a receipt to turn `waiting` into `prepared`.
+Partner operators follow [the signer guide](../partner-kit/attestation-signer/README.md)
+and import the published deployment kit. Once they poll the TSO, return to the
+private working directory (`cd ..` from `runtime/`) and run `scrollsdk setup apply`
+again. It does not upgrade already installed runtime releases: review and
+reconcile the resulting runtime values.
 
 ## 6. Acceptance criteria
 

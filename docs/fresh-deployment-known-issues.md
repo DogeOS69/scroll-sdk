@@ -135,7 +135,7 @@ again.
 1. Select matching core, contracts, genesis generator and real-proof materials.
 2. Confirm owner signing access and verify the intended owner address.
 3. Verify the fixed Bridge output amount before broadcast and on chain afterwards.
-4. Bind Bridge context, proof materials, CubeSigner policy and signer receipts.
+4. Bind Bridge context, proof materials and CubeSigner policy; publish the signer deployment kit.
 5. Regenerate DA/proof archive paths; update all retained Reth runtime values.
 6. Prepare dstack Secrets and storage, and verify monitoring collection.
 7. Run `setup proof-config-check` and `setup deployment-preflight`.

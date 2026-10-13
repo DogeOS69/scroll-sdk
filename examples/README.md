@@ -302,20 +302,22 @@ scrollsdk setup proof-config-check --deployment-dir .
 make reconcile-proof-services
 ```
 
-Before bridge genesis, give each external signer operator the complete
-`partner-kit/attestation-signer/` directory, collect the descriptor produced by
-its Phase A script (`signer init`, `--print-identity`, then `signer init --identity`),
-and import the descriptors with
-`scrollsdk setup attestation-signer`. After genesis, send every partner the
-complete `signer-policy-bundle/` produced by
-`scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
-protocol context in every signer mode, so partners start the service and run
-`signer preflight` only after installing that bundle. Production partners use
-`--require-production-ready` and keep their own RPC source sets and rotation
-allowlists in the generated `attestation-signer.toml`.
-External signers initiate signed polling and callbacks to TSO; they do not
-provide a reachable signer endpoint. The kit publishes local preflight and
-metrics ports only on host loopback by default.
+External signer operators follow the
+[signer kit README](../partner-kit/attestation-signer/README.md). Before bridge
+genesis, each runs `./signer.sh init` and sends you its `identity.json`; import
+them with `scrollsdk setup attestation-signer`.
+
+After genesis, `scrollsdk setup apply` writes the signer **deployment kit**
+(the same output as `scrollsdk setup export-deployment-kit --kit-version <v>`).
+Publish the kit directory unchanged at an immutable URL and record its manifest
+SHA-256 on the deployment's Governance record. Each signer runs
+`./signer.sh import <kit-dir> <manifest-sha256>`, fills its own RPC source sets
+in `attestation-signer.toml`, and runs `./signer.sh start`. There are no signer
+receipts to collect: readiness is the published kit plus fresh, authenticated
+TSO polls from the configured signers.
+
+External signers poll TSO outbound; they need no reachable endpoint. The kit
+binds its HTTP and metrics ports to host loopback by default.
 
 For a deployment that will later use real proving, import the software
 identities and Bridge-bound material before selecting `generation = real`.
@@ -355,10 +357,10 @@ with the complete compiler-rendered topology without scaling PC.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-`scrollsdk setup proof-config-check` and `setup export-signer-policy` currently
+`scrollsdk setup proof-config-check` and `setup export-deployment-kit` currently
 skip the whole input configuration file's hash comparison. This check is
 temporarily disabled in the CLI so edits such as Grafana account configuration
-do not block signer bundle export. The original source hash is still recorded.
+do not block deployment kit export. The original source hash is still recorded.
 Proof mode/generation/enforcement, generated proof artifacts, selected materials,
 and protocol-context integrity checks remain enabled.
 

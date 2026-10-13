@@ -45,16 +45,11 @@ exist only in the selected proof source.
 | TSO | `TSO_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<pin>` in Helm values |
 | Deployment contract | `preTsukiDirectSign.maxEndBatchHeight` in schema-v5 `.data/proof-deployment.json` |
 
-`scrollsdk setup export-signer-policy` projects the same intent to the
-partner-operated Rust signer bundle as:
-
-```dotenv
-ATTESTATION_SIGNER_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT=<pin>
-```
-
-This value belongs in the deployment policy bundle's `signer-policy.env`, not
-the operator-owned key/backend `attestation-signer.env`. Keeping it out of the
-operator file ensures a generated retirement bundle actually removes it.
+The signer deployment kit (`scrollsdk setup export-deployment-kit`) does not
+carry `ATTESTATION_SIGNER_PRE_TSUKI_DIRECT_SIGN_MAX_END_BATCH_HEIGHT`: its env
+holds only the bridge fields, and `signer.sh import` rejects any other field.
+Signers on the standalone kit therefore do not receive this pin. The former
+`export-signer-policy` bundle, which carried it, is removed.
 
 CubeSigner is correctness/TEE-only and receives no direct-sign attestation
 configuration.
@@ -83,6 +78,6 @@ Follow dogeos-core's exact ordering and completion predicate. In summary:
    proof mode.
 
 Removing the intent and rerunning `setup prep-charts` removes both WP and TSO
-projections and records their absence in a new deployment contract. Export and
-apply a fresh signer policy bundle to remove the signer projection. Never edit
-only one of the three trust-boundary configurations.
+projections and records their absence in a new deployment contract. The signer
+deployment kit never carries the pin. Never edit only one of the WP and TSO
+configurations.
