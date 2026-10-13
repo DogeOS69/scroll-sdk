@@ -12,13 +12,13 @@
     },
     {
       "file": "deployment-kit.json",
-      "sha256": "sha256:9e877484f13524e3b079f0dc530b4f562af0a248e685184996fa18666a22ed29",
-      "sizeBytes": 1594
+      "sha256": "sha256:3fa9a8e5e171a9ce42cf58a35947123386edf55fa7cd196655bf5a5ebb835bda",
+      "sizeBytes": 1049
     },
     {
       "file": "protocol_context.json",
-      "sha256": "sha256:11eae7bb0a8ef1c3679e37da860f4e628c3d98bbe06d4dd3cf75eb3799f3d69f",
-      "sizeBytes": 814
+      "sha256": "sha256:a94b8578671ca12c365155968790bd0870b8ea74bbced0341df02d1760f86d09",
+      "sizeBytes": 811
     }
   ],
   "schema": "dogeos/deployment-kit-manifest/v1"

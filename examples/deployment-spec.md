@@ -405,7 +405,7 @@ Successful completion reports `prepared`: service configuration, genesis, Bridge
 artifacts, Secrets and the signer deployment kit are prepared. It does not mean Helm releases
 have been installed or that a running chain has passed acceptance. Owner-managed
 CubeSigner authorization/session material remains operator-owned. Apply waits
-for the deployment kit to be published and the signers to poll the TSO before completion.
+for the deployment kit's publication to be recorded before completion.
 
 ## Install the frontend and monitoring releases
 
@@ -607,11 +607,15 @@ The legacy coordinator chunk/batch/bundle collection timers are removed: they
 belong to retired Scroll services, not beta.6 Proof Coordinator. Native proof
 materialization policy remains owned by the pinned core compiler/templates.
 
-Publish the deployment kit unchanged at an immutable URL and record its
-manifest SHA-256 on the deployment's Governance record. Signers import it with
+Apply then pauses for publication. Publish the kit directory (`deployment-kit-k-<12 hex>/`, or an archive of it)
+unchanged at an immutable https URL and put the URL and manifest SHA-256 on the
+deployment's Governance record. Save
+`{"url": "<https URL>", "manifest_sha256": "<sha>"}` as
+`.scrollsdk/inputs/deployment-kit/published.json` and rerun `setup apply`; it
+records the publication and runs the final check. Signers import the kit with
 that SHA-256 ([signer kit README](../partner-kit/attestation-signer/README.md)).
-There are no signer receipts: apply waits until the kit is published and the
-configured signers poll the TSO with fresh, authenticated requests. Completed
+There are no signer receipts. After rollout, `scrollsdk setup proof-config-check
+--live` must pass: every registered attestation signer polls the TSO. Completed
 AWS/proving/publication steps are not replayed on resume. Do not edit generated
 TOML or the saved plan.
 

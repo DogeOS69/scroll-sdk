@@ -106,9 +106,7 @@ def verify_kit(folder, expected, identity_file):
     kit = json.loads(regular(folder / 'deployment-kit.json'))
     require(kit['schema'] == 'dogeos/deployment-kit/v1', 'Unsupported deployment kit schema')
     require(kit['policy_mode'] == 'enforce', 'Expected enforce mode')
-    require(isinstance(kit['kit_version'], str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}', kit['kit_version']), 'Invalid kit version')
-    deployment = kit['deployment']
-    require(isinstance(deployment, dict) and {'generation_id', 'inputs', 'topology_revision'} <= set(deployment), 'Missing deployment generation')
+    require(isinstance(kit['kit_version'], str) and re.fullmatch(r'k-[0-9a-f]{12}', kit['kit_version']), 'Invalid kit version')
     identity = json.loads(regular(identity_file))
     require(identity['schema'] == 'dogeos/attestation-signer-descriptor/v1', 'Use core --print-identity JSON')
     require(identity['network'] == kit['network'], 'Kit is for another network than this signer')

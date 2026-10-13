@@ -6,12 +6,14 @@ A rotation replaces the bridge's attestation signer set. Devops runs the three
 
 ## 0. Deployment kit (once per deployment, not per rotation)
 
-```bash
-scrollsdk setup export-deployment-kit --kit-version 1
-```
-
-Publish the kit directory unchanged at an immutable URL and record its manifest
-SHA-256 on the deployment's Governance record. A rotation does not need a new kit.
+`scrollsdk setup apply` writes the kit and pauses. Publish the kit directory (`deployment-kit-k-<12 hex>/`, or an archive of it)
+unchanged at an immutable https URL and put the URL and manifest SHA-256 on the
+deployment's Governance record. Save
+`{"url": "<https URL>", "manifest_sha256": "<sha>"}` as
+`.scrollsdk/inputs/deployment-kit/published.json` and rerun `setup apply`.
+Without `setup apply`, run `scrollsdk setup export-deployment-kit`, publish, then
+`scrollsdk setup export-deployment-kit --published-url <https URL>`.
+A rotation does not need a new kit.
 
 ## 1. New signers
 

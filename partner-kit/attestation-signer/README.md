@@ -185,7 +185,7 @@ came with the download. If the kit is an archive, unpack it first; `import`
 takes the directory.
 
 ```bash
-./signer.sh import ./deployment-kit-1 '<MANIFEST_SHA256_FROM_THE_GOVERNANCE_RECORD>'
+./signer.sh import ./deployment-kit-k-10918298dde4 '<MANIFEST_SHA256_FROM_THE_GOVERNANCE_RECORD>'
 ```
 
 `import` requires a stopped signer. It verifies the manifest against that
@@ -201,7 +201,7 @@ the `/etc/dogeos` mount.
 
 | Kit file | Meaning |
 | --- | --- |
-| `deployment-kit.json` | Network, protocol instance id, kit version, TSO URL, artifact origin, context and verifier digests, deployment generation |
+| `deployment-kit.json` | Network, protocol instance id, kit version (`k-<12 hex>`), TSO URL, artifact origin, context and verifier digests |
 | `deployment-kit.env` | The same bridge-owned runtime fields, loaded by Compose |
 | `protocol_context.json` | Canonical deployment/genesis context |
 | `advance-l2-agg-verifying-key.bin` | Production AdvanceL2 aggregate verifying key |
@@ -313,7 +313,7 @@ with its own Governance record; a published kit is never overwritten. Use
 
 ```bash
 ./signer.sh stop
-./signer.sh import ./deployment-kit-2 '<NEW_MANIFEST_SHA256_FROM_THE_RECORD>'
+./signer.sh import ./deployment-kit-k-<new 12 hex> '<NEW_MANIFEST_SHA256_FROM_THE_RECORD>'
 ./signer.sh start
 ```
 

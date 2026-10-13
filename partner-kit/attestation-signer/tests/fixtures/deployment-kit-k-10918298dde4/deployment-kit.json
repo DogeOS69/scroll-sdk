@@ -8,28 +8,14 @@
   "artifact_origins": [
     "https://s3.us-east-1.amazonaws.com"
   ],
-  "deployment": {
-    "generation_id": "1b4d462f2153a774c93b2c4aa48e455d067ac6bfb5876e27802492f82dd66cb9",
-    "inputs": {
-      "materials": {
-        "path": ".data/proof-materials-v1.json",
-        "sha256": "62910c83ac9e49928e69f76d9e550207b37a8a4a4b2a01ab2d43aea7e98f0a13"
-      },
-      "protocolContext": {
-        "path": ".data/protocol_context.json",
-        "sha256": "11eae7bb0a8ef1c3679e37da860f4e628c3d98bbe06d4dd3cf75eb3799f3d69f"
-      }
-    },
-    "topology_revision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-  },
-  "kit_version": "1",
+  "kit_version": "k-10918298dde4",
   "network": "testnet",
   "policy_mode": "enforce",
   "protocol_context": {
     "file": "protocol_context.json",
-    "sha256": "sha256:11eae7bb0a8ef1c3679e37da860f4e628c3d98bbe06d4dd3cf75eb3799f3d69f"
+    "sha256": "sha256:a94b8578671ca12c365155968790bd0870b8ea74bbced0341df02d1760f86d09"
   },
-  "protocol_instance_id": "0x2a9dffc0d2ecbed48f6ccc16f2e9abd11dfbac38fe71d2c0cd6fbb0e8d24a6ce",
+  "protocol_instance_id": "0x05203d4cfa5cf58a09204af4a4d900f49854c8a5666b7bcddfaf91abf12a9a76",
   "schema": "dogeos/deployment-kit/v1",
   "tso_url": "https://tso.example.com"
 }

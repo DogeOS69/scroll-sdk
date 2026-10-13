@@ -1,8 +1,8 @@
 # Deployment intent for a TESTNET with active / real / enforce proofs.
 # See deployment-spec.md and copy deployment.env.example outside this checkout.
 # Bridge uses the beta.6 production outpoint flow. Real material handoffs are
-# required; apply writes the signer deployment kit, then waits until it is
-# published and the configured signers poll the TSO.
+# required; apply writes the signer deployment kit, then waits until its
+# publication is recorded in .scrollsdk/inputs/deployment-kit/published.json.
 # Replace REPLACE_WITH_*, TODO_*, *.example.invalid and the marked numeric inputs.
 # This file contains no private keys, signer sessions or working credentials.
 version: "1.0"
@@ -340,8 +340,8 @@ preparation:
   # publicReadMode: existing-public-s3 (or existing-gateway + publicEndpointUrl).
   # Optional coordinatorRoleName, withdrawalRoleName and secretName select
   # nonstandard existing resource names; otherwise names derive from alias/cluster.
-  # Apply writes the signer deployment kit, then waits until it is published and
-  # the configured signers poll the TSO before the final enforcing check.
+  # Apply writes the signer deployment kit, then waits until its publication is
+  # recorded before the final enforcing check.
   # No Secret upload or paid Worker launch is selected.
 
 # Enable after filling SLACK_WEBHOOK_URL in private deployment.env.

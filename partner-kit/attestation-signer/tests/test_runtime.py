@@ -12,9 +12,9 @@ runtime = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)
 
 
-FIXTURE = Path(__file__).parent / 'fixtures/deployment-kit-1'
-# sha256 of the fixture manifest, as printed by `scrollsdk setup export-deployment-kit`.
-FIXTURE_DIGEST = 'f2faedcb513a339a29355c1e39fffa20fad28097f328bebfd234661b696a3fec'
+FIXTURE = Path(__file__).parent / 'fixtures/deployment-kit-k-10918298dde4'
+# sha256 of the fixture manifest; see fixtures/README.md.
+FIXTURE_DIGEST = '183df486f0bf8afac147bee83e15cecc63695fce92fa9a45f3a71a879c645338'
 
 
 class RuntimeTests(unittest.TestCase):
@@ -145,7 +145,7 @@ class RuntimeTests(unittest.TestCase):
 
     def test_kit_contract_fields_and_core_identity_are_required(self):
         kit = json.loads((self.bundle / 'deployment-kit.json').read_text())
-        for change, message in [({'kit_version': '../1'}, 'kit version'), ({'deployment': {}}, 'deployment generation')]:
+        for change, message in [({'kit_version': '../1'}, 'kit version'), ({'kit_version': '1'}, 'kit version')]:
             (self.bundle / 'deployment-kit.json').write_text(json.dumps({**kit, **change}))
             self.digest = self.manifest()
             self.assert_rejected(message)

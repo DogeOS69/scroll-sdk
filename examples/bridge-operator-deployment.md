@@ -71,21 +71,21 @@ sign or broadcast funding payments on the operator's behalf.
 3. Run the same `setup apply` again. It generates genesis and Bridge-bound real
    proof materials, publishes them, prepares Secrets and writes the signer
    deployment kit.
-4. Publish the kit directory unchanged at an immutable URL and record its
-   manifest SHA-256 on the deployment's Governance record. Each signer imports
-   it with that SHA-256 and starts. Resume the same apply once the signers
-   poll the TSO.
+4. Publish the kit directory (`deployment-kit-k-<12 hex>/`) unchanged at an
+   immutable https URL and put the URL and manifest SHA-256 on the deployment's
+   Governance record. Save `{"url": "<https URL>", "manifest_sha256": "<sha>"}`
+   as `.scrollsdk/inputs/deployment-kit/published.json` and run the same apply
+   again. Signers import the kit with that SHA-256 and start.
 
 The two wallet/Bridge funding waits normally mean **one plan plus three apply
-invocations to reach the signer handoff**, then another apply once the signers
-are online. There can be further waits. Do not count these as a guarantee of five
+invocations to reach the kit publication**, then another apply once it is
+recorded. There can be further waits. Do not count these as a guarantee of five
 commands to deploy the chain. Preserve the saved plan; changed intent needs a
 new reviewed plan, not edits to generated TOML or frozen state.
 
 ## 3. Prepare an installation directory and upload Secrets
 
-Signers need live RPC/TSO services before they can come online. Once apply
-waits for the signers, use a private runtime copy for installation. This keeps contract-address updates and provider reconciliation
+After apply reports `prepared`, use a private runtime copy for installation. This keeps contract-address updates and provider reconciliation
 from modifying the preparation workflow's fingerprinted files. Create it only
 once; do not overwrite an existing runtime directory on resume:
 
@@ -260,10 +260,10 @@ an eight-hour example, safe recovery, and the limits of cost/deletion guarantees
 Do not destroy the controller/cluster before confirming all rented resources are gone.
 
 Partner operators follow [the signer guide](../partner-kit/attestation-signer/README.md)
-and import the published deployment kit. Once they poll the TSO, return to the
-private working directory (`cd ..` from `runtime/`) and run `scrollsdk setup apply`
-again. It does not upgrade already installed runtime releases: review and
-reconcile the resulting runtime values.
+and import the published deployment kit. After rollout, run
+`scrollsdk setup proof-config-check --live --kube-context <context> --namespace <namespace>`.
+It passes only when every registered attestation signer polls the TSO; the
+deployment is not accepted until it does.
 
 ## 6. Acceptance criteria
 

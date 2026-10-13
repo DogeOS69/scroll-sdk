@@ -314,13 +314,18 @@ scrollsdk setup attestation-signer --descriptor-dir descriptors
 ```
 
 After genesis, `scrollsdk setup apply` writes the signer **deployment kit**
-(the same output as `scrollsdk setup export-deployment-kit --kit-version <v>`).
-Publish the kit directory unchanged at an immutable URL and record its manifest
-SHA-256 on the deployment's Governance record. Each signer runs
-`./signer.sh import <kit-dir> <manifest-sha256>`, fills its own RPC source sets
-in `attestation-signer.toml`, and runs `./signer.sh start`. There are no signer
-receipts to collect: readiness is the published kit plus fresh, authenticated
-TSO polls from the configured signers.
+(the same writer as `scrollsdk setup export-deployment-kit`) and pauses.
+Publish the kit directory (`deployment-kit-k-<12 hex>/`, or an archive of it)
+unchanged at an immutable https URL and put the URL and manifest SHA-256 on the
+deployment's Governance record. Record it by saving
+`{"url": "<https URL>", "manifest_sha256": "<sha>"}` as
+`.scrollsdk/inputs/deployment-kit/published.json` and rerunning `setup apply`
+(standalone: `scrollsdk setup export-deployment-kit --published-url <https URL>`).
+Each signer runs `./signer.sh import <kit-dir> <manifest-sha256>`, fills its own
+RPC source sets in `attestation-signer.toml`, and runs `./signer.sh start`.
+There are no signer receipts. The deployment is not accepted until, after
+rollout, `scrollsdk setup proof-config-check --live` passes: every registered
+attestation signer polls the TSO.
 
 External signers poll TSO outbound; they need no reachable endpoint. The kit
 binds its HTTP and metrics ports to host loopback by default.
