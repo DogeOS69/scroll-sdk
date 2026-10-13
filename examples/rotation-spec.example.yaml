@@ -30,6 +30,15 @@ timelock:
   # old height and max(live tip, confirmed anchor) + 259200 + marginBlocks.
   # Default refresh margin is 10000 blocks; it allows time for offline review.
   # marginBlocks: 10000
+  # To select an exact absolute Dogecoin recovery height, use policy: explicit
+  # and height: YOUR_REVIEWED_BLOCK_HEIGHT instead (no marginBlocks).
+  # The height must be an integer below 500000000 and at least
+  # max(live tip, confirmed anchor) + 259200. It is never auto-adjusted.
+
+# Example alternative (illustrative only; choose a sufficient live height):
+# timelock:
+#   policy: explicit
+#   height: 64000000
 
 # TEE, ordered recovery public keys/threshold and namespace are inherited from
 # the validated current bridge script. Never enter private keys in this file.

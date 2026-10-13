@@ -74,6 +74,25 @@ margin of 10000 blocks, and never shortens the old height. It changes recovery
 availability, script hash and bridge address: all signers must review it.
 The fixed result is never silently recalculated at submission time.
 
+To select an exact absolute **Dogecoin recovery block height**, use:
+
+```yaml
+timelock:
+  policy: explicit
+  height: 64000000  # Illustrative; choose a height sufficient for your live chain.
+```
+
+`height` is required for `explicit` and is not accepted with `preserve` or
+`refresh`; `marginBlocks` applies only to `refresh`. The height must be an
+integer below 500000000 and at least `max(live tip, confirmed anchor) + 259200`.
+An explicit height can shorten or extend the old recovery height if that bound
+is met; all operators must review the change. The CLI uses exactly the supplied
+height, freezes it in the proposal and checks admission again before submission.
+If review takes too long and the height no longer leaves sufficient delay,
+create a new proposal instead of editing the approved one. For identity-file
+initialization, use `bridge rotation init --timelock explicit --timelock-height
+64000000` together with its usual directory and identity arguments.
+
 ## 2. Freeze and distribute the proposal
 
 ```bash

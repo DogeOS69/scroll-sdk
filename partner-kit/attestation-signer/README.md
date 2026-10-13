@@ -343,6 +343,13 @@ unchanged TEE/recovery identity and namespace, and timelock at the proposal's
 recorded anchor. Read the printed old/new members, threshold, recovery timing
 and target bridge address. Do not approve only an unexplained hash.
 
+The bridge proposal may use `timelock.policy: explicit` to select an exact
+absolute Dogecoin recovery height. Review `oldHeight` and `newHeight`: an
+explicit choice can shorten or extend recovery timing. Offline inspection
+checks the script and the minimum 259200-block delay at the recorded anchor;
+the bridge tool and WP must recheck against live state before submission.
+Use a signer kit supporting this policy; older kits reject it as unknown.
+
 Approval adds the exact target to **this old instance's**
 `allowed_next_bridge_script_hashes`, backs up the TOML, preserves its bind-mount
 inode, restarts this container and checks its `rotate_key` capability. It does

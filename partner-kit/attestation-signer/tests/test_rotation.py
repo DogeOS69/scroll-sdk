@@ -76,6 +76,21 @@ class RotationTest(unittest.TestCase):
     def test_valid_disjoint_proposal(self):
         self.verify(envelope())
 
+    def test_explicit_recovery_height_and_admission_boundary(self):
+        item = envelope()
+        item['proposal']['timelock'].update(policy='explicit', newHeight=400000)
+        item['proposal']['target']['redeemScriptHex'] = script(KEYS[3:6], height=400000)
+        self.verify(self.rehash(item))
+        # Explicit is an exact height, even below the old height; normal admission
+        # and script/summary consistency still apply.
+        changed = copy.deepcopy(item)
+        changed['proposal']['timelock']['newHeight'] += 1
+        with self.assertRaisesRegex(ValueError, 'Timelock summary mismatch'):
+            self.verify(self.rehash(changed))
+        item['proposal']['timelock']['anchorHeight'] = 140801
+        with self.assertRaisesRegex(ValueError, 'Insufficient recovery delay'):
+            self.verify(self.rehash(item))
+
     def test_mismatched_digest_and_independent_current_hash(self):
         item = envelope()
         item['proposal']['graceWfTxs'] += 1

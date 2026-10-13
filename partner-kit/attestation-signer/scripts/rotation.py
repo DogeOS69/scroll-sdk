@@ -186,7 +186,7 @@ def verify(envelope, expected, current_hash):
     require(address(new['keyHash'], proposal['network']) == new['address'], 'Target bridge address mismatch')
     timing = proposal['timelock']
     require(timing['oldHeight'] == before['timelock'] and timing['newHeight'] == after['timelock'], 'Timelock summary mismatch')
-    require(timing['policy'] in ('preserve', 'refresh'), 'Unknown timelock policy')
+    require(timing['policy'] in ('preserve', 'refresh', 'explicit'), 'Unknown timelock policy')
     if timing['policy'] == 'preserve':
         require(before['timelock'] == after['timelock'], 'Preserve policy changes timelock')
     require(type(timing['anchorHeight']) is int and timing['anchorHeight'] >= 0
