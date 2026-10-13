@@ -82,6 +82,15 @@ Deployment in place, run a second manager, or use a new worker prefix/PVC.
 2. Check the currently running GPU's real-mode readiness, image/program pins,
    fleet/offer, price and state. Dry-run the chart with a separate review name;
    do not start an allocator as a rendering test.
+   Set existing monitoring to an explicit operator-owned handoff phase before
+   changing resources. Update its expected admitted manifest, Pod selector and
+   mount-path checks from the reviewed Helm render: this chart labels Pods with
+   `app.kubernetes.io/name=capacity-manager` and
+   `app.kubernetes.io/instance=devnet-capacity-manager-active`, rather than the
+   raw Deployment's name label. Otherwise the old raw-manifest monitor could
+   mistake an approved change for missing Pods or security drift. Continue
+   watching drain/provider inventory; do not let monitoring restore SDK or the
+   old raw Deployment independently.
 3. Scale the **existing raw manager** to zero with its original configuration.
    Its native shutdown drains owned workers. Allow up to 30 minutes; verify
    manager Pods are gone, owned tasks terminal, proof leases zero and provider
@@ -120,7 +129,9 @@ Deployment in place, run a second manager, or use a new worker prefix/PVC.
 8. Verify exactly one current provider run and GPU, binding worker readiness to
    its new run ID. Check current CPU/GPU limits, accepted proof results, queue
    ages, fresh decisions, errors and spend. Compare identical inputs or report
-   workload differences. Keep the SDK watchdog suspended.
+   workload differences. Verify monitoring now checks the Helm admission
+   contract and current run ID, then leave the handoff phase. Keep the SDK
+   watchdog suspended.
 
 Because this profile sets `scaleDownOnShutdown: true`, manager upgrades/restarts
 may drain and replace workers. Preserve enough grace, expect cold-start time,
