@@ -27,6 +27,10 @@ EOF
 case "${1:---help}" in --help|-h) usage; exit 0 ;; esac
 command -v docker >/dev/null || fail 'Docker is required.'
 case "$root" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
+# Only the kit's own Compose file: no docker-compose.override.yml, no COMPOSE_FILE.
+compose() {
+  env -u COMPOSE_FILE docker compose -f "$root/docker-compose.yml" "$@"
+}
 protect_outputs() {
   bash "$root/scripts/protect-output.sh" "$root"
 }
@@ -51,7 +55,7 @@ assert_stopped() {
 }
 container_id() {
   local container
-  container=$(docker compose ps -q attestation-signer)
+  container=$(compose ps -q attestation-signer)
   [[ "$container" =~ ^[0-9a-f]+$ ]] || fail 'Expected one running signer in this Compose project.'
   printf '%s' "$container"
 }
@@ -170,8 +174,8 @@ case "$action" in
     [ -L active-bundle ] && [ -f identity.json ] && [ -d data ] || fail 'Initialize and import the approved deployment kit first.'
     # prestart re-verifies active-bundle/ against its manifest before anything starts.
     # Parse resolved Compose in a container; never print credential-bearing config.
-    docker compose config --format json | "${py[@]}" -i --network none --entrypoint python "$python_image" /workspace/scripts/runtime.py prestart
-    docker compose up -d --force-recreate attestation-signer
+    compose config --format json | "${py[@]}" -i --network none --entrypoint python "$python_image" /workspace/scripts/runtime.py prestart "$root"
+    compose up -d --force-recreate attestation-signer
     echo 'Run ./signer.sh check after startup. Docker health alone does not prove TSO connectivity.'
     ;;
   check)
@@ -183,6 +187,7 @@ case "$action" in
     [ "$#" = 1 ] || fail 'Usage: ./signer.sh inspect ROTATION_EXPORT'
     if [ ! -f "$1" ] || [ -L "$1" ]; then fail 'The rotation export must be a regular, non-symlink file.'; fi
     [ -L active-bundle ] || fail 'Import the approved deployment kit first.'
+    "${py[@]}" --network none --entrypoint python "$python_image" /workspace/scripts/runtime.py verify
     export_file="$(cd -- "$(dirname -- "$1")" && pwd -P)/$(basename -- "$1")"
     case "$export_file" in *,*) fail 'Docker bind paths cannot contain commas.' ;; esac
     network=$(setting ATTESTATION_SIGNER_NETWORK active-bundle/deployment-kit.env)
@@ -199,7 +204,7 @@ case "$action" in
       --entrypoint /usr/local/bin/attestation_signer "$image" \
       inspect-rotation /rotation-export.json
     ;;
-  stop) [ "$#" = 0 ] || fail 'stop takes no arguments.'; docker compose stop attestation-signer ;;
-  logs) [ "$#" = 0 ] || fail 'logs takes no arguments.'; docker compose logs --tail=100 attestation-signer ;;
+  stop) [ "$#" = 0 ] || fail 'stop takes no arguments.'; compose stop attestation-signer ;;
+  logs) [ "$#" = 0 ] || fail 'logs takes no arguments.'; compose logs --tail=100 attestation-signer ;;
   *) usage >&2; exit 1 ;;
 esac

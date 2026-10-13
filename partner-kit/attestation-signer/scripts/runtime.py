@@ -102,7 +102,7 @@ def verify_kit(folder, expected, identity_file):
         raw = regular(folder / name)
         require(sha256_ref(raw) == entry['sha256'], 'Kit file digest mismatch')
         require(len(raw) == entry['sizeBytes'], 'Kit file size mismatch')
-    require(KIT_FILES <= names, 'Incomplete deployment kit')
+    require(names == KIT_FILES, 'Deployment kit must list exactly the required files')
     kit = json.loads(regular(folder / 'deployment-kit.json'))
     require(kit['schema'] == 'dogeos/deployment-kit/v1', 'Unsupported deployment kit schema')
     require(kit['policy_mode'] == 'enforce', 'Expected enforce mode')
@@ -172,7 +172,7 @@ def verify_active_files(folder, expected, identity_file):
 
 
 def verify_active(root):
-    """Re-verify the selected kit on every start; the compose env and mounts come from it."""
+    """Re-verify the selected kit before start and inspect read it."""
     active = root / 'active-bundle'
     require(active.is_symlink(), 'Import the approved deployment kit first')
     target = os.readlink(active)
@@ -220,9 +220,22 @@ def validate_rpc_config(root):
         require(not env_values(regular(legacy)), 'Move legacy operator.env settings into TOML; this kit does not load operator.env')
 
 
-def prestart(root, compose):
+KIT_COMMAND = ['-c', '/etc/dogeos-partner/attestation-signer.toml']
+
+
+def check_service(service, host_root):
+    """The resolved service must run the kit's own command and mount active-bundle/ at /etc/dogeos."""
+    require(service.get('command') == KIT_COMMAND and not service.get('entrypoint'), 'Compose command or entrypoint differs from the signer kit')
+    kit_mounts = [v for v in service.get('volumes', []) if v.get('target', '').rstrip('/') == '/etc/dogeos' or v.get('target', '').startswith('/etc/dogeos/')]
+    require(len(kit_mounts) == 1 and kit_mounts[0].get('type') == 'bind' and kit_mounts[0].get('target') == '/etc/dogeos'
+            and kit_mounts[0].get('source') == host_root + '/active-bundle' and kit_mounts[0].get('read_only') is True,
+            'Compose must mount only active-bundle, read-only, at /etc/dogeos')
+
+
+def prestart(root, compose, host_root):
     kit_env = env_values(regular(verify_active(root) / 'deployment-kit.env'))
     service = compose['services']['attestation-signer']
+    check_service(service, host_root)
     environment = service.get('environment', {})
     # Operator env files load after the kit; they must not replace any bridge field.
     for field in sorted(BRIDGE_FIELDS):
@@ -253,7 +266,9 @@ def main():
     elif action == 'import':
         install(root, Path('/kit'), sys.argv[2])
     elif action == 'prestart':
-        prestart(root, json.load(sys.stdin))
+        prestart(root, json.load(sys.stdin), sys.argv[2])
+    elif action == 'verify':
+        verify_active(root)
     elif action == 'check':
         identity = json.loads(regular(root / 'identity.json'))
         with urllib.request.urlopen('http://127.0.0.1:4040/policy', timeout=5) as response:

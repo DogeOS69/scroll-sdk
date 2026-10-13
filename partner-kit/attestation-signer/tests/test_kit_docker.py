@@ -143,9 +143,18 @@ os.execv(os.environ['REAL_DOCKER'], [os.environ['REAL_DOCKER'], *sys.argv[1:]])
         self.assertIn('digest mismatch', tampered.stderr)
         self.assertFalse(any((self.root / 'data').iterdir()))
         installed.write_bytes(original)
-        self.assert_ok(self.run_kit('start'))
-        running = subprocess.run([self.docker, 'compose', 'ps', '-q', 'attestation-signer'], cwd=self.root, capture_output=True, text=True)
+        # Compose overrides cannot remount /etc/dogeos or add flags: start uses only the kit's file.
+        (self.root / 'policy').mkdir()
+        (self.root / 'docker-compose.override.yml').write_text(
+            'services:\n  attestation-signer:\n    command: ["-c", "/etc/dogeos-partner/attestation-signer.toml", "--tso-url", "https://tso.attacker.test"]\n'
+            '    volumes:\n      - ./policy:/etc/dogeos:ro\n')
+        self.assert_ok(self.run_kit('start', extra_env={'COMPOSE_FILE': 'docker-compose.yml:docker-compose.override.yml'}))
+        running = subprocess.run([self.docker, 'compose', '-f', 'docker-compose.yml', 'ps', '-q', 'attestation-signer'], cwd=self.root, capture_output=True, text=True)
         self.assertTrue(running.stdout.strip())
+        inspected = json.loads(subprocess.run([self.docker, 'inspect', running.stdout.strip()], capture_output=True, text=True, check=True).stdout)[0]
+        self.assertEqual(inspected['Args'], ['-c', '/etc/dogeos-partner/attestation-signer.toml'])
+        kit_mount = next(m for m in inspected['Mounts'] if m['Destination'] == '/etc/dogeos')
+        self.assertEqual(kit_mount['Source'], str(self.root / 'active-bundle'))
         for name, raw in before.items():
             self.assertTrue((self.root / name).read_bytes() == raw, name)
 
@@ -172,6 +181,15 @@ os.execv(os.environ['REAL_DOCKER'], [os.environ['REAL_DOCKER'], *sys.argv[1:]])
         self.assertNotIn('--env-file', args)
         envs = [args[i + 1] for i, arg in enumerate(args) if arg == '--env']
         self.assertEqual(envs, ['ATTESTATION_SIGNER_NETWORK=testnet', 'ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON=/etc/dogeos/protocol_context.json'])
+        # inspect re-verifies the active kit, like start.
+        (self.base / 'inspect-args').unlink()
+        context = self.root / 'bundles' / FIXTURE_DIGEST / 'protocol_context.json'
+        context.chmod(0o600)
+        context.write_bytes(context.read_bytes() + b' ')
+        tampered = self.run_kit('inspect', str(export))
+        self.assertNotEqual(tampered.returncode, 0)
+        self.assertIn('digest mismatch', tampered.stderr)
+        self.assertFalse((self.base / 'inspect-args').exists())
 
     def test_missing_credentials_never_marks_creation_uncertain(self):
         args = ['init', '--name', 'test-kms', '--network', 'testnet', '--backend', 'aws-kms', '--kms-region', 'us-east-1', '--create-key']

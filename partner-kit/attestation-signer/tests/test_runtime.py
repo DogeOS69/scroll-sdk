@@ -43,6 +43,15 @@ class RuntimeTests(unittest.TestCase):
     def install(self):
         runtime.install(self.root, self.bundle, self.digest)
 
+    def service(self, environment):
+        """The resolved Compose service as `docker compose config --format json` prints it."""
+        return {'command': list(runtime.KIT_COMMAND), 'environment': environment,
+                'volumes': [{'type': 'bind', 'source': f'{self.root}/data', 'target': '/app/data'},
+                            {'type': 'bind', 'source': f'{self.root}/active-bundle', 'target': '/etc/dogeos', 'read_only': True}]}
+
+    def prestart(self, service):
+        runtime.prestart(self.root, {'services': {'attestation-signer': service}}, str(self.root))
+
     def assert_operator_files_unchanged(self):
         for name, original in self.original.items():
             self.assertTrue((self.root / name).read_bytes() == original, name)
@@ -90,7 +99,7 @@ class RuntimeTests(unittest.TestCase):
         original = context.read_bytes()
         context.write_bytes(original + b' ')
         with self.assertRaisesRegex(ValueError, 'digest mismatch'):
-            runtime.prestart(self.root, {'services': {'attestation-signer': {}}})
+            self.prestart({})
         context.write_bytes(original)
         runtime.verify_active(self.root)
         (installed / 'extra.env').write_text('ATTESTATION_SIGNER_ALLOWED_NEXT_BRIDGE_SCRIPT_HASHES=0x00\n')
@@ -108,15 +117,31 @@ class RuntimeTests(unittest.TestCase):
     def test_operator_env_cannot_override_kit_fields_at_start(self):
         self.install()
         kit_env = runtime.env_values((self.root / 'active-bundle' / 'deployment-kit.env').read_bytes())
-        compose = {'services': {'attestation-signer': {'environment': dict(kit_env)}}}
         config = self.root / 'attestation-signer.toml'
         config.write_text((Path(__file__).parents[1] / 'attestation-signer.toml').read_text().replace('.example.invalid', '.test'))
         config.chmod(0o600)
         (self.root / 'operator.env').unlink()
-        runtime.prestart(self.root, compose)
+        self.prestart(self.service(dict(kit_env)))
         for field, value in [('ATTESTATION_SIGNER_POLICY_MODE', 'observe'), ('ATTESTATION_SIGNER_TSO_URL', 'https://tso.attacker.test')]:
             with self.assertRaisesRegex(ValueError, field):
-                runtime.prestart(self.root, {'services': {'attestation-signer': {'environment': {**kit_env, field: value}}}})
+                self.prestart(self.service({**kit_env, field: value}))
+
+    def test_compose_must_mount_the_kit_and_run_the_kit_command(self):
+        self.install()
+        kit_env = runtime.env_values((self.root / 'active-bundle' / 'deployment-kit.env').read_bytes())
+        good = self.service(kit_env)
+        kit_mount = good['volumes'][1]
+        for change, message in [
+            ({'command': runtime.KIT_COMMAND + ['--tso-url', 'https://tso.attacker.test']}, 'command'),
+            ({'entrypoint': ['/bin/sh']}, 'entrypoint'),
+            ({'volumes': [{**kit_mount, 'source': f'{self.root}/policy'}]}, 'active-bundle'),
+            ({'volumes': [{**kit_mount, 'read_only': False}]}, 'active-bundle'),
+            ({'volumes': [kit_mount, {'type': 'bind', 'source': f'{self.root}/ctx.json', 'target': '/etc/dogeos/protocol_context.json'}]}, 'active-bundle'),
+            ({'volumes': []}, 'active-bundle'),
+        ]:
+            with self.assertRaisesRegex(ValueError, message):
+                runtime.check_service({**good, **change}, str(self.root))
+        runtime.check_service(good, str(self.root))
 
     def test_kit_contract_fields_and_core_identity_are_required(self):
         kit = json.loads((self.bundle / 'deployment-kit.json').read_text())
@@ -133,12 +158,17 @@ class RuntimeTests(unittest.TestCase):
     def test_missing_verifier_is_rejected(self):
         (self.bundle / 'advance-l2-agg-verifying-key.bin').unlink()
         self.digest = self.manifest()
-        self.assert_rejected('Incomplete deployment kit')
+        self.assert_rejected('exactly the required files')
 
     def test_missing_required_file_is_rejected(self):
         (self.bundle / 'deployment-kit.env').unlink()
         self.digest = self.manifest()
-        self.assert_rejected('Incomplete deployment kit')
+        self.assert_rejected('exactly the required files')
+
+    def test_extra_listed_file_is_rejected(self):
+        (self.bundle / 'extra.json').write_text('{}')
+        self.digest = self.manifest()
+        self.assert_rejected('exactly the required files')
 
     def test_kit_for_another_network_is_rejected(self):
         self.original['identity.json'] = json.dumps({**self.identity, 'network': 'mainnet'}).encode()
