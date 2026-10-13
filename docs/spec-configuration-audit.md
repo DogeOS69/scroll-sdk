@@ -1,8 +1,8 @@
 # DeploymentSpec configuration coverage audit
 
-> Current contracts default (2026-10-10): `dogeos-v0.3.0-rc.5`
-> (`be94674ec64383c1cea61770e64d3b1586bd298e`). The rc.4 references below
-> retain the original audit and rehearsal baseline; they do not certify an rc.5
+> Current contracts default (2026-10-13): `dogeos-v0.3.0-rc.6`
+> (`1b7f40037084c88f4364a4f40dda68e9e5965b28`). The rc.4 references below
+> retain the original audit and rehearsal baseline; they do not certify an rc.6
 > container rehearsal. Current image selections are in [the examples](../examples/README.md).
 
 Audit date: 2026-10-09. Scope: a new deployment using core beta.6 and contracts

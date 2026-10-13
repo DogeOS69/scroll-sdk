@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - ".github/scripts/validate_charts.py"
+      - ".github/tests/test_chart_validation.py"
+      - ".github/workflows/chart-sync-check.yaml"
+      - "partner-kit/attestation-signer/**"
       - ".github/scripts/validate_production_values.py"
       - "charts/**/values.yaml"
       - "charts/**/values.schema.json"
@@ -14,6 +17,9 @@ on:
   pull_request:
     paths:
       - ".github/scripts/validate_charts.py"
+      - ".github/tests/test_chart_validation.py"
+      - ".github/workflows/chart-sync-check.yaml"
+      - "partner-kit/attestation-signer/**"
       - ".github/scripts/validate_production_values.py"
       - "charts/**/values.yaml"
       - "charts/**/values.schema.json"
@@ -35,6 +41,9 @@ jobs:
 
       - name: Install dependencies
         run: pip install pyyaml
+
+      - name: Test chart validation
+        run: python -m unittest discover -s .github/tests -p test_chart_validation.py -v
 
       - name: Validate Chart Files
         run: python .github/scripts/validate_charts.py
