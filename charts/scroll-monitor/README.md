@@ -318,6 +318,30 @@ the rules and source references for the current DogeOS workflow.
 
 ### Business and funding alerts
 
+`WFBuildQueueStalled` uses the current-head job age metric from
+[dogeos-core #1529](https://github.com/DogeOS69/dogeos-core/pull/1529):
+`withdrawal_processor_protocol_job_head_oldest_age_seconds`. A current job in
+`queued`, `building`, `built`, `failed_retryable`, or `bug` must be older than
+30 minutes for another 10 minutes before the critical alert fires. Core excludes
+superseded historical jobs from this metric; current bugs remain actionable.
+The observation must have a valid `job_head` snapshot, a nonfuture timestamp
+less than 120 seconds old, and a successful scrape.
+
+During rolling upgrades, each namespace/job/instance still exposing only the
+old metrics falls back to `withdrawal_processor_protocol_job_oldest_age_seconds`
+with its `jobs` snapshot guard. Such instances can still alert on historical
+failures until WP is upgraded. Any head-aware age, validity, or timestamp series
+disables that fallback for its target, including when the new snapshot is
+invalid. The old metric remains available for historical dashboards.
+
+The separate `WPProtocolObservationUnavailable` warning (under `businessAlerts`)
+already covers the new `source="job_head"`: an invalid or stale snapshot lasting
+five minutes alerts there instead of treating cached ages as current evidence.
+Keep both `businessAlerts` and `serviceAlerts` enabled for this coverage. A queue
+alert disappearing because its observation became unavailable does not establish
+recovery. Exact shipped Grafana expressions are migrated while preserving
+operator overrides, including pause state and notification settings.
+
 `TSONoRegisteredSigners` and `FeeOracleStale` require an observed signer count
 or computation timestamp. Missing metrics instead trigger the warning rules
 `TSOSignerMetricMissing` and `FeeOracleMetricMissing` after five minutes. This

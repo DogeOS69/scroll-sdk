@@ -114,7 +114,7 @@
 {{- $guards := dict -}}
 {{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
 {{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
-{{- range $source := list "jobs" "proof_work" -}}
+{{- range $source := list "jobs" "job_head" "proof_work" -}}
 {{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
 {{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}
@@ -125,6 +125,18 @@
 {{- range $rule := $group.rules -}}
 {{- range $marker, $guard := $guards -}}
 {{- $_ := set $rule "expr" (replace $marker $guard $rule.expr) -}}
+{{- end -}}
+{{/* Expand historical expressions too, so exact-match Grafana migration works. */}}
+{{- if hasKey $rule "previousExpr" -}}
+{{- $previous := $rule.previousExpr -}}
+{{- $expanded := list -}}
+{{- range $expr := (ternary $previous (list $previous) (kindIs "slice" $previous)) -}}
+{{- range $marker, $guard := $guards -}}
+{{- $expr = replace $marker $guard $expr -}}
+{{- end -}}
+{{- $expanded = append $expanded $expr -}}
+{{- end -}}
+{{- $_ := set $rule "previousExpr" (ternary $expanded (first $expanded) (kindIs "slice" $previous)) -}}
 {{- end -}}
 {{- if hasKey $pauses $rule.alert -}}
 {{- $_ := set $rule "isPaused" (index $pauses $rule.alert) -}}
