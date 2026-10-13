@@ -35,6 +35,17 @@ is `dstack-system`. This may differ from the business-service `NAMESPACE`.
 
 ## 2. Plan once; resume apply at external waits
 
+To generate and review genesis before completing the rest of the deployment
+inputs, use `scrollsdk setup plan --until genesis`, then `scrollsdk setup apply`.
+This prepares only the required deployer, primary sequencer and Fee Oracle
+identities and the contracts artifacts. KMS-backed identities may create AWS
+resources. Apply returns `paused` after writing `deployment/.data/genesis.json`;
+it does not continue into Bridge initialization or service installation.
+See [Generate genesis first and stop](deployment-spec.md#generate-genesis-first-and-stop)
+for required inputs and how to expand the plan later without regenerating genesis.
+
+For the complete preparation flow:
+
 ```bash
 scrollsdk setup plan
 scrollsdk setup apply

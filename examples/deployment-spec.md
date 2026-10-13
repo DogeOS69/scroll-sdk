@@ -351,6 +351,50 @@ The wallet commands above follow Dogecoin Core's
 [validateaddress implementation](https://github.com/dogecoin/dogecoin/blob/v1.14.9/src/rpc/misc.cpp),
 and [dumpprivkey implementation](https://github.com/dogecoin/dogecoin/blob/v1.14.9/src/wallet/rpcdump.cpp).
 
+### Generate genesis first and stop
+
+When later service or Bridge inputs are not ready, start with a genesis-only plan:
+
+```bash
+scrollsdk setup plan --until genesis
+scrollsdk setup apply
+```
+
+The plan records the stopping boundary, so apply stops automatically even if
+`--until` is omitted. It prepares the real deployer account, primary L2 sequencer
+identity and Fee Oracle identity, then invokes the contracts generator and exports
+`deployment/.data/genesis.json` alongside `deployment/values/genesis.yaml`.
+The result is `status: paused` with exit code 0, not a completed deployment.
+An existing full plan can also be stopped with `scrollsdk setup apply --until genesis`.
+
+Genesis-only planning validates chain/network, genesis economics, owner and
+contract recipients, deployment salt, and the necessary identity intents. It does
+not query CubeSigner or download a proof release, and does not require signer
+public keys, recovery keys, Dogecoin RPC credentials, fee-wallet WIF, PostgreSQL,
+Vast credentials, ingress certificates, or runtime image tags. It needs a local
+SDK checkout and Docker for the contracts generator (or the explicit local
+contracts backend). KMS identities still require AWS access: apply may create or
+reuse the primary sequencer and Fee Oracle KMS keys and their IAM/IRSA resources.
+It does not provision archive/proof buckets, prepare dstack, fund wallets,
+initialize the Bridge, or install services at this boundary.
+
+After reviewing genesis, complete the remaining fields in the original spec and
+run the regular commands:
+
+```bash
+scrollsdk setup plan
+scrollsdk setup apply
+```
+
+Plan expands the saved genesis-only plan after full validation. It requires the
+same genesis inputs and pinned SDK revision, verifies the saved artifacts, and
+preserves all completed genesis steps and identities. Changed genesis inputs or
+modified artifacts are rejected; do not delete the deployment directory to work
+around that check. Repeating a genesis-only apply is safe and does not advance.
+For a full plan paused by an apply flag alone, resume with `setup apply` without
+the flag; no new plan is needed. Plans created by an older CLI workflow still
+require their original CLI version.
+
 ## Plan, apply and fund
 
 ```bash
