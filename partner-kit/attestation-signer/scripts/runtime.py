@@ -106,7 +106,11 @@ def verify_kit(folder, expected, identity_file):
     kit = json.loads(regular(folder / 'deployment-kit.json'))
     require(kit['schema'] == 'dogeos/deployment-kit/v1', 'Unsupported deployment kit schema')
     require(kit['policy_mode'] == 'enforce', 'Expected enforce mode')
+    require(isinstance(kit['kit_version'], str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}', kit['kit_version']), 'Invalid kit version')
+    deployment = kit['deployment']
+    require(isinstance(deployment, dict) and {'generation_id', 'inputs', 'topology_revision'} <= set(deployment), 'Missing deployment generation')
     identity = json.loads(regular(identity_file))
+    require(identity['schema'] == 'dogeos/attestation-signer-descriptor/v1', 'Use core --print-identity JSON')
     require(identity['network'] == kit['network'], 'Kit is for another network than this signer')
     require(re.fullmatch(r'0x[0-9a-f]{64}', kit['protocol_instance_id']), 'Invalid protocol instance id')
     context, verifier = kit['protocol_context'], kit['advance_l2_verifier']
@@ -174,9 +178,11 @@ def verify_active(root):
     target = os.readlink(active)
     expected = Path(target).name
     require(Path(target) == Path('bundles') / expected and re.fullmatch(r'[0-9a-f]{64}', expected), 'active-bundle must link to an imported kit')
+    require(not (root / 'bundles').is_symlink(), 'Bundles directory must not be a symlink')
     folder = root / 'bundles' / expected
     require(folder.is_dir() and not folder.is_symlink(), 'Imported kit is missing')
     verify_active_files(folder, expected, root / 'identity.json')
+    return folder
 
 
 SOURCE_ENV_OVERRIDES = {
@@ -215,9 +221,12 @@ def validate_rpc_config(root):
 
 
 def prestart(root, compose):
-    verify_active(root)
+    kit_env = env_values(regular(verify_active(root) / 'deployment-kit.env'))
     service = compose['services']['attestation-signer']
     environment = service.get('environment', {})
+    # Operator env files load after the kit; they must not replace any bridge field.
+    for field in sorted(BRIDGE_FIELDS):
+        require(environment.get(field) == kit_env[field], 'Operator configuration overrides the deployment kit field ' + field)
     reject_rpc_overrides(environment)
     validate_rpc_config(root)
     print('Active deployment kit and RPC file configuration checked. Independent ownership of the sources still requires operator review.')

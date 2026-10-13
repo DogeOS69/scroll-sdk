@@ -105,6 +105,31 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'deployment-kit-manifest.json'):
             runtime.verify_active(self.root)
 
+    def test_operator_env_cannot_override_kit_fields_at_start(self):
+        self.install()
+        kit_env = runtime.env_values((self.root / 'active-bundle' / 'deployment-kit.env').read_bytes())
+        compose = {'services': {'attestation-signer': {'environment': dict(kit_env)}}}
+        config = self.root / 'attestation-signer.toml'
+        config.write_text((Path(__file__).parents[1] / 'attestation-signer.toml').read_text().replace('.example.invalid', '.test'))
+        config.chmod(0o600)
+        (self.root / 'operator.env').unlink()
+        runtime.prestart(self.root, compose)
+        for field, value in [('ATTESTATION_SIGNER_POLICY_MODE', 'observe'), ('ATTESTATION_SIGNER_TSO_URL', 'https://tso.attacker.test')]:
+            with self.assertRaisesRegex(ValueError, field):
+                runtime.prestart(self.root, {'services': {'attestation-signer': {'environment': {**kit_env, field: value}}}})
+
+    def test_kit_contract_fields_and_core_identity_are_required(self):
+        kit = json.loads((self.bundle / 'deployment-kit.json').read_text())
+        for change, message in [({'kit_version': '../1'}, 'kit version'), ({'deployment': {}}, 'deployment generation')]:
+            (self.bundle / 'deployment-kit.json').write_text(json.dumps({**kit, **change}))
+            self.digest = self.manifest()
+            self.assert_rejected(message)
+        (self.bundle / 'deployment-kit.json').write_text(json.dumps(kit))
+        self.digest = self.manifest()
+        self.original['identity.json'] = json.dumps({**self.identity, 'schema': 'other'}).encode()
+        (self.root / 'identity.json').write_bytes(self.original['identity.json'])
+        self.assert_rejected('print-identity')
+
     def test_missing_verifier_is_rejected(self):
         (self.bundle / 'advance-l2-agg-verifying-key.bin').unlink()
         self.digest = self.manifest()

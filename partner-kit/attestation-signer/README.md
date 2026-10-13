@@ -206,7 +206,8 @@ on every start and refuses to start on any mismatch.
 
 The kit holds no signer list and no rotation material. `import` and `start`
 reject kit fields that would set your private key, RPC trust, binary pins or
-rotation permissions. They never change `attestation-signer.env`,
+rotation permissions, and `start` refuses local env files that override a kit
+field. They never change `attestation-signer.env`,
 `transport.key`, `attestation-signer.toml`, `identity.json`, AWS credentials
 or the database. Image, commit and policy pins come from the approved release
 record, not from the kit.
@@ -295,8 +296,9 @@ signer's directory, check the rotation export the bridge operator sends you:
 ```
 
 It runs the signer image's `inspect-rotation` offline against this signer's
-configuration and prints the decoded old/new sets, the grace and the exact
-`allowed_next_bridge_script_hashes` line. After your team's review, add that
+configuration. That subcommand needs a signer release that includes it; the
+beta.6a image pinned in `.env.example` does not. It prints the decoded old/new
+sets, the grace and the exact `allowed_next_bridge_script_hashes` line. After your team's review, add that
 line to `attestation-signer.toml` and restart with `./signer.sh start`, one
 signer at a time. The new signers are set up as new signers above, in new
 directories with new keys and databases.
