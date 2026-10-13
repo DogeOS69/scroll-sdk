@@ -89,7 +89,7 @@ and minimum withdrawal values already use L2 wei.
 
 Core service images are beta.6, with `v0.3.0-beta.6-kms` for withdrawal-processor.
 That image supports KMS sequencing; its fee wallet still uses a local key.
-The CLI genesis default is contracts rc.5, and
+The CLI genesis default is contracts rc.6, and
 fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Empty blocks are disabled by default (`reth.sequencer.allowEmptyBlocks: false`);
 the block interval does not require producing a block when there is no eligible work.
