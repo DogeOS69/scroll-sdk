@@ -156,17 +156,17 @@ instructions describe beta.5 to beta.5a only.
 
 ## Contracts images
 
-Use the matching `dogeos69/scroll-stack-contracts` rc.6 images for the three
+Use the matching `dogeos69/scroll-stack-contracts` rc.7 images for the three
 contracts operations:
 
 | Operation | Image tag |
 | --- | --- |
-| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.6` |
-| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.6` |
-| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.6` |
+| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.7` |
+| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.7` |
+| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.7` |
 
 The deployment example pins `image.tag`. The CLI selects the generation and
-verification images separately; use a CLI release configured for rc.6 or supply
+verification images separately; use a CLI release configured for rc.7 or supply
 the matching explicit `--image-tag` to `setup gen-l2-artifacts` and
 `setup verify-contracts`.
 
