@@ -1,6 +1,6 @@
 image:
   repository: dogeos69/preinstalls
-  tag: v0.2.0
+  tag: v0.2.1
 
 configMaps:
   preinstalls-env:
@@ -19,7 +19,7 @@ verify:
   enabled: false
   image:
     repository: dogeos69/preinstalls
-    tag: v0.2.0
+    tag: v0.2.1
   blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
   blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
   scVerifierUrl: http://blockscout-sc-verifier:8080
