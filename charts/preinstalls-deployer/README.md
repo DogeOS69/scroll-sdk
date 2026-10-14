@@ -29,7 +29,7 @@ The Helm chart and the deployment image are separate artifacts:
 | Artifact | Registry reference | Client |
 | --- | --- | --- |
 | Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.0-dogeos` | Helm |
-| Contract deployment image | `docker.io/dogeos69/preinstalls:v0.1.0` | Docker / Kubernetes |
+| Contract deployment image (standalone example) | `docker.io/dogeos69/preinstalls:v0.2.0` | Docker / Kubernetes |
 
 The chart is published by this repository's `publish-chart.yaml` workflow.
 Changes under `charts/preinstalls-deployer/` merged into `v0.3.0-develop` trigger that
@@ -60,25 +60,24 @@ Helm registry configuration to distinguish public access from cached credentials
 Check package visibility separately; a successful push does not imply public
 read access.
 
-The existing standalone Makefile can select this chart explicitly:
+The standalone `examples/Makefile.example` uses this chart by default, with
+`examples/values/preinstalls-production.yaml` selecting `dogeos69/preinstalls:v0.2.0`
+for both deployment and optional verification:
 
 ```bash
-make install-preinstalls \
-  PREINSTALLS_CHART=oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer \
-  PREINSTALLS_CHART_VERSION=0.1.0-dogeos
+make install-preinstalls
 ```
 
 Use the same release name when selecting this copy. Do not install both charts
 as separate releases in the same namespace: they manage the same ConfigMap and
-Secret names. The Makefile default remains on the original chart until the
-publication comparison is complete.
+Secret names.
 
 ## Required values
 
 ```yaml
 image:
   repository: dogeos69/preinstalls
-  tag: v0.1.0
+  tag: v0.2.0
 
 envFrom:
   - configMapRef:
@@ -88,6 +87,9 @@ envFrom:
 
 verify:
   enabled: false  # enable only after Blockscout and its verifier are available
+  image:
+    repository: dogeos69/preinstalls
+    tag: v0.2.0
   blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
   blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
 ```
