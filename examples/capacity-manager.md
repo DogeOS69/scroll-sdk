@@ -16,8 +16,8 @@ digest from the Core release owner, then set `image.repository` and
 `image.digest` in the spec. Verify that the selected image provides
 `/usr/local/bin/capacity-manager` with `--dstack-max-price-usd` and
 `--provisioner-state-dir`. The SDK chart consumes that image directly; image
-building and publication are managed outside this repository. Generic examples
-require an explicit digest; DevNet profiles pin their separately published image.
+building and publication are managed outside this repository. Generic and DevNet
+examples pin `dogeos69/capacity-manager:develop-50653e7b` by its immutable digest.
 The manager image is independent of the existing proof worker/circuit release:
 keep the compiler-checked worker image and published program bundle unchanged.
 Selecting L4 requires the worker image check to report CUDA architecture 89.

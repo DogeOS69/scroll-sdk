@@ -53,8 +53,9 @@ watchdog suspended.
 
 ## Truthful architecture and proof contract
 
-The manager image stays pinned to the existing qualified digest. The worker
-image changes to
+The manager image is pinned to `dogeos69/capacity-manager:develop-50653e7b` by
+digest. The historical qualification below predates this manager image update.
+The worker image remains
 `dogeos69/prover-worker-cuda@sha256:5f170b2150877b66ce8c3daa1c467d8ac60947c1f229f913cab1247e79efb2b9`,
 built for CUDA architecture 89 from source
 `350508c1cd068230fc731747a3b5bbfbb44b81cf`. This is a different binary/source

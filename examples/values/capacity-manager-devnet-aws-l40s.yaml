@@ -8,8 +8,9 @@ fullnameOverride: devnet-capacity-manager-active
 prepared: false
 replicaCount: 1
 image:
-  repository: 074120976575.dkr.ecr.us-east-1.amazonaws.com/dogeos-devnet/capacity-manager-lab
-  digest: sha256:1830c15c0736fbf3cf439f26eafdb9739e8be924b6b7e5b0ba2435fb94f90e11
+  repository: dogeos69/capacity-manager
+  # dogeos69/capacity-manager:develop-50653e7b
+  digest: sha256:4535d8ae9ce9adf7d84dc129de28606e0471216037cbf7c4ad985636eb735620
   pullPolicy: IfNotPresent
 serviceAccount:
   create: false
