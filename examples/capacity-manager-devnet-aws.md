@@ -1,43 +1,49 @@
 # DevNet Capacity Manager: AWS primary with manual Vast fallback
 
-Use `values/capacity-manager-devnet-aws-a10g.yaml` as the **primary AWS path for
-all four proving families**, in namespace `dstack-system`. Vast RTX3090 is the
-fallback when AWS capacity is unavailable or its price exceeds the configured
-ceiling. Both profiles use the same release name, worker prefix, external
-ServiceAccount, PVC and bearer references. Never install them as two production
-allocators. The AWS profile can rent one paid GPU indefinitely, with a USD
-1.75/hour ceiling plus provider storage/traffic costs.
+Use `values/capacity-manager-devnet-aws-l40s.yaml` as the **primary AWS path for
+all four proving families**, following the preparation procedure in
+[the L40S guide](capacity-manager-devnet-aws-l40s.md), in namespace
+`dstack-system`. Its current CUDA89 worker passed isolated all-family native
+qualification and the paired chunk performance check. The profile retains
+`prepared: false`: isolated qualification does not authorize live activation.
+Verify external fleet/auth/state, the approved USD 3.10/hour ceiling and the
+same-owner handoff before explicitly enabling it. Storage/traffic cost extra.
+
+Vast RTX3090 is the qualified fallback when AWS capacity is unavailable or its
+price exceeds the configured ceiling. Both profiles use the same release name,
+worker prefix, external ServiceAccount, PVC and bearer references. Never install
+them as two production allocators. A10G is an optional functional alternative
+only when the operator explicitly accepts its measured performance tradeoff;
+it is not the primary install or return-from-fallback path.
 
 The current Core provisioner selects one policy provider and one dstack project
 per manager. These Helm profiles do **not** implement automatic failover,
 simultaneous provider pools or per-family provider routing. Fallback and return
 to AWS are explicit operator handoffs with one allocation owner throughout.
 
-The manager and worker image digests and exact worker command are unchanged.
-The command SHA256 is
-`81b537df1660ac50e4d64142b63f9b99afd537b1a906b7589e00873d4cfbbec0`.
-All four proving families, program hashes, architecture check, parallelism and
-graceful drain settings are retained. The A10G has nominal 24GB VRAM; the AWS
-offer exposes about 22GiB usable, so placement uses a 22GiB minimum. All family
-minimums remain 16GiB. The provisional chunk runtime estimate is 360 seconds;
-this is not a measured throughput guarantee or a claim of performance parity.
+L40S preserves the manager image, program hashes, proving-family roles,
+parallelism, graceful drain and auth/state contract. It uses the qualified
+CUDA89 worker image and changes the command's compute-capability check from
+86 to 89; see the L40S guide for exact image/command pins and build limitations.
+All family VRAM minimums remain 16GiB; runtime estimates are provisional.
 
 ## Prerequisites and bounded placement
 
 The chart does not configure AWS credentials or create provider fleets. Before
 starting it, provision and offer-only validate the dedicated dstack fleet
-`devnet-provers-aws/devnet-capacity-manager-active-aws-a10g`:
+`devnet-provers-aws/devnet-capacity-manager-active-aws-l40s`, using the
+L40S preparation procedure:
 
-- backend `aws`, region `us-east-1`, instance type `g5.4xlarge`, on-demand;
-- nodes 0..1, exactly one A10G with at least 22GiB usable GPU memory;
-- minimum 16 CPUs, 64GiB RAM and 200GiB disk;
-- hourly instance price ceiling USD 1.75 and an explicit bounded idle policy.
+- backend `aws`, region `us-east-1`, instance type `g6e.4xlarge`, on-demand;
+- nodes 0..1, exactly one L40S with at least 44GiB usable GPU memory;
+- minimum 16 CPUs, 128GiB RAM and 200GiB disk;
+- hourly instance price ceiling USD 3.10 and an explicit bounded idle policy.
 
 Confirm actual planned resources and price before allocation. Provider offers
 and availability can change; a matching instance name alone is insufficient.
-A priced offer does not guarantee live EC2 capacity. The isolated lab observed
-`InsufficientInstanceCapacity` in two eligible availability zones, followed by
-a successful bounded CM retry. If allocation still cannot obtain an instance
+A priced offer does not guarantee live EC2 capacity. The isolated L40S tests encountered unavailable/unsupported placements and
+three cold-start task submissions without capacity before a successful run.
+Follow the L40S guide for supported-AZ validation and bounded retries. If allocation still cannot obtain an instance
 within the agreed startup window, treat that as AWS availability exhaustion and
 follow the same manual fallback procedure. Stop AWS CM first, then verify
 terminal owned tasks and actual provider cleanup; an offer-only result or a
@@ -89,12 +95,13 @@ Secrets remain externally managed. If WP NetworkPolicy is enforced, preserve
 its other values and apply the existing
 `values/capacity-manager-devnet-wp-peer.yaml` overlay to its release in `default`.
 
-Only after cleanup and preflight, install/update the **same** release:
+Only after cleanup, preflight and verification of the live prerequisites in
+the L40S guide, explicitly enable and install/update the **same** release:
 
 ```bash
 helm upgrade --install devnet-capacity-manager-active ../charts/capacity-manager \
   --kube-context "$KUBE_CONTEXT" --namespace dstack-system \
-  -f values/capacity-manager-devnet-aws-a10g.yaml
+  -f values/capacity-manager-devnet-aws-l40s.yaml --set prepared=true
 ```
 
 Update monitoring's project, fleet, provider inventory, price and metrics epoch
@@ -112,9 +119,11 @@ repair CM on failure; do not silently restore SDK ownership.
    use `get_plan(..., unallocated_resources=True, for_offers_only=True)` and
    inspect `job_plans[].offers`; do not call apply or create as a preflight.
    Keep the existing fleet and instance selectors, then confirm availability,
-   exactly one A10G, usable VRAM, CPU/RAM/disk and hourly price at or below USD
-   1.75. Check actual ownership/inventory separately: an offer-only plan does
-   not prove there are no paid workers. Record a bounded, credential-free result.
+   exactly one L40S, at least 44GiB usable VRAM, 16 CPUs, 128GiB RAM,
+   200GiB disk and hourly price at or below USD 3.10. Complete the L40S
+   fleet/auth/state preparation and supported-AZ checks before activation.
+   Check actual ownership/inventory separately: an offer-only plan does not
+   prove there are no paid workers. Record a bounded, credential-free result.
 2. If no matching available AWS offer meets the price ceiling, leave the
    ceiling unchanged and prepare the qualified RTX3090 fallback described in
    `capacity-manager-devnet.md`. Preflight its current pinned offer, effective
@@ -140,7 +149,9 @@ repair CM on failure; do not silently restore SDK ownership.
 5. While on fallback, periodically repeat the bounded AWS offer-only check at
    the existing monitoring cadence. Once an acceptable AWS offer returns,
    prepare the reverse handoff: drain/verify cleanup of the Vast worker and
-   provider rental, then update the same release to this AWS-primary profile.
+   provider rental, then follow the L40S preparation procedure and update the
+   same release to `values/capacity-manager-devnet-aws-l40s.yaml`, explicitly
+   enabling it only after verifying the live fleet/auth/state and budget gates.
    Verify the new exact AWS RunID and resource/price/security checks. Restoring
    AWS preference must not start a second allocator or resume SDK ownership.
 
@@ -161,13 +172,28 @@ public inputs and canonical verification key were checked. Actual CPU and
 memory cgroup limits were unrestricted; a container quota did not explain this
 sample. The isolated AWS instance and disk were verified removed afterward.
 
-A stronger L40S candidate is described in `capacity-manager-devnet-aws-l40s.md`.
-Its isolated exact-input chunk replay passed in 206.947 seconds. It remains
-disabled pending current-image all-family acceptance and external prerequisites.
-The operator authorized an ongoing USD 3.10/hour ceiling conditional on
-performance qualification. The A10G profile is a functional AWS option, **not a
-qualified replacement for the RTX3090 performance requirement**. The production
-RTX3090 manager remains unchanged during qualification. Earlier all-family AWS
-qualification used a different worker image and does not qualify this profile's
-performance. All-family current-image acceptance, throughput and Private
-Mainnet load qualification remain outstanding.
+The AWS-primary L40S profile is described in
+`capacity-manager-devnet-aws-l40s.md`. Its isolated exact-input chunk replay
+passed in 206.947 seconds. Its current CUDA89 image also passed the complete
+isolated native C3 test with 17 real proofs proved and verified: 5 chunks,
+5 batches, 1 L2 range aggregation and 6 bridge transitions, including genuine
+checked M=2 aggregation signer acceptance and native Docker exit code 0.
+`prepared: false` remains until external live fleet/auth/state, budget and
+same-owner handoff prerequisites are verified. The operator authorized an
+ongoing USD 3.10/hour ceiling conditional on performance qualification.
+Sustained throughput, Private Mainnet load, recovery and the live AWS handoff
+remain separate qualification gates. Production CM on RTX3090 remains active.
+
+## Optional A10G alternative: explicit performance tradeoff
+
+`values/capacity-manager-devnet-aws-a10g.yaml` is a functional AWS option,
+**not a qualified replacement for the RTX3090 performance requirement**.
+Use it only after explicit operator acceptance of the slower measured proving
+performance above. Its separate fleet is
+`devnet-provers-aws/devnet-capacity-manager-active-aws-a10g`, with on-demand
+`g5.4xlarge`, one A10G, at least 22GiB usable VRAM, 16 CPUs, 64GiB RAM,
+200GiB disk and a USD 1.75/hour ceiling. Use that profile's fleet, image,
+command, resource and price selectors together; do not mix them with L40S.
+The same external preparation, native drain, zero-lease and actual cleanup
+checks apply. Earlier all-family AWS qualification used a different worker
+image and does not establish this A10G profile's performance parity.
