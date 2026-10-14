@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk for dogeos
 name: scroll-sdk
-version: 0.1.20-dogeos
+version: 0.1.21-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -94,7 +94,7 @@ dependencies:
     version: 15.5.0
     condition: postgresql.enabled
   - name: preinstalls
-    version: 0.1.1-dogeos
+    version: 0.1.2-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: preinstalls.enabled
   - name: rollup-explorer-backend

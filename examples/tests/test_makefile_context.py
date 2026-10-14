@@ -58,6 +58,31 @@ class MakefileContextTests(unittest.TestCase):
     def test_empty_context_is_an_empty_argument_not_the_next_option(self):
         self.assert_context(self.expanded_commands('', 'default'), '', 'default')
 
+    def test_preinstalls_runs_before_contracts_and_waits_for_the_hook(self):
+        commands = self.expanded_commands('selected', 'chain', targets=['install-all'])
+        preinstalls = next(command for command in commands if 'preinstalls' in command)
+        contracts = next(command for command in commands if 'contracts' in command)
+        self.assertLess(commands.index(preinstalls), commands.index(contracts))
+        self.assertIn('values/preinstalls-production.yaml', preinstalls)
+        self.assertEqual(preinstalls[preinstalls.index('--timeout') + 1], '20m')
+        self.assertNotIn('--no-hooks', preinstalls)
+        # Each recursive make is a separate recipe: failure must stop install-all.
+        source = MAKEFILE.read_text()
+        self.assertIn('\t$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-preinstalls\n'
+                      '\t$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts\n', source)
+
+    def test_preinstalls_chart_can_be_validated_locally(self):
+        commands = self.expanded_commands('selected', 'chain', {
+            'PREINSTALLS_CHART': './charts/preinstalls',
+            'PREINSTALLS_CHART_VERSION': '0.1.2-dogeos',
+            'PREINSTALLS_TIMEOUT': '30m',
+        }, targets=['install-preinstalls'])
+        self.assertEqual(commands, [[
+            'helm', '--kube-context', 'selected', 'upgrade', '-i', 'preinstalls',
+            './charts/preinstalls', '-n', 'chain', '--version=0.1.2-dogeos',
+            '--timeout', '30m', '--values', 'values/preinstalls-production.yaml',
+        ]])
+
     def test_dstack_install_accepts_chart_and_values_overrides(self):
         commands = self.expanded_commands('selected', 'chain', {
             'DSTACK_NAMESPACE': 'gpu-system',
