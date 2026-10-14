@@ -163,8 +163,9 @@ sample. The isolated AWS instance and disk were verified removed afterward.
 
 A stronger L40S candidate is described in `capacity-manager-devnet-aws-l40s.md`.
 Its isolated exact-input chunk replay passed in 206.947 seconds. It remains
-disabled pending current-image all-family acceptance, external prerequisites
-and an approved ongoing price ceiling. The A10G profile is a functional AWS option, **not a
+disabled pending current-image all-family acceptance and external prerequisites.
+The operator authorized an ongoing USD 3.10/hour ceiling conditional on
+performance qualification. The A10G profile is a functional AWS option, **not a
 qualified replacement for the RTX3090 performance requirement**. The production
 RTX3090 manager remains unchanged during qualification. Earlier all-family AWS
 qualification used a different worker image and does not qualify this profile's

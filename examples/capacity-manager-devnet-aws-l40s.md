@@ -3,12 +3,14 @@
 `values/capacity-manager-devnet-aws-l40s.yaml` is a candidate for the AWS-primary
 Capacity Manager path. It deliberately sets `prepared: false`, so installation
 fails closed. It is not an enabled default or a second allocator. The isolated
-L40S test is bounded by the existing USD 10 compute budget; that test does not
-authorize changing the ongoing production price ceiling.
+L40S test is bounded by the existing USD 10 compute budget. For this DevNet
+rollout, the operator authorized an ongoing GPU ceiling of USD 3.10/hour
+conditional on performance qualification. That authorization is separate from
+the lab budget and does not remove the remaining activation gates.
 
 ## Placement and external prerequisites
 
-Before explicitly enabling this profile, approve the ongoing USD 3.10/hour
+Before explicitly enabling this profile, confirm the approved USD 3.10/hour
 ceiling and provision/offer-only validate the dedicated dstack fleet
 `devnet-provers-aws/devnet-capacity-manager-active-aws-l40s`:
 
@@ -82,8 +84,9 @@ preserved for restoration and the test rental must be removed afterward. This
 placement is qualification evidence, not a production network recommendation.
 The lab used synthetic capacity and offline proof replay without production
 coordinator claims or WP/PC production auth. A valid chunk replay does not
-establish all-family production readiness or launch throughput. Those gates and
-the ongoing price decision remain outstanding, so `prepared: false` is retained.
+establish all-family production readiness or launch throughput. Those gates
+remain outstanding, so `prepared: false` is retained. The ongoing USD 3.10/hour
+ceiling is authorized conditional on performance qualification.
 The chunk policy estimate is 240 seconds based on this 206.947-second sample;
 all estimates remain provisional pending production workload distributions.
 
