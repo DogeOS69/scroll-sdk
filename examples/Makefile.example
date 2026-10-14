@@ -402,7 +402,7 @@ delete-l2-reth-bootnode:
 
 # Explicit opt-in: starts the Core loop and may rent paid GPU instances.
 CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
-CAPACITY_MANAGER_CHART_VERSION ?= 0.1.0
+CAPACITY_MANAGER_CHART_VERSION ?= 0.1.1
 install-capacity-manager:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m
 

@@ -72,8 +72,10 @@ by reference; it is the existing shared bearer credential, not a new API scope.
 Before chart publication, use the local chart explicitly:
 `make install-capacity-manager CAPACITY_MANAGER_CHART=../scroll-sdk/charts/capacity-manager`.
 Deploy WP chart 0.1.26 or newer so the generated manager peer is rendered.
-The manager must share the proof services' namespace; dstack can remain in
-`dstack-system`. There is no public ingress or inbound service for the manager.
+The generated peer assumes the manager shares the proof services' namespace;
+dstack can remain in `dstack-system`. The [DevNet profile](capacity-manager-devnet.md)
+uses an explicit namespace-and-Pod peer for a manager in `dstack-system` and WP
+in `default`. There is no public ingress or inbound service for the manager.
 
 Preparation creates `.scrollsdk/capacity-manager/plan.json`. A conflicting SDK
 worker session stops preparation. SDK `proof-workers apply` refuses this marker

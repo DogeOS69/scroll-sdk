@@ -1,0 +1,99 @@
+# L40S: isolated native all-family qualification passed (17 proofs, CUDA89 image below).
+# Explicit live fleet/auth/state preparation and same-owner handoff remain required.
+# An explicit prepared=true override can rent one paid GPU indefinitely at <=3.10/hour.
+# Secrets/SA/state already exist and remain externally managed. No credentials here.
+# Shares the existing allocator identity; never install as a parallel production manager.
+# Read ../capacity-manager-devnet-aws-l40s.md before enabling this candidate.
+fullnameOverride: devnet-capacity-manager-active
+prepared: false
+replicaCount: 1
+image:
+  repository: 074120976575.dkr.ecr.us-east-1.amazonaws.com/dogeos-devnet/capacity-manager-lab
+  digest: sha256:1830c15c0736fbf3cf439f26eafdb9739e8be924b6b7e5b0ba2435fb94f90e11
+  pullPolicy: IfNotPresent
+serviceAccount:
+  create: false
+  name: devnet-capacity-manager-active
+manager:
+  workerIdPrefix: devnet-capacity-manager-active
+  workerImage: dogeos69/prover-worker-cuda@sha256:5f170b2150877b66ce8c3daa1c467d8ac60947c1f229f913cab1247e79efb2b9
+  workerCommand: |-
+    set -eu; umask 077; install -d /dogeos/artifacts/chunk /dogeos/artifacts/batch /dogeos/artifacts/bridge; test "$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d '. ' | head -n 1)" = '89'; printf %s "$DOGEOS_PROVER_WORKER_TOKEN" > /tmp/scrollsdk-worker.token; unset DOGEOS_PROVER_WORKER_TOKEN; install -d '/dogeos/artifacts/chunk'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/chunk/app.vmexe' -o '/dogeos/artifacts/chunk/app.vmexe'; printf '%s  %s\n' 'd61608bf38ea55be280ca5ad971b53bdf9944e10652c2623aaf2eef2a8ae7972' '/dogeos/artifacts/chunk/app.vmexe' | sha256sum --check --status; install -d '/dogeos/artifacts/chunk'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/chunk/openvm.toml' -o '/dogeos/artifacts/chunk/openvm.toml'; printf '%s  %s\n' '3d11fb74d57092a7da9f9064519482fa6bf60d93e3d7ca845d861c47159f2b84' '/dogeos/artifacts/chunk/openvm.toml' | sha256sum --check --status; install -d '/dogeos/artifacts/batch'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/batch/app.vmexe' -o '/dogeos/artifacts/batch/app.vmexe'; printf '%s  %s\n' '5f9d83b89a690b91012a7ea5a3c5d3a7dc5c54c715c6f585df77d235964870eb' '/dogeos/artifacts/batch/app.vmexe' | sha256sum --check --status; install -d '/dogeos/artifacts/batch'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/batch/openvm.toml' -o '/dogeos/artifacts/batch/openvm.toml'; printf '%s  %s\n' '53cc74fc91acd85faee7a06617e2b9d82149fee738a48f71856d56004ea94dd1' '/dogeos/artifacts/batch/openvm.toml' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/bridge-state.vmexe' -o '/dogeos/artifacts/bridge/bridge-state.vmexe'; printf '%s  %s\n' '8df52df31a398c08b2073cee819c3eea602db8b932f35f0ab2365d5f200f84ef' '/dogeos/artifacts/bridge/bridge-state.vmexe' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/openvm.toml' -o '/dogeos/artifacts/bridge/openvm.toml'; printf '%s  %s\n' '5690cf6bae7da45d16bc8de66bf0d1931da737832d0b1e2400e9f6a8ceb9778d' '/dogeos/artifacts/bridge/openvm.toml' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/bridge-artifact-manifest.json' -o '/dogeos/artifacts/bridge/bridge-artifact-manifest.json'; printf '%s  %s\n' '6cc437b373a0d8d616ab38e77ed0e3773cd345421ced0916d5bd2ecca8c9564f' '/dogeos/artifacts/bridge/bridge-artifact-manifest.json' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/batch-aggregation.vmexe' -o '/dogeos/artifacts/bridge/batch-aggregation.vmexe'; printf '%s  %s\n' '6d7db1fcec0a04505c08cbaf78e9f43875621cb5de42a86149a8aceb20773b51' '/dogeos/artifacts/bridge/batch-aggregation.vmexe' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/batch-aggregation-openvm.toml' -o '/dogeos/artifacts/bridge/batch-aggregation-openvm.toml'; printf '%s  %s\n' '09a74a8f8cf322adcccaa56b8914c77204a89519de1f047395613d556a5f65b5' '/dogeos/artifacts/bridge/batch-aggregation-openvm.toml' | sha256sum --check --status; install -d '/dogeos/artifacts/bridge'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/bridge/l2-range-aggregation-topology-program.json' -o '/dogeos/artifacts/bridge/l2-range-aggregation-topology-program.json'; printf '%s  %s\n' '422a7bccf289b3b1ec030cbe2d611f116d93c9d2ad578fb79252078356c21caf' '/dogeos/artifacts/bridge/l2-range-aggregation-topology-program.json' | sha256sum --check --status; install -d '/dogeos/artifacts'; curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 10 --speed-limit 1024 --speed-time 30 --max-time 600 --retry 2 'https://s3.us-east-1.amazonaws.com/dogeos-devnet-artifacts-us-east-1-c9e51a/dogeos-testnet/proofs/proof-programs/8106131922953a6827c70e8439a7f148a20dcc6ec9dc094de84dbe3996e364ec/protocol_context.json' -o '/dogeos/artifacts/protocol_context.json'; printf '%s  %s\n' '98b55950e4d809f274b21b4ca3be1f57df3186eb74a4fc861cd0a59e69223834' '/dogeos/artifacts/protocol_context.json' | sha256sum --check --status; exec /usr/local/bin/prover-worker '--proof-coordinator-url' 'https://proof.devnet.doge.xyz' '--artifact-read-base-url' 'https://dogeos-devnet-artifacts-us-east-1-c9e51a.s3.us-east-1.amazonaws.com/dogeos-testnet/proofs' '--worker-token-file' '/tmp/scrollsdk-worker.token' '--worker-id' '{worker_id}' '--mode' 'real' '--protocol-context-json' '/dogeos/artifacts/protocol_context.json' '--enable-prove-scroll-chunk' '--chunk-app-exe' '/dogeos/artifacts/chunk/app.vmexe' '--chunk-app-config' '/dogeos/artifacts/chunk/openvm.toml' '--chunk-parallelism' '1' '--chunk-max-body-bytes' '536870912' '--enable-prove-scroll-batch' '--batch-app-exe' '/dogeos/artifacts/batch/app.vmexe' '--batch-app-config' '/dogeos/artifacts/batch/openvm.toml' '--batch-parallelism' '1' '--batch-max-body-bytes' '536870912' '--enable-prove-l2-range-aggregation' '--l2-range-aggregation-app-exe' '/dogeos/artifacts/bridge/batch-aggregation.vmexe' '--l2-range-aggregation-app-config' '/dogeos/artifacts/bridge/batch-aggregation-openvm.toml' '--l2-range-aggregation-program-manifest' '/dogeos/artifacts/bridge/l2-range-aggregation-topology-program.json' '--l2-range-aggregation-max-body-bytes' '536870912' '--enable-prove-bridge-transition' '--bridge-max-body-bytes' '536870912' '--bridge-app-exe' '/dogeos/artifacts/bridge/bridge-state.vmexe' '--bridge-app-config' '/dogeos/artifacts/bridge/openvm.toml' '--drain-timeout-ms' '720000'
+  workerTokenSecret: cm_active_worker_token_1013
+  workerReadinessFile: /dogeos/artifacts/prover-worker-ready-v1.json
+  proofWorkBaseUrl: http://withdrawal-processor.default.svc.cluster.local:9300
+  policy: |
+    # Continuous full-mode, one AWS L40S candidate; estimates remain provisional.
+    # One validated exact-input chunk: 206.947s; 240s estimate is provisional.
+    [global]
+    target_drain_seconds = 600
+    liveness_floor = 1
+    steady_state_floor = 1
+    max_workers = 1
+    scale_down_ttl_seconds = 300
+
+    [pool]
+    provider = "aws"
+    gpu_class = "L40S"
+    vram_gib = 44
+    max_workers = 1
+    hourly_cost_usd_per_worker = 3.1
+    max_hourly_cost_usd = 3.1
+    provider_diversity_min = 1
+
+    [families.scroll_chunk]
+    runtime_seconds = 240
+    min_workers = 0
+    max_workers = 1
+    min_vram_gib = 16
+
+    [families.scroll_batch]
+    runtime_seconds = 300
+    min_workers = 0
+    max_workers = 1
+    min_vram_gib = 16
+
+    [families.l2_range_aggregation]
+    runtime_seconds = 1800
+    min_workers = 0
+    max_workers = 1
+    min_vram_gib = 16
+
+    [families.bridge_state]
+    runtime_seconds = 1800
+    min_workers = 0
+    max_workers = 1
+    min_vram_gib = 16
+  pollIntervalMs: 10000
+  provisioningTimeoutSeconds: 780
+  failureCooldownSeconds: 120
+  scaleDownOnShutdown: true
+  dstack:
+    serverUrl: https://dstack.devnet.doge.xyz
+    project: devnet-provers-aws
+    fleets:
+    - devnet-capacity-manager-active-aws-l40s
+    regions:
+    - us-east-1
+    instanceTypes:
+    - g6e.4xlarge
+    maxPricePerHourUsd: 3.1
+wpAuth:
+  existingSecret: devnet-capacity-manager-active-wp-token
+  key: proof-work-token
+dstackAuth:
+  existingSecret: dstack-controller-auth
+  key: admin-token
+persistence:
+  existingClaim: devnet-capacity-manager-active-state
+  size: 1Gi
+  storageClass: gp3
+  retain: true
+terminationGracePeriodSeconds: 1800
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

@@ -5,18 +5,18 @@ on:
       - charts/capacity-manager/**
       - charts/withdrawal-processor/**
       - examples/capacity-manager*
-      - examples/values/capacity-manager-production.yaml
+      - examples/values/capacity-manager*.yaml
       - examples/values/withdrawal-processor-production.yaml
-      - examples/tests/test_capacity_manager.py
+      - examples/tests/test_capacity_manager*.py
       - .github/workflows/test-capacity-manager.yaml
   push:
     paths:
       - charts/capacity-manager/**
       - charts/withdrawal-processor/**
       - examples/capacity-manager*
-      - examples/values/capacity-manager-production.yaml
+      - examples/values/capacity-manager*.yaml
       - examples/values/withdrawal-processor-production.yaml
-      - examples/tests/test_capacity_manager.py
+      - examples/tests/test_capacity_manager*.py
       - .github/workflows/test-capacity-manager.yaml
 permissions:
   contents: read
@@ -34,4 +34,7 @@ jobs:
       - run: pip install PyYAML==6.0.2
       - run: helm dependency build charts/withdrawal-processor
       - run: helm lint --strict charts/capacity-manager -f charts/capacity-manager/ci/render-values.yaml
-      - run: python3 -m unittest examples/tests/test_capacity_manager.py
+      - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-rtx3090.yaml
+      - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-aws-a10g.yaml
+      - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-aws-l40s.yaml --set prepared=true
+      - run: python3 -m unittest discover -s examples/tests -p 'test_capacity_manager*.py'

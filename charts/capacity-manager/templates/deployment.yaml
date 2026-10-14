@@ -21,6 +21,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "capacity-manager.serviceAccountName" . }}
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
@@ -61,6 +62,10 @@ spec:
             - {{ printf "DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.%s }}" (required "workerTokenSecret is required" .Values.manager.workerTokenSecret) | quote }}
             - --dstack-worker-env
             - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+            {{- if .Values.manager.workerReadinessFile }}
+            - --dstack-worker-env
+            - {{ printf "DOGEOS_PROVER_WORKER_READY_FILE=%s" .Values.manager.workerReadinessFile | quote }}
+            {{- end }}
             - --dstack-provisioning-timeout-seconds
             - {{ .Values.manager.provisioningTimeoutSeconds | quote }}
             - --dstack-failure-cooldown-seconds
