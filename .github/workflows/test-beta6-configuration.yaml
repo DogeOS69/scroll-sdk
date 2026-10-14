@@ -7,7 +7,6 @@ on:
       - charts/proof-coordinator/**
       - examples/values/**
       - partner-kit/attestation-signer/**
-      - .github/tests/test_partner_transport.py
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
@@ -18,7 +17,6 @@ on:
       - charts/proof-coordinator/**
       - examples/values/**
       - partner-kit/attestation-signer/**
-      - .github/tests/test_partner_transport.py
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
       - .github/workflows/test-beta6-configuration.yaml
@@ -46,13 +44,11 @@ jobs:
       - run: helm dependency build charts/withdrawal-processor
       - run: helm dependency build charts/proof-coordinator
       - run: python3 -m unittest discover -s .github/tests -p 'test_beta6_compatibility.py' -v
-      - run: python3 -m unittest discover -s .github/tests -p 'test_partner_transport.py' -v
       - name: Verify standalone key generation against the beta.6 signer
         run: node --test .github/tests/test_signer_keygen.mjs
         env:
           SIGNER_KEYGEN_DOCKER_TEST: '1'
-      - name: Verify signer handoff, runtime and rotation safety
+      - name: Verify signer deployment-kit import, start and runtime safety
         run: python3 -m unittest discover -s partner-kit/attestation-signer/tests -p 'test_*.py' -v
         env:
           SIGNER_KIT_DOCKER_TEST: '1'
-          RUN_DOCKER_ROTATION_TESTS: '1'

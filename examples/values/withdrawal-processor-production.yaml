@@ -108,8 +108,6 @@ serviceAccount:
 env:
   # CLI-owned atomic proof activation projection. Default posture is disabled;
   # setup prep-charts replaces the proof-system entries together.
-  # The temporary Issue #843 pre-Tsuki direct-sign pin is owned by the native
-  # WithdrawalProcessor.toml managed block, not by a partial Figment env table.
   # Logging
   - name: RUST_LOG
     value: "info,withdrawal_processor=info"

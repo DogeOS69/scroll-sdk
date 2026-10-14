@@ -446,10 +446,10 @@ material and partner handoffs can require additional work; these counts are not
 a guarantee that enforcing preparation finishes in four commands.
 
 Successful completion reports `prepared`: service configuration, genesis, Bridge
-artifacts, Secrets and signer policy are prepared. It does not mean Helm releases
+artifacts, Secrets and the signer deployment kit are prepared. It does not mean Helm releases
 have been installed or that a running chain has passed acceptance. Owner-managed
-CubeSigner authorization/session material remains operator-owned. Partner policy
-approval is a required handoff that apply waits for and imports before completion.
+CubeSigner authorization/session material remains operator-owned. Apply waits
+for the deployment kit's publication to be recorded before completion.
 
 ## Install the frontend and monitoring releases
 
@@ -645,30 +645,26 @@ After generating this deployment's `.data/protocol_context.json`, apply:
 3. Imports the validated real material into `.data/proof-materials/`, builds the
    full real topology and prepares the service configuration.
 4. Publishes the verified program bundle using the selected release and generated
-   proof-store receipt, then exports the enforcing signer-policy bundle.
+   proof-store receipt, then writes the signer deployment kit.
 
 The legacy coordinator chunk/batch/bundle collection timers are removed: they
 belong to retired Scroll services, not beta.6 Proof Coordinator. Native proof
 materialization policy remains owned by the pinned core compiler/templates.
 
-Apply then pauses at `signer-receipts` and writes
-`.scrollsdk/inputs/signer-receipts/request.json`. Send `signer-policy-bundle/` to
-the partners. Each partner validates their final enforce configuration against
-the selected release and returns a `dogeos/attestation-signer-policy-validation/v1`
-receipt from that verification. The beta.6 signer itself does not emit this
-receipt; the partner validation process must produce it. See the matching CLI
-`docs/proof-config-transactions.md` for its required bindings. The request file maps signer IDs to numbered receipt filenames. Save the
-returned files there and rerun the same `setup apply` command.
+Apply then pauses for publication. Publish the kit directory (`deployment-kit-k-<12 hex>/`, or an archive of it)
+unchanged at an immutable https URL and put the URL and manifest SHA-256 on the
+deployment's Governance record. Save
+`{"url": "<https URL>", "manifest_sha256": "<sha>"}` as
+`.scrollsdk/inputs/deployment-kit/published.json` and rerun `setup apply`; it
+records the publication and runs the final check. Signers import the kit with
+that SHA-256 ([signer kit README](../partner-kit/attestation-signer/README.md)).
+There are no signer receipts. After rollout, `scrollsdk setup proof-config-check
+--live --kube-context <context> --namespace <namespace>` must pass: every
+registered attestation signer polls the TSO. Completed
+AWS/proving/publication steps are not replayed on resume. Do not edit generated
+TOML or the saved plan.
 
-Apply computes the hashes and verifies the active signer set, keys, bundle hash,
-core revision, enforce policy mode, passed result and validation timestamp before
-copying accepted evidence into `.data/signer-policy-validation/`. It then
-regenerates the configuration with the publication receipt and runs the final
-check. Wrong or stale evidence is rejected; completed AWS/proving/publication
-steps are not replayed. Do not edit generated TOML or the saved plan.
-
-This integration is covered by synthetic receipt tests. It does not establish
-acceptance by real partner operators. External CUDA Worker startup, actual proving
+A fresh TSO poll does not establish that a partner signer can sign real traffic. External CUDA Worker startup, actual proving
 and deployment acceptance remain separate operations. No proof mode is silently
 downgraded to mock or observe.
 

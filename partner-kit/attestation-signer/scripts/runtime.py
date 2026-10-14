@@ -1,6 +1,5 @@
 """Standalone operator helpers. Run inside the pinned Python container."""
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -10,11 +9,6 @@ import tempfile
 import tomllib
 from urllib.parse import urlparse
 import urllib.request
-
-spec = importlib.util.spec_from_file_location('handoff', Path(__file__).with_name('verify-handoff.py'))
-handoff = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(handoff)
-
 
 class OperatorError(ValueError):
     """Only static messages and public field names may enter this exception."""
@@ -83,6 +77,60 @@ BRIDGE_FIELDS = {
 }
 
 
+MANIFEST = 'deployment-kit-manifest.json'
+KIT_FILES = {'deployment-kit.json', 'deployment-kit.env', 'protocol_context.json', 'advance-l2-agg-verifying-key.bin'}
+SAFE_NAME = r'[A-Za-z0-9][A-Za-z0-9_.-]*'
+COMMITMENT = r'0x[0-9a-f]{128}'
+
+
+def sha256_ref(raw):
+    return 'sha256:' + hashlib.sha256(raw).hexdigest()
+
+
+def verify_kit(folder, expected, identity_file):
+    """Verify a deployment kit directory against its authenticated manifest digest."""
+    manifest_raw = regular(folder / MANIFEST)
+    require(hashlib.sha256(manifest_raw).hexdigest() == expected, 'Manifest differs from authenticated digest')
+    manifest = json.loads(manifest_raw)
+    require(manifest['schema'] == 'dogeos/deployment-kit-manifest/v1', 'Unsupported kit manifest schema')
+    names = set()
+    for entry in manifest['files']:
+        name = entry['file']
+        require(isinstance(name, str) and re.fullmatch(SAFE_NAME, name) and name != MANIFEST, 'Unsafe kit filename')
+        require(name not in names, 'Duplicate kit file')
+        names.add(name)
+        raw = regular(folder / name)
+        require(sha256_ref(raw) == entry['sha256'], 'Kit file digest mismatch')
+        require(len(raw) == entry['sizeBytes'], 'Kit file size mismatch')
+    require(names == KIT_FILES, 'Deployment kit must list exactly the required files')
+    kit = json.loads(regular(folder / 'deployment-kit.json'))
+    require(kit['schema'] == 'dogeos/deployment-kit/v1', 'Unsupported deployment kit schema')
+    require(kit['policy_mode'] == 'enforce', 'Expected enforce mode')
+    require(isinstance(kit['kit_version'], str) and re.fullmatch(r'k-[0-9a-f]{12}', kit['kit_version']), 'Invalid kit version')
+    identity = json.loads(regular(identity_file))
+    require(identity['schema'] == 'dogeos/attestation-signer-descriptor/v1', 'Use core --print-identity JSON')
+    require(identity['network'] == kit['network'], 'Kit is for another network than this signer')
+    require(re.fullmatch(r'0x[0-9a-f]{64}', kit['protocol_instance_id']), 'Invalid protocol instance id')
+    context, verifier = kit['protocol_context'], kit['advance_l2_verifier']
+    require(context['file'] == 'protocol_context.json' and verifier['agg_verifying_key_file'] == 'advance-l2-agg-verifying-key.bin', 'Unexpected kit material filename')
+    require(sha256_ref(regular(folder / 'protocol_context.json')) == context['sha256'], 'Context does not match kit')
+    require(sha256_ref(regular(folder / 'advance-l2-agg-verifying-key.bin')) == verifier['agg_verifying_key_sha256'], 'Verifier does not match kit')
+    require(re.fullmatch(COMMITMENT, verifier['batch_program_commitment_hex']) and re.fullmatch(COMMITMENT, verifier['l2_range_aggregation_program_commitment_hex']), 'Missing verifier commitments')
+    values = env_values(regular(folder / 'deployment-kit.env'))
+    require(set(values) == BRIDGE_FIELDS, 'Bridge env contains missing or non-bridge fields; it cannot set keys, RPC trust, binary pins or rotation permissions')
+    # Core validates endpoints/commitments at startup. Reject Compose interpolation here.
+    require(all('$' not in v and not v.startswith(('"', "'")) for v in values.values()), 'Bridge env must contain literal values')
+    require(values['ATTESTATION_SIGNER_POLICY_MODE'] == 'enforce', 'Expected enforce mode')
+    require(values['ATTESTATION_SIGNER_NETWORK'] == kit['network'], 'Bridge env network mismatch')
+    require(values['ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON'] == '/etc/dogeos/protocol_context.json', 'Invalid context path')
+    require(values['ATTESTATION_SIGNER_ADVANCE_L2_AGG_VERIFYING_KEY_PATH'] == '/etc/dogeos/advance-l2-agg-verifying-key.bin', 'Invalid verifier path')
+    require(values['ATTESTATION_SIGNER_TSO_URL'] == kit['tso_url'], 'TSO URL does not match kit')
+    require([values['ATTESTATION_SIGNER_ARTIFACT_ALLOWED_ORIGINS']] == kit['artifact_origins'], 'Artifact origin does not match kit')
+    for field, key in [('ATTESTATION_SIGNER_ADVANCE_L2_BATCH_PROGRAM_COMMITMENT_HEX', 'batch_program_commitment_hex'), ('ATTESTATION_SIGNER_L2_RANGE_AGGREGATION_PROGRAM_COMMITMENT_HEX', 'l2_range_aggregation_program_commitment_hex')]:
+        require(values[field] == verifier[key], 'Verifier commitment does not match kit')
+    return names | {MANIFEST}
+
+
 def install(root, folder, expected):
     require(re.fullmatch(r'[0-9a-f]{64}', expected), 'Use the authenticated manifest SHA-256')
     # Snapshot once; verify and install exactly those bytes, not a subsequently changed input.
@@ -91,34 +139,19 @@ def install(root, folder, expected):
     bundles.mkdir(mode=0o700, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.import-', dir=bundles) as temp:
         snapshot = Path(temp)
-        manifest = regular(folder / 'signer-policy-manifest.json')
+        manifest = regular(folder / MANIFEST)
         require(hashlib.sha256(manifest).hexdigest() == expected, 'Manifest differs from authenticated digest')
-        put_private(snapshot / 'signer-policy-manifest.json', manifest)
+        put_private(snapshot / MANIFEST, manifest)
         for entry in json.loads(manifest)['files']:
             name = entry['file']
-            require(isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', name), 'Unsafe bundle filename')
+            require(isinstance(name, str) and re.fullmatch(SAFE_NAME, name) and name != MANIFEST, 'Unsafe kit filename')
+            require(not (snapshot / name).exists(), 'Duplicate kit file')
             put_private(snapshot / name, regular(folder / name))
-        handoff.verify_bundle(snapshot, root / 'identity.json', expected)
-        policy = json.loads(regular(snapshot / 'signer-policy.json'))
-        values = env_values(regular(snapshot / 'signer-policy.env'))
-        require(set(values) == BRIDGE_FIELDS, 'Bridge env contains missing or non-bridge fields; it cannot set keys, RPC trust, binary pins or rotation permissions')
-        require(values['ATTESTATION_SIGNER_POLICY_MODE'] == 'enforce', 'Expected enforce mode')
-        require(values['ATTESTATION_SIGNER_NETWORK'] == policy['network'], 'Bridge env network mismatch')
-        require(values['ATTESTATION_SIGNER_PROTOCOL_CONTEXT_JSON'] == '/etc/dogeos/protocol_context.json', 'Invalid context path')
-        require(values['ATTESTATION_SIGNER_ADVANCE_L2_AGG_VERIFYING_KEY_PATH'] == '/etc/dogeos/advance-l2-agg-verifying-key.bin', 'Invalid verifier path')
-        # Core validates endpoints/commitments at startup. Reject Compose interpolation here.
-        require(all('$' not in v and not v.startswith(('"', "'")) for v in values.values()), 'Bridge env must contain literal values')
-        context = regular(snapshot / 'protocol_context.json')
-        require('sha256:' + hashlib.sha256(context).hexdigest() == policy['protocolContext']['sha256'], 'Context does not match policy')
-        vk = regular(snapshot / 'advance-l2-agg-verifying-key.bin')
-        require('sha256:' + hashlib.sha256(vk).hexdigest() == policy['advanceL2Verifier']['aggVerifyingKeySha256'], 'Verifier does not match policy')
-        require(values['ATTESTATION_SIGNER_TSO_URL'] == policy['tsoUrl'], 'TSO URL does not match policy')
-        for field, key in [('ATTESTATION_SIGNER_ADVANCE_L2_BATCH_PROGRAM_COMMITMENT_HEX', 'batchProgramCommitmentHex'), ('ATTESTATION_SIGNER_L2_RANGE_AGGREGATION_PROGRAM_COMMITMENT_HEX', 'l2RangeAggregationProgramCommitmentHex')]:
-            require(values[field] == policy['advanceL2Verifier'][key], 'Verifier commitment does not match policy')
+        verify_kit(snapshot, expected, root / 'identity.json')
         final = bundles / expected
-        require(not final.is_symlink(), 'Bundle record must not be a symlink')
+        require(not final.is_symlink(), 'Kit record must not be a symlink')
         if final.exists():
-            handoff.verify_bundle(final, root / 'identity.json', expected)
+            verify_active_files(final, expected, root / 'identity.json')
         else:
             snapshot.rename(final)
             snapshot.mkdir()  # TemporaryDirectory cleanup only removes this empty directory.
@@ -128,8 +161,26 @@ def install(root, folder, expected):
         require(not temp_link.exists() and not temp_link.is_symlink(), 'Interrupted import link exists; inspect before retrying')
         temp_link.symlink_to(Path('bundles') / expected, target_is_directory=True)
         os.replace(temp_link, active)
-    print('Bundle verified and installed. Private keys, operator RPC trust and rotation allowlists were not changed.')
+    print('Deployment kit verified and installed. Private keys, operator RPC trust and rotation allowlists were not changed.')
 
+
+def verify_active_files(folder, expected, identity_file):
+    listed = verify_kit(folder, expected, identity_file)
+    require({p.name for p in folder.iterdir()} == listed, 'Installed kit contains unlisted files')
+
+
+def verify_active(root):
+    """Re-verify the selected kit before start and inspect read it."""
+    active = root / 'active-bundle'
+    require(active.is_symlink(), 'Import the approved deployment kit first')
+    target = os.readlink(active)
+    expected = Path(target).name
+    require(Path(target) == Path('bundles') / expected and re.fullmatch(r'[0-9a-f]{64}', expected), 'active-bundle must link to an imported kit')
+    require(not (root / 'bundles').is_symlink(), 'Bundles directory must not be a symlink')
+    folder = root / 'bundles' / expected
+    require(folder.is_dir() and not folder.is_symlink(), 'Imported kit is missing')
+    verify_active_files(folder, expected, root / 'identity.json')
+    return folder
 
 
 SOURCE_ENV_OVERRIDES = {
@@ -167,12 +218,29 @@ def validate_rpc_config(root):
         require(not env_values(regular(legacy)), 'Move legacy operator.env settings into TOML; this kit does not load operator.env')
 
 
-def prestart(root, compose):
+KIT_COMMAND = ['-c', '/etc/dogeos-partner/attestation-signer.toml']
+
+
+def check_service(service, host_root):
+    """The resolved service must run the kit's own command and mount active-bundle/ at /etc/dogeos."""
+    require(service.get('command') == KIT_COMMAND and not service.get('entrypoint'), 'Compose command or entrypoint differs from the signer kit')
+    kit_mounts = [v for v in service.get('volumes', []) if v.get('target', '').rstrip('/') == '/etc/dogeos' or v.get('target', '').startswith('/etc/dogeos/')]
+    require(len(kit_mounts) == 1 and kit_mounts[0].get('type') == 'bind' and kit_mounts[0].get('target') == '/etc/dogeos'
+            and kit_mounts[0].get('source') == host_root + '/active-bundle' and kit_mounts[0].get('read_only') is True,
+            'Compose must mount only active-bundle, read-only, at /etc/dogeos')
+
+
+def prestart(root, compose, host_root):
+    kit_env = env_values(regular(verify_active(root) / 'deployment-kit.env'))
     service = compose['services']['attestation-signer']
+    check_service(service, host_root)
     environment = service.get('environment', {})
+    # Operator env files load after the kit; they must not replace any bridge field.
+    for field in sorted(BRIDGE_FIELDS):
+        require(environment.get(field) == kit_env[field], 'Operator configuration overrides the deployment kit field ' + field)
     reject_rpc_overrides(environment)
     validate_rpc_config(root)
-    print('RPC file configuration checked. Independent ownership of the sources still requires operator review.')
+    print('Active deployment kit and RPC file configuration checked. Independent ownership of the sources still requires operator review.')
 
 
 def check_report(identity, report):
@@ -194,9 +262,11 @@ def main():
     if action == 'prepare':
         prepare(root, sys.argv[2])
     elif action == 'import':
-        install(root, Path('/bundle'), sys.argv[2])
+        install(root, Path('/kit'), sys.argv[2])
     elif action == 'prestart':
-        prestart(root, json.load(sys.stdin))
+        prestart(root, json.load(sys.stdin), sys.argv[2])
+    elif action == 'verify':
+        verify_active(root)
     elif action == 'check':
         identity = json.loads(regular(root / 'identity.json'))
         with urllib.request.urlopen('http://127.0.0.1:4040/policy', timeout=5) as response:
@@ -213,5 +283,5 @@ if __name__ == '__main__':
         if isinstance(error, OperatorError):
             print(str(error), file=sys.stderr)
         # No provider responses, URLs, keys or arbitrary file contents in diagnostics.
-        print('Operation failed. Check arguments, file integrity, ownership, bundle fields or local signer capabilities. No private values are logged.', file=sys.stderr)
+        print('Operation failed. Check arguments, file integrity, ownership, kit fields or local signer capabilities. No private values are logged.', file=sys.stderr)
         sys.exit(1)

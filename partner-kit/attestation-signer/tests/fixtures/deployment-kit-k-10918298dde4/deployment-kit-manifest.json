@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "file": "advance-l2-agg-verifying-key.bin",
+      "sha256": "sha256:da6233d381fa2ad5a2bb9297e9c5e67ad2d51305ada7e5a33e0860c2a3b94bc4",
+      "sizeBytes": 56
+    },
+    {
+      "file": "deployment-kit.env",
+      "sha256": "sha256:1ca2629e2ffa1919bb40383e83098e94f16aa3b69f5fcadb7327fe0d9de88171",
+      "sizeBytes": 831
+    },
+    {
+      "file": "deployment-kit.json",
+      "sha256": "sha256:3fa9a8e5e171a9ce42cf58a35947123386edf55fa7cd196655bf5a5ebb835bda",
+      "sizeBytes": 1049
+    },
+    {
+      "file": "protocol_context.json",
+      "sha256": "sha256:a94b8578671ca12c365155968790bd0870b8ea74bbced0341df02d1760f86d09",
+      "sizeBytes": 811
+    }
+  ],
+  "schema": "dogeos/deployment-kit-manifest/v1"
+}

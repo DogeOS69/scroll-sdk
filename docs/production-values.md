@@ -60,12 +60,6 @@ For TSO's public signer callbacks, configure and verify the separate field,
 application-body, and ingress-body limits as described in
 [`tso-ingress-body-limit.md`](tso-ingress-body-limit.md).
 
-The temporary Issue #843 testnet recovery posture is deliberately absent from
-all defaults. When authorized for a deployment, generate its bounded WP/TSO/Rust
-signer projections from one scrollsdk proof intent and follow
-[`pre-tsuki-direct-sign-recovery.md`](pre-tsuki-direct-sign-recovery.md). Do not
-turn the example pin into a production-values default.
-
 `.github/scripts/validate_production_values.py` compares each supported chart's
 defaults with both production overlays. CI rejects a change that adds a chart
 default without making the corresponding production decision explicit, or

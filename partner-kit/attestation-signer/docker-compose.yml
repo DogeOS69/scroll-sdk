@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 60s
     env_file:
-      - ./active-bundle/signer-policy.env
+      - ./active-bundle/deployment-kit.env
       - ./attestation-signer.env
       - ./aws.env
     environment:

@@ -10,7 +10,7 @@ must be able to run the selected signer image's architecture. The signer polls
 TSO outbound; it needs **no public inbound port**, public IP, or TLS certificate.
 
 The short path is: **copy → initialize → register public keys → import the
-bridge bundle and configure trusted RPCs → start and check**.
+deployment kit and configure trusted RPCs → start and check**.
 
 ## 1. Copy the template into a private runtime directory
 
@@ -26,8 +26,8 @@ cd "$HOME/dogeos-signer-a"
 
 Copy the clean template, never another running signer's directory. The runtime
 directory may be inside your deployment Git repository. Initialization adds
-ignore rules for generated private keys, credentials, database and rotation
-backups automatically; tracked public templates/scripts do not block it.
+ignore rules for generated private keys, credentials and database
+automatically; tracked public templates/scripts do not block it.
 Only a private output file that is already tracked needs to be untracked first.
 Review your own TOML before any commit: ignore rules do not hide tracked files.
 
@@ -48,7 +48,7 @@ For a local signing key:
 ```
 
 Use `mainnet`, `testnet`, or `regtest` as appropriate. No RPC connection or
-bridge bundle is needed for local initialization. The script runs cryptography
+deployment kit is needed for local initialization. The script runs cryptography
 inside a pinned Docker Official Node image with networking disabled. It does
 not start the signer. For AWS KMS, use the alternative immediately below.
 
@@ -82,7 +82,7 @@ runtime directory. Keep these files mode `0600` and directory `aws/` mode `0700`
 On an appropriate AWS host, an accessible instance IAM role can supply credentials
 without populated files. The script does not automatically mount your home AWS
 folder, export host credentials or refresh expired sessions. Never enter secrets
-in command arguments, Governance, or the bridge handoff.
+in command arguments, Governance, or the deployment kit.
 
 The same `aws.env` and read-only `aws/` mount are used by the AWS CLI container
 and the signer container. A host SSO login/cache is not automatically forwarded;
@@ -175,41 +175,45 @@ If you paste public keys, no additional identity-file handoff is required.
 Never upload the entire directory, `attestation-signer.env`, `transport.key`,
 AWS credentials, database, or private RPC configuration.
 
-## 4. Receive the bridge bundle and configure your RPC trust
+## 4. Import the deployment kit and configure your RPC trust
 
-The bridge operator registers the public pair and publishes a versioned public
-configuration bundle. Receive its manifest SHA-256 over your authenticated
-Governance/operator channel. A digest downloaded beside arbitrary files does
-not independently establish who approved them.
-
-Place the received directory at `received-bundle/` and import it:
+The bridge operator exports one **deployment kit** per deployment and kit
+version, and publishes it unchanged at an immutable URL. The deployment's
+approved Governance record lists the kit version, its download URL and its
+**manifest SHA-256**. Copy the SHA-256 from that record, not from a file that
+came with the download. If the kit is an archive, unpack it first; `import`
+takes the directory.
 
 ```bash
-./signer.sh import ./received-bundle '<AUTHENTICATED_MANIFEST_SHA256>'
+./signer.sh import ./deployment-kit-k-10918298dde4 '<MANIFEST_SHA256_FROM_THE_GOVERNANCE_RECORD>'
 ```
 
-The digest comes from the bridge operator's export/stage output; you do not
-invent it. Import verifies manifest hashes, your public-key pair, network,
-`active/real/enforce`, and required verifier material. It stores an immutable
-copy under `bundles/<manifest-sha256>/` and selects it with `active-bundle`.
-If a signer is already running in this project, stop it before importing.
+`import` requires a stopped signer. It verifies the manifest against that
+digest, every listed file's SHA-256 and size, that the kit is for your
+signer's network, `enforce` mode, the verifier material, and that
+`deployment-kit.json`, `deployment-kit.env` and the files agree. It stores an
+immutable copy under `bundles/<manifest-sha256>/` and selects it with
+`active-bundle`. `start` verifies `active-bundle/` against its manifest again
+on every start and refuses to start on any mismatch. `signer.sh` uses only this
+kit's `docker-compose.yml`: a `docker-compose.override.yml` or `COMPOSE_FILE` is
+ignored, and `start` refuses a Compose file that changes the signer command or
+the `/etc/dogeos` mount.
 
-| Bridge-provided file | Meaning |
+| Kit file | Meaning |
 | --- | --- |
-| `signer-policy.env` | Bridge-owned runtime fields: TSO URL, artifact origin, context/verifier paths and commitments |
-| `protocol_context.json` | Canonical deployment/genesis context; a rotation does not rewrite genesis |
+| `deployment-kit.json` | Network, protocol instance id, kit version (`k-<12 hex>`), TSO URL, artifact origin, context and verifier digests |
+| `deployment-kit.env` | The same bridge-owned runtime fields, loaded by Compose |
+| `protocol_context.json` | Canonical deployment/genesis context |
 | `advance-l2-agg-verifying-key.bin` | Production AdvanceL2 aggregate verifying key |
-| `signer-policy.json` | Public configuration, registered pairs and material identities for review |
-| `signer-policy-manifest.json` | File sizes and SHA-256 hashes |
-| `rotation-reference.json` (rotation only) | Current/target bridge identity and proposal digest, separate from immutable genesis context |
+| `deployment-kit-manifest.json` | File sizes and SHA-256 hashes; its own SHA-256 is the kit identity |
 
-Review the deployment identity, TSO endpoint, artifact origin and approved proof
-release with the bridge operator. Import rejects fields that would set your
-private key, RPC trust, binary pins or rotation permissions. It never replaces
-`attestation-signer.env`, `transport.key`, `attestation-signer.toml`,
-AWS credentials, or the database. Generated legacy `PARTNER-COMMANDS.md` and
-`operatorOwnedPolicy.productionRequires` metadata in older exports do not
-replace this manual's capability-specific acceptance procedure.
+The kit holds no signer list and no rotation material. `import` and `start`
+reject kit fields that would set your private key, RPC trust, binary pins or
+rotation permissions, and `start` refuses local env files that override a kit
+field. They never change `attestation-signer.env`,
+`transport.key`, `attestation-signer.toml`, `identity.json`, AWS credentials
+or the database. Image, commit and policy pins come from the approved release
+record, not from the kit.
 
 Edit **your** `attestation-signer.toml` in this directory. Fill these three source sets; the template already provides two entries
 for each:
@@ -244,7 +248,7 @@ JSON or conversion is needed. Remove these old env overrides if migrating:
 even empty ones, because core would otherwise ignore the corresponding TOML.
 A populated legacy `operator.env` also blocks startup until its settings are
 moved into the supported TOML fields. Operator credentials remain local; the
-bridge bundle must not replace these trust decisions.
+deployment kit must not replace these trust decisions.
 
 Leave `allowed_next_bridge_script_hashes` and `allowed_next_sequencer_signers`
 empty/unset until separately approving those operations. Normal startup does
@@ -282,103 +286,42 @@ docker compose port attestation-signer 9100
 Use the first address for local `/health` and `/policy`, and the second for
 `/metrics`. `docker compose ps` only reports process/health status.
 
-## RotateKey: prepare the NEW signer
+## Kit updates and RotateKey
 
-The current protocol/tool workflow replaces the whole attestation set. Even
-when your team operates both generations, use a clean template, new keys, a
-new Compose project name and a new database. Never replace private keys in the
-old directory or copy its database into the new directory.
+**New signer.** Import the deployment's current kit once (steps 1–5).
 
-1. Repeat steps 1–3 in a new directory, for example `dogeos-signer-a-next`,
-   with name `signer-a-next`. For KMS, select/create a **different** KMS key.
-2. The bridge operator prepares and stages the proposal/TSO registration. Receive
-   its deployment bundle, `proposal.json`, authenticated proposal digest and
-   independently confirmed **current** bridge key hash.
-3. Repeat steps 4–5 in the new directory. Reuse your independently reviewed RPC
-   sources where appropriate, including private authentication fields, but not the old
-   signing identity, database or previously granted rotation permissions.
-4. Inspect the proposal and, after confirmed TSO polling, return readiness:
+**Existing signer, ordinary rotation.** An attestation-key rotation does
+**not** need a new kit and existing signers do not re-import. In the old
+signer's directory, check the rotation export the bridge operator sends you:
 
 ```bash
-./signer.sh rotation inspect ./received-rotation/proposal.json \
-  --expected-sha256 '<APPROVED_PROPOSAL_DIGEST>' \
-  --current-key-hash '0x<CURRENT_BRIDGE_SCRIPT_HASH>'
-
-./signer.sh rotation ready ./received-rotation/proposal.json \
-  --expected-sha256 '<APPROVED_PROPOSAL_DIGEST>' \
-  --current-key-hash '0x<CURRENT_BRIDGE_SCRIPT_HASH>' \
-  --acknowledge-tso-connected
+./signer.sh inspect ./rotation-export.json
 ```
 
-Obtain the digest through the approved channel and corroborate the current hash
-against the bridge operator's validated replay/last activation record. The
-proposal digest is the tool's canonical digest, **not** `sha256sum proposal.json`.
-The wrapper discovers your container and identity; you do not type public keys
-again. The TSO acknowledgement records observed connectivity, not a guess.
+It re-verifies the active kit, then runs the signer image's `inspect-rotation`
+offline with only the kit's network and protocol context; your keys, TOML and AWS files are not
+passed to it. That subcommand needs a signer release that includes it; the
+beta.6a image pinned in `.env.example` does not. It prints the decoded old/new
+sets, the grace and the exact `allowed_next_bridge_script_hashes` line. After
+your team's review, add that line to `attestation-signer.toml` and restart with
+`./signer.sh start`, one signer at a time. The new signers are set up as new
+signers above, in new directories with new keys and databases.
 
-Return `rotation-readiness-<digest>.json` through the authenticated channel.
-It is a readiness record, not a cryptographically signed Governance approval.
-The receiver must authenticate its source and save distinct filenames per
-operator. Your new signer needs **no** future rotation allowlist to become ready.
-Starting it does not submit a rotation or prove it has already signed a WF.
-
-## RotateKey: authorize using the OLD signer
-
-Keep the old signer running with its original keys and database. Receive the
-same proposal and trusted review inputs. In the **old** directory:
+**Kit update.** A change of endpoints or verifier material is a new kit version
+with its own Governance record; a published kit is never overwritten. Use
+**stop → import → start**:
 
 ```bash
-./signer.sh rotation inspect ./received-rotation/proposal.json \
-  --expected-sha256 '<APPROVED_PROPOSAL_DIGEST>' \
-  --current-key-hash '0x<CURRENT_BRIDGE_SCRIPT_HASH>'
-
-# Run only after your team's review/approval:
-./signer.sh rotation approve ./received-rotation/proposal.json \
-  --expected-sha256 '<APPROVED_PROPOSAL_DIGEST>' \
-  --current-key-hash '0x<CURRENT_BRIDGE_SCRIPT_HASH>'
+./signer.sh stop
+./signer.sh import ./deployment-kit-k-<new 12 hex> '<NEW_MANIFEST_SHA256_FROM_THE_RECORD>'
+./signer.sh start
 ```
 
-Inspection verifies both scripts, disjoint old/new attestation sets, thresholds,
-unchanged TEE/recovery identity and namespace, and timelock at the proposal's
-recorded anchor. Read the printed old/new members, threshold, recovery timing
-and target bridge address. Do not approve only an unexplained hash.
-
-Approval adds the exact target to **this old instance's**
-`allowed_next_bridge_script_hashes`, backs up the TOML, preserves its bind-mount
-inode, restarts this container and checks its `rotate_key` capability. It does
-not change `allowed_next_sequencer_signers`, either private key, database, RPC
-trust, deployment bundle, `protocol_context.json`, aggregate verifying key or
-program commitments. A simultaneous proof/protocol upgrade is a separate task.
-
-Return `rotation-approval-<digest>.json` over the authenticated channel. A failed
-restart can leave the approved entry on disk without a successful receipt;
-inspect the service and backup before retrying. No WP request is made by any
-signer-kit rotation command. Runtime verification checks the configured mount,
-overrides, identity and capability; core does not expose a remotely attested
-list of loaded target hashes.
-
-Only the bridge operator submits after collecting current approvals and target
-readiness. For a rehearsal that must not submit, stop at this handoff. Until
-activation and retirement are confirmed, keep **both** generations available.
-
-### Activation and retirement
-
-The bridge operator must give you the rotation ID/digest and activation evidence,
-not just say that a command exited successfully. Before stopping the old signer,
-obtain and retain their confirmation of:
-
-- The completed intent and validated replay using the target bridge key.
-- A subsequent WF transaction signed by the **new** cohort, correlated with new
-  signer request/decision records and TSO transaction evidence. A later WF
-  number alone is insufficient; current CLI acceptance leaves this manual.
-- Expired protocol overlap, handled old-bridge funds and no outstanding requests
-  needing the old identity. The bridge operator reads those protocol/chain facts;
-  the signer kit cannot establish them from a local health endpoint.
-
-Then stop the old instance with `./signer.sh stop`. Keep its directory, private
-backup and approval records under your retention policy. Do not delete the KMS
-key or database as part of this command. The new signer keeps serving; its
-future rotation permissions remain a separate approval.
+**Upgrading from the old bundle format.** A signer that imported a
+`signer-policy-bundle` with an earlier version of this kit re-imports **once**
+after updating these scripts, and only once the deployment's kit record is
+approved in Governance. Use the same stop → import → start; `start` refuses
+the old bundle. Keys, database and TOML are kept.
 
 ## Routine operation, backup and troubleshooting
 
@@ -390,9 +333,9 @@ future rotation permissions remain a separate approval.
 ```
 
 For a normal restart, `docker compose restart attestation-signer` preserves the
-identity and database. After image/env/bundle changes use `./signer.sh start`
+identity and database. After image/env/kit changes use `./signer.sh start`
 which recreates the container so those changes are read. Stop before importing
-a new bundle; review image and binary pins together. Never rerun key creation
+a new kit; review image and binary pins together. Never rerun key creation
 to perform an upgrade. Do not launch two instances with the same signing key.
 
 The database is in **this directory's `data/`**, not an anonymous/named Docker
@@ -404,7 +347,7 @@ by copying that file.
 
 For a consistent backup, stop the signer, then archive this private directory
 (including dotfiles, both keys/KMS references, `data/`, bundles, active link,
-TOML, private env and rotation receipts) into your secure backup location. For
+TOML and private env) into your secure backup location. For
 example, with an existing private backup directory:
 
 ```bash
@@ -425,7 +368,8 @@ may make rollback unsafe; preserve a stopped pre-upgrade backup.
 | --- | --- |
 | Initialization rejects partial files | Restore the original complete identity; do not generate replacement keys |
 | KMS lookup/signing fails | Check container credentials, expiry, region, expected public key, IAM and key policy; inspect private provider diagnostics |
-| Import fails | Check authenticated digest, complete files, network, registered public pair and supported bridge env fields |
+| Import fails | Check the manifest SHA-256 from the Governance record, an unpacked complete kit, and its network |
+| Start refuses the active kit | Re-import the approved kit; never edit files under `bundles/` |
 | Local checks fail | Inspect `/policy` for AdvanceL1/L2 blocks; check RPC quorum, release pins, proof artifacts and network |
 | `/ready` is 503 only for future rotations | Keep those targets unapproved; use the capability-specific check above |
 | No TSO polls | Check outbound DNS/routes, TSO endpoint, transport registration and clock; local health is insufficient |
@@ -439,8 +383,7 @@ rotation capabilities, so it is not a substitute for capability-specific
 alerts. Keep HTTP/metrics on loopback, or explicitly restrict a private/VPN
 monitoring listener. Do not expose these ports publicly to operate a signer.
 
-The old `scripts/phase-a.sh`, `phase-b.sh`, `verify-bundle.sh`, and nested
-`docker-compose/` files remain for existing CLI-managed deployments. They are
-**legacy**, require extra tools, and are not steps in this standalone workflow.
-Do not run them over a newly initialized directory. Historical rehearsal records
+The nested `docker-compose/` files remain as a legacy reference for existing
+CLI-managed deployments. They are not steps in this standalone workflow. Do not
+run them over a newly initialized directory. Historical rehearsal records
 are evidence of those runs, not an alternative operating manual.

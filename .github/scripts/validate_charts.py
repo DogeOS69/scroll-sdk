@@ -174,7 +174,7 @@ def validate_attestation_signer_partner_kit():
     compose, _ = load_yaml_file(root / "docker-compose.yml")
     signer = (compose or {}).get("services", {}).get("attestation-signer", {})
     if signer.get("env_file") != [
-        "./active-bundle/signer-policy.env",
+        "./active-bundle/deployment-kit.env",
         "./attestation-signer.env",
         "./aws.env",
     ]:

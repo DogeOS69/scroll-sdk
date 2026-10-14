@@ -206,23 +206,13 @@ test('explicit reviewed pins are installed once and conflicting reruns preserve 
 })
 
 
-test('explicit pins pass through Docker and identity.sh exports the selected core schema', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
+test('explicit pins pass through Docker initialization', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
   const root = temporary(t)
   const generated = spawnSync('bash', [path.join(scripts, 'init-keys.sh'), '--name', 'partner-r3', '--network', 'testnet', '--out', root,
     '--release-version', '0.3.0', '--git-commit', '20746174e993a64e7edb132b9ecdbd989788d864', '--signing-policy-version', '1'], {encoding: 'utf8'})
   assert.equal(generated.status, 0, generated.stderr)
-  const image = 'dogeos69/attestation-signer@sha256:b69b503511837cfa80eb427b41fcefc5e47dbc8f2cfece5a04437ef83653359b'
-  assert.equal(spawnSync('docker', ['pull', image], {encoding: 'utf8'}).status, 0, 'Could not preload reviewed signer image')
-  const before = snapshots(root)
-  const exported = spawnSync('bash', [path.join(scripts, 'identity.sh'), image, root], {encoding: 'utf8'})
-  noSecretOutput(root, exported)
-  assert.equal(exported.status, 0, 'Offline core identity export failed')
-  const actual = JSON.parse(exported.stdout)
-  const expected = JSON.parse(fs.readFileSync(path.join(root, files[2])))
-  assert.equal(actual.schema, 'dogeos/attestation-signer-descriptor/v1')
-  assert.equal(actual.publicKey, expected.attestationPubkey)
-  assert.equal(actual.transportPubkey, expected.transportPubkey)
-  assert.deepEqual(snapshots(root), before)
+  const env = fs.readFileSync(path.join(root, files[0]), 'utf8')
+  assert.ok(env.includes('ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT=20746174e993a64e7edb132b9ecdbd989788d864'))
 })
 
 test('KMS identity validates key metadata, reuses transport and never writes a WIF', t => {

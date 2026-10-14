@@ -285,9 +285,9 @@ If another chart already owns the scrape, set this supplemental monitor to false
 so each endpoint has one owner. Its selector must match the Service labels and
 its port is the named Service port `http`, not the numeric port `3000`.
 
-A ServiceMonitor does not override NetworkPolicy. On deployments that enforce
-TSO's direct-sign isolation, arrange a metrics-only listener or proxy rather than
-opening the shared port (which also serves `/propose`) without reviewing access.
+A ServiceMonitor does not override NetworkPolicy. If a NetworkPolicy restricts
+TSO, review access before opening its shared port to the scraper: that port also
+serves `/propose`.
 
 ## Dogecoin indexer stall monitoring
 

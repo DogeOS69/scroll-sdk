@@ -302,20 +302,33 @@ scrollsdk setup proof-config-check --deployment-dir .
 make reconcile-proof-services
 ```
 
-Before bridge genesis, give each external signer operator the complete
-`partner-kit/attestation-signer/` directory, collect the descriptor produced by
-its Phase A script (`signer init`, `--print-identity`, then `signer init --identity`),
-and import the descriptors with
-`scrollsdk setup attestation-signer`. After genesis, send every partner the
-complete `signer-policy-bundle/` produced by
-`scrollsdk setup export-signer-policy`. Current dogeos-core requires canonical
-protocol context in every signer mode, so partners start the service and run
-`signer preflight` only after installing that bundle. Production partners use
-`--require-production-ready` and keep their own RPC source sets and rotation
-allowlists in the generated `attestation-signer.toml`.
-External signers initiate signed polling and callbacks to TSO; they do not
-provide a reachable signer endpoint. The kit publishes local preflight and
-metrics ports only on host loopback by default.
+External signer operators follow the
+[signer kit README](../partner-kit/attestation-signer/README.md). Before bridge
+genesis, each runs `./signer.sh init` and sends you its public `identity.json`.
+Add the agreed signer ID (a DNS label) to each file, then import them:
+
+```bash
+mkdir -p descriptors
+jq --arg id signer-a '. + {id: $id}' signer-a/identity.json > descriptors/signer-a.json
+scrollsdk setup attestation-signer --descriptor-dir descriptors
+```
+
+After genesis, `scrollsdk setup apply` writes the signer **deployment kit**
+(the same writer as `scrollsdk setup export-deployment-kit`) and pauses.
+Publish the kit directory (`deployment-kit-k-<12 hex>/`, or an archive of it)
+unchanged at an immutable https URL and put the URL and manifest SHA-256 on the
+deployment's Governance record. Record it by saving
+`{"url": "<https URL>", "manifest_sha256": "<sha>"}` as
+`.scrollsdk/inputs/deployment-kit/published.json` and rerunning `setup apply`
+(standalone: `scrollsdk setup export-deployment-kit --published-url <https URL>`).
+Each signer runs `./signer.sh import <kit-dir> <manifest-sha256>`, fills its own
+RPC source sets in `attestation-signer.toml`, and runs `./signer.sh start`.
+There are no signer receipts. The deployment is not accepted until, after
+rollout, `scrollsdk setup proof-config-check --live --kube-context <context>
+--namespace <namespace>` passes: every registered attestation signer polls the TSO.
+
+External signers poll TSO outbound; they need no reachable endpoint. The kit
+binds its HTTP and metrics ports to host loopback by default.
 
 For a deployment that will later use real proving, import the software
 identities and Bridge-bound material before selecting `generation = real`.
@@ -355,10 +368,10 @@ with the complete compiler-rendered topology without scaling PC.
 
 The default installation check blocks proof-owned managed-block or manifest
 drift, while ordinary WP/TSO values and shared native-config drift are warnings.
-`scrollsdk setup proof-config-check` and `setup export-signer-policy` currently
+`scrollsdk setup proof-config-check` and `setup export-deployment-kit` currently
 skip the whole input configuration file's hash comparison. This check is
 temporarily disabled in the CLI so edits such as Grafana account configuration
-do not block signer bundle export. The original source hash is still recorded.
+do not block deployment kit export. The original source hash is still recorded.
 Proof mode/generation/enforcement, generated proof artifacts, selected materials,
 and protocol-context integrity checks remain enabled.
 
@@ -375,6 +388,5 @@ follow the
 [DogeOS proof system operator runbook](https://github.com/DogeOS69/scroll-sdk-cli/blob/main/docs/proof-operator-runbook.md).
 
 For attestation key replacement after deployment, follow the
-[bridge operator rotation workflow](attestation-rotation.md) and start with
-[rotation-spec.example.yaml](rotation-spec.example.yaml). The signer side uses
+[bridge operator rotation workflow](attestation-rotation.md). The signer side uses
 the independent Docker tools in `partner-kit/attestation-signer`.

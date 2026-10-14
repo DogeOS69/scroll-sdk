@@ -1,0 +1,21 @@
+{
+  "advance_l2_verifier": {
+    "agg_verifying_key_file": "advance-l2-agg-verifying-key.bin",
+    "agg_verifying_key_sha256": "sha256:da6233d381fa2ad5a2bb9297e9c5e67ad2d51305ada7e5a33e0860c2a3b94bc4",
+    "batch_program_commitment_hex": "0x22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222",
+    "l2_range_aggregation_program_commitment_hex": "0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "artifact_origins": [
+    "https://s3.us-east-1.amazonaws.com"
+  ],
+  "kit_version": "k-10918298dde4",
+  "network": "testnet",
+  "policy_mode": "enforce",
+  "protocol_context": {
+    "file": "protocol_context.json",
+    "sha256": "sha256:a94b8578671ca12c365155968790bd0870b8ea74bbced0341df02d1760f86d09"
+  },
+  "protocol_instance_id": "0x05203d4cfa5cf58a09204af4a4d900f49854c8a5666b7bcddfaf91abf12a9a76",
+  "schema": "dogeos/deployment-kit/v1",
+  "tso_url": "https://tso.example.com"
+}
