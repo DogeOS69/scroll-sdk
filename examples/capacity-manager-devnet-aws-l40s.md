@@ -60,9 +60,12 @@ Before activation:
 2. Verify GPU quota, `g6e.4xlarge` support, AMI access and VPC/subnets in each
    candidate region. Preserve the intended private-network posture: private
    workers need working outbound connectivity to the controller, proof
-   coordinator, image registry and artifact endpoints. Provide explicit
-   regional VPC mappings when defaults are disallowed; do not enable public
-   IPs/default VPCs simply to make an offer pass.
+   coordinator, image registry and artifact endpoints. The controller must also
+   reach each private worker's SSH/shim endpoints through approved routing and
+   security rules. Verify that path before paid startup; an offer-only plan does
+   not prove connectivity. Provide explicit regional VPC mappings when defaults
+   are disallowed; do not enable public IPs/default VPCs simply to make an offer
+   pass.
 3. Run an offer-only plan without a region filter and record all candidate
    regions, actual resource/price bounds and eligible availability zones.
    Compare the cheapest available compatible offers across the prepared
@@ -82,6 +85,10 @@ An operator can temporarily restrict the run to a reviewed subset with
 that expand brackets). Existing fleet/backend restrictions still apply. Inspect
 regional eligibility and offers again before each replacement allocation;
 changes to live backend/fleet configuration remain a separate controlled step.
+Region selectors are part of the ownership fingerprint. Before changing an
+active release's list (including `[us-east-1]` to `[]` or a temporary subset),
+follow the drain-confirmed handoff below using the previous configuration.
+Otherwise the old workers remain untouched and reserve the allocation slot.
 
 Reuse the existing `devnet-capacity-manager-active` release, worker prefix and
 unannotated ServiceAccount, external `devnet-capacity-manager-active-state` PVC,
@@ -95,8 +102,9 @@ Follow the single-owner handoff in `capacity-manager-devnet-aws.md`. Drain using
 the original provider configuration, confirm zero leases, terminal tasks,
 manager shutdown and actual provider instance/disk cleanup before replacing
 capacity. Preserve the PVC and checkpoints. Project and worker prefix determine
-the state-file identity; different worker image/architecture/fleet selectors
-change the ownership fingerprint. Do not erase state or start a second manager
+the state-file identity; worker-spec changes, including image, architecture,
+fleet and region selectors, change the ownership fingerprint. Do not erase
+state or start a second manager
 to bypass mismatched live ownership. The SDK task remains retired and its old
 watchdog suspended.
 
