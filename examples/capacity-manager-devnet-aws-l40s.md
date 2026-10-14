@@ -82,9 +82,12 @@ receipt and is not included in this comparison. These are single samples with
 different hosts/builds, not a throughput or GPU-only causality claim.
 
 Allocation succeeded in `us-east-1d` after temporarily selecting an existing
-supported VPC for the isolated AWS project. The original configuration is
-preserved for restoration and the test rental must be removed afterward. This
-placement is qualification evidence, not a production network recommendation.
+supported VPC for the isolated AWS project. Both isolated qualification rentals and their attached disks were verified
+removed. Original project backend/auth configuration was restored and checked,
+and only newly created network/guard resources were removed. The cumulative
+conservative compute upper bound was USD 9.3244 against the USD 15 lab ceiling
+(excluding storage/traffic; not an invoice). This placement is qualification
+evidence, not a production network recommendation.
 The initial replay used synthetic capacity and offline proof replay. The follow-up
 used the stock native C3 external-worker scenario on WSL with actual isolated
 WP/PC claims, leases, accepted results and verification under Capacity Manager.
