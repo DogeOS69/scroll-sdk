@@ -162,8 +162,9 @@ memory cgroup limits were unrestricted; a container quota did not explain this
 sample. The isolated AWS instance and disk were verified removed afterward.
 
 A stronger L40S candidate is described in `capacity-manager-devnet-aws-l40s.md`.
-It remains disabled pending live capacity, proof qualification and an approved
-ongoing price ceiling. The A10G profile is a functional AWS option, **not a
+Its isolated exact-input chunk replay passed in 206.947 seconds. It remains
+disabled pending current-image all-family acceptance, external prerequisites
+and an approved ongoing price ceiling. The A10G profile is a functional AWS option, **not a
 qualified replacement for the RTX3090 performance requirement**. The production
 RTX3090 manager remains unchanged during qualification. Earlier all-family AWS
 qualification used a different worker image and does not qualify this profile's

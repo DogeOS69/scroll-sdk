@@ -66,14 +66,26 @@ roles, parallelism and drain settings are preserved. The image's declared
 compiled architecture and runtime startup check agree; no CUDA guard is
 disabled or bypassed. All family VRAM minima remain 16GiB.
 
-Current exact-input L40S proof performance: **pending**. The root-owned isolated
-lab uses synthetic capacity and an offline proof replay without production
-coordinator claims or WP/PC production auth. A valid replay must verify cycles,
-public inputs, program and canonical verification key, record actual image and
-binary identity, and separate cold preparation from timed proving. Image labels
-and a successful chunk replay do not establish all-family production readiness,
-launch throughput or exclusive GPU causation. Runtime estimates in this profile
-remain provisional.
+The isolated L40S exact-input replay produced a **valid proof in 206.947
+seconds**, compared with 253.489 seconds for the historical SDK and 218.352
+seconds for the qualified CM RTX3090 placement: 18.4% and 5.2% faster,
+respectively. Total request time was 217.783 seconds; STARK proving was 208.023
+seconds. Cycles, public inputs, program, canonical verification key, actual
+image/binary identity and full child completion were validated. Cold preparation
+ran before the timed proof; its duration was not exported in the sanitized
+receipt and is not included in this comparison. These are single samples with
+different hosts/builds, not a throughput or GPU-only causality claim.
+
+Allocation succeeded in `us-east-1d` after temporarily selecting an existing
+supported VPC for the isolated AWS project. The original configuration is
+preserved for restoration and the test rental must be removed afterward. This
+placement is qualification evidence, not a production network recommendation.
+The lab used synthetic capacity and offline proof replay without production
+coordinator claims or WP/PC production auth. A valid chunk replay does not
+establish all-family production readiness or launch throughput. Those gates and
+the ongoing price decision remain outstanding, so `prepared: false` is retained.
+The chunk policy estimate is 240 seconds based on this 206.947-second sample;
+all estimates remain provisional pending production workload distributions.
 
 ## Explicit activation gate
 

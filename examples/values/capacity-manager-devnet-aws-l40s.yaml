@@ -23,7 +23,7 @@ manager:
   proofWorkBaseUrl: http://withdrawal-processor.default.svc.cluster.local:9300
   policy: |
     # Continuous full-mode, one AWS L40S candidate; estimates remain provisional.
-    # AWS runtime estimates are provisional; current exact-input performance is pending.
+    # One validated exact-input chunk: 206.947s; 240s estimate is provisional.
     [global]
     target_drain_seconds = 600
     liveness_floor = 1
@@ -41,7 +41,7 @@ manager:
     provider_diversity_min = 1
 
     [families.scroll_chunk]
-    runtime_seconds = 360
+    runtime_seconds = 240
     min_workers = 0
     max_workers = 1
     min_vram_gib = 16
