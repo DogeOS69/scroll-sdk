@@ -28,7 +28,7 @@ The Helm chart and the deployment image are separate artifacts:
 
 | Artifact | Registry reference | Client |
 | --- | --- | --- |
-| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.0-dogeos` | Helm |
+| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.1-dogeos` | Helm |
 | Contract deployment image (standalone example) | `docker.io/dogeos69/preinstalls:v0.2.0` | Docker / Kubernetes |
 
 The chart is published by this repository's `publish-chart.yaml` workflow.
@@ -42,7 +42,7 @@ The image is published independently by
 Verify release availability with Helm, not `docker pull`:
 
 ```bash
-helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.0-dogeos
+helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.1-dogeos
 ```
 
 A Helm chart uses Helm-specific OCI media types, so Docker reports an unsupported
