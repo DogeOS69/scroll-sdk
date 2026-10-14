@@ -25,14 +25,29 @@ WP must expose `GET /v1/proof-work/capacity/summary` on its proof-work listener
 and accept the deployment's proof-work bearer token. Qualify this API against the
 selected WP image; the manager image alone does not add the endpoint to WP.
 
-Configure stock dstack 0.21.5 with a **dedicated project and existing fleet** for
-this deployment. Core's `docs/engineering/aws-gpu-dstack.md` and
-`tools/real-proving/dstack/server-aws.yml.example` describe AWS credentials, role,
-VPC, quota and fleet setup. The SDK does not invent these infrastructure values
-or provision an AWS fleet in this step. The declared fleets/regions/instance
-types must exist in that project. Provider selection is explicit; there is no
-automatic AWS-to-Vast failover. AWS provisioning IAM belongs to dstack; the
-manager Pod receives no AWS credentials or Kubernetes API token.
+The integration uses stock dstack **0.21.5**. With
+`preparation.dstack.mode: import`, the CLI generates the server project/backend
+configuration; its project is `capacityManager.project`. There is no additional
+manual project-creation command. If `preparation.dstack.project` is also present,
+it must match. `mode: external` deliberately leaves project/backend management
+to the operator and the install preflight checks their availability.
+
+Vast uses `VASTAI_API_KEY` from `deployment.env` through
+`preparation.dstack.vastaiApiKeyEnv`. AWS uses the controller's existing IRSA
+role (`serviceAccount.annotations.eks.amazonaws.com/role-arn`) with
+`defaultCredentialsEnabled: true`. Declare existing region-to-VPC IDs under
+`preparation.dstack.aws.vpcIds`; default VPC discovery is disabled. Private
+instances are the default: the VPC needs suitable private subnets with outbound
+connectivity and controller-to-worker reachability. Set `publicIps: true` only
+when using the corresponding public networking arrangement. Optional
+`iamInstanceProfile` names an existing worker instance profile.
+
+The CLI does not create AWS provisioning roles, VPCs, subnets or quotas. Core's
+`docs/engineering/aws-gpu-dstack.md` and
+`tools/real-proving/dstack/server-aws.yml.example` document these prerequisites.
+These are provider-specific infrastructure inputs, not generated fleet IDs.
+Provider selection is explicit; there is no automatic AWS-to-Vast failover.
+The manager Pod receives no AWS credentials or Kubernetes API token.
 
 ## Prepare and start
 
@@ -43,11 +58,13 @@ manager Pod receives no AWS credentials or Kubernetes API token.
    The `prep-charts` integration consumes the compiler worker contract, image check and
    verified publication receipt. It generates the policy and command in
    `values/capacity-manager-production.yaml` and adds only the manager peer to
-   WP's proof-work NetworkPolicy. It never allocates GPUs.
+   WP's proof-work NetworkPolicy. It also writes reviewable fleet definitions to
+   `.scrollsdk/capacity-manager/fleets/*.yaml`, with checksums in the saved plan.
+   It never allocates GPUs.
 3. Install/upgrade WP and Proof Coordinator, and install dstack using the normal
    deployment targets. They provide the existing proof token Secret and dstack
    credentials. Use the deployment namespace and Kubernetes context consistently.
-4. Explicitly install the manager. Make synchronizes credentials first:
+4. Review the generated fleet and manager values, then explicitly install the manager. Make prepares the fleet and synchronizes credentials first:
 
 ```bash
 # From the spec directory, enter setup plan's conventional output directory.
@@ -57,13 +74,32 @@ make install-capacity-manager KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE
 scrollsdk setup capacity-manager status --dir . --kube-context "$KUBE_CONTEXT"
 ```
 
-`make install-capacity-manager` waits for dstack's rollout, checks the named fleets,
-and synchronizes the existing worker token into the dstack project's Secret store.
-The proof chart's ExternalSecret must have synchronized the token first. A failed
-preflight stops before Helm; fix the cause and retry the same Make target.
-The controller must be running because dstack 0.21.5 registers project Secrets
-through its API, not its startup YAML. This idempotent preflight creates no fleets
-or runs. Only the subsequent Helm installation can start GPU allocation.
+`make install-capacity-manager` waits for dstack's rollout, checks that the
+selected project has the provider backend, then prepares the declared fleets.
+`capacityManager.fleet.action: create` is the default: a missing fleet is created
+with `nodes.min: 0`, `nodes.target: 0` and `nodes.max: maxWorkers`. No initial GPU
+instance is requested. A matching existing fleet is reused. `action: reuse`
+requires it to exist. Both modes reject mismatched settings or a terminating
+fleet without updating, deleting, or force-applying it. A concurrent create
+fails safely; retry the same Make target to check the resulting fleet.
+
+The generated fleet takes its provider, GPU, regions, instance types, price
+ceiling and maximum size from `capacityManager`. Defaults are 16 CPUs, 64 GiB
+RAM (128 GiB for L40S), 200 GiB disk and 600 seconds of idle time. Override these
+under `capacityManager.fleet`. Each instance has exactly one selected GPU.
+Idle instances can be released because the fleet minimum is zero; this idle
+period is separate from Core's worker drain/scale-down time and is not a maximum
+worker lifetime. A warm worker (`minWorkers: 1`) remains busy running the worker
+process even when no proof is being processed.
+
+Finally the preflight synchronizes the existing worker token into the dstack
+project's Secret store. The proof chart's ExternalSecret must have synchronized
+the token first. A failed preflight stops before Helm; fix the cause and retry.
+The controller must be running because dstack 0.21.5 creates fleets and project
+Secrets through its API, not through server startup YAML. This preparation
+starts no runs. The subsequent Helm installation starts the manager and can
+allocate paid workers. Empty fleet creation does not establish GPU availability,
+price or a successful proof; those are live acceptance checks.
 
 The manager references the existing controller auth Secret in the same namespace;
 it does not create another copy of the admin token. WP's existing `proof-work-token`

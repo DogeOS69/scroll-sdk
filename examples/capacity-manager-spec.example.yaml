@@ -1,6 +1,7 @@
 # Merge this section into deployment-spec.yaml and REMOVE proofWorkers.
 # The normal setup plan/apply prepares configuration; it does not rent GPUs.
-# Configure an isolated dstack project and provider fleet before credentials.
+# Imported dstack server configuration creates this project/backend.
+# make install-capacity-manager prepares the empty fleet before installing the manager.
 capacityManager:
   image:
     repository: ghcr.io/dogeos69/capacity-manager
@@ -10,6 +11,12 @@ capacityManager:
   gpu: L4
   project: dogeos-aws-provers
   fleets: [dogeos-aws-l4]
+  fleet:
+    action: create          # reuse checks an existing matching fleet without modifying it
+    cpus: 16
+    memoryGiB: 64
+    diskSizeGiB: 200
+    idleDurationSeconds: 600
   regions: [us-east-1]
   instanceTypes: [g6.4xlarge]
   minWorkers: 1
@@ -21,3 +28,31 @@ capacityManager:
 # Vast alternative: provider: vastai, gpu: RTX4090, an isolated Vast project/fleet,
 # regions: [us-texas], instanceTypes: [], prices 0.80 / 1.60 respectively.
 # These prices are policy limits, not quotations or total-invoice guarantees.
+
+# Merge these fields into the existing blocks; do not duplicate YAML keys.
+dstackController:
+  enabled: true
+  defaultCredentialsEnabled: true
+  serviceAccount:
+    annotations:
+      # Existing controller role with dstack EC2 provisioning permissions.
+      eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/REPLACE_WITH_DSTACK_ROLE
+preparation:
+  dstack:
+    mode: import
+    providers: [aws]
+    # project is derived from capacityManager.project; do not repeat it here.
+    aws:
+      # Existing VPC IDs from your AWS inventory; no default-VPC fallback.
+      vpcIds:
+        us-east-1: vpc-REPLACE_WITH_EXISTING_VPC_ID
+      # Private subnets need outbound access and controller-to-worker reachability.
+      publicIps: false
+
+# For Vast, replace preparation.dstack with:
+#   mode: import
+#   providers: [vastai]
+#   vastaiApiKeyEnv: VASTAI_API_KEY
+# Disable dstackController.defaultCredentialsEnabled and remove the AWS role
+# annotation if no AWS backend is used. Do not retain preparation.dstack.aws.
+# Set capacityManager.provider/gpu/regions/prices to the Vast alternative above.
