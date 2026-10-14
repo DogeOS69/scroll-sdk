@@ -17,8 +17,7 @@ No path flags are needed. The capacity plan reads `.scrollsdk/intent.json`, the
 checked CUDA-image receipt, publication receipt and compiler-generated Worker
 contract. It derives the dstack project, auth Secret reference and controller
 image from the same deployment. The namespace follows
-`dstackController.monitoring.namespace` (default `dstack-system`), independently
-of the chain namespace. The Kubernetes context defaults to the saved Secret-upload
+`infrastructure.namespace` (default `default`), shared with the chain services. The Kubernetes context defaults to the saved infrastructure/Secret-upload
 context when present, otherwise the current kubectl context; `--kube-context` on
 plan overrides it. Plan displays and freezes this target before any GPU apply. `--deployment-dir` and
 plan-only `--spec` are optional overrides. Capacity apply always uses its saved

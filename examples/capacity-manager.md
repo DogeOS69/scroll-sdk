@@ -39,41 +39,46 @@ manager Pod receives no AWS credentials or Kubernetes API token.
 1. Retire any existing SDK worker session using `setup proof-workers status` and
    `destroy`; confirm provider instances/fleets are gone. Remove `proofWorkers`
    from spec and add `capacityManager` from `capacity-manager-spec.example.yaml`.
-2. Run the normal `scrollsdk setup plan` and `scrollsdk setup apply`. The final
-   capacity-manager stage consumes the compiler worker contract, image check and
+2. Run the normal staged setup through `setup render` and `setup upload-secrets`.
+   The `prep-charts` integration consumes the compiler worker contract, image check and
    verified publication receipt. It generates the policy and command in
    `values/capacity-manager-production.yaml` and adds only the manager peer to
    WP's proof-work NetworkPolicy. It never allocates GPUs.
 3. Install/upgrade WP and Proof Coordinator, and install dstack using the normal
    deployment targets. They provide the existing proof token Secret and dstack
    credentials. Use the deployment namespace and Kubernetes context consistently.
-4. Prepare credentials, then explicitly install the manager:
+4. Explicitly install the manager. Make synchronizes credentials first:
 
 ```bash
 # From the spec directory, enter setup plan's conventional output directory.
 cd deployment
-scrollsdk setup capacity-manager credentials --kube-context "$KUBE_CONTEXT"
 make install-withdrawal-processor KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
 make install-capacity-manager KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
-scrollsdk setup capacity-manager status --kube-context "$KUBE_CONTEXT"
+scrollsdk setup capacity-manager status --dir . --kube-context "$KUBE_CONTEXT"
 ```
 
-Credential preparation checks the named dstack fleets, sends the worker token to
-its project secret channel, and copies the selected controller API token into
-`capacity-manager-dstack-auth` in the proof namespace. No token is written to
-values, stdout, a ConfigMap or this checkout. It does not create fleets/runs.
-For a separately managed project-scoped API token, provision the destination
-Secret through your secret manager and supply the worker project secret there;
-skip the CLI credential-copy action. WP's existing `proof-work-token` is mounted
-by reference; it is the existing shared bearer credential, not a new API scope.
+`make install-capacity-manager` waits for dstack's rollout, checks the named fleets,
+and synchronizes the existing worker token into the dstack project's Secret store.
+The proof chart's ExternalSecret must have synchronized the token first. A failed
+preflight stops before Helm; fix the cause and retry the same Make target.
+The controller must be running because dstack 0.21.5 registers project Secrets
+through its API, not its startup YAML. This idempotent preflight creates no fleets
+or runs. Only the subsequent Helm installation can start GPU allocation.
+
+The manager references the existing controller auth Secret in the same namespace;
+it does not create another copy of the admin token. WP's existing `proof-work-token`
+is also mounted by reference. `gen-secrets` and `push-secrets` retain their existing
+credential generation/publication responsibilities; neither requires a running
+dstack server. No token is written to values, stdout, or a ConfigMap.
 
 Before chart publication, use the local chart explicitly:
 `make install-capacity-manager CAPACITY_MANAGER_CHART=../scroll-sdk/charts/capacity-manager`.
 Deploy WP chart 0.1.26 or newer so the generated manager peer is rendered.
-The generated peer assumes the manager shares the proof services' namespace;
-dstack can remain in `dstack-system`. The [DevNet profile](capacity-manager-devnet.md)
-uses an explicit namespace-and-Pod peer for a manager in `dstack-system` and WP
-in `default`. There is no public ingress or inbound service for the manager.
+All spec-managed releases use `infrastructure.namespace` (default `default`).
+The manager, dstack, proof services and generated WP peer share this namespace.
+The [DevNet profile](capacity-manager-devnet.md) describes a historical manual
+installation; its cross-namespace layout is not the normal spec deployment path.
+There is no public ingress or inbound service for the manager.
 
 Preparation creates `.scrollsdk/capacity-manager/plan.json`. A conflicting SDK
 worker session stops preparation. SDK `proof-workers apply` refuses this marker

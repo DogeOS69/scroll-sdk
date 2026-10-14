@@ -1,4 +1,4 @@
-# Generated worker command and policy come from setup capacity-manager prepare.
+# Generated worker command and policy come from setup prep-charts (or setup render).
 # Installing this independent release can allocate paid GPUs; install-all excludes it.
 fullnameOverride: capacity-manager
 prepared: false
@@ -9,8 +9,8 @@ wpAuth:
   existingSecret: proof-coordinator-secrets
   key: proof-work-token
 dstackAuth:
-  existingSecret: capacity-manager-dstack-auth
-  key: token
+  existingSecret: dstack-controller-auth
+  key: admin-token
 persistence:
   size: 1Gi
   retain: true
