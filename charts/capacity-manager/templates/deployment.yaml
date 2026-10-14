@@ -74,7 +74,7 @@ spec:
             - --dstack-fleet
             - {{ . | quote }}
             {{- end }}
-            {{- range (required "At least one dstack region is required" .Values.manager.dstack.regions) }}
+            {{- range .Values.manager.dstack.regions }}
             - --dstack-region
             - {{ . | quote }}
             {{- end }}

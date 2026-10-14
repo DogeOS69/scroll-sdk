@@ -34,7 +34,7 @@ starting it, provision and offer-only validate the dedicated dstack fleet
 `devnet-provers-aws/devnet-capacity-manager-active-aws-l40s`, using the
 L40S preparation procedure:
 
-- backend `aws`, region `us-east-1`, instance type `g6e.4xlarge`, on-demand;
+- backend `aws`, every eligible prepared region, instance type `g6e.4xlarge`, on-demand;
 - nodes 0..1, exactly one L40S with at least 44GiB usable GPU memory;
 - minimum 16 CPUs, 128GiB RAM and 200GiB disk;
 - hourly instance price ceiling USD 3.10 and an explicit bounded idle policy.
@@ -47,8 +47,11 @@ Follow the L40S guide for supported-AZ validation and bounded retries. If alloca
 within the agreed startup window, treat that as AWS availability exhaustion and
 follow the same manual fallback procedure. Stop AWS CM first, then verify
 terminal owned tasks and actual provider cleanup; an offer-only result or a
-failed task alone cannot establish cleanup. Do not expand price, regions or
-instance selectors automatically.
+failed task alone cannot establish cleanup. Keep the approved price and
+instance selectors. Regional eligibility must be prepared in the external
+backend/fleet before activation; see the L40S guide's regional-selection
+procedure. The primary chart has no run-level region filter and does not change
+AWS account, network or provider configuration.
 
 Keep credentials in the existing dstack controller/provider configuration. Do
 not add AWS credentials, IRSA annotations or Kubernetes API access to the
@@ -121,7 +124,8 @@ repair CM on failure; do not silently restore SDK ownership.
    Keep the existing fleet and instance selectors, then confirm availability,
    exactly one L40S, at least 44GiB usable VRAM, 16 CPUs, 128GiB RAM,
    200GiB disk and hourly price at or below USD 3.10. Complete the L40S
-   fleet/auth/state preparation and supported-AZ checks before activation.
+   fleet/auth/state preparation and supported-AZ checks across eligible regions
+   before activation.
    Check actual ownership/inventory separately: an offer-only plan does not
    prove there are no paid workers. Record a bounded, credential-free result.
 2. If no matching available AWS offer meets the price ceiling, leave the

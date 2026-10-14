@@ -31,8 +31,13 @@ Configure stock dstack 0.21.5 with a **dedicated project and existing fleet** fo
 this deployment. Core's `docs/engineering/aws-gpu-dstack.md` and
 `tools/real-proving/dstack/server-aws.yml.example` describe AWS credentials, role,
 VPC, quota and fleet setup. The SDK does not invent these infrastructure values
-or provision an AWS fleet in this step. The declared fleets/regions/instance
-types must exist in that project. Provider selection is explicit; there is no
+or provision an AWS fleet in this step. The declared fleets and instance types
+must exist in that project. `manager.dstack.regions: []` emits no run-level
+region filter, allowing all regions eligible in the external fleet/backend;
+it does not expand backend regions, quotas or VPC/subnet coverage. Set an
+explicit list for restricted placement; Vast policies require a region in
+Core. See the L40S guide for multi-region AWS preparation and cost caveats.
+Provider selection is explicit; there is no
 automatic AWS-to-Vast failover. AWS provisioning IAM belongs to dstack; the
 manager Pod receives no AWS credentials or Kubernetes API token.
 
