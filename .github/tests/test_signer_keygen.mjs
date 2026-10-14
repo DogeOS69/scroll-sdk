@@ -161,8 +161,8 @@ test('Docker initialization inside Git permits tracked public templates and igno
   assert.notEqual(spawnSync('git', ['-C', root, 'check-ignore', '-q', 'operator/']).status, 0)
 })
 
-test('Docker-generated keys match the real beta.6 signer on every network', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
-  const signer = 'dogeos69/attestation-signer@sha256:f5f02291e0a4c9a3c688fba431b52ba9c26c9418073c92671f03dad7d81f79fc'
+test('Docker-generated keys match the real beta.7 signer on every network', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
+  const signer = 'dogeos69/attestation-signer@sha256:7727d3c8dbf2f59f6e48993d1a6885707d4dadfe177cbaf9e3c2ee9986e2d7a0'
   for (const network of ['mainnet', 'testnet', 'regtest']) {
     const root = temporary(t)
     const generated = run(root, network, 'partner-a', true)
@@ -209,10 +209,10 @@ test('explicit reviewed pins are installed once and conflicting reruns preserve 
 test('explicit pins pass through Docker initialization', {skip: process.env.SIGNER_KEYGEN_DOCKER_TEST !== '1'}, t => {
   const root = temporary(t)
   const generated = spawnSync('bash', [path.join(scripts, 'init-keys.sh'), '--name', 'partner-r3', '--network', 'testnet', '--out', root,
-    '--release-version', '0.3.0', '--git-commit', '20746174e993a64e7edb132b9ecdbd989788d864', '--signing-policy-version', '1'], {encoding: 'utf8'})
+    '--release-version', '0.3.0', '--git-commit', '50653e7b67e2a6a8eadef06fabdec8037e6f61ef', '--signing-policy-version', '1'], {encoding: 'utf8'})
   assert.equal(generated.status, 0, generated.stderr)
   const env = fs.readFileSync(path.join(root, files[0]), 'utf8')
-  assert.ok(env.includes('ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT=20746174e993a64e7edb132b9ecdbd989788d864'))
+  assert.ok(env.includes('ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT=50653e7b67e2a6a8eadef06fabdec8037e6f61ef'))
 })
 
 test('KMS identity validates key metadata, reuses transport and never writes a WIF', t => {

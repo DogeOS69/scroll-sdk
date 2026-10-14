@@ -66,8 +66,7 @@ Prepare dstack project Secret `cm_active_worker_token_1013` **inside
 Secret in `main` is not available in the AWS project. Check an existing target
 Secret for equality before reuse; never overwrite unrelated auth or put a real
 token in values. The remote worker token in this profile is only a project
-Secret reference. The manager ECR image also requires existing node image-pull
-permissions.
+Secret reference. The manager image is pinned by digest in Docker Hub.
 
 ## Provider handoff without a second allocator
 

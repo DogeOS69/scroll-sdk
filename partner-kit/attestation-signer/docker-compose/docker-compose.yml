@@ -16,7 +16,7 @@
 services:
   attestation-signer:
     # SIGNER_IMAGE accepts an approved immutable repo@sha256 reference.
-    image: ${SIGNER_IMAGE:-dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.6}}
+    image: ${SIGNER_IMAGE:-dogeos69/attestation-signer:${ATTESTATION_SIGNER_IMAGE_TAG:-v0.3.0-beta.7}}
     command: ["-c", "/etc/dogeos-partner/attestation-signer.toml"]
     restart: unless-stopped
     env_file:

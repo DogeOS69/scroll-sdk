@@ -87,10 +87,13 @@ withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoi
 `contracts.DEPOSIT_FEE = "1000000000000000000"` in L2 wei (18 decimals); withdrawal
 and minimum withdrawal values already use L2 wei.
 
-Core service images are beta.6, with `v0.3.0-beta.6-kms` for withdrawal-processor.
+Core service images, including the KMS-enabled withdrawal-processor, use
+`v0.3.0-beta.7`. See [the release pins and publication prerequisites](core-beta7-images.md).
 That image supports KMS sequencing; its fee wallet still uses a local key.
-The CLI genesis default is contracts rc.6, and
-fresh-chain defaults are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
+The contracts deployment example uses rc.7. Select the matching rc.7 genesis
+and verification images explicitly when using a CLI release whose defaults are
+older; see [Contracts images](README.md#contracts-images). Fresh-chain defaults
+are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Empty blocks are disabled by default (`reth.sequencer.allowEmptyBlocks: false`);
 the block interval does not require producing a block when there is no eligible work.
 Reth has its own release lineage; its tag must be selected explicitly. Plan
@@ -182,7 +185,7 @@ placeholders, not working identities or credentials.
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
 | Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
 | Attestation identities | Fill `attestationSigners` from approved Governance records: one `name`, `attestationPubkey` and `transportPubkey` per signer. Selected names must match `bridge.initialAttestationKeyset.signerIds`. No descriptor files or publicly reachable signer endpoints are required. |
-| Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.6` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
+| Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.7` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
 | Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
@@ -612,7 +615,7 @@ selected KMS operations; do not put cloud credentials in the spec.
 ## Real proof generation and completion limits
 
 The operator selects `preparation.proofRelease.version`, for example
-`v0.3.0-beta.6`. Plan reads the official `DogeOS69/dogeos-core` release
+`v0.3.0-beta.7`. Plan reads the official `DogeOS69/dogeos-core` release
 `proof-release-<version>`, downloads `dogeos-proof-release-v1.json` and its
 published `.sha256`, verifies the checksum and schema, and caches the verified
 manifest by digest. The immutable plan records the manifest path, checksum and
@@ -620,14 +623,13 @@ compiler/Worker image digests; apply uses these pins without selecting a newer
 release. The checksum verifies the artifact against the publisher's release; it
 is not an independent publisher signature. No operator-generated hash is needed.
 
-**Release dependency:** the publishing workflow is in
-[dogeos-core PR #1335](https://github.com/DogeOS69/dogeos-core/pull/1335), still open
-at this update (2026-10-09). Neither `proof-release-v0.3.0-beta.6` nor
-`v0.3.0-beta.6` was available through GitHub Release lookup. The core release owner
-must land the workflow and publish the compatible proof artifacts. Plan fails
-clearly when the release/assets are unavailable; it does not ask operators to
-invent a manifest or silently substitute mock proofs. Thus this starter expresses
-the intended version but cannot currently complete online planning for beta.6.
+**Release dependency:** the beta.7 image workflow includes the proof release pipeline.
+The example requires `proof-release-v0.3.0-beta.7` with its manifest and checksum;
+a Git tag or successful service-image build alone is insufficient. At this update
+(2026-10-15), the image workflow is still running and that proof release is not yet
+available. Plan fails clearly until the required assets are published; do not
+substitute the beta.6 proofexp release or invent a checksum. See
+[beta.7 image update](core-beta7-images.md) for the validation boundary.
 
 For an offline/private release handoff only, replace `version` with
 `manifest: /private/approved/dogeos-proof-release-v1.json` and `sha256` from the

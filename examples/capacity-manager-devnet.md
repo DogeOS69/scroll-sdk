@@ -10,7 +10,8 @@ Use `values/capacity-manager-devnet-rtx3090.yaml` with the independent
 October 13, 2026 full-mode deployment, not a default for other networks. It can
 keep one paid worker running indefinitely; `install-all` remains unchanged.
 
-The profile preserves the pinned manager/worker images, exact worker command,
+The profile updates the manager to `dogeos69/capacity-manager:develop-50653e7b`
+by digest and preserves the pinned worker image, exact worker command,
 hash-checked chunk/batch/bridge/aggregation programs and shared proof-work bearer
 references. It sets one warm worker, a one-worker ceiling, an instance/pool price
 ceiling of USD 0.80/hour and native graceful shutdown with 1800 seconds of grace.
@@ -71,10 +72,10 @@ deployment must provision these external resources first or explicitly choose
 chart-created account/state with fresh names. Do not replace an existing
 checkpoint with an empty claim to bypass ownership conflicts.
 
-The pinned manager digest currently lives in the DevNet ECR registry. EKS node
-image-pull permissions are required; the manager account receives no IRSA role.
-Use the profile's published repository and digest together; the SDK chart
-consumes the image without building it.
+The manager image is pinned by digest in Docker Hub; the manager account
+receives no IRSA role. Use the profile's published repository and digest
+together; the SDK chart consumes the image without building it. The historical
+qualification above predates this manager image update.
 
 ## Raw Deployment to Helm handoff
 

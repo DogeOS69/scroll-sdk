@@ -3,8 +3,9 @@
 fullnameOverride: capacity-manager
 prepared: false
 image:
-  repository: ghcr.io/dogeos69/capacity-manager
-  digest: <PUBLISHED_CAPACITY_MANAGER_IMAGE_DIGEST>
+  repository: dogeos69/capacity-manager
+  # dogeos69/capacity-manager:develop-50653e7b
+  digest: sha256:4535d8ae9ce9adf7d84dc129de28606e0471216037cbf7c4ad985636eb735620
 wpAuth:
   existingSecret: proof-coordinator-secrets
   key: proof-work-token
