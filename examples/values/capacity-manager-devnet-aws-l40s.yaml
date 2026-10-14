@@ -1,4 +1,5 @@
-# L40S candidate: disabled until placement, price and all-family readiness are approved.
+# L40S: isolated native all-family qualification passed (17 proofs, CUDA89 image below).
+# Explicit live fleet/auth/state preparation and same-owner handoff remain required.
 # An explicit prepared=true override can rent one paid GPU indefinitely at <=3.10/hour.
 # Secrets/SA/state already exist and remain externally managed. No credentials here.
 # Shares the existing allocator identity; never install as a parallel production manager.

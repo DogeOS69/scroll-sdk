@@ -1,9 +1,12 @@
-# DevNet AWS L40S candidate: disabled pending qualification
+# DevNet AWS L40S: qualified lab profile, explicit deployment preparation
 
-`values/capacity-manager-devnet-aws-l40s.yaml` is a candidate for the AWS-primary
-Capacity Manager path. It deliberately sets `prepared: false`, so installation
-fails closed. It is not an enabled default or a second allocator. The isolated
-L40S test is bounded by the existing USD 10 compute budget. For this DevNet
+`values/capacity-manager-devnet-aws-l40s.yaml` supplies the AWS-primary
+Capacity Manager path. The current worker passed isolated all-family native
+qualification, in addition to the paired chunk replay below. `prepared: false`
+still requires explicit preparation of the live fleet, project auth and same-owner
+state handoff before installation. The initial isolated replay used a USD 10
+compute ceiling; the operator raised the cumulative lab ceiling to USD 15 for
+the native qualification. For this DevNet
 rollout, the operator authorized an ongoing GPU ceiling of USD 3.10/hour
 conditional on performance qualification. That authorization is separate from
 the lab budget and does not remove the remaining activation gates.
@@ -82,11 +85,28 @@ Allocation succeeded in `us-east-1d` after temporarily selecting an existing
 supported VPC for the isolated AWS project. The original configuration is
 preserved for restoration and the test rental must be removed afterward. This
 placement is qualification evidence, not a production network recommendation.
-The lab used synthetic capacity and offline proof replay without production
-coordinator claims or WP/PC production auth. A valid chunk replay does not
-establish all-family production readiness or launch throughput. Those gates
-remain outstanding, so `prepared: false` is retained. The ongoing USD 3.10/hour
-ceiling is authorized conditional on performance qualification.
+The initial replay used synthetic capacity and offline proof replay. The follow-up
+used the stock native C3 external-worker scenario on WSL with actual isolated
+WP/PC claims, leases, accepted results and verification under Capacity Manager.
+The current CUDA89 image completed **17 real proofs**: 5 chunks, 5 batches,
+1 L2 range aggregation and 6 bridge transitions. The genuine M=2 aggregation
+reached the checked signer path; the complete native test passed and its exact
+Docker container exited with code 0. No production traffic or auth was used.
+The native test took 3603 seconds including extended unpaid setup/waiting;
+that elapsed time is not proof throughput. This establishes isolated all-family
+functionality, while the separate paired replay supplies the single-input timing
+comparison. Sustained launch load, failure recovery and the live same-owner
+handoff remain separate gates. The ongoing USD 3.10/hour ceiling is authorized
+conditional on performance qualification.
+During cold fleet startup, three tasks reported
+`failed_to_start_due_to_no_capacity` before the successful current RunID reached
+real proving. Treat
+transient scheduling failure separately from GPU proof performance, and bind
+readiness/results to the replacement RunID. Fleet user tags were not inherited
+by the run-created EC2 instance: retirement tooling must verify actual project,
+run identity and instance/disk IDs, including replacement instances, rather than
+relying solely on a custom fleet tag.
+
 The chunk policy estimate is 240 seconds based on this 206.947-second sample;
 all estimates remain provisional pending production workload distributions.
 
