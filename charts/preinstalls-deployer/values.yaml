@@ -1,0 +1,36 @@
+---
+global:
+  isStandalone: false
+
+image:
+  repository: dogeos69/preinstalls
+  tag: v0.1.0
+
+# The deploy pod (presigned + Foundry CREATE2) and the verify pod (Blockscout
+# source verification) share this configmap. The parent scroll-sdk chart
+# generates `preinstalls-env` from config.toml via create-env-files.sh,
+# matching the per-chart `<name>-env` convention used by the rest of the repo.
+envFrom:
+  - configMapRef:
+      name: preinstalls-env
+
+# Verify is intentionally a separate Pod with a higher Helm hook weight so it
+# only runs after Blockscout is up; the deploy itself doesn't depend on it.
+verify:
+  enabled: true
+  image:
+    # Re-use the same image — it carries forge + the source tree needed for
+    # `forge verify-contract`.
+    repository: dogeos69/preinstalls
+    tag: v0.1.0
+  # Defaults match the in-cluster service shipped by the parent scroll-sdk
+  # chart (`blockscout-blockscout-svc`). The wait4x readiness check uses
+  # `/api/v2/stats` because `/api/v1/health` returns 400 on this Blockscout.
+  blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
+  blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
+  scVerifierUrl: http://blockscout-sc-verifier:8080
+
+# Pre-flight gates. Both pods wait for the L2 sequencer; the verify pod also
+# waits for the Blockscout backend to be live.
+waits:
+  l2RpcEndpoint: http://l2-rpc:8545
