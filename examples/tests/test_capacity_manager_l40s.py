@@ -18,12 +18,15 @@ WORKER_IMAGE = ('dogeos69/prover-worker-cuda@sha256:'
                 '5f170b2150877b66ce8c3daa1c467d8ac60947c1f229f913cab1247e79efb2b9')
 
 
-def render(prepared=False):
+def render(prepared=False, regions=None):
     args = ['helm', 'template', 'devnet-capacity-manager-active',
             str(ROOT / 'charts/capacity-manager'), '--namespace', 'dstack-system',
             '-f', str(PROFILE)]
     if prepared:
         args.extend(['--set', 'prepared=true'])
+    if regions is not None:
+        for index, region in enumerate(regions):
+            args.extend(['--set', f'manager.dstack.regions[{index}]={region}'])
     return subprocess.run(args, capture_output=True, text=True)
 
 
@@ -67,7 +70,7 @@ class CapacityManagerL40sTests(unittest.TestCase):
         self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_active_worker_token_1013 }}',
                       self.args)
 
-    def test_single_aws_l40s_with_explicit_price_and_placement(self):
+    def test_single_aws_l40s_with_explicit_price_and_unrestricted_run_regions(self):
         policy = tomllib.loads(self.values['manager']['policy'])
         self.assertEqual(policy['global']['max_workers'], 1)
         self.assertEqual(policy['pool']['provider'], 'aws')
@@ -85,11 +88,28 @@ class CapacityManagerL40sTests(unittest.TestCase):
         for flag, value in {
             '--dstack-project': 'devnet-provers-aws',
             '--dstack-fleet': 'devnet-capacity-manager-active-aws-l40s',
-            '--dstack-region': 'us-east-1', '--dstack-instance-type': 'g6e.4xlarge',
+            '--dstack-instance-type': 'g6e.4xlarge',
             '--dstack-max-price-usd': '3.1',
         }.items():
             self.assertEqual(self.args.count(flag), 1)
             self.assertEqual(self.args[self.args.index(flag) + 1], value)
+
+    def test_region_filter_is_optional_and_can_be_explicitly_overridden(self):
+        self.assertEqual(self.values['manager']['dstack']['regions'], [])
+        self.assertNotIn('--dstack-region', self.args)
+        result = render(prepared=True, regions=['eu-central-1', 'eu-north-1'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        deployment = next(d for d in yaml.safe_load_all(result.stdout)
+                          if d and d['kind'] == 'Deployment')
+        args = deployment['spec']['template']['spec']['containers'][0]['args']
+        selected = [args[index + 1] for index, flag in enumerate(args)
+                    if flag == '--dstack-region']
+        self.assertEqual(selected, ['eu-central-1', 'eu-north-1'])
+        # Restricting regions must not alter the qualified worker or budget.
+        for flag in ('--dstack-worker-image', '--dstack-worker-command',
+                     '--dstack-max-price-usd', '--dstack-fleet'):
+            self.assertEqual(args[args.index(flag) + 1],
+                             self.args[self.args.index(flag) + 1])
 
     def test_truthful_89_image_preserves_all_other_crypto_execution_arguments(self):
         self.assertEqual(self.values['image'], self.reference['image'])

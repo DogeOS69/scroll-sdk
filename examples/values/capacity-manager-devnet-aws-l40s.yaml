@@ -74,8 +74,9 @@ manager:
     project: devnet-provers-aws
     fleets:
     - devnet-capacity-manager-active-aws-l40s
-    regions:
-    - us-east-1
+    # Let AWS choose across every eligible fleet/backend region.
+    # Prepare regional network/quota coverage in dstack before enabling.
+    regions: []
     instanceTypes:
     - g6e.4xlarge
     maxPricePerHourUsd: 3.1
