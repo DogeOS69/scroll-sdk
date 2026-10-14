@@ -5,6 +5,7 @@
 NAMESPACE ?= default
 # Kubernetes context name from `kubectl config get-contexts`.
 # Applies to every Helm/Kubectl cluster operation, including recursive targets.
+# Spec bootstrap fills this default from infrastructure.kubeContext.
 # Empty uses the current kubeconfig context; no global context is changed.
 # Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
@@ -29,6 +30,9 @@ PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.25
+PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls
+PREINSTALLS_CHART_VERSION ?= 0.1.2-dogeos
+PREINSTALLS_TIMEOUT ?= 20m
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
 L2_RETH_CHART_VERSION ?= 0.1.5
@@ -48,6 +52,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/l2-reth-bootnode-production-0.yaml \
 	values/l2-reth-bootnode-production-1.yaml \
 	values/l2-reth-rpc-production.yaml \
+	values/preinstalls-production.yaml \
 	values/contracts-production.yaml \
 	values/scroll-common-config-contracts.yaml \
 	values/scroll-common-config.yaml \
@@ -78,14 +83,14 @@ endif
 
 .PHONY: prepare install-dogecoin install-scroll-core \
 	install-dstack-controller install-scroll-monitor \
-	install-contracts install-eth-da-submitter \
+	install-preinstalls install-contracts install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
 	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-dogecoin delete-frontends \
+	delete-all delete-preinstalls delete-dogecoin delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
@@ -176,6 +181,14 @@ install-l2-reth-bootnode:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-bootnode-1 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
 		--values values/l2-reth-bootnode-production-1.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
+
+# Helm waits for the post-install/post-upgrade deploy hook to succeed.
+# Install after L2 readiness and before the DogeOS contracts release.
+install-preinstalls:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i preinstalls $(PREINSTALLS_CHART) -n "$(NAMESPACE)" \
+		--version=$(PREINSTALLS_CHART_VERSION) \
+		--timeout "$(PREINSTALLS_TIMEOUT)" \
+		--values values/preinstalls-production.yaml
 
 install-contracts:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i contracts oci://ghcr.io/dogeos69/scroll-sdk/helm/contracts -n "$(NAMESPACE)" \
@@ -289,6 +302,7 @@ install-all: check-install-all-values
 	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet -n "$(NAMESPACE)" && scrollsdk setup dogecoin-wallet-import
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-core
 	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n "$(NAMESPACE)"
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-preinstalls
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts
 	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
@@ -299,7 +313,12 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync
 
+delete-preinstalls:
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" preinstalls
+	kubectl --context "$(KUBE_CONTEXT)" delete pod --ignore-not-found -n "$(NAMESPACE)" preinstalls-preinstalls-deploy preinstalls-preinstalls-verify
+
 delete-all:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-preinstalls || true
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" scroll-common || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-l2-reth || true
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" frontends || true

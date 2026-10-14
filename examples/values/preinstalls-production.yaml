@@ -15,7 +15,8 @@ envFrom:
       name: preinstalls-env
 
 verify:
-  enabled: true
+  # Opt in only after Blockscout and its source verifier are installed.
+  enabled: false
   image:
     repository: dogeos69/preinstalls
     tag: v0.1.0
@@ -31,8 +32,8 @@ externalSecrets:
     provider: aws
     data:
       - remoteRef:
-          key: scroll/contracts-secret-env
-          property: DEPLOYER_PRIVATE_KEY
+          key: scroll/preinstalls-secret-env
+          property: PRIV_KEY
         secretKey: PRIV_KEY
     refreshInterval: 2m
     serviceAccount: external-secrets
