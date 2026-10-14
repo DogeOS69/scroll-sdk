@@ -29,6 +29,8 @@ manager:
     serverUrl: http://dstack-controller.dstack-system.svc:3000
     project: ""
     fleets: []
+    # Empty: no run-level region filter; fleet/backend eligibility still applies.
+    # Vast policies require an explicit region in Core.
     regions: []
     instanceTypes: []
     maxPricePerHourUsd: 0.8

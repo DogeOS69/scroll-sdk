@@ -46,6 +46,13 @@ The CLI does not create AWS provisioning roles, VPCs, subnets or quotas. Core's
 `docs/engineering/aws-gpu-dstack.md` and
 `tools/real-proving/dstack/server-aws.yml.example` document these prerequisites.
 These are provider-specific infrastructure inputs, not generated fleet IDs.
+
+`manager.dstack.regions: []` emits no run-level region filter, allowing all
+regions eligible in the configured fleet/backend. It does not expand backend
+regions, quotas or VPC/subnet coverage. Set an explicit list for restricted
+placement; Vast policies require a region in Core. See the L40S guide for
+multi-region AWS preparation and cost caveats.
+
 Provider selection is explicit; there is no automatic AWS-to-Vast failover.
 The manager Pod receives no AWS credentials or Kubernetes API token.
 

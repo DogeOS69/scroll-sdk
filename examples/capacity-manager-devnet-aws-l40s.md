@@ -17,7 +17,7 @@ Before explicitly enabling this profile, confirm the approved USD 3.10/hour
 ceiling and provision/offer-only validate the dedicated dstack fleet
 `devnet-provers-aws/devnet-capacity-manager-active-aws-l40s`:
 
-- AWS, `us-east-1`, on-demand `g6e.4xlarge`, nodes 0..1;
+- AWS, every eligible prepared region, on-demand `g6e.4xlarge`, nodes 0..1;
 - exactly one L40S, nominal 48GB VRAM, at least 44GiB usable;
 - minimum 16 CPUs, 128GiB RAM and 200GiB disk;
 - hourly instance price at or below USD 3.10 and a bounded idle policy.
@@ -34,6 +34,62 @@ and manual fallback rather than retrying an unsupported placement indefinitely. 
 inside the existing dstack controller/provider path. The manager has no AWS
 credentials, IRSA annotation or Kubernetes API token.
 
+### Regional selection and lower-cost placement
+
+The L40S profile sets `manager.dstack.regions: []`. Helm emits no
+`--dstack-region` argument, so Core leaves the worker RunSpec's `regions` unset.
+This allows dstack to consider all eligible regions rather than pinning worker
+placement to the EKS/controller region. The fixed instance type, single-worker
+limit, CUDA89 image and USD 3.10/hour ceiling remain unchanged. The manager
+and program URLs remain in `us-east-1`; that does not constrain the worker's
+region. The optional A10G profile retains its explicit historical region.
+
+Eligibility is the intersection of the AWS account, the project's AWS backend,
+the external fleet and the worker RunSpec. Removing the run filter alone does
+not expand a backend or fleet pinned to `us-east-1`. The backend restored after
+lab qualification had `regions: [us-east-1]`, a VPC mapping only for that region
+and `public_ips: false`; it requires separate provider/network preparation.
+Before activation:
+
+1. Inspect the dedicated AWS backend and fleet. Remove their single-region
+   constraints or configure all intended eligible regions, preserving the same
+   owner/fleet and resource/price limits. Stock dstack 0.21.5's omitted AWS
+   backend `regions` defaults to its supported OS-image regions, not every AWS
+   region. Account-disabled/unsupported regions require separate preparation;
+   this chart does not opt in an account or create regional networking.
+2. Verify GPU quota, `g6e.4xlarge` support, AMI access and VPC/subnets in each
+   candidate region. Preserve the intended private-network posture: private
+   workers need working outbound connectivity to the controller, proof
+   coordinator, image registry and artifact endpoints. The controller must also
+   reach each private worker's SSH/shim endpoints through approved routing and
+   security rules. Verify that path before paid startup; an offer-only plan does
+   not prove connectivity. Provide explicit regional VPC mappings when defaults
+   are disallowed; do not enable public IPs/default VPCs simply to make an offer
+   pass.
+3. Run an offer-only plan without a region filter and record all candidate
+   regions, actual resource/price bounds and eligible availability zones.
+   Compare the cheapest available compatible offers across the prepared
+   regions. dstack's offer ordering considers price and availability, while
+   reusable fleet capacity can take precedence over provisioning a new host.
+   This is not a guarantee of the globally cheapest AWS machine or continuous
+   migration when prices change. Keep on-demand provisioning; prior Spot
+   price research is not Spot qualification or a deployment setting.
+4. Qualify a selected distant region's startup, real claims/results, queue age
+   and proof transfer timings before the live same-owner handoff. Include
+   cross-region transfer charges and latency when comparing total cost;
+   isolated `us-east-1d` qualification does not establish remote-region
+   performance or connectivity.
+
+An operator can temporarily restrict the run to a reviewed subset with
+`--set manager.dstack.regions[0]=eu-central-1` (quote this argument in shells
+that expand brackets). Existing fleet/backend restrictions still apply. Inspect
+regional eligibility and offers again before each replacement allocation;
+changes to live backend/fleet configuration remain a separate controlled step.
+Region selectors are part of the ownership fingerprint. Before changing an
+active release's list (including `[us-east-1]` to `[]` or a temporary subset),
+follow the drain-confirmed handoff below using the previous configuration.
+Otherwise the old workers remain untouched and reserve the allocation slot.
+
 Reuse the existing `devnet-capacity-manager-active` release, worker prefix and
 unannotated ServiceAccount, external `devnet-capacity-manager-active-state` PVC,
 WP Secret `devnet-capacity-manager-active-wp-token`/`proof-work-token` and dstack
@@ -46,8 +102,9 @@ Follow the single-owner handoff in `capacity-manager-devnet-aws.md`. Drain using
 the original provider configuration, confirm zero leases, terminal tasks,
 manager shutdown and actual provider instance/disk cleanup before replacing
 capacity. Preserve the PVC and checkpoints. Project and worker prefix determine
-the state-file identity; different worker image/architecture/fleet selectors
-change the ownership fingerprint. Do not erase state or start a second manager
+the state-file identity; worker-spec changes, including image, architecture,
+fleet and region selectors, change the ownership fingerprint. Do not erase
+state or start a second manager
 to bypass mismatched live ownership. The SDK task remains retired and its old
 watchdog suspended.
 
