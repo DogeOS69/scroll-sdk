@@ -29,7 +29,7 @@ PROOF_COORDINATOR_CHART_VERSION ?= 0.3.3
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.25
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.26
 PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls
 PREINSTALLS_CHART_VERSION ?= 0.1.3-dogeos
 PREINSTALLS_TIMEOUT ?= 20m
@@ -399,3 +399,13 @@ delete-l2-reth-bootnode:
 	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-bootnode-0-data || true
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l2-reth-bootnode-1 || true
 	kubectl --context "$(KUBE_CONTEXT)" delete pvc -n "$(NAMESPACE)" l2-reth-bootnode-1-data || true
+
+# Explicit opt-in: starts the Core loop and may rent paid GPU instances.
+CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
+CAPACITY_MANAGER_CHART_VERSION ?= 0.1.1
+install-capacity-manager:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m
+
+# Pause only: does not stop remote workers or their billing. See capacity-manager.md.
+pause-capacity-manager:
+	kubectl --context "$(KUBE_CONTEXT)" scale deployment/capacity-manager -n "$(NAMESPACE)" --replicas=0

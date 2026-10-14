@@ -1,0 +1,15 @@
+# Nonfunctional render-only input; never deploy this fixture.
+prepared: true
+image:
+  repository: example.invalid/capacity-manager
+  digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+manager:
+  workerIdPrefix: render-only
+  workerImage: example.invalid/worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  workerCommand: exit 1
+  workerTokenSecret: nonfunctional_test_reference
+  policy: "[global]\nmax_workers = 1\n"
+  dstack:
+    project: nonfunctional-test
+    fleets: [nonfunctional-test]
+    regions: [us-east-1]

@@ -1,0 +1,11 @@
+# Overlay on the existing WP release in default; only its proof-work port admits this peer.
+networkPolicy:
+  allowFrom:
+    capacityManager:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: dstack-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: capacity-manager
+          app.kubernetes.io/instance: devnet-capacity-manager-active

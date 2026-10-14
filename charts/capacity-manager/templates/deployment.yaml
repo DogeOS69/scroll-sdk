@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fullnameOverride }}
+  labels:
+    {{- include "capacity-manager.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: capacity-manager
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "capacity-manager.labels" . | nindent 8 }}
+      annotations:
+        checksum/policy: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "capacity-manager.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: capacity-manager
+          image: {{ printf "%s@%s" .Values.image.repository .Values.image.digest | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/usr/local/bin/capacity-manager]
+          args:
+            - --provisioner
+            - dstack
+            - --policy-file
+            - /etc/capacity-manager/capacity-policy.toml
+            - --provisioner-state-dir
+            - /var/lib/capacity-manager
+            - --worker-id-prefix
+            - {{ required "workerIdPrefix is required" .Values.manager.workerIdPrefix | quote }}
+            - --proof-work-base-url
+            - {{ .Values.manager.proofWorkBaseUrl | quote }}
+            - --poll-interval-ms
+            - {{ .Values.manager.pollIntervalMs | quote }}
+            - --dstack-server-url
+            - {{ .Values.manager.dstack.serverUrl | quote }}
+            - --dstack-project
+            - {{ required "Dedicated dstack project is required" .Values.manager.dstack.project | quote }}
+            - --dstack-token-file
+            - /run/secrets/dstack/token
+            - --dstack-max-price-usd
+            - {{ .Values.manager.dstack.maxPricePerHourUsd | quote }}
+            - --dstack-worker-image
+            - {{ .Values.manager.workerImage | quote }}
+            - --dstack-worker-command
+            - {{ required "Generated workerCommand is required" .Values.manager.workerCommand | quote }}
+            - --dstack-worker-env
+            - {{ printf "DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.%s }}" (required "workerTokenSecret is required" .Values.manager.workerTokenSecret) | quote }}
+            - --dstack-worker-env
+            - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+            {{- if .Values.manager.workerReadinessFile }}
+            - --dstack-worker-env
+            - {{ printf "DOGEOS_PROVER_WORKER_READY_FILE=%s" .Values.manager.workerReadinessFile | quote }}
+            {{- end }}
+            - --dstack-provisioning-timeout-seconds
+            - {{ .Values.manager.provisioningTimeoutSeconds | quote }}
+            - --dstack-failure-cooldown-seconds
+            - {{ .Values.manager.failureCooldownSeconds | quote }}
+            {{- range (required "At least one dstack fleet is required" .Values.manager.dstack.fleets) }}
+            - --dstack-fleet
+            - {{ . | quote }}
+            {{- end }}
+            {{- range (required "At least one dstack region is required" .Values.manager.dstack.regions) }}
+            - --dstack-region
+            - {{ . | quote }}
+            {{- end }}
+            {{- range .Values.manager.dstack.instanceTypes }}
+            - --dstack-instance-type
+            - {{ . | quote }}
+            {{- end }}
+            {{- if .Values.manager.scaleDownOnShutdown }}
+            - --scale-down-on-shutdown
+            {{- end }}
+          env:
+            - name: DOGEOS_PROOF_WORK_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "WP auth Secret is required" .Values.wpAuth.existingSecret }}
+                  key: {{ .Values.wpAuth.key }}
+            - {name: RUST_LOG, value: info}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - {name: policy, mountPath: /etc/capacity-manager, readOnly: true}
+            - {name: state, mountPath: /var/lib/capacity-manager}
+            - {name: dstack-token, mountPath: /run/secrets/dstack, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: policy
+          configMap: {name: {{ .Values.fullnameOverride }}-policy}
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-state" .Values.fullnameOverride) .Values.persistence.existingClaim }}
+        - name: dstack-token
+          secret:
+            secretName: {{ required "dstack auth Secret is required" .Values.dstackAuth.existingSecret }}
+            defaultMode: 0440
+            items:
+              - {key: {{ .Values.dstackAuth.key }}, path: token}
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
