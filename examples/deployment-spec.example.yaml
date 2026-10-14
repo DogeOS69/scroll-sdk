@@ -163,7 +163,9 @@ bridge:
     depositFeeSats: "100000000" # 1 DOGE (Dogecoin uses 8 decimals)
     withdrawalFeeWei: "100000000000000000" # 0.1 DOGE (L2 uses 18 decimals)
     minWithdrawalAmountWei: "1000000000000000000" # 1 DOGE
-  feeRecipient: "$ENV:OWNER_ADDRESS"
+  # Dedicated L2/EVM address receiving Moat bridge fees; choose separately from
+  # the contract owner and the Dogecoin fee-vault withdrawal recipient below.
+  feeRecipient: "$ENV:L2_BRIDGE_FEE_RECIPIENT_ADDRESS"
   # No seedString: production mode does not derive wallet or recovery keys.
 
 signing:
