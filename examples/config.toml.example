@@ -52,7 +52,8 @@ CONNECT_WALLET_PROJECT_ID = "14efbaafcf5232a47d93a68229b71028"
 TIMESTAMP = 0
 
 L2_MAX_NATIVE_DOGE_SUPPLY = "226156424291633194186662080095093570025917938800079226639565593765455331328"
-L2_DEPLOYER_INITIAL_BALANCE = 1000000000000000000
+# 10 native DOGE; quoted because this exceeds TOML's signed 64-bit integer range.
+L2_DEPLOYER_INITIAL_BALANCE = "10000000000000000000"
 # Fresh-chain targets; require the contracts generator that consumes GAS_LIMIT
 # and a rollup-node release supporting the 420,000 gwei consensus cap.
 GAS_LIMIT = 30_000_000
