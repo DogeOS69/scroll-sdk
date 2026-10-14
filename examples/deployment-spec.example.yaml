@@ -10,7 +10,7 @@ version: "1.0"
 metadata:
   name: dogeos-testnet
   environment: testnet
-  description: "beta.6 / rc.6 preparation with production Bridge initialization"
+  description: "beta.7 / rc.6 preparation with production Bridge initialization"
 
 # Plan locks the committed HEAD of --sdk-dir automatically.
 # Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
@@ -229,13 +229,13 @@ images:
     l2Rpc: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
     l2Sequencer: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
     l2Bootnode: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
-    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.6-kms}
-    l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.6}
-    tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.6}
-    proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.6}
-    ethDaSubmitter: {repository: dogeos69/eth-da-submitter, tag: v0.3.0-beta.6}
-    feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.6}
-    cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.6}
+    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.7}
+    l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.7}
+    tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.7}
+    proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.7}
+    ethDaSubmitter: {repository: dogeos69/eth-da-submitter, tag: v0.3.0-beta.7}
+    feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.7}
+    cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.7}
 
 # Real proof materials are imported from release/Worker receipts after Bridge
 # context exists. Their hashes and public identities are tool-produced, never invented.
@@ -305,7 +305,7 @@ preparation:
   # Put external inputs in its sibling 'inputs' directory or use absolute paths.
   bridge:
     mode: production
-    image: dogeos69/bridge-genesis-tools@sha256:27e646fd5d9c340926df82f47f7d352fd5333de4e6178c5a8c56aa9637769262
+    image: dogeos69/bridge-genesis-tools@sha256:d165e828ae53f9a4af5bc60d7ed9244176b3db2307f567eedb4d7f3c01db6339
     # Apply creates the funding input at the default path when payments are needed.
     production:
       # Apply creates/reuses the derived KMS alias and pins its public key.
@@ -313,7 +313,7 @@ preparation:
       sequencerKms: {action: create}
       # Existing key: sequencerKms: {action: reuse, keyId: alias/EXISTING_KEY}
       # The workload role defaults to the proofAws withdrawal role.
-      # beta.6-kms supports KMS for the sequencer only; fee wallet remains local.
+      # beta.7 supports KMS for the sequencer only; fee wallet remains local.
       # Set DOGECOIN_FEE_WALLET_KEY in private deployment.env only.
       # Apply derives and pins the fee-wallet public key and funding address.
       recoveryPublicKeys:
@@ -331,7 +331,7 @@ preparation:
   proofRelease:
     # CLI retrieves the official manifest/checksum and freezes immutable image pins.
     # Requires the core release owner to publish this version's proof release.
-    version: v0.3.0-beta.6
+    version: v0.3.0-beta.7
   proofMaterials:
     mode: real
   # Explicitly request publication using the same pinned release manifest.

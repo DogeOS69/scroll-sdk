@@ -135,7 +135,8 @@ policy comes from SDK templates rather than a second set of CLI defaults.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.6**. Follow the
+The core service examples target **v0.3.0-beta.7**. See the
+[beta.7 image update](core-beta7-images.md) and follow the
 [beta.6 configuration checklist](core-beta6-configuration.md) for the signer
 format, independent S3 targets, binary approval pins and proof identities.
 Update the generated deployment configuration together with the images;

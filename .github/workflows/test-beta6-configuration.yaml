@@ -44,7 +44,7 @@ jobs:
       - run: helm dependency build charts/withdrawal-processor
       - run: helm dependency build charts/proof-coordinator
       - run: python3 -m unittest discover -s .github/tests -p 'test_beta6_compatibility.py' -v
-      - name: Verify standalone key generation against the beta.6 signer
+      - name: Verify standalone key generation against the selected beta.7 signer
         run: node --test .github/tests/test_signer_keygen.mjs
         env:
           SIGNER_KEYGEN_DOCKER_TEST: '1'
