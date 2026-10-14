@@ -30,8 +30,8 @@ See [the spec reference](deployment-spec.md) for field semantics and key custody
 Run `plan` and `apply` from your private working directory. Keep the SDK checkout
 as its sibling `../scroll-sdk`, or override `--sdk-dir` once when planning. Set `AWS_PROFILE`,
 `AWS_REGION`, `KUBE_CONTEXT` and `NAMESPACE` to the reviewed spec values. Do not source deployment.env: the CLI parses it as literal data.
-Set `DSTACK_NAMESPACE` to `dstackController.monitoring.namespace`, whose default
-is `dstack-system`. This may differ from the business-service `NAMESPACE`.
+All releases, including dstack and capacity-manager, use `infrastructure.namespace`
+(default `default`). The generated Makefile uses this as `NAMESPACE`.
 
 ## 2. Plan once; resume apply at external waits
 
@@ -105,12 +105,11 @@ test ! -e runtime
 cp -a deployment runtime
 cd runtime
 scrollsdk setup cubesigner-refresh -N --doge-config .data/doge-config.toml
-export DSTACK_NAMESPACE=dstack-system # Use your override if configured in the spec.
-kubectl --context "$KUBE_CONTEXT" create namespace "$DSTACK_NAMESPACE" \
+kubectl --context "$KUBE_CONTEXT" create namespace "$NAMESPACE" \
   --dry-run=client -o yaml | kubectl --context "$KUBE_CONTEXT" apply -f -
 scrollsdk setup push-secrets -N --provider aws \
   --aws-region "$AWS_REGION" \
-  --kube-context "$KUBE_CONTEXT" --namespace "$DSTACK_NAMESPACE"
+  --kube-context "$KUBE_CONTEXT" --namespace "$NAMESPACE"
 ```
 
 An authenticated CubeSigner owner authorizes the session. The command writes it
@@ -121,7 +120,7 @@ creates the corresponding Kubernetes Secret. Configure store authentication as
 for Dogecoin. Dstack's generated controller credentials use its existing explicit
 Kubernetes publication path, so the context/namespace flags are required.
 For this combined upload, `--namespace` selects the dstack Secret destination;
-the other service secrets go to the selected AWS/Vault store. Create the dstack
+the other service secrets go to the selected AWS/Vault store. Create the deployment
 namespace before uploading, rather than waiting for the later Helm installation.
 If `preparation.secretUpload` already completed, do not upload again needlessly.
 
@@ -137,7 +136,7 @@ passes it to each Makefile target. Check rollout/health at each stage and stop
 on failure; do not run this sequence unattended past failed checks.
 
 ```bash
-export KUBE_CONTEXT NAMESPACE DSTACK_NAMESPACE
+export KUBE_CONTEXT NAMESPACE
 make install-scroll-monitor
 kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" wait \
   --for=condition=Ready externalsecret/grafana-admin --timeout=120s

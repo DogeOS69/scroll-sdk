@@ -1,4 +1,5 @@
-"""Check expanded recipes without invoking Helm, kubectl, or any cluster."""
+"""Check expanded recipes and stubbed installation ordering without a cluster."""
+import os
 import pathlib
 import re
 import shlex
@@ -33,7 +34,7 @@ class MakefileContextTests(unittest.TestCase):
         return [shlex.split(line) for line in expanded.splitlines()
                 if line.startswith(('helm ', 'kubectl '))]
 
-    def assert_context(self, commands, context, namespace, dstack_namespace='dstack-system'):
+    def assert_context(self, commands, context, namespace):
         self.assertGreater(len(commands), 50)
         for command in commands:
             if command[:2] == ['helm', 'repo']:
@@ -42,8 +43,7 @@ class MakefileContextTests(unittest.TestCase):
                 flag = '--kube-context' if command[0] == 'helm' else '--context'
                 self.assertEqual(command.count(flag), 1)
                 self.assertEqual(command[command.index(flag) + 1], context)
-                expected_namespace = dstack_namespace if 'dstack-controller' in command else namespace
-                self.assertEqual(command[command.index('-n') + 1], expected_namespace)
+                self.assertEqual(command[command.index('-n') + 1], namespace)
 
     def test_header_context_and_namespace_reach_all_cluster_commands(self):
         self.assert_context(self.expanded_commands('header-cluster', 'header-ns'),
@@ -51,9 +51,9 @@ class MakefileContextTests(unittest.TestCase):
 
     def test_command_line_overrides_reach_recursive_targets(self):
         overrides = {'KUBE_CONTEXT': 'arn:aws:eks:us-east-1:123456789012:cluster/selected',
-                     'NAMESPACE': 'selected-ns', 'DSTACK_NAMESPACE': 'selected-gpu-ns'}
+                     'NAMESPACE': 'selected-ns'}
         self.assert_context(self.expanded_commands('header-cluster', 'header-ns', overrides),
-                            overrides['KUBE_CONTEXT'], overrides['NAMESPACE'], overrides['DSTACK_NAMESPACE'])
+                            overrides['KUBE_CONTEXT'], overrides['NAMESPACE'])
 
     def test_empty_context_is_an_empty_argument_not_the_next_option(self):
         self.assert_context(self.expanded_commands('', 'default'), '', 'default')
@@ -85,16 +85,41 @@ class MakefileContextTests(unittest.TestCase):
 
     def test_dstack_install_accepts_chart_and_values_overrides(self):
         commands = self.expanded_commands('selected', 'chain', {
-            'DSTACK_NAMESPACE': 'gpu-system',
             'DSTACK_CONTROLLER_CHART': './charts/dstack-controller',
             'DSTACK_CONTROLLER_CHART_VERSION': '0.1.2',
             'DSTACK_CONTROLLER_VALUES': 'custom values/dstack.yaml',
         }, targets=['install-dstack-controller'])
         self.assertEqual(commands, [[
             'helm', '--kube-context', 'selected', 'upgrade', '-i', 'dstack-controller',
-            './charts/dstack-controller', '-n', 'gpu-system', '--create-namespace',
+            './charts/dstack-controller', '-n', 'chain', '--create-namespace',
             '--version', '0.1.2', '--values', 'custom values/dstack.yaml',
         ]])
+
+    def test_capacity_preflight_runs_before_helm_and_failure_stops_installation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            log = root / 'calls'
+            for name in ['scrollsdk', 'helm']:
+                tool = root / name
+                tool.write_text('#!/bin/sh\nprintf "%s\\n" "' + name + ' $*" >> "$CALL_LOG"\n'
+                                + ('exit "$PREFLIGHT_EXIT"\n' if name == 'scrollsdk' else 'exit 0\n'))
+                tool.chmod(0o755)
+            env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'],
+                       CALL_LOG=str(log), PREFLIGHT_EXIT='1')
+            command = ['make', '--no-print-directory', '-f', str(MAKEFILE),
+                       'install-capacity-manager', 'KUBE_CONTEXT=selected', 'NAMESPACE=chain']
+            failed = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertEqual(len(log.read_text().splitlines()), 1)
+            self.assertIn('--dir . --kube-context selected --namespace chain', log.read_text())
+            log.unlink()
+            env['PREFLIGHT_EXIT'] = '0'
+            succeeded = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertEqual(succeeded.returncode, 0, succeeded.stderr)
+            calls = log.read_text().splitlines()
+            self.assertEqual(len(calls), 2)
+            self.assertTrue(calls[0].startswith('scrollsdk setup capacity-manager credentials'))
+            self.assertTrue(calls[1].startswith('helm --kube-context selected'))
 
     def test_monitor_applies_generated_dstack_overlay_after_base_values(self):
         overlay = 'values/scroll-monitor-dstack.yaml'

@@ -28,7 +28,6 @@ dstackController:
   fullnameOverride: dstack-controller
   monitoring:
     enabled: true
-    namespace: dstack-system
     auth:
       existingSecret: dstack-controller-monitoring
       key: token
@@ -69,9 +68,9 @@ an independent chart or release:
 
 ```bash
 make -f Makefile.example install-scroll-monitor \
-  KUBE_CONTEXT=YOUR_CONTEXT NAMESPACE=YOUR_CHAIN_NAMESPACE
+  KUBE_CONTEXT=YOUR_CONTEXT NAMESPACE=YOUR_NAMESPACE
 make -f Makefile.example install-dstack-controller \
-  KUBE_CONTEXT=YOUR_CONTEXT DSTACK_NAMESPACE=dstack-system
+  KUBE_CONTEXT=YOUR_CONTEXT NAMESPACE=YOUR_NAMESPACE
 ```
 
 Run these commands from the deployment directory containing `Makefile.example`
@@ -88,9 +87,9 @@ an explicit empty value skips the overlay. To disable an existing integration,
 regenerate an overlay with monitoring disabled rather than just omitting it.
 
 `install-dstack-controller` installs the independent OCI chart, pinned to version
-`0.1.3`, and creates its namespace if needed. `DSTACK_NAMESPACE` defaults to
-`dstack-system`; it must match `dstackController.monitoring.namespace` and the
-namespace containing the controller Secrets. Override `DSTACK_CONTROLLER_CHART`,
+`0.1.4`, and creates its namespace if needed. `NAMESPACE` defaults to
+`default`; it is shared by the controller, monitoring, and the other releases.
+The CLI derives the monitoring namespace from `infrastructure.namespace`. Override `DSTACK_CONTROLLER_CHART`,
 `DSTACK_CONTROLLER_CHART_VERSION` or `DSTACK_CONTROLLER_VALUES` for a local chart,
 another version or another generated values path. The controller is installed
 explicitly and is not part of the chain's `install-all` or `delete-all` targets.

@@ -212,6 +212,10 @@ class TemplateTests(unittest.TestCase):
         self.assertEqual(charts["businessPodAlerts"], examples["businessPodAlerts"])
         self.assertEqual(charts["diskAlerts"], examples["diskAlerts"])
         self.assertEqual(charts["resourceAlerts"], examples["resourceAlerts"])
+        # The spec path installs dstack in the same namespace as all services.
+        # The packaged standalone profile may retain its historical namespace.
+        self.assertEqual(examples["dstack"]["namespace"], "default")
+        charts["dstack"]["namespace"] = "default"
         self.assertEqual(charts["dstack"], examples["dstack"])
         self.assertEqual(charts["additionalServiceMonitors"], examples["additionalServiceMonitors"])
         self.assertEqual(charts["dogecoinIndexerAlerts"], examples["dogecoinIndexerAlerts"])

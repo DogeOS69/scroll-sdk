@@ -1,6 +1,7 @@
 # Configuration generation and validation belong to `scrollsdk setup ...`.
 # prep-charts emits self-contained proof values; this Makefile only runs
-# ordinary Helm installs/removals. Run prep-charts and proof-config-check first.
+# Helm installs/removals and the capacity-manager credential preflight.
+# Run prep-charts and proof-config-check first.
 
 NAMESPACE ?= default
 # Kubernetes context name from `kubectl config get-contexts`.
@@ -9,8 +10,7 @@ NAMESPACE ?= default
 # Empty uses the current kubeconfig context; no global context is changed.
 # Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
-# Must match dstackController.monitoring.namespace and the published Secrets.
-DSTACK_NAMESPACE ?= dstack-system
+# Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
 DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.4
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
@@ -130,7 +130,7 @@ install-scroll-monitor:
 # Independent release: prepare/publish dstack Secrets and install the monitor's
 # Prometheus Operator CRDs first. See dstack-monitoring/README.md.
 install-dstack-controller:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dstack-controller $(DSTACK_CONTROLLER_CHART) -n "$(DSTACK_NAMESPACE)" \
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dstack-controller $(DSTACK_CONTROLLER_CHART) -n "$(NAMESPACE)" \
 		--create-namespace \
 		--version $(DSTACK_CONTROLLER_CHART_VERSION) \
 		--values "$(DSTACK_CONTROLLER_VALUES)"
@@ -403,7 +403,9 @@ delete-l2-reth-bootnode:
 # Explicit opt-in: starts the Core loop and may rent paid GPU instances.
 CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
 CAPACITY_MANAGER_CHART_VERSION ?= 0.1.1
+.PHONY: install-capacity-manager pause-capacity-manager
 install-capacity-manager:
+	scrollsdk setup capacity-manager credentials --dir . --kube-context "$(KUBE_CONTEXT)" --namespace "$(NAMESPACE)"
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m
 
 # Pause only: does not stop remote workers or their billing. See capacity-manager.md.

@@ -347,10 +347,10 @@ serviceAlerts:
   paused: false
 
 # Internal dstack monitoring is enabled by default. Apply the generated
-# scroll-monitor-dstack.yaml overlay when the controller uses another namespace.
+# scroll-monitor-dstack.yaml overlay with the namespace selected in the spec.
 dstack:
   enabled: true
-  namespace: dstack-system
+  namespace: default
   controllerName: dstack-controller
 
 dogecoinIndexerAlerts:
