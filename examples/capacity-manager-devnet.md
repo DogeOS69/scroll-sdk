@@ -73,7 +73,8 @@ checkpoint with an empty claim to bypass ownership conflicts.
 
 The pinned manager digest currently lives in the DevNet ECR registry. EKS node
 image-pull permissions are required; the manager account receives no IRSA role.
-This is independent of the generic chart's GHCR image workflow/release.
+Use the profile's published repository and digest together; the SDK chart
+consumes the image without building it.
 
 ## Raw Deployment to Helm handoff
 

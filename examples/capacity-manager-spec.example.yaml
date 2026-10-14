@@ -4,7 +4,7 @@
 capacityManager:
   image:
     repository: ghcr.io/dogeos69/capacity-manager
-    # Obtain the published digest from the Capacity Manager image workflow.
+    # Obtain the compatible image repository and digest from the Core release owner.
     digest: REPLACE_WITH_PUBLISHED_SHA256_DIGEST
   provider: aws
   gpu: L4

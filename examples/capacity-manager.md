@@ -11,15 +11,13 @@ explicit paid-resource action; with the example policy it keeps one worker warm.
 The integration targets Core commit
 `350508c1cd068230fc731747a3b5bbfbb44b81cf` (native dstack price ceiling, manual
 provider switching). The normal proof-coordinator image does not contain this
-binary. Run the SDK **Capacity Manager image** workflow on a reviewed commit;
-use its `ghcr.io/dogeos69/capacity-manager@sha256:...` output in spec. The workflow
-needs `CORE_SOURCE_READ_TOKEN` if the Core checkout is not readable by its normal
-GitHub token. Publishing is a separate release action, not a side effect of
-configuration generation. This PR does not ship an already-published digest.
-
-For a local build, use a clean Core checkout at that commit as Docker's build
-context and this repository's `docker/capacity-manager/Dockerfile` as Dockerfile.
-Verify `capacity-manager --help` exposes `--dstack-max-price-usd` before publishing.
+binary. Obtain a compatible, published Capacity Manager image and its immutable
+digest from the Core release owner, then set `image.repository` and
+`image.digest` in the spec. Verify that the selected image provides
+`/usr/local/bin/capacity-manager` with `--dstack-max-price-usd` and
+`--provisioner-state-dir`. The SDK chart consumes that image directly; image
+building and publication are managed outside this repository. Generic examples
+require an explicit digest; DevNet profiles pin their separately published image.
 The manager image is independent of the existing proof worker/circuit release:
 keep the compiler-checked worker image and published program bundle unchanged.
 Selecting L4 requires the worker image check to report CUDA architecture 89.
