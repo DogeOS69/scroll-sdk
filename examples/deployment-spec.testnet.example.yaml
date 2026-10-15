@@ -175,7 +175,8 @@ bridge:
 signing:
   cubesigner:
     # Complete policy publication, Council approval and attachment on testnet too.
-    # Import the resulting policyReceipts before final rendering.
+    # setup proof-materials writes a receipts.json input and waits before charts;
+    # fill it and rerun that command without editing this spec.
     # See deployment-spec.md for the receipt handoff and required inputs.
     mode: production_verifier_key_policy
     # Read-only query during plan; the public key and role metadata are frozen.

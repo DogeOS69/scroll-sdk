@@ -40,8 +40,14 @@ Each spec already includes public execution and beacon URLs for its DA network;
 Fee Oracle samples Ethereum mainnet in both examples.
 Both examples use CubeSigner `production_verifier_key_policy`. After the protocol
 context and policy artifacts exist, complete publication, Council approval and
-attachment through the governance flow on both testnet and mainnet. Supply `signing.cubesigner.policyReceipts` for that
-exact deployment before final production rendering. Receipts include `release`,
+attachment through the governance flow on both testnet and mainnet. During staged
+preparation, `setup proof-materials` pauses at `charts` and creates
+`deployment/.scrollsdk/inputs/cubesigner-policy/receipts.json`. Complete that
+input with the governed receipt references, then rerun `setup proof-materials`;
+do not edit the frozen spec or managed `doge-config.toml`. The CLI fills the
+protocol-context reference and imports verified evidence before `prep-charts`.
+For standalone generation without a saved preparation plan, supply
+`signing.cubesigner.policyReceipts` in the spec instead. Receipts include `release`,
 `attachment` and `protocolContext` file references (`path` and `sha256`) plus the
 CubeSigner `environment` and `organization`; obtain them from the completed
 workflow, not from invented hashes. See the CLI's
