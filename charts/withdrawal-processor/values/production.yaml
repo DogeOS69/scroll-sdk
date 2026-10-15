@@ -180,7 +180,7 @@ env:
     value: "0"
 
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__CONFIRMATIONS # Required, u32, confirmation depth (>=1)
-    value: "12"
+    value: "1"
 
   - name: DOGEOS_WITHDRAWAL_DOGEOS_INDEXER__POLL_INTERVAL_MS # Required, u64, polling interval (ms, >=100)
     value: "30000"
