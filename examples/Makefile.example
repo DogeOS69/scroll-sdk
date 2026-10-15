@@ -12,7 +12,7 @@ NAMESPACE ?= default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.4
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.5
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
 SCROLL_MONITOR_CHART_VERSION ?= 0.1.47-dogeos
