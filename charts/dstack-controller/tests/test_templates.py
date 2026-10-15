@@ -9,14 +9,17 @@ import yaml
 CHART = Path(__file__).resolve().parents[1]
 
 
-def render(values=None):
+def render(values=None, overlays=()):
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "values.yaml"
         path.write_text(yaml.safe_dump(values or {}))
-        return subprocess.run([
+        command = [
             "helm", "template", "gpu", str(CHART), "--namespace", "dstack-system",
-            "-f", str(path),
-        ], text=True, capture_output=True)
+        ]
+        for overlay in overlays:
+            command.extend(["-f", str(overlay)])
+        command.extend(["-f", str(path)])
+        return subprocess.run(command, text=True, capture_output=True)
 
 
 def resources(values=None):
@@ -66,6 +69,42 @@ class ControllerTemplates(unittest.TestCase):
         self.assertFalse(pod["automountServiceAccountToken"])
         self.assertEqual(resource(docs, "ServiceAccount")["metadata"]["annotations"],
                          {"eks.amazonaws.com/role-arn": role})
+
+    def test_aws_irsa_overlay_prepares_only_the_credential_chain(self):
+        values = yaml.safe_load((CHART / "values/aws-irsa.yaml").read_text())
+        # The shipped placeholder is deliberately not a usable role. A site
+        # supplies its existing role; this fake fixture performs no AWS call.
+        self.assertIn("REPLACE_WITH_DSTACK_CONTROLLER_ROLE",
+                      values["serviceAccount"]["annotations"]["eks.amazonaws.com/role-arn"])
+        role = "arn:aws:iam::123456789012:role/test-dstack"
+        # Apply only site-specific overrides after the actual shipped overlay.
+        # This exercises Helm's layering, not a Python copy of the overlay.
+        result = render({
+            "serviceAccount": {"annotations": {"eks.amazonaws.com/role-arn": role}},
+            "serverConfig": {"existingSecret": "existing-native-projects", "key": "config.yml"},
+            "persistence": {"existingClaim": "existing-controller-state"},
+        }, overlays=[CHART / "values/aws-irsa.yaml"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = [doc for doc in yaml.safe_load_all(result.stdout) if doc]
+        pod = resource(docs, "Deployment")["spec"]["template"]["spec"]
+        env = {e["name"]: e for e in pod["containers"][0]["env"]}
+        self.assertNotIn("DSTACK_DEFAULT_CREDS_DISABLED", env)
+        self.assertEqual(env["AWS_EC2_METADATA_DISABLED"],
+                         {"name": "AWS_EC2_METADATA_DISABLED", "value": "true"})
+        self.assertFalse(pod["automountServiceAccountToken"])
+        self.assertEqual(resource(docs, "ServiceAccount")["metadata"]["annotations"],
+                         {"eks.amazonaws.com/role-arn": role})
+        volumes = {v["name"]: v for v in pod["volumes"]}
+        self.assertEqual(volumes["config"]["secret"]["secretName"], "existing-native-projects")
+        self.assertEqual(volumes["state"]["persistentVolumeClaim"]["claimName"],
+                         "existing-controller-state")
+        self.assertNotIn("AWS_ACCESS_KEY_ID", env)
+        self.assertNotIn("AWS_SECRET_ACCESS_KEY", env)
+        self.assertFalse(any(d["kind"] in {
+            "Secret", "ConfigMap", "Job", "Role", "RoleBinding", "ClusterRole", "ClusterRoleBinding",
+        } for d in docs))
+        self.assertNotIn("initContainers", pod)
+        self.assertTrue(all("helm.sh/hook" not in d["metadata"].get("annotations", {}) for d in docs))
 
     def test_config_and_credentials_reference_secrets_without_rendering_values(self):
         docs = resources({
