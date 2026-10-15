@@ -200,7 +200,7 @@ frontend:
   baseDomain: dogeos.example.invalid
   externalUrls:
     l1Rpc: https://dogecoin.example.invalid
-    l1Explorer: https://dogecoin-explorer.example.invalid
+    l1Explorer: https://sochain.com/dogetest
   subdomains:
     frontend: portal
     rpcGateway: rpc

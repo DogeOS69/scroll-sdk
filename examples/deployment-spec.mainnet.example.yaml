@@ -201,7 +201,7 @@ frontend:
   baseDomain: dogeos-mainnet.example.invalid
   externalUrls:
     l1Rpc: https://dogecoin-mainnet.example.invalid
-    l1Explorer: https://dogecoin-explorer.example.invalid
+    l1Explorer: https://sochain.com/doge
   subdomains:
     frontend: portal
     rpcGateway: rpc
