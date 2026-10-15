@@ -45,7 +45,7 @@ exact deployment before final production rendering. Receipts include `release`,
 `attachment` and `protocolContext` file references (`path` and `sha256`) plus the
 CubeSigner `environment` and `organization`; obtain them from the completed
 workflow, not from invented hashes. See the CLI's
-[CubeSigner evidence handoff](https://github.com/DogeOS69/scroll-sdk-cli/blob/v0.3.0-develop/docs/proof-config-transactions.md#cubesigner-receipts-and-external-signer-evidence)
+[CubeSigner evidence handoff](https://github.com/DogeOS69/scroll-sdk-cli/blob/v0.3.0/docs/proof-config-transactions.md#cubesigner-receipts-and-external-signer-evidence)
 for the receipt contract.
 
 Select only `dogecoin.network`: `mainnet`, `testnet` or `regtest`. The CLI derives
