@@ -16,7 +16,7 @@ metadata:
 # Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
 
 # Reference existing infrastructure; this spec does not create a cluster.
-# Apply creates AWS KMS keys and IAM/IRSA resources for all four signing identities:
+# Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
 # eth-da-submitter, fee-oracle and both sequencers. P2P nodekeys remain local.
 infrastructure:
   provider: aws
@@ -26,7 +26,7 @@ infrastructure:
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
     # Optional: secretsPrefix: your-reviewed-existing-prefix
-  namespace: dogeos-testnet
+  namespace: default
   sequencerCount: 2
   bootnodeCount: 2
 
@@ -160,6 +160,7 @@ bridge:
     feeWallet: 100000000  # Rehearsal funding budget; review before funding.
     bridge: 1000000000
   confirmationsRequired: 6
+  # Bridge service fees, separate from network gas and initial wallet funding.
   fees:
     depositFeeSats: "100000000" # 1 DOGE (Dogecoin uses 8 decimals)
     withdrawalFeeWei: "100000000000000000" # 0.1 DOGE (L2 uses 18 decimals)
@@ -171,7 +172,10 @@ bridge:
 
 signing:
   cubesigner:
-    mode: transport_only
+    # Complete policy publication, Council approval and attachment on testnet too.
+    # Import the resulting policyReceipts before final rendering.
+    # See deployment-spec.md for the receipt handoff and required inputs.
+    mode: production_verifier_key_policy
     # Read-only query during plan; the public key and role metadata are frozen.
     identity:
       roleId: REPLACE_WITH_CUBESIGNER_ROLE_ID

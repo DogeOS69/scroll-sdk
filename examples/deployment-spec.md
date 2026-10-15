@@ -1,6 +1,7 @@
 # Prepare from a complete DeploymentSpec
 
-Use [deployment-spec.example.yaml](deployment-spec.example.yaml) together with
+Choose [deployment-spec.testnet.example.yaml](deployment-spec.testnet.example.yaml) or
+[deployment-spec.mainnet.example.yaml](deployment-spec.mainnet.example.yaml), together with
 [deployment.env.example](deployment.env.example). The spec selects deployment
 intent for `scrollsdk setup plan` / `setup apply`.
 Operator inputs, automatically generated artifacts and external approval handoffs
@@ -12,7 +13,7 @@ For the ordered command sequence and handoff checklist, see
 
 ## Selected scope
 
-This example prepares a **testnet deployment** with the beta.6 production Bridge
+Both examples prepare a deployment with the beta.6 production Bridge
 outpoint flow, two Reth sequencers, two bootnodes, AWS KMS signing identities for
 eth-da-submitter, fee-oracle, both L2 sequencers and the Dogecoin Bridge sequencer,
 and a SQLite dstack controller
@@ -20,14 +21,38 @@ with imported Vast.ai credentials. P2P nodekeys remain local. Both the
 attestation and recovery cohorts use 2-of-3; Bridge funding requires 6 confirmations.
 It selects `active / real / enforce` proofs. The approved release producer
 generates this deployment's Bridge-bound compiler identity; no hand-written
-compiler identity or mock proof hashes are accepted. This is a testnet policy;
-CubeSigner remains explicitly `transport_only`.
+compiler identity or mock proof hashes are accepted.
+
+| Setting | Testnet example | Mainnet example |
+| --- | --- | --- |
+| Instance / environment | `dogeos-testnet` / `testnet` | `dogeos-mainnet` / `mainnet` |
+| Kubernetes namespace | `default` | `default` |
+| Dogecoin network | `testnet` | `mainnet` |
+| Ethereum DA chain / chain ID | `sepolia` / `11155111` | `mainnet` / `1` |
+| Pending blob transactions (CLI default) | `10` | `8` |
+| L2 chain ID | `221122`; review for your chain | `1122005` |
+| CubeSigner mode | `production_verifier_key_policy` | `production_verifier_key_policy` |
+| Deposit / withdrawal fee | 1 DOGE / 0.1 DOGE | 1 DOGE / 0.1 DOGE |
+
+The mainnet spec is a preparation template, not a claim of production readiness.
+The mainnet L2 chain ID is `1122005`. Set mainnet Dogecoin identities/RPC and replace both
+Sepolia DA URLs from the shared `deployment.env.example` with mainnet provider
+URLs before `setup plan`. Fee Oracle sampling is configured independently.
+Both examples use CubeSigner `production_verifier_key_policy`. After the protocol
+context and policy artifacts exist, complete publication, Council approval and
+attachment through the governance flow on both testnet and mainnet. Supply `signing.cubesigner.policyReceipts` for that
+exact deployment before final production rendering. Receipts include `release`,
+`attachment` and `protocolContext` file references (`path` and `sha256`) plus the
+CubeSigner `environment` and `organization`; obtain them from the completed
+workflow, not from invented hashes. See the CLI's
+[CubeSigner evidence handoff](https://github.com/DogeOS69/scroll-sdk-cli/blob/v0.3.0-develop/docs/proof-config-transactions.md#cubesigner-receipts-and-external-signer-evidence)
+for the receipt contract.
 
 Select only `dogecoin.network`: `mainnet`, `testnet` or `regtest`. The CLI derives
 the fixed L1 chain ID (`1`, `111111` or `5555555`) for every generated consumer.
 `network.l1ChainId` is not a spec input; remove it from older specs.
-`network.l2ChainId` is still operator-selected. The Ethereum DA chain ID is
-separate: `ethereumDa.chainId` is `11155111` for Sepolia.
+`network.l2ChainId` selects the L2 chain (`1122005` for mainnet). The Ethereum DA chain ID is
+separate: `ethereumDa.chainId` is `11155111` for Sepolia or `1` for Ethereum mainnet.
 
 Ethereum provider URLs can contain API keys. Keep complete execution and beacon
 URLs in private `deployment.env`, referenced by `ethereumDa.l1RpcUrl` and
@@ -166,7 +191,8 @@ private-instance/
 From the scroll-sdk checkout, copy the examples into that private directory:
 
 ```bash
-install -m 600 examples/deployment-spec.example.yaml /private/instance/deployment-spec.yaml
+# Choose ONE spec; use deployment-spec.mainnet.example.yaml for mainnet.
+install -m 600 examples/deployment-spec.testnet.example.yaml /private/instance/deployment-spec.yaml
 install -m 600 examples/deployment.env.example /private/instance/deployment.env
 ```
 
@@ -177,7 +203,7 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Set execution/beacon URLs in private `deployment.env`; the example supplies public Sepolia defaults. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Set execution/beacon URLs in private `deployment.env`; the example supplies public Sepolia defaults. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
 | Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |

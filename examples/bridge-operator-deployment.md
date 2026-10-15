@@ -1,6 +1,6 @@
 # Bridge operator deployment sequence
 
-This is the current spec-based AWS/testnet workflow. It separates preparation,
+This is the spec-based AWS deployment workflow. It separates preparation,
 external handoffs, installation, and acceptance. `setup apply` does not install
 Helm releases or rent GPUs. A `waiting` result or healthy Pods is not acceptance.
 Use the matching SDK and CLI revisions; the monitor external-store path requires
@@ -9,7 +9,8 @@ scroll-monitor 0.1.44-dogeos to be published, or a build of the matching local c
 ## 1. Fill the operator inputs
 
 Create a private working directory outside both source repositories, then copy
-`examples/deployment-spec.example.yaml` and `examples/deployment.env.example`
+either `examples/deployment-spec.testnet.example.yaml` or
+`examples/deployment-spec.mainnet.example.yaml`, plus `examples/deployment.env.example`,
 there as `deployment-spec.yaml` and `deployment.env`. Keep permissions private.
 
 | Location | What the bridge operator supplies |
