@@ -105,9 +105,11 @@ ethereumDa:
   # Optional override: publish: {maxPendingBlobTxs: 10}
   chain: sepolia
   chainId: 11155111
-  # Full URLs may contain provider credentials; keep their values in deployment.env.
-  l1RpcUrl: "$ENV:ETHEREUM_RPC_URL"
-  beaconRpcUrl: "$ENV:ETHEREUM_BEACON_RPC_URL"
+  # Public, credential-free defaults. For authenticated providers, use
+  # $ENV:ETHEREUM_RPC_URL and $ENV:ETHEREUM_BEACON_RPC_URL instead,
+  # with the full URLs stored only in private deployment.env.
+  l1RpcUrl: https://ethereum-sepolia-rpc.publicnode.com
+  beaconRpcUrl: https://ethereum-sepolia-beacon-api.publicnode.com
   # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
   # These do not replace Ethereum safe/finalized block-tag checks.
   confirmationDepth: 1
@@ -187,7 +189,8 @@ signing:
 feeOracle:
   contractWriteMode: live
   # Fee sampling can use Ethereum mainnet even when DA publication uses Sepolia.
-  ethereumRpcUrl: "$ENV:FEE_ORACLE_ETHEREUM_RPC_URL"
+  # For an authenticated provider, use $ENV:FEE_ORACLE_ETHEREUM_RPC_URL.
+  ethereumRpcUrl: https://ethereum-rpc.publicnode.com
 
 frontend:
   protocol: https

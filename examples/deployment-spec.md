@@ -35,9 +35,9 @@ compiler identity or mock proof hashes are accepted.
 | Deposit / withdrawal fee | 1 DOGE / 0.1 DOGE | 1 DOGE / 0.1 DOGE |
 
 The mainnet spec is a preparation template, not a claim of production readiness.
-The mainnet L2 chain ID is `1122005`. Set mainnet Dogecoin identities/RPC and replace both
-Sepolia DA URLs from the shared `deployment.env.example` with mainnet provider
-URLs before `setup plan`. Fee Oracle sampling is configured independently.
+The mainnet L2 chain ID is `1122005`. Set mainnet Dogecoin identities/RPC.
+Each spec already includes public execution and beacon URLs for its DA network;
+Fee Oracle samples Ethereum mainnet in both examples.
 Both examples use CubeSigner `production_verifier_key_policy`. After the protocol
 context and policy artifacts exist, complete publication, Council approval and
 attachment through the governance flow on both testnet and mainnet. Supply `signing.cubesigner.policyReceipts` for that
@@ -54,15 +54,23 @@ the fixed L1 chain ID (`1`, `111111` or `5555555`) for every generated consumer.
 `network.l2ChainId` selects the L2 chain (`1122005` for mainnet). The Ethereum DA chain ID is
 separate: `ethereumDa.chainId` is `11155111` for Sepolia or `1` for Ethereum mainnet.
 
-Ethereum provider URLs can contain API keys. Keep complete execution and beacon
-URLs in private `deployment.env`, referenced by `ethereumDa.l1RpcUrl` and
-`ethereumDa.beaconRpcUrl` as `$ENV:ETHEREUM_RPC_URL` and
-`$ENV:ETHEREUM_BEACON_RPC_URL`. The environment example supplies public Sepolia
-defaults; replace them for your selected network/provider. Configure
-`feeOracle.ethereumRpcUrl` independently through `$ENV:FEE_ORACLE_ETHEREUM_RPC_URL`.
-Its mainnet default samples Ethereum mainnet fees even when this rehearsal's DA
-publication runs on Sepolia; it does not change the DA chain or the Fee Oracle's
-L2 transaction destination.
+The public endpoint defaults are listed directly in each spec:
+
+| Endpoint | Mainnet spec | Testnet spec |
+| --- | --- | --- |
+| Ethereum execution | `https://ethereum-rpc.publicnode.com` | `https://ethereum-sepolia-rpc.publicnode.com` |
+| Ethereum beacon | `https://ethereum-beacon-api.publicnode.com` | `https://ethereum-sepolia-beacon-api.publicnode.com` |
+| Fee Oracle sampling | `https://ethereum-rpc.publicnode.com` | `https://ethereum-rpc.publicnode.com` |
+
+These credential-free URLs come from [PublicNode](https://ethereum.publicnode.com/).
+Review provider limits and blob-broadcast support for your workload.
+For authenticated endpoints, replace the corresponding spec value with
+`$ENV:ETHEREUM_RPC_URL`, `$ENV:ETHEREUM_BEACON_RPC_URL` or
+`$ENV:FEE_ORACLE_ETHEREUM_RPC_URL`, and fill the matching optional entry in private
+`deployment.env`. Store the complete URL, including any API key, only in that env
+file. An env entry alone does not override a literal URL in the spec.
+Fee Oracle sampling is independent of DA publication and does not change its L2
+transaction destination.
 
 The matching CLI exports these URLs to private `secrets/*.env`, uploads them with
 `push-secrets`, and projects ExternalSecret references into the service values.
@@ -203,8 +211,8 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Set execution/beacon URLs in private `deployment.env`; the example supplies public Sepolia defaults. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
-| Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
+| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Review the public execution/beacon URLs in the selected spec; use private `deployment.env` references for authenticated providers. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults in the spec. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
 | Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
