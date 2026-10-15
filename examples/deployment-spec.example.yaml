@@ -21,6 +21,9 @@ metadata:
 infrastructure:
   provider: aws
   aws:
+    # Before final chart preparation, add alb.mode: existing, endpoints and
+    # service bindings from existing-alb.md. HTTP ingress must reference
+    # pre-provisioned ALBs/listeners/target groups; Helm must not own their lifetime.
     accountId: REPLACE_WITH_AWS_ACCOUNT_ID
     region: us-west-2
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER

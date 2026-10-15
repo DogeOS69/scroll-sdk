@@ -1,0 +1,10 @@
+apiVersion: v2
+name: alb-bindings
+description: Bind Kubernetes Services to externally managed AWS ALB target groups
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.22.0-0"
+maintainers:
+  - name: DogeOS69
+    email: support@dogeos.com

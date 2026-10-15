@@ -1,5 +1,9 @@
 # Prepare from a complete DeploymentSpec
 
+AWS HTTP ingress uses [existing ALB references](existing-alb.md). Add
+`infrastructure.aws.alb` for exposed endpoints before final chart preparation;
+application Helm releases must not own the ALB lifecycle.
+
 Use [deployment-spec.example.yaml](deployment-spec.example.yaml) together with
 [deployment.env.example](deployment.env.example). The spec selects deployment
 intent for `scrollsdk setup plan` / `setup apply`.

@@ -10,6 +10,8 @@ NAMESPACE ?= default
 # Empty uses the current kubeconfig context; no global context is changed.
 # Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
+ALB_BINDINGS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/alb-bindings
+ALB_BINDINGS_CHART_VERSION ?= 0.1.0
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
 DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.4
@@ -312,12 +314,14 @@ install-all: check-install-all-values
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync
+	@if test -f values/alb-bindings-production.yaml; then $(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-alb-bindings; fi
 
 delete-preinstalls:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" preinstalls
 	kubectl --context "$(KUBE_CONTEXT)" delete pod --ignore-not-found -n "$(NAMESPACE)" preinstalls-preinstalls-deploy preinstalls-preinstalls-verify
 
 delete-all:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-alb-bindings || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-preinstalls || true
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" scroll-common || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-l2-reth || true
@@ -336,6 +340,16 @@ delete-all:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" eth-da-submitter || true
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-interface || true
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) delete-testnet-activity-helper || true
+
+# Install workloads first: preflight verifies Services and the controller CRD.
+# Only the binding release is removed; AWS edge resources remain externally owned.
+.PHONY: install-alb-bindings delete-alb-bindings
+install-alb-bindings:
+	scrollsdk setup alb --require-services --kube-context "$(KUBE_CONTEXT)" --namespace "$(NAMESPACE)"
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i alb-bindings "$(ALB_BINDINGS_CHART)" -n "$(NAMESPACE)" --version=$(ALB_BINDINGS_CHART_VERSION) --values values/alb-bindings-production.yaml --wait --timeout 5m
+
+delete-alb-bindings:
+	helm --kube-context "$(KUBE_CONTEXT)" uninstall alb-bindings -n "$(NAMESPACE)" --wait --timeout 5m
 
 delete-l1-interface:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-interface
