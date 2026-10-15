@@ -82,6 +82,18 @@ class L2RethP2PTests(unittest.TestCase):
                     {"http": 8545, "ws": 8546, "metrics": 6060},
                 )
 
+    def test_http_rpc_is_required_by_rollup_node_even_with_ws_enabled(self):
+        for role in ["bootnode", "rpc", "sequencer"]:
+            for ws in [False, True]:
+                with self.subTest(role=role, ws=ws):
+                    self.assert_fails(
+                        "rollup-node requires its local HTTP RPC",
+                        values={"role": role, "reth": {
+                            "http": {"enabled": False}, "ws": {"enabled": ws},
+                            "signer": {"type": "awsKms", "awsKmsKeyId": "test-placeholder"},
+                        }},
+                    )
+
     def test_bootnode_example_keeps_p2p_internal(self):
         services = self.services(self.render(BOOTNODE_EXAMPLE))
         self.assertEqual(list(services), ["review-l2-reth"])

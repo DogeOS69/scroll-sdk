@@ -35,6 +35,9 @@ Validate l2-reth role constraints before generating common chart values.
   {{- if not (has $role (list "rpc" "sequencer" "bootnode")) -}}
     {{- fail (printf "invalid role %q: expected rpc, sequencer, or bootnode" $role) -}}
   {{- end -}}
+  {{- if not .Values.reth.http.enabled -}}
+    {{- fail "reth.http.enabled must be true: rollup-node requires its local HTTP RPC; keep service.main internal to avoid public exposure" -}}
+  {{- end -}}
   {{- $replicas := int (default 1 .Values.controller.replicas) -}}
   {{- if and (eq $role "sequencer") (gt $replicas 1) -}}
     {{- fail "role sequencer requires controller.replicas to be 0 or 1; multiple sequencer replicas are unsafe" -}}
