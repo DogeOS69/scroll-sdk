@@ -16,7 +16,7 @@ class OwnershipTests(unittest.TestCase):
         self.assertFalse(any(n.endswith('MetricsTargetDown') and n!='MetricsTargetDown' for n in names))
         self.assertFalse(any(n.endswith('PodNotReady') and n not in {'BusinessPodNotReady','KubePodNotReady'} for n in names))
         self.assertTrue({'MetricsTargetDown','KubePodNotReady','BusinessPodNotReady','PVCInodesFillingUp'} <= names)
-        self.assertEqual(sum(len(g['rules']) for g in groups if g['name'].startswith('dogeos.services.')),91)
+        self.assertEqual(sum(len(g['rules']) for g in groups if g['name'].startswith('dogeos.services.')),94)
 
     def test_global_replacements_do_not_keep_a_business_namespace_filter(self):
         docs=render('--set','grafanaAlerting.enabled=false','--set-string','businessPodAlerts.podNameRegex=business-.*')

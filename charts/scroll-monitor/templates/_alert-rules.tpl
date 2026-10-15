@@ -92,7 +92,11 @@
 {{- fail "serviceAlerts.cubesignerPolicyMode must match the CubeSigner runtime mode" -}}
 {{- end -}}
 {{- $policyRequired := ternary "0" "1" (eq $mode "transport_only") -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | fromYaml).groups -}}
+{{- $runway := $.Values.recoveryRunwayAlerts -}}
+{{- if or (le (int $runway.criticalBlocks) 0) (le (int $runway.warningBlocks) (int $runway.criticalBlocks)) (ge (int $runway.warningBlocks) 500000000) (empty $runway.jobRegex) -}}
+{{- fail "recoveryRunwayAlerts requires 0 < criticalBlocks < warningBlocks < 500000000 and a jobRegex" -}}
+{{- end -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_JOB_REGEX__" ($runway.jobRegex | quote) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}

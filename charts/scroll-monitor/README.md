@@ -809,3 +809,24 @@ value alone does not delete or pause previously provisioned rules.
 Duplicate service checks and upstream rule families have one retained owner.
 See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
 cluster-wide replacements, and distinct conditions that remain monitored.
+
+
+### Recovery CLTV runway (FYEO #24)
+
+The shared service-alert pipeline includes wallet-backed recovery runway warning,
+critical and observation-unknown rules for WP. Requires the paired dogeos-core
+`recovery_runway` collector; older images produce unknown rather than healthy.
+`recoveryRunwayAlerts` configures warning/critical blocks and target job regex.
+Defaults align with the portal's working 90/60 nominal days at 1,440 blocks/day;
+these are operator policy, not protocol constants. Fresh known hazards alert even
+with incomplete coverage. An attested complete empty wallet is quiet.
+
+Core's `docs/runbooks/recovery-runway-monitor.md` documents historical script
+inventory, digest-bound rescan attestation, source freshness, limits and response.
+In particular, protocol `bridge_utxos` cannot establish all retired holdings.
+These rules inherit existing service-alert enable/pause and notification routing.
+This addition configures no receiver, credentials or production destination, and
+Git/rendered rules do not establish deployed or tested notification delivery.
+Review source rollout, job matching, existing missing-target coverage, configured
+thresholds and on-call receiver wiring before activation. No portal UI or separate
+monitoring service is added.
