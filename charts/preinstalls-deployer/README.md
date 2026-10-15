@@ -17,6 +17,11 @@ Sourcify is not invoked pre-launch (the chain ID has to be public in
 `sourcify-chains-default.json` first). Run a sourcify backfill script
 post-launch instead.
 
+The deployment hook waits for a successful HTTP POST `eth_chainId` response
+with a hexadecimal chain ID. HTTP failures, JSON-RPC errors, and missing results
+are retried every two seconds. This checks RPC availability; supported chain IDs
+and contract deployment prerequisites are checked by the deployment image.
+
 ## Installation order and release artifacts
 
 Install this chart after the L2 RPC and sequencer are ready, and wait for its
@@ -28,7 +33,7 @@ The Helm chart and the deployment image are separate artifacts:
 
 | Artifact | Registry reference | Client |
 | --- | --- | --- |
-| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.1-dogeos` | Helm |
+| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.2-dogeos` | Helm |
 | Contract deployment image (standalone example) | `docker.io/dogeos69/preinstalls:v0.2.0` | Docker / Kubernetes |
 
 The chart is published by this repository's `publish-chart.yaml` workflow.
@@ -42,7 +47,7 @@ The image is published independently by
 Verify release availability with Helm, not `docker pull`:
 
 ```bash
-helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.1-dogeos
+helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.2-dogeos
 ```
 
 A Helm chart uses Helm-specific OCI media types, so Docker reports an unsupported

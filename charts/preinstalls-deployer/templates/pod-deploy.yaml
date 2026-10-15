@@ -12,14 +12,20 @@ spec:
   restartPolicy: OnFailure
   initContainers:
     - name: 1-wait-for-l2-sequencer
-      image: atkrad/wait4x:latest
+      image: curlimages/curl:8.20.0
+      command: ["/bin/sh", "-ec"]
       args:
-        - http
-        - $(L2_RPC_ENDPOINT)
-        - --expect-status-code
-        - "200"
-        - --timeout
-        - "0"
+        - |
+          # Reth rejects HTTP GET. Require a successful JSON-RPC response.
+          until response=$(curl --silent --fail --connect-timeout 5 --max-time 10 \
+            --header 'Content-Type: application/json' \
+            --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+            "$L2_RPC_ENDPOINT") && \
+            printf '%s' "$response" | grep -Eq '"result"[[:space:]]*:[[:space:]]*"0x[0-9a-fA-F]+"'; do
+            echo "Waiting for L2 JSON-RPC readiness..."
+            sleep 2
+          done
+          echo "L2 JSON-RPC is ready."
       envFrom:
         {{- toYaml .Values.envFrom | nindent 8 }}
   containers:
