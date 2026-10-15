@@ -194,11 +194,14 @@ is exposed and to whom; values only supply the deployment-specific inputs:
   annotations. The Elastic IPs are created and owned by the deployment's
   infrastructure; the chart only references their allocation IDs and never
   creates or releases them. List one allocation per subnet, in the same order.
-  The subnet must be in the same Availability Zone as the node's EBS data
-  volume, or cross-zone load balancing must be enabled
+  The node and its EBS data volume must be in an Availability Zone enabled by
+  one of these subnets. For a single-subnet NLB, set the node's scheduling
+  constraints to that subnet's AZ before its PVC is provisioned. Cross-zone
+  load balancing does not enable an omitted AZ: AWS marks a target there as
+  `unused` with `Target.NotInUse`, even when cross-zone forwarding is enabled.
+  With multiple enabled AZs and one designated Pod, enable cross-zone forwarding
   (`service.beta.kubernetes.io/aws-load-balancer-attributes:
-  load_balancing.cross_zone.enabled=true`); otherwise a pod scheduled in another
-  AZ has no load balancer node in front of it.
+  load_balancing.cross_zone.enabled=true`) so every NLB address can reach it.
 - Source restriction: `sourceRanges` becomes `spec.loadBalancerSourceRanges`,
   which is enforced by the frontend security group that the AWS Load Balancer
   Controller creates for the NLB (NLB security groups, controller v2.6.0 or
