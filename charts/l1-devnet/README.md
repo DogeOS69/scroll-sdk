@@ -91,10 +91,3 @@ Kubernetes: `>=1.22.0-0`
 | validator.resources.requests.cpu | string | `"250m"` |  |
 | validator.resources.requests.memory | string | `"512Mi"` |  |
 | validatorCount | int | `64` |  |
-
-## Existing ALB
-
-Set `targetGroupBindings` to register this application with existing HTTP/IP
-target groups. Disable the corresponding Ingresses. Bindings are installed,
-updated and removed with this release; the external ALB, listeners, rules and
-target groups remain. See [configuration and prerequisites](../../examples/existing-alb.md).

@@ -106,7 +106,3 @@ monitoring:
   scrapeTimeout: 10s
   # Limits protect Prometheus against unexpectedly large fleet/job label sets.
   sampleLimit: 50000
-
-# Existing ALB target groups. Installed and removed with this application.
-# See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.
-targetGroupBindings: {}

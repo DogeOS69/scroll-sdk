@@ -47,8 +47,8 @@ not the Helm release name or the Pod/container port. Set it explicitly to suppor
 release overrides and vendor charts. Bindings live in `infrastructure.namespace`.
 
 This fragment only selects two services. Add a binding for every other exposed
-ingress, or explicitly set its `enabled: false` in operator values. CLI generation
-fails if an enabled ingress has no binding. In particular, public HTTP RPC and
+ingress of the supported applications below, or explicitly set its `enabled: false` in operator values. CLI generation
+fails if a supported application has an enabled ingress without a binding. In particular, public HTTP RPC and
 WebSocket RPC have separate binding keys and target groups. Give them distinct
 hostnames (or explicitly configure distinct paths); identical host/path rules
 cannot route to two unrelated target groups.
@@ -57,11 +57,9 @@ Supported binding keys:
 
 | Binding | Values ingress |
 | --- | --- |
-| `tso-service`, `proof-coordinator`, `frontends`, `l1-devnet`, `l1-interface` | `ingress.main` of the corresponding production file |
+| `tso-service`, `proof-coordinator`, `frontends` | `ingress.main` of the corresponding production file |
 | `l2-reth-rpc-public` | `l2-reth-rpc-public-production.yaml` / `ingress.main` |
 | `l2-reth-rpc-public-ws` | Same file / `ingress.websocket` |
-| `dogecoin`, `blockbook`, `dstack-controller` | `ingress` of the corresponding production file |
-| `scroll-monitor` | `scroll-monitor-production.yaml` / `grafana.ingress` |
 | `blockscout-api` | `blockscout-production.yaml` / `blockscout-stack.blockscout.ingress` |
 | `blockscout-frontend` | Same file / `blockscout-stack.frontend.ingress` |
 
@@ -73,9 +71,11 @@ marker manually or enable legacy Ingresses alongside bindings.
 
 CLI writes `targetGroupBindings` into each application's production values.
 The application chart owns these bindings in the same Helm release as its
-Services and workloads. Blockscout and Grafana bindings belong to their existing
-parent charts (`blockscout` and `scroll-monitor`). No separate chart or release
-is required.
+Services and workloads. Blockscout bindings belong to the existing `blockscout`
+parent chart. No separate chart or release is required.
+
+This workflow covers only the five charts listed above. It does not modify or
+restrict the ingress configuration of other charts.
 
 For example, the generated TSO values contain:
 
@@ -120,10 +120,6 @@ policy; the CLI preflight is not automatically run by Helm.
   The binding templates do not manage security groups. TSO still requires edge
   NetworkPolicy peers even though its Kubernetes Ingress is disabled. Disable
   `preparation.tsoAlbEdge`; set edge CIDRs to the chosen ALB subnets explicitly.
-- For dstack use an internal ALB, `dstackController.ingress.hosts`, and internal
-  DNS. Do not combine existing mode with `dstackController.internalTls`, which
-  describes a controller-created ALB. Keep the existing controller HTTPS URL
-  consistent with the selected hostname.
 - Target groups are exclusive to one binding. Do not mix manually registered
   targets, other clusters or other TargetGroupBindings in the same group.
 
@@ -137,7 +133,7 @@ DNS/TLS, authorized requests, denied TSO paths and application health.
 1. Generate/bootstrap with a pinned SDK commit containing the application
    `templates/targetgroupbindings.yaml` files, and finish normal preparation.
    Final AWS spec-based `prep-charts` requires existing bindings or explicitly
-   disabled HTTP ingress. Use the matching chart versions in the SDK Makefile;
+   disabled HTTP ingress for the supported applications. Use the matching chart versions in the SDK Makefile;
    older chart versions do not render these bindings.
 2. Install AWS Load Balancer Controller and its TargetGroupBinding CRD separately.
    Run `scrollsdk setup alb` to check AWS resources before installing workloads.

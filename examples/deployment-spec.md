@@ -1,6 +1,6 @@
 # Prepare from a complete DeploymentSpec
 
-AWS HTTP ingress uses [existing ALB references](existing-alb.md). Add
+Supported public applications use [existing ALB references](existing-alb.md) on AWS. Add
 `infrastructure.aws.alb` for exposed endpoints before final chart preparation;
 application Helm releases must not own the ALB lifecycle.
 

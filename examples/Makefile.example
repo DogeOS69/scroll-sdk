@@ -12,10 +12,10 @@ NAMESPACE ?= default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.5
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.4
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
-SCROLL_MONITOR_CHART_VERSION ?= 0.1.48-dogeos
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.47-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades, including install-all.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
@@ -102,24 +102,24 @@ prepare:
 
 install-dogecoin:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n "$(NAMESPACE)" \
-		--version=0.1.14 \
+		--version=0.1.13 \
 		--values values/dogecoin-production.yaml
 
 install-blockbook:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n "$(NAMESPACE)" \
-		--version=0.1.5 \
+		--version=0.1.4 \
 		--values values/blockbook-production.yaml
 
 install-l1-interface:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n "$(NAMESPACE)" \
-		--version=0.0.23 \
+		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
 # Development only: requires ethereumDa.chain: devnet; not part of install-all.
 install-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
-		--version=0.1.7-dogeos \
+		--version=0.1.6-dogeos \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:

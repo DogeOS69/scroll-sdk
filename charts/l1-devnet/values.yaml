@@ -114,7 +114,3 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
-
-# Existing ALB target groups. Installed and removed with this application.
-# See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.
-targetGroupBindings: {}

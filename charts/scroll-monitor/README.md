@@ -809,10 +809,3 @@ value alone does not delete or pause previously provisioned rules.
 Duplicate service checks and upstream rule families have one retained owner.
 See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
 cluster-wide replacements, and distinct conditions that remain monitored.
-
-## Existing ALB
-
-Set `targetGroupBindings` to register this application with existing HTTP/IP
-target groups. Disable the corresponding Ingresses. Bindings are installed,
-updated and removed with this release; the external ALB, listeners, rules and
-target groups remain. See [configuration and prerequisites](../../examples/existing-alb.md).

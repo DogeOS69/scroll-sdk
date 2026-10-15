@@ -18,7 +18,7 @@ proof intent; the guide records the outstanding partner-evidence handoff. Commen
 variables, wallet keys and optional signer/database imports. Keep completed inputs
 private; the output deployment directory starts empty.
 
-For AWS HTTP ingress, follow [existing ALB setup](existing-alb.md) to select
+For supported public applications on AWS, follow [existing ALB setup](existing-alb.md) to select
 pre-provisioned ALBs and retain them when uninstalling application charts.
 
 Production service overlays are intentionally operator-readable and repeat all

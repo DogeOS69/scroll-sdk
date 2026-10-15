@@ -150,10 +150,3 @@ python3 charts/dogecoin/tests/smoke_regtest.py
 | storage.storageClassName | string | `""` |  |
 | terminationGracePeriodSeconds | int | `300` |  |
 | tolerations | list | `[]` |  |
-
-## Existing ALB
-
-Set `targetGroupBindings` to register this application with existing HTTP/IP
-target groups. Disable the corresponding Ingresses. Bindings are installed,
-updated and removed with this release; the external ALB, listeners, rules and
-target groups remain. See [configuration and prerequisites](../../examples/existing-alb.md).

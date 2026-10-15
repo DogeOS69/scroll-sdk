@@ -9,22 +9,16 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 # Binding key -> (ingress path, actual default Service name, Service port).
 CHARTS = {
-    'blockbook': {'blockbook': ('ingress', 'blockbook', 19139)},
     'blockscout': {
         'blockscout-api': ('blockscout-stack.blockscout.ingress', 'blockscout-blockscout-svc', 80),
         'blockscout-frontend': ('blockscout-stack.frontend.ingress', 'blockscout-frontend-svc', 80),
     },
-    'dogecoin': {'dogecoin': ('ingress', 'dogecoin', 44555)},
-    'dstack-controller': {'dstack-controller': ('ingress', 'dstack-controller', 3000)},
     'frontends': {'frontends': ('ingress.main', 'frontends', 80)},
-    'l1-devnet': {'l1-devnet': ('ingress.main', 'l1-devnet', 8545)},
-    'l1-interface': {'l1-interface': ('ingress.main', 'l1-interface', 9090)},
     'l2-reth': {
         'l2-reth-rpc-public': ('ingress.main', 'l2-reth', 8545),
         'l2-reth-rpc-public-ws': ('ingress.websocket', 'l2-reth', 8546),
     },
     'proof-coordinator': {'proof-coordinator': ('ingress.main', 'proof-coordinator', 7788)},
-    'scroll-monitor': {'scroll-monitor': ('grafana.ingress', 'grafana', 80)},
     'tso-service': {'tso-service': ('ingress.main', 'tso-service', 3000)},
 }
 
@@ -95,7 +89,7 @@ class ExistingAlbTests(unittest.TestCase):
             for path, _, _ in entries.values():
                 with self.subTest(chart=chart, ingress=path):
                     values = values_for(chart)
-                    ingress(values, path).update(enabled=True, hosts=['example.invalid'] if chart == 'dstack-controller' else [])
+                    ingress(values, path).update(enabled=True, hosts=[])
                     result = self.render(chart, values)
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn('disable Ingress', result.stderr)
