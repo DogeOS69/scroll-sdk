@@ -73,13 +73,13 @@ class MakefileContextTests(unittest.TestCase):
 
     def test_preinstalls_chart_can_be_validated_locally(self):
         commands = self.expanded_commands('selected', 'chain', {
-            'PREINSTALLS_CHART': './charts/preinstalls',
+            'PREINSTALLS_CHART': './charts/preinstalls-deployer',
             'PREINSTALLS_CHART_VERSION': '0.1.2-dogeos',
             'PREINSTALLS_TIMEOUT': '30m',
         }, targets=['install-preinstalls'])
         self.assertEqual(commands, [[
             'helm', '--kube-context', 'selected', 'upgrade', '-i', 'preinstalls',
-            './charts/preinstalls', '-n', 'chain', '--version=0.1.2-dogeos',
+            './charts/preinstalls-deployer', '-n', 'chain', '--version=0.1.2-dogeos',
             '--timeout', '30m', '--values', 'values/preinstalls-production.yaml',
         ]])
 

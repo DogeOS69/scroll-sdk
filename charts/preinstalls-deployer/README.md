@@ -17,6 +17,11 @@ Sourcify is not invoked pre-launch (the chain ID has to be public in
 `sourcify-chains-default.json` first). Run a sourcify backfill script
 post-launch instead.
 
+The deployment hook waits for a successful HTTP POST `eth_chainId` response
+with a hexadecimal chain ID. HTTP failures, JSON-RPC errors, and missing results
+are retried every two seconds. This checks RPC availability; supported chain IDs
+and contract deployment prerequisites are checked by the deployment image.
+
 ## Installation order and release artifacts
 
 Install this chart after the L2 RPC and sequencer are ready, and wait for its
@@ -28,8 +33,14 @@ The Helm chart and the deployment image are separate artifacts:
 
 | Artifact | Registry reference | Client |
 | --- | --- | --- |
-| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.1-dogeos` | Helm |
-| Contract deployment image (standalone example) | `docker.io/dogeos69/preinstalls:v0.2.0` | Docker / Kubernetes |
+| Release Helm chart | `oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer`, version `0.1.2-dogeos` | Helm |
+| Contract deployment image (standalone example) | `docker.io/dogeos69/preinstalls:v0.2.1` | Docker / Kubernetes |
+
+The default deployment and verification images also use `v0.2.1`, matching the
+standalone production example. The [v0.2.1 release](https://github.com/DogeOS69/dogeos-preinstalls/releases/tag/v0.2.1)
+completes the canonical Safe v1.3.0 set with CreateCall, SignMessageLib, and
+SimulateTxAccessor. Its Docker Hub manifest digest was verified as
+`sha256:ac72c72278f0ef009aaa2f1c50f778c0e5d792ad81b7b3225ecfaa230ab278c7`.
 
 The chart is published by this repository's `publish-chart.yaml` workflow.
 Changes under `charts/preinstalls-deployer/` merged into `v0.3.0-develop` trigger that
@@ -42,18 +53,18 @@ The image is published independently by
 Verify release availability with Helm, not `docker pull`:
 
 ```bash
-helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.1-dogeos
+helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 0.1.2-dogeos
 ```
 
 A Helm chart uses Helm-specific OCI media types, so Docker reports an unsupported
 media type when asked to pull it as a container image.
 
-## Publication comparison
+## Publication and installation
 
-This is a copy of `charts/preinstalls` under a new OCI package name to diagnose
-release-package access. The deployment image, resources, hooks, and default
-values are unchanged; only the chart identity and helper names differ.
-The original chart and umbrella chart are unchanged.
+This chart replaces the retired `preinstalls` chart and retains its resource and
+hook layout. Its default deployment and verification images are `v0.2.1`.
+The Helm release can still be named `preinstalls`; use `preinstalls-deployer`
+as the chart package.
 
 After the release workflow publishes this chart, test the package with an empty
 Helm registry configuration to distinguish public access from cached credentials.
@@ -61,7 +72,7 @@ Check package visibility separately; a successful push does not imply public
 read access.
 
 The standalone `examples/Makefile.example` uses this chart by default, with
-`examples/values/preinstalls-production.yaml` selecting `dogeos69/preinstalls:v0.2.0`
+`examples/values/preinstalls-production.yaml` selecting `dogeos69/preinstalls:v0.2.1`
 for both deployment and optional verification:
 
 ```bash
@@ -77,7 +88,7 @@ Secret names.
 ```yaml
 image:
   repository: dogeos69/preinstalls
-  tag: v0.2.0
+  tag: v0.2.1
 
 envFrom:
   - configMapRef:
@@ -89,7 +100,7 @@ verify:
   enabled: false  # enable only after Blockscout and its verifier are available
   image:
     repository: dogeos69/preinstalls
-    tag: v0.2.0
+    tag: v0.2.1
   blockscoutApiUrl: http://blockscout-blockscout-svc:80/api
   blockscoutHealthUrl: http://blockscout-blockscout-svc:80/api/v2/stats
 ```
