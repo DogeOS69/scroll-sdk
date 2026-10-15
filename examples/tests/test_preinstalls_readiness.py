@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class PreinstallsReadinessTest(unittest.TestCase):
     def test_rpc_readiness(self):
-        for chart in ("preinstalls", "preinstalls-deployer"):
+        for chart in ("preinstalls-deployer",):
             for first_reply in ("ready", "rpc_error", "http_error", "missing_result"):
                 with self.subTest(chart=chart, first_reply=first_reply):
                     rendered = subprocess.check_output(

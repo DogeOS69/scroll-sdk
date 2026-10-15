@@ -59,12 +59,12 @@ helm pull oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer --version 
 A Helm chart uses Helm-specific OCI media types, so Docker reports an unsupported
 media type when asked to pull it as a container image.
 
-## Publication comparison
+## Publication and installation
 
-This is a copy of `charts/preinstalls` under a new OCI package name to diagnose
-release-package access. This chart retains the original resource and hook layout, with its own chart
-identity and helper names. Its default deployment and verification images are
-now `v0.2.1`; the original chart retains its existing image defaults.
+This chart replaces the retired `preinstalls` chart and retains its resource and
+hook layout. Its default deployment and verification images are `v0.2.1`.
+The Helm release can still be named `preinstalls`; use `preinstalls-deployer`
+as the chart package.
 
 After the release workflow publishes this chart, test the package with an empty
 Helm registry configuration to distinguish public access from cached credentials.
