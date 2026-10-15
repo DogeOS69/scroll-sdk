@@ -69,7 +69,7 @@ poll_interval_ms = 1000
 start_height = 0
 
 [dogeos_indexer]
-confirmations = 12
+confirmations = 1
 allow_sparse_block_hash_probe = false
 log_query_batch_size = 10000
 message_queue_address = "<TODO>"
