@@ -94,7 +94,10 @@ targetGroupBindings:
       port: 3000
 ```
 
-Charts reject enabled application Ingresses alongside nonempty bindings.
+Charts reject enabled application Ingresses alongside nonempty bindings,
+including additional ingress entries and Blockscout component ingresses.
+Binding names retain the release name; names exceeding 63 characters are
+shortened with a hash so releases sharing a long prefix remain distinct.
 Direct Helm users must supply the same values and validate the external routing
 policy; the CLI preflight is not automatically run by Helm.
 
@@ -110,6 +113,8 @@ policy; the CLI preflight is not automatically run by Helm.
   target groups. Prefix `/signer` means ALB patterns `/signer` and `/signer/*`;
   Exact `/health` means `/health`. TSO permits only these paths, never `/*`.
   Rules pointing to a selected target group from another listener are rejected.
+  For overlapping selected routes, place narrower paths first: Blockscout
+  `/api` and `/api/*` must have higher priority than the frontend `/*` rule.
 - TSO and Proof Coordinator retain their existing separate-ALB requirement.
   Coordinator idle timeout must be at least 120 seconds. Other services may
   share an externally managed ALB with separate target groups and routing rules.
@@ -142,7 +147,10 @@ DNS/TLS, authorized requests, denied TSO paths and application health.
    Configure security groups and NetworkPolicy before checking target health.
 4. Run `scrollsdk setup alb --require-services` to verify the explicit Kubernetes
    context, installed CRD and ClusterIP Service ports. Then run
-   `scrollsdk test ingress` for target health, and test real HTTPS routes.
+   `scrollsdk test ingress` to verify live bindings and healthy targets against
+   current Service EndpointSlices, and test real HTTPS routes. The runtime check
+   needs read access to bindings, Services and EndpointSlices and should be rerun
+   after any rollout and target draining finish.
 5. Uninstall applications with their normal targets, such as `make delete-tso`.
    Helm also removes their bindings; the controller deregisters the targets.
    External ALBs, listeners, rules and target groups remain. Keep the controller

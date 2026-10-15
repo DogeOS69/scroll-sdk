@@ -1,7 +1,7 @@
 {{- /* Bindings belong to this application release; AWS infrastructure is external. */ -}}
 {{- $ingresses := dict "l2-reth-rpc-public" (get (get .Values "ingress" | default dict) "main" | default dict) "l2-reth-rpc-public-ws" (get (get .Values "ingress" | default dict) "websocket" | default dict) }}
 {{- if .Values.targetGroupBindings }}
-{{- range $name, $ingress := $ingresses }}
+{{- range $name, $ingress := (.Values.ingress | default dict) }}
 {{- if $ingress.enabled }}
 {{- fail (printf "%s: disable Ingress when using targetGroupBindings" $name) }}
 {{- end }}
@@ -22,18 +22,22 @@
 {{- fail "targetGroupBindings requires an actual Service name" }}
 {{- end }}
 {{- $port := float64 (default 0 $service.port) }}
-{{- if or (kindIs "string" $service.port) (lt $port 1.0) (gt $port 65535.0) (ne $port (floor $port)) }}
+{{- if or (kindIs "string" $service.port) (kindIs "bool" $service.port) (lt $port 1.0) (gt $port 65535.0) (ne $port (floor $port)) }}
 {{- fail "targetGroupBindings requires a numeric Service port between 1 and 65535" }}
 {{- end }}
 {{- if hasKey $groups $binding.targetGroupARN }}
 {{- fail "Each binding must use a distinct, externally managed target group" }}
 {{- end }}
 {{- $_ := set $groups $binding.targetGroupARN true }}
+{{- $resourceName := printf "%s-%s" $.Release.Name $name }}
+{{- if gt (len $resourceName) 63 }}
+{{- $resourceName = printf "%s-%s" ($resourceName | trunc 54 | trimSuffix "-") ($resourceName | sha256sum | trunc 8) }}
+{{- end }}
 ---
 apiVersion: elbv2.k8s.aws/v1beta1
 kind: TargetGroupBinding
 metadata:
-  name: {{ printf "%s-%s" ($.Release.Name | trunc 35 | trimSuffix "-") $name }}
+  name: {{ $resourceName }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ $.Chart.Name }}

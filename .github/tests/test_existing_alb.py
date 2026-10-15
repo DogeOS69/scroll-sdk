@@ -43,9 +43,9 @@ def values_for(chart):
 
 
 class ExistingAlbTests(unittest.TestCase):
-    def render(self, chart, values):
+    def render(self, chart, values, release=None):
         return subprocess.run(
-            ['helm', 'template', chart, str(ROOT / 'charts' / chart), '-n', 'operator', '-f', '-'],
+            ['helm', 'template', release or chart, str(ROOT / 'charts' / chart), '-n', 'operator', '-f', '-'],
             input=yaml.safe_dump(values), text=True, capture_output=True, check=False,
         )
 
@@ -96,12 +96,49 @@ class ExistingAlbTests(unittest.TestCase):
 
     def test_invalid_bindings_fail_before_install(self):
         for chart in CHARTS:
-            for field, value in [('targetType', 'instance'), ('targetGroupARN', 'REPLACE_WITH_ARN'), ('port', 0), ('port', 65536), ('port', '80'), ('port', 80.5)]:
+            for field, value in [('targetType', 'instance'), ('targetGroupARN', 'REPLACE_WITH_ARN'), ('port', 0), ('port', 65536), ('port', '80'), ('port', 80.5), ('port', True), ('port', False)]:
                 with self.subTest(chart=chart, field=field, value=value):
                     values = values_for(chart)
                     binding = next(iter(values['targetGroupBindings'].values()))
                     (binding['serviceRef'] if field == 'port' else binding)[field] = value
                     self.assertNotEqual(self.render(chart, values).returncode, 0)
+
+    def test_additional_ingresses_cannot_create_an_alb_alongside_bindings(self):
+        for chart in CHARTS:
+            with self.subTest(chart=chart):
+                values = values_for(chart)
+                path = 'blockscout-stack.stats.ingress' if chart == 'blockscout' else 'ingress.extra'
+                ingress(values, path).update(enabled=True, ingressClassName='alb', hosts=[{
+                    'host': 'extra.example.invalid', 'paths': [{'path': '/', 'pathType': 'Prefix'}],
+                }])
+                result = self.render(chart, values)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('disable Ingress', result.stderr)
+                ingress(values, path)['enabled'] = False
+                self.documents(self.render(chart, values))
+
+    def test_long_release_names_keep_bindings_unique_and_stable(self):
+        for chart in CHARTS:
+            for length in [39, 53]:
+                with self.subTest(chart=chart, length=length):
+                    values = values_for(chart)
+                    seen = set()
+                    for suffix in ['one', 'two']:
+                        release = 'a' * (length - 4) + '-' + suffix
+                        docs = self.documents(self.render(chart, values, release))
+                        names = {d['metadata']['name'] for d in docs if d['kind'] == 'TargetGroupBinding'}
+                        self.assertEqual(len(names), len(CHARTS[chart]))
+                        self.assertFalse(names & seen)
+                        self.assertTrue(all(len(name) <= 63 for name in names))
+                        again = self.documents(self.render(chart, values, release))
+                        self.assertEqual(names, {d['metadata']['name'] for d in again if d['kind'] == 'TargetGroupBinding'})
+                        seen.update(names)
+
+    def test_short_release_binding_names_remain_unchanged(self):
+        for chart in CHARTS:
+            docs = self.documents(self.render(chart, values_for(chart)))
+            names = {d['metadata']['name'] for d in docs if d['kind'] == 'TargetGroupBinding'}
+            self.assertEqual(names, {f'{chart}-{key}' for key in CHARTS[chart]})
 
     def test_rejects_foreign_bindings_and_duplicate_target_groups(self):
         for chart in CHARTS:

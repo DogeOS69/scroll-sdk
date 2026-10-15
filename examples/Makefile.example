@@ -25,7 +25,7 @@ EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.1
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.4
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.5
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
@@ -35,7 +35,7 @@ PREINSTALLS_CHART_VERSION ?= 0.1.2-dogeos
 PREINSTALLS_TIMEOUT ?= 20m
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
-L2_RETH_CHART_VERSION ?= 0.1.6
+L2_RETH_CHART_VERSION ?= 0.1.7
 # Existing-chain upgrade hook only. Fresh native Reth genesis needs neither
 # file, and this repository does not ship a deployment-specific normalizer.
 # To perform a reviewed migration, supply BOTH paths explicitly.
@@ -216,7 +216,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.12 \
+		--version=0.1.13 \
 		--values values/tso-service-production.yaml \
 		--wait
 
@@ -258,7 +258,7 @@ reconcile-proof-services:
 # install-all does not install Blockscout or its contract verifier.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
-		--version=0.1.10-dogeos \
+		--version=0.1.11-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n "$(NAMESPACE)" \
@@ -266,7 +266,7 @@ install-blockscout:
 
 install-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n "$(NAMESPACE)" \
-		--version=0.1.3-dogeos \
+		--version=0.1.4-dogeos \
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
