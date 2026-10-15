@@ -1,6 +1,6 @@
 # Credential-chain preparation only; this does not prepare a backend or rent GPUs.
 # Replace the nonfunctional role placeholder in site-specific values applied LAST.
-# See README: public AWS allocation remains blocked until the network gate passes.
+# See README for public SSH exposure and operator-specific source restrictions.
 defaultCredentialsEnabled: true
 serviceAccount:
   annotations:

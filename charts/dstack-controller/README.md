@@ -219,16 +219,17 @@ explicit regional `vpc_ids`, with approved routing in both directions. Stock
 are disabled. Do not silently switch a private deployment to the public
 fragment to make regional validation pass.
 
-**Public-worker allocation gate:** stock 0.21.5's AWS
+**Public-worker SSH exposure:** stock 0.21.5's AWS
 `create_security_group` path adds TCP/22 from `0.0.0.0/0`, including when the
-named security group already exists. A pre-created restricted group alone
-does not preserve a controller-CIDR-only SSH restriction. Before any paid
-allocation, verify a durable independent network restriction (for example,
-an appropriately reviewed network ACL) that enforces the intended controller
-source range despite that security-group rule. Keep allocation disabled until
-this is resolved; IRSA setup, successful offer planning and the overlay's
-offline tests do not satisfy the gate. This chart manages neither security
-groups nor network ACLs.
+named security group already exists. Public SSH is permitted only with explicit
+operator acceptance and SSH key authentication. If the operator requires
+controller-CIDR-only SSH, a pre-created
+restricted group alone does not preserve that restriction. Under that
+requirement, keep allocation disabled until a durable independent network
+restriction (for example, an appropriately reviewed network ACL) enforces the
+intended controller source range despite the security-group rule. IRSA setup,
+successful offer planning and the overlay's offline tests do not verify that
+restriction. This chart manages neither security groups nor network ACLs.
 
 After credential/backend preparation, use a bounded offer-only plan to inspect
 eligible regions, compatible instances and prices. Do not apply a fleet or task
