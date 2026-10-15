@@ -1,8 +1,0 @@
-# Nonfunctional AWS identifiers for offline Helm validation only.
-bindings:
-  tso-service:
-    targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/example-tso/0000000000000000
-    targetType: ip
-    serviceRef:
-      name: tso-service
-      port: 3000

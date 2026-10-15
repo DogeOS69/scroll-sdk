@@ -220,3 +220,6 @@ externalSecrets:
         secretKey: prover-worker-token
     refreshInterval: 2m
     serviceAccount: external-secrets
+
+# Optional bindings owned by this application Helm release.
+targetGroupBindings: {}

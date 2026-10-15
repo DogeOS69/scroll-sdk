@@ -99,3 +99,7 @@ networkPolicy:
     edge: []                  # public Ingress sources, e.g. [{ipBlock: {cidr: <ALB subnet CIDR>}}]
     operators: []             # optional: operator tooling / ad-hoc port-forward source
     monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port
+
+# Existing ALB target groups. Installed and removed with this application.
+# See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.
+targetGroupBindings: {}

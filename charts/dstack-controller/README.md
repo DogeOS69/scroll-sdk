@@ -239,3 +239,10 @@ metrics and creates a ServiceMonitor. Provide the dedicated monitoring Secret
 (the CLI generates it), and install Prometheus Operator CRDs first. Set it to
 false to disable metrics and the ServiceMonitor. See [the monitoring guide](../../examples/dstack-monitoring/README.md)
 for CLI generation, namespace discovery, GPU coverage, and optional host Alloy.
+
+## Existing ALB
+
+Set `targetGroupBindings` to register this application with existing HTTP/IP
+target groups. Disable the corresponding Ingresses. Bindings are installed,
+updated and removed with this release; the external ALB, listeners, rules and
+target groups remain. See [configuration and prerequisites](../../examples/existing-alb.md).

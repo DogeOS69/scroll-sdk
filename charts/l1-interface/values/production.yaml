@@ -230,3 +230,6 @@ serviceMonitor:
         path: /api/v1/metrics
         interval: 10s
         scrapeTimeout: 5s
+
+# Optional bindings owned by this application Helm release.
+targetGroupBindings: {}

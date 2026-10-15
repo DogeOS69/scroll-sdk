@@ -121,6 +121,12 @@ generated configuration does not establish runtime access.
 
 ## Public TSO and proof worker ingress
 
+For existing ALBs, follow [the existing ALB workflow](existing-alb.md): each
+application chart installs its own TargetGroupBinding, and Ingress stays disabled.
+Certificates, forwarding rules and ALB attributes are configured externally.
+The annotation-based configuration below describes the legacy managed-Ingress
+workflow and does not select or configure an externally managed ALB.
+
 The SDK production templates select `ingressClassName: alb` for TSO and Proof
 Coordinator. Spec generation fills their public hostnames and routes; the
 controller, certificate, WAF, source allowlist and load-balancer settings stay in

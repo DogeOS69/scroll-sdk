@@ -1,3 +1,0 @@
-# Generated from infrastructure.aws.alb by scroll-sdk-cli.
-# Existing HTTP/IP target groups, listeners and ALBs are managed outside Helm.
-bindings: {}

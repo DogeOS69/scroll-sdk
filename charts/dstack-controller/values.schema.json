@@ -250,6 +250,9 @@
               "hosts"
             ]
           }
+        },
+        "existingAlbBinding": {
+          "type": "string"
         }
       },
       "required": [
@@ -408,6 +411,9 @@
         "scrapeTimeout",
         "sampleLimit"
       ]
+    },
+    "targetGroupBindings": {
+      "type": "object"
     }
   },
   "required": [

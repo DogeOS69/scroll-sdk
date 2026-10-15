@@ -324,3 +324,10 @@ Run from an approved partner address and from an unapproved one:
 3. From the approved source, 8545, 8546 and 6060 on the EIP time out and UDP
    30303 gets no answer: only the TCP 30303 listener exists.
 4. From an unapproved source, TCP 30303 on the EIP times out.
+
+## Existing ALB
+
+Set `targetGroupBindings` to register this application with existing HTTP/IP
+target groups. Disable the corresponding Ingresses. Bindings are installed,
+updated and removed with this release; the external ALB, listeners, rules and
+target groups remain. See [configuration and prerequisites](../../examples/existing-alb.md).

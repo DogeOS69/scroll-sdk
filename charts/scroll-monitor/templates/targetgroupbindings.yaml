@@ -1,0 +1,49 @@
+{{- /* Bindings belong to this application release; AWS infrastructure is external. */ -}}
+{{- $ingresses := dict "scroll-monitor" (get (get .Values "grafana" | default dict) "ingress" | default dict) }}
+{{- if .Values.targetGroupBindings }}
+{{- range $name, $ingress := $ingresses }}
+{{- if $ingress.enabled }}
+{{- fail (printf "%s: disable Ingress when using targetGroupBindings" $name) }}
+{{- end }}
+{{- end }}
+{{- $groups := dict }}
+{{- range $name, $binding := .Values.targetGroupBindings }}
+{{- if not (hasKey $ingresses $name) }}
+{{- fail (printf "unsupported targetGroupBindings key: %s" $name) }}
+{{- end }}
+{{- if not (regexMatch "^arn:aws:elasticloadbalancing:[a-z0-9-]+:[0-9]{12}:targetgroup/[a-zA-Z0-9_-]+/[a-f0-9]{16}$" (default "" $binding.targetGroupARN)) }}
+{{- fail "targetGroupBindings requires an existing targetGroupARN" }}
+{{- end }}
+{{- if ne (default "ip" $binding.targetType) "ip" }}
+{{- fail "targetGroupBindings supports only IP target groups" }}
+{{- end }}
+{{- $service := default dict $binding.serviceRef }}
+{{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" (default "" $service.name)) }}
+{{- fail "targetGroupBindings requires an actual Service name" }}
+{{- end }}
+{{- $port := float64 (default 0 $service.port) }}
+{{- if or (kindIs "string" $service.port) (lt $port 1.0) (gt $port 65535.0) (ne $port (floor $port)) }}
+{{- fail "targetGroupBindings requires a numeric Service port between 1 and 65535" }}
+{{- end }}
+{{- if hasKey $groups $binding.targetGroupARN }}
+{{- fail "Each binding must use a distinct, externally managed target group" }}
+{{- end }}
+{{- $_ := set $groups $binding.targetGroupARN true }}
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ printf "%s-%s" ($.Release.Name | trunc 35 | trimSuffix "-") $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+spec:
+  targetGroupARN: {{ $binding.targetGroupARN | quote }}
+  targetType: ip
+  serviceRef:
+    name: {{ $service.name | quote }}
+    port: {{ $service.port }}
+{{- end }}
+{{- end }}

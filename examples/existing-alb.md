@@ -3,7 +3,7 @@
 Use the paired scroll-sdk-cli release with `infrastructure.aws.alb.mode: existing`.
 Provision the ALBs, HTTPS 443 listeners, ACM certificates, listener rules and
 HTTP/IP target groups independently, before installing application bindings.
-Neither CLI generation nor the `alb-bindings` chart creates these AWS resources.
+Neither CLI generation nor application charts create these AWS resources.
 Missing or mismatched references are errors; there is no create-new fallback.
 
 The following is a **fragment** to merge into your deployment spec. Replace the
@@ -71,9 +71,32 @@ route metadata for verification. Regeneration keeps it disabled, even if a chart
 preparation helper would normally enable the public endpoint. Do not delete the
 marker manually or enable legacy Ingresses alongside bindings.
 
-`values/alb-bindings-production.yaml` is generated from the spec. It is installed
-as a separate release, allowing the same integration for native charts and
-third-party subcharts without changing their resource ownership.
+CLI writes `targetGroupBindings` into each application's production values.
+The application chart owns these bindings in the same Helm release as its
+Services and workloads. Blockscout and Grafana bindings belong to their existing
+parent charts (`blockscout` and `scroll-monitor`). No separate chart or release
+is required.
+
+For example, the generated TSO values contain:
+
+```yaml
+ingress:
+  main:
+    enabled: false
+    existingAlbBinding: tso-service
+    # Retain the generated hosts/paths here for CLI verification.
+targetGroupBindings:
+  tso-service:
+    targetGroupARN: REPLACE_WITH_EXISTING_HTTP_IP_TARGET_GROUP_ARN
+    targetType: ip
+    serviceRef:
+      name: tso-service
+      port: 3000
+```
+
+Charts reject enabled application Ingresses alongside nonempty bindings.
+Direct Helm users must supply the same values and validate the external routing
+policy; the CLI preflight is not automatically run by Helm.
 
 ## Infrastructure requirements
 
@@ -94,7 +117,7 @@ third-party subcharts without changing their resource ownership.
   the health path and success codes from application values. Configure the
   listener default action separately (for example, a fixed 404).
 - Restrict ALB/backend security groups and configure Pod routing/NetworkPolicy.
-  The binding chart does not manage security groups. TSO still requires edge
+  The binding templates do not manage security groups. TSO still requires edge
   NetworkPolicy peers even though its Kubernetes Ingress is disabled. Disable
   `preparation.tsoAlbEdge`; set edge CIDRs to the chosen ALB subnets explicitly.
 - For dstack use an internal ALB, `dstackController.ingress.hosts`, and internal
@@ -111,42 +134,33 @@ DNS/TLS, authorized requests, denied TSO paths and application health.
 
 ## Install, check and remove
 
-1. Generate/bootstrap with a pinned SDK commit containing `alb-bindings`, and
-   finish the normal preparation workflow. Final AWS spec-based `prep-charts`
-   requires existing bindings or explicitly disabled HTTP ingress.
-2. Run `scrollsdk setup alb` to check AWS resources before installation.
-3. Install application workloads with the generated values. These values must
-   render no managed ALB Ingresses. Configure security groups and NetworkPolicy.
-4. Run `make install-alb-bindings`. It first runs
-   `scrollsdk setup alb --require-services`, checks the exact Kubernetes target,
-   controller CRD and installed ClusterIP Service ports, then installs bindings.
-   `install-all` invokes this target when binding values exist. Install optional
-   workloads selected by bindings (such as dstack or Blockscout) beforehand.
-5. Run `scrollsdk test ingress`; existing mode checks bindings and AWS target
-   health instead of expecting Kubernetes Ingress objects. Then test real
-   HTTPS application routes. This check does not replace endpoint acceptance.
-6. `make delete-alb-bindings` removes bindings and deregisters targets. `delete-all`
-   also removes the binding release. ALBs, listeners, rules and target groups
-   remain. Keep the AWS Load Balancer Controller running for finalizer cleanup.
+1. Generate/bootstrap with a pinned SDK commit containing the application
+   `templates/targetgroupbindings.yaml` files, and finish normal preparation.
+   Final AWS spec-based `prep-charts` requires existing bindings or explicitly
+   disabled HTTP ingress. Use the matching chart versions in the SDK Makefile;
+   older chart versions do not render these bindings.
+2. Install AWS Load Balancer Controller and its TargetGroupBinding CRD separately.
+   Run `scrollsdk setup alb` to check AWS resources before installing workloads.
+3. Install applications with their generated values using the normal targets,
+   such as `make install-tso`. Each release installs its own bindings and Services.
+   Configure security groups and NetworkPolicy before checking target health.
+4. Run `scrollsdk setup alb --require-services` to verify the explicit Kubernetes
+   context, installed CRD and ClusterIP Service ports. Then run
+   `scrollsdk test ingress` for target health, and test real HTTPS routes.
+5. Uninstall applications with their normal targets, such as `make delete-tso`.
+   Helm also removes their bindings; the controller deregisters the targets.
+   External ALBs, listeners, rules and target groups remain. Keep the controller
+   running until binding finalizers complete.
 
-Before the chart is published, use a reviewed local checkout:
-
-```bash
-make install-alb-bindings ALB_BINDINGS_CHART=/path/to/scroll-sdk/charts/alb-bindings
-```
-
-Uninstalling one application does not uninstall the separate binding release.
-For a deliberate binding removal, first disable its ingress and remove its
-`existingAlbBinding` marker in operator values, remove its spec binding, then
-regenerate and upgrade the binding release. The CLI refuses a stale marker
-whose binding was removed accidentally. Regeneration alone does not modify
-already installed resources.
+For an intentional binding removal without uninstalling the application, disable
+its ingress and remove its `existingAlbBinding` marker and `targetGroupBindings`
+entry in operator values, remove its spec binding, then regenerate and upgrade
+that application release. The CLI rejects stale bindings or markers. Regeneration
+alone does not modify installed resources.
 
 The expected lifecycle test on a disposable deployment is: install, observe
-healthy registered Pod targets, uninstall the binding/application releases,
-confirm the ALB/listener/TG ARNs are unchanged and targets are deregistered,
-then reinstall and verify new Pod targets become healthy. Offline render tests
-establish the Helm ownership boundary; they do not claim this live AWS test ran.
-
-References: [AWS lifecycle pattern](https://aws.amazon.com/blogs/containers/patterns-for-targetgroupbinding-with-aws-load-balancer-controller/),
-[TargetGroupBinding](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/targetgroupbinding/targetgroupbinding/).
+healthy registered Pod targets, uninstall the application release, confirm the
+ALB/listener/TG ARNs are unchanged and targets are deregistered, then reinstall
+and verify new targets become healthy. Offline tests render all supported
+application charts and check their bindings and Services belong to the same
+release; they do not claim this live AWS test ran.

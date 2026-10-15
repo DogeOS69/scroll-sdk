@@ -2,12 +2,14 @@ name: Test existing ALB bindings
 on:
   pull_request:
     paths:
-      - charts/alb-bindings/**
+      - charts/**
+      - .github/tests/test_existing_alb.py
       - examples/Makefile.example
       - .github/workflows/test-alb-bindings.yaml
   push:
     paths:
-      - charts/alb-bindings/**
+      - charts/**
+      - .github/tests/test_existing_alb.py
       - examples/Makefile.example
       - .github/workflows/test-alb-bindings.yaml
 permissions:
@@ -24,5 +26,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install PyYAML==6.0.2
-      - run: helm lint --strict charts/alb-bindings -f charts/alb-bindings/ci/render-values.yaml
-      - run: python3 -m unittest discover -s charts/alb-bindings/tests
+      - name: Build application chart dependencies
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add blockscout https://blockscout.github.io/helm-charts
+          for chart in blockbook blockscout dogecoin frontends l1-interface l2-reth proof-coordinator scroll-monitor tso-service; do
+            helm dependency build "charts/$chart" --skip-refresh
+          done
+      - run: python3 -m unittest discover -s .github/tests -p test_existing_alb.py -v

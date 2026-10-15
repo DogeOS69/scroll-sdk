@@ -656,3 +656,7 @@ infrastructureAlerts:
 
 # Optional external Secret stores; credentials must never be included in values.
 externalSecrets: {}
+
+# Existing ALB target groups. Installed and removed with this application.
+# See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.
+targetGroupBindings: {}
