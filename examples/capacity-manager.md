@@ -131,8 +131,11 @@ log, and no dstack project secret is used. Core's rules are in
 **Never copy the master to a worker.** It can mint a credential for any worker
 name. Run the manager only next to the coordinator, never on a GPU host.
 
-This chart needs a capacity-manager image that includes dogeos-core #1598.
-Older images do not accept `--worker-credential-master-file`.
+This mode needs a capacity-manager image that includes dogeos-core #1598.
+Older images do not accept `--worker-credential-master-file`. Until you rotate,
+an older image against an older coordinator can keep the deprecated shared
+token: set `manager.workerTokenSecret` and `workerCredentialMaster: null`. The
+chart refuses both at once. A #1591 coordinator rejects the shared token.
 
 **Rotation**, from a shared token or for a later rotation:
 

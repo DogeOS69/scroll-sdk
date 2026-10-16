@@ -62,15 +62,13 @@ The profile reuses these externally managed resources in `dstack-system`:
 - PVC `devnet-capacity-manager-active-state` (1Gi, gp3), containing the existing
   reconcile checkpoint;
 - Secret `devnet-capacity-manager-active-wp-token`, key `proof-work-token`;
-- Secret `dstack-controller-auth`, key `admin-token`;
-- Secret `devnet-capacity-manager-active-worker-master`, key `master`: the
-  coordinator-only worker-credential master. Create it during the master
-  rotation in [capacity-manager.md](capacity-manager.md#worker-credentials),
-  with the same value as the coordinator's `prover_api.worker_auth_token_file`.
+- Secret `dstack-controller-auth`, key `admin-token`.
 
-The manager mints each run's credential from that master (dogeos-core #1598).
-The old dstack project secret `cm_active_worker_token_1013` held the retired
-shared token; delete it after the rotation. No Secret is created by this profile. Check the Secret references, account metadata and retained PVC
+The remote worker token is the dstack **project Secret reference**
+`cm_active_worker_token_1013`, not a credential in values. No Secret is created
+by this profile. This is the legacy shared-token mode, which a dogeos-core
+#1591 coordinator rejects. Migrate it as described in
+[capacity-manager.md](capacity-manager.md#worker-credentials). Check the Secret references, account metadata and retained PVC
 before installing; never copy real token values into this repository. A fresh
 deployment must provision these external resources first or explicitly choose
 chart-created account/state with fresh names. Do not replace an existing

@@ -67,9 +67,8 @@ class CapacityManagerL40sTests(unittest.TestCase):
         self.assertEqual(set(env), {'RUST_LOG', 'DOGEOS_PROOF_WORK_BEARER_TOKEN'})
         self.assertEqual(env['DOGEOS_PROOF_WORK_BEARER_TOKEN']['valueFrom']['secretKeyRef'],
                          {'name': 'devnet-capacity-manager-active-wp-token', 'key': 'proof-work-token'})
-        self.assertEqual(self.args[self.args.index('--worker-credential-master-file') + 1],
-                         '/run/secrets/worker-credential-master/master')
-        self.assertFalse(any(arg.startswith('DOGEOS_PROVER_WORKER_TOKEN=') for arg in self.args))
+        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_active_worker_token_1013 }}',
+                      self.args)
 
     def test_single_aws_l40s_with_explicit_price_and_unrestricted_run_regions(self):
         policy = tomllib.loads(self.values['manager']['policy'])

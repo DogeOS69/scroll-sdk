@@ -51,6 +51,21 @@ class CapacityManagerTests(unittest.TestCase):
         pvc = next(d for d in docs if d['kind'] == 'PersistentVolumeClaim')
         self.assertEqual(pvc['metadata']['annotations']['helm.sh/resource-policy'], 'keep')
 
+    def test_legacy_shared_token_is_explicit_and_exclusive(self):
+        values = config()
+        values['manager']['workerTokenSecret'] = 'cm_test_token'
+        result = render('capacity-manager', values)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('not both', result.stderr)
+        values['workerCredentialMaster'] = None
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        pod = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Deployment')['spec']['template']['spec']
+        args = pod['containers'][0]['args']
+        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_test_token }}', args)
+        self.assertNotIn('--worker-credential-master-file', args)
+        self.assertFalse(any(v['name'] == 'worker-credential-master' for v in pod['volumes']))
+
     def test_refuses_unprepared_mutable_or_multiple_writer_deployment(self):
         for change in [{'prepared': False}, {'replicaCount': 2}, {'image': {'digest': 'latest'}}]:
             values = config()
