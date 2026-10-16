@@ -811,7 +811,7 @@ See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
 cluster-wide replacements, and distinct conditions that remain monitored.
 
 
-### Recovery CLTV runway (FYEO #24)
+### Recovery CLTV runway
 
 The shared service-alert pipeline includes wallet-backed recovery runway warning,
 critical and observation-unknown rules for WP. Requires the paired dogeos-core
