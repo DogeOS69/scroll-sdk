@@ -304,7 +304,7 @@ period; evaluation and notification intervals still apply.
 | `L2RethTransactionQueueLarge` | The Reth queued transaction pool exceeds 1000 transactions. | 15m | warning |
 | `L2RethL1ReorgObserved` | The L2 derivation watcher observed an L1 reorg. | Immediate | warning |
 
-### [proof-coordinator](alerts/services/proof-coordinator.yaml) — 17 rules
+### [proof-coordinator](alerts/services/proof-coordinator.yaml) — 18 rules
 
 | Rule | Condition / symptom | Pending | Severity |
 | --- | --- | --- | --- |
@@ -323,6 +323,7 @@ period; evaluation and notification intervals still apply.
 | `ProofCoordinatorObserveDegraded` | A terminal real-proof failure was degraded to mock retry. | Immediate | warning |
 | `ProofCoordinatorEagerLocatorInvalid` | An eager artifact locator failed validation. | Immediate | warning |
 | `ProofCoordinatorEagerLocatorConflict` | Eager locator publication found conflicting bytes. | Immediate | warning |
+| `ProverWorkerRepeatedFailures` | One authenticated worker name failed 5 or more proof results in 15 minutes (`proof_coordinator_worker_failed_results_total`, per `worker_id`). No automatic per-worker limit exists; the runbook is dogeos-core's `aws-gpu-dstack.md` "Misbehaving worker". | Immediate | warning |
 
 ### [tso-service](alerts/services/tso-service.yaml) — 7 rules
 
