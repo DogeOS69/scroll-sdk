@@ -8,13 +8,15 @@ For additional, more robust helper scripts, checkout the [scroll-sdk-cli](https:
 1. `Makefile.example`: A basic makefile for quickly installing and deleting the charts necessary for the Scroll SDK.
 2. `config.toml.example`: A template config.toml file for new deployments. A good starting point for filling out chain-specific details or using the Scroll SDK CLI tool.
 
-For the CLI spec `plan`/`apply` workflow, use the complete
-[deployment-spec.example.yaml](deployment-spec.example.yaml), the companion
+For the CLI spec `plan`/`apply` workflow, choose the complete
+[testnet spec](deployment-spec.testnet.example.yaml) or
+[mainnet spec](deployment-spec.mainnet.example.yaml), the companion
 [deployment.env.example](deployment.env.example), and the
 [step-by-step operator guide](deployment-spec.md). Copy the YAML and env file
 outside the checkout, fill the marked deployment inputs, and pass them to
-`setup plan --spec ... --env-file ...`. The example selects testnet production-Bridge preparation with active/real/enforce
-proof intent; the guide records the outstanding partner-evidence handoff. Comments identify base
+`setup plan --spec ... --env-file ...`. Both examples select production-Bridge preparation with active/real/enforce
+proof intent and bridge fees of 1 DOGE per deposit and 0.1 DOGE per withdrawal.
+The guide records the outstanding partner-evidence handoff. Comments identify base
 variables, wallet keys and optional signer/database imports. Keep completed inputs
 private; the output deployment directory starts empty.
 

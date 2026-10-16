@@ -4,7 +4,8 @@ Supported public applications use [existing ALB references](existing-alb.md) on 
 `infrastructure.aws.alb` for exposed endpoints before final chart preparation;
 application Helm releases must not own the ALB lifecycle.
 
-Use [deployment-spec.example.yaml](deployment-spec.example.yaml) together with
+Choose [deployment-spec.testnet.example.yaml](deployment-spec.testnet.example.yaml) or
+[deployment-spec.mainnet.example.yaml](deployment-spec.mainnet.example.yaml), together with
 [deployment.env.example](deployment.env.example). The spec selects deployment
 intent for `scrollsdk setup plan` / `setup apply`.
 Operator inputs, automatically generated artifacts and external approval handoffs
@@ -16,7 +17,7 @@ For the ordered command sequence and handoff checklist, see
 
 ## Selected scope
 
-This example prepares a **testnet deployment** with the beta.6 production Bridge
+Both examples prepare a deployment with the beta.6 production Bridge
 outpoint flow, two Reth sequencers, two bootnodes, AWS KMS signing identities for
 eth-da-submitter, fee-oracle, both L2 sequencers and the Dogecoin Bridge sequencer,
 and a SQLite dstack controller
@@ -24,24 +25,62 @@ with imported Vast.ai credentials. P2P nodekeys remain local. Both the
 attestation and recovery cohorts use 2-of-3; Bridge funding requires 6 confirmations.
 It selects `active / real / enforce` proofs. The approved release producer
 generates this deployment's Bridge-bound compiler identity; no hand-written
-compiler identity or mock proof hashes are accepted. This is a testnet policy;
-CubeSigner remains explicitly `transport_only`.
+compiler identity or mock proof hashes are accepted.
+
+| Setting | Testnet example | Mainnet example |
+| --- | --- | --- |
+| Instance / environment | `dogeos-testnet` / `testnet` | `dogeos-mainnet` / `mainnet` |
+| Kubernetes namespace | `default` | `default` |
+| Dogecoin network | `testnet` | `mainnet` |
+| Ethereum DA chain / chain ID | `sepolia` / `11155111` | `mainnet` / `1` |
+| Pending blob transactions (CLI default) | `10` | `8` |
+| L2 chain ID | `221122`; review for your chain | `1122005` |
+| CubeSigner mode | `production_verifier_key_policy` | `production_verifier_key_policy` |
+| Deposit / withdrawal fee | 1 DOGE / 0.1 DOGE | 1 DOGE / 0.1 DOGE |
+
+The mainnet spec is a preparation template, not a claim of production readiness.
+The mainnet L2 chain ID is `1122005`. Set mainnet Dogecoin identities/RPC.
+Each spec already includes public execution and beacon URLs for its DA network;
+Fee Oracle samples Ethereum mainnet in both examples.
+Both examples use CubeSigner `production_verifier_key_policy`. After the protocol
+context and policy artifacts exist, complete publication, Council approval and
+attachment through the governance flow on both testnet and mainnet. During staged
+preparation, `setup proof-materials` pauses at `charts` and creates
+`deployment/.scrollsdk/inputs/cubesigner-policy/receipts.json`. Complete that
+input with the governed receipt references, then rerun `setup proof-materials`;
+do not edit the frozen spec or managed `doge-config.toml`. The CLI fills the
+protocol-context reference and imports verified evidence before `prep-charts`.
+For standalone generation without a saved preparation plan, supply
+`signing.cubesigner.policyReceipts` in the spec instead. Receipts include `release`,
+`attachment` and `protocolContext` file references (`path` and `sha256`) plus the
+CubeSigner `environment` and `organization`; obtain them from the completed
+workflow, not from invented hashes. See the CLI's
+[CubeSigner evidence handoff](https://github.com/DogeOS69/scroll-sdk-cli/blob/v0.3.0/docs/proof-config-transactions.md#cubesigner-receipts-and-external-signer-evidence)
+for the receipt contract.
 
 Select only `dogecoin.network`: `mainnet`, `testnet` or `regtest`. The CLI derives
 the fixed L1 chain ID (`1`, `111111` or `5555555`) for every generated consumer.
 `network.l1ChainId` is not a spec input; remove it from older specs.
-`network.l2ChainId` is still operator-selected. The Ethereum DA chain ID is
-separate: `ethereumDa.chainId` is `11155111` for Sepolia.
+`network.l2ChainId` selects the L2 chain (`1122005` for mainnet). The Ethereum DA chain ID is
+separate: `ethereumDa.chainId` is `11155111` for Sepolia or `1` for Ethereum mainnet.
 
-Ethereum provider URLs can contain API keys. Keep complete execution and beacon
-URLs in private `deployment.env`, referenced by `ethereumDa.l1RpcUrl` and
-`ethereumDa.beaconRpcUrl` as `$ENV:ETHEREUM_RPC_URL` and
-`$ENV:ETHEREUM_BEACON_RPC_URL`. The environment example supplies public Sepolia
-defaults; replace them for your selected network/provider. Configure
-`feeOracle.ethereumRpcUrl` independently through `$ENV:FEE_ORACLE_ETHEREUM_RPC_URL`.
-Its mainnet default samples Ethereum mainnet fees even when this rehearsal's DA
-publication runs on Sepolia; it does not change the DA chain or the Fee Oracle's
-L2 transaction destination.
+The public endpoint defaults are listed directly in each spec:
+
+| Endpoint | Mainnet spec | Testnet spec |
+| --- | --- | --- |
+| Ethereum execution | `https://ethereum-rpc.publicnode.com` | `https://ethereum-sepolia-rpc.publicnode.com` |
+| Ethereum beacon | `https://ethereum-beacon-api.publicnode.com` | `https://ethereum-sepolia-beacon-api.publicnode.com` |
+| Fee Oracle sampling | `https://ethereum-rpc.publicnode.com` | `https://ethereum-rpc.publicnode.com` |
+
+These credential-free URLs come from [PublicNode](https://ethereum.publicnode.com/).
+Review provider limits and blob-broadcast support for your workload.
+For authenticated endpoints, replace the corresponding spec value with
+`$ENV:ETHEREUM_RPC_URL`, `$ENV:ETHEREUM_BEACON_RPC_URL` or
+`$ENV:FEE_ORACLE_ETHEREUM_RPC_URL`, and fill the matching optional entry in private
+`deployment.env`. Store the complete URL, including any API key, only in that env
+file. An env entry alone does not override a literal URL in the spec.
+Fee Oracle sampling is independent of DA publication and does not change its L2
+transaction destination.
 
 The matching CLI exports these URLs to private `secrets/*.env`, uploads them with
 `push-secrets`, and projects ExternalSecret references into the service values.
@@ -100,11 +139,21 @@ older; see [Contracts images](README.md#contracts-images). Fresh-chain defaults
 are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Empty blocks are disabled by default (`reth.sequencer.allowEmptyBlocks: false`);
 the block interval does not require producing a block when there is no eligible work.
-Reth has its own release lineage; its tag must be selected explicitly. Plan
-resolves the committed HEAD of `--sdk-dir` and freezes its full commit in
-the saved intent. Working-tree edits do not affect template selection. Advanced
-users may override it with `templates.sdkRevision: <full-commit>`; normal specs
-omit `templates`. Apply keeps the frozen revision even if the checkout advances.
+Reth has its own release lineage; its tag must be selected explicitly. Both
+starters pin `templates.sdkRevision` to `58acf6b9b64adf59f2e0d4a095010958d4e16472`,
+the reviewed application-owned ALB/NLB charts in [SDK PR #175](https://github.com/DogeOS69/scroll-sdk/pull/175).
+Fetch that commit into the SDK checkout used by `--sdk-dir` before planning:
+
+```bash
+git -C /path/to/scroll-sdk fetch origin 58acf6b9b64adf59f2e0d4a095010958d4e16472
+```
+
+The pin selects committed templates and matching chart versions; working-tree
+edits do not affect it. After #175 merges, a newer reviewed revision containing
+that support can replace the pin. Install the matching published chart versions,
+or build and use the charts from that exact SDK revision locally. Plan checks
+selected binding support before querying CubeSigner or resolving proof releases.
+Apply keeps the frozen revision even if the checkout advances.
 
 Use a CLI build containing `setup plan` and `setup apply`. Check `scrollsdk setup
 plan --help` before starting. AWS, Kubernetes and the external RPCs
@@ -119,46 +168,53 @@ upload is a separate operator step in this example. The selected archive step cr
 does not provision resources;
 generated configuration does not establish runtime access.
 
-## Public TSO and proof worker ingress
+## Public application ALBs and other ingresses
 
-For existing ALBs, follow [the existing ALB workflow](existing-alb.md): each
-application chart installs its own TargetGroupBinding, and Ingress stays disabled.
-Certificates, forwarding rules and ALB attributes are configured externally.
-The annotation-based configuration below describes the legacy managed-Ingress
-workflow and does not select or configure an externally managed ALB.
+Both starters explicitly select `infrastructure.aws.alb.mode: existing`. Before
+`setup plan`, fill the three ALB/HTTPS-443 listener pairs and all seven HTTP/IP
+target groups. Resources must belong to the configured AWS account, region and
+EKS VPC. Set `infrastructure.kubeContext` to that EKS cluster. The TSO and Proof
+Coordinator must use separate ALBs; the other public applications may share the
+`public` ALB. Each binding uses a distinct target group. `serviceRef` names and
+ports match the pinned templates and Makefile release names; review them if you
+change a release name or Service override.
 
-The SDK production templates select `ingressClassName: alb` for TSO and Proof
-Coordinator. Spec generation fills their public hostnames and routes; the
-controller, certificate, WAF, source allowlist and load-balancer settings stay in
-`values/tso-service-production.yaml` and
-`values/proof-coordinator-production.yaml`. Re-running generation preserves
-operator changes to these settings. It does not provision ACM certificates or
-migrate an existing load balancer or DNS record.
+ALBs, ACM certificates, DNS, security groups and forwarding rules are externally
+managed. Application Helm releases own only their TargetGroupBindings. Generation
+disables the selected Kubernetes Ingresses and retains their host/path metadata
+for verification. Do not enable those Ingresses or use their certificate/group
+annotations to configure the external ALBs. Other applications, such as dstack
+and an enabled Grafana ingress, retain their ordinary ingress configuration.
 
-Once bootstrap has populated the deployment values, set
-`ingress.main.annotations.alb.ingress.kubernetes.io/certificate-arn` in each
-public service's values file to an **issued ACM certificate in the ALB region**
-covering that service's hostname. A wildcard certificate may cover both hosts;
-each service still gets its own ALB. Do not set `alb.ingress.kubernetes.io/group.name`.
-An optional regional WAF web ACL ARN and inbound CIDRs belong in the same
-annotations block. Leave the WAF annotation absent if WAF is not used.
+Configure the external HTTPS listener certificates for the generated hostnames.
+HTTP RPC (`rpc.<baseDomain>`) and WebSocket RPC (`ws-rpc.<baseDomain>`) need
+separate host rules and target groups. Blockscout `/api` and `/api/*` rules must
+precede its frontend `/*` rule. TSO exposes only `/health`, `/signer` and
+`/signer/*`; do not forward its private management routes. Proof Coordinator
+requires an ALB idle timeout of at least 120 seconds. Target-group health checks
+must match the retained application values, including success codes.
 
-`setup prep-charts` (including the chart preparation stage of `setup apply`)
-rejects an enabled ALB ingress with a missing/placeholder certificate, a shared
-ALB group, unresolved annotation placeholders, or a Proof Coordinator idle
-timeout below 120 seconds. Bootstrap itself accepts placeholders so these
-operator-owned files can be prepared. Fill these values before chart preparation;
-if apply reaches this check first, complete the files and resume apply.
-ALB uses ACM, so generation removes stale cert-manager/nginx annotations and
-Kubernetes `tls` entries from ALB ingresses. TSO exposes only `/health`
-and `/signer/*`; its private management routes remain internal.
+Set the chosen TSO ALB subnet CIDRs in
+`values/tso-service-production.yaml` under `networkPolicy.allowFrom.edge` before
+final render. Keep `preparation.tsoAlbEdge` disabled for existing ALBs. The
+remaining internal peer restrictions and CNI enforcement still apply.
 
-All generated HTTP ingresses now use ALB. Explicit nginx/other controller
-selections are rejected until the operator updates the values. `setup tls
---certificate-arn <issued-ACM-ARN> -N` configures certificates locally, without
-cert-manager. Bootnode TCP P2P NLBs remain separate. See
-[network and IAM preparation](network-and-iam.md) for the required TSO ALB
-subnet CIDRs, CNI enforcement checks and workload permission matrix.
+Run these read-only checks from the generated deployment directory:
+
+```bash
+scrollsdk setup alb
+# After application installation:
+scrollsdk setup alb --require-services
+scrollsdk test ingress --config config.toml
+```
+
+Final AWS chart preparation rejects enabled public application ingresses without
+an existing binding. To omit a public endpoint, remove its binding and explicitly
+disable its corresponding ingress in operator values; remove any stale binding
+and `existingAlbBinding` marker when migrating an already generated deployment.
+See the [pinned existing-ALB guide](https://github.com/DogeOS69/scroll-sdk/blob/58acf6b9b64adf59f2e0d4a095010958d4e16472/examples/existing-alb.md)
+for routing, NetworkPolicy and lifecycle checks. Bootnode TCP P2P NLBs remain
+separate. These templates and checks do not establish live deployment acceptance.
 
 ## Prepare the private inputs
 
@@ -176,7 +232,8 @@ private-instance/
 From the scroll-sdk checkout, copy the examples into that private directory:
 
 ```bash
-install -m 600 examples/deployment-spec.example.yaml /private/instance/deployment-spec.yaml
+# Choose ONE spec; use deployment-spec.mainnet.example.yaml for mainnet.
+install -m 600 examples/deployment-spec.testnet.example.yaml /private/instance/deployment-spec.yaml
 install -m 600 examples/deployment.env.example /private/instance/deployment.env
 ```
 
@@ -187,8 +244,8 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and Dogecoin testnet RPC. Set execution/beacon URLs in private `deployment.env`; the example supplies public Sepolia defaults. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
-| Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
+| Infrastructure, endpoints and domains | Fill the existing ALB/listener/target-group references and EKS kubeContext as described above. Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Review the public execution/beacon URLs in the selected spec; use private `deployment.env` references for authenticated providers. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults in the spec. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
 | Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
