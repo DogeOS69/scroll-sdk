@@ -15,7 +15,7 @@ there as `deployment-spec.yaml` and `deployment.env`. Keep permissions private.
 
 | Location | What the bridge operator supplies |
 | --- | --- |
-| spec: infrastructure | Instance name, AWS account/region, existing EKS cluster, namespace, two distinct blob/proof bucket names, create/reuse choices |
+| spec: infrastructure | Existing ALB/listener/target-group references, matching EKS kubeContext and pinned SDK chart revision (see deployment-spec.md); instance name, AWS account/region, existing EKS cluster, namespace, two distinct blob/proof bucket names, create/reuse choices |
 | spec: network and endpoints | Dogecoin network, reachable external RPC and matching internal Kubernetes route, L2 chain ID, base domain/DNS, reviewed compatible Reth images; review the selected spec’s public Ethereum RPC defaults for actual blob-broadcast support |
 | spec: identities and custody | KMS create/reuse intent, CubeSigner role/key reference, three paired attestation/transport public identities from Governance, three recovery public keys |
 | spec: bridge and contracts | Future block-height timelock, thresholds, fees, unique deployment salt, dedicated L2 bridge-fee recipient (`L2_BRIDGE_FEE_RECIPIENT_ADDRESS` in `deployment.env`), and independent Dogecoin fee-vault recipient address |

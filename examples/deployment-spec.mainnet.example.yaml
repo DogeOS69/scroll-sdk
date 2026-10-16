@@ -12,20 +12,68 @@ metadata:
   environment: mainnet
   description: "beta.7 / rc.7 preparation with production Bridge initialization"
 
-# Plan locks the committed HEAD of --sdk-dir automatically.
-# Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
+# Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
+# Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
+# After #175 merges, update only to a reviewed SDK revision containing it.
+templates:
+  sdkRevision: 58acf6b9b64adf59f2e0d4a095010958d4e16472
 
 # Reference existing infrastructure; this spec does not create a cluster.
 # Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
 # eth-da-submitter, fee-oracle and both sequencers. P2P nodekeys remain local.
 infrastructure:
   provider: aws
+  kubeContext: REPLACE_WITH_EKS_CONTEXT
   aws:
     accountId: REPLACE_WITH_AWS_ACCOUNT_ID
     region: us-west-2
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
     # Optional: secretsPrefix: your-reviewed-existing-prefix
+    # Existing HTTPS ALBs and HTTP/IP target groups are externally managed.
+    # Fill every reference before setup plan. TSO and proof need separate ALBs.
+    # Service names below match Makefile release names and the pinned templates.
+    alb:
+      mode: existing
+      endpoints:
+        public:
+          loadBalancerArn: REPLACE_WITH_PUBLIC_ALB_ARN
+          listenerArn: REPLACE_WITH_PUBLIC_HTTPS_LISTENER_ARN
+        tso:
+          loadBalancerArn: REPLACE_WITH_TSO_ALB_ARN
+          listenerArn: REPLACE_WITH_TSO_HTTPS_LISTENER_ARN
+        proof:
+          loadBalancerArn: REPLACE_WITH_PROOF_ALB_ARN
+          listenerArn: REPLACE_WITH_PROOF_HTTPS_LISTENER_ARN
+      bindings:
+        frontends:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_FRONTENDS_TARGET_GROUP_ARN
+          serviceRef: {name: frontends, port: 80}
+        l2-reth-rpc-public:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_RPC_HTTP_TARGET_GROUP_ARN
+          serviceRef: {name: l2-reth-rpc-public, port: 8545}
+        l2-reth-rpc-public-ws:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_RPC_WS_TARGET_GROUP_ARN
+          serviceRef: {name: l2-reth-rpc-public, port: 8546}
+        blockscout-api:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_API_TARGET_GROUP_ARN
+          serviceRef: {name: blockscout-blockscout-svc, port: 80}
+        blockscout-frontend:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_FRONTEND_TARGET_GROUP_ARN
+          serviceRef: {name: blockscout-frontend-svc, port: 80}
+        tso-service:
+          endpoint: tso
+          targetGroupArn: REPLACE_WITH_TSO_TARGET_GROUP_ARN
+          serviceRef: {name: tso-service, port: 3000}
+        proof-coordinator:
+          endpoint: proof
+          targetGroupArn: REPLACE_WITH_PROOF_TARGET_GROUP_ARN
+          serviceRef: {name: proof-coordinator, port: 7788}
   namespace: default
   sequencerCount: 2
   bootnodeCount: 2
@@ -206,6 +254,7 @@ frontend:
   subdomains:
     frontend: portal
     rpcGateway: rpc
+    rpcGatewayWs: ws-rpc  # Separate host and target group for WebSocket RPC.
     blockscout: blockscout
     grafana: grafana
     tso: tso

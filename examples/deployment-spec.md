@@ -135,11 +135,21 @@ older; see [Contracts images](README.md#contracts-images). Fresh-chain defaults
 are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
 Empty blocks are disabled by default (`reth.sequencer.allowEmptyBlocks: false`);
 the block interval does not require producing a block when there is no eligible work.
-Reth has its own release lineage; its tag must be selected explicitly. Plan
-resolves the committed HEAD of `--sdk-dir` and freezes its full commit in
-the saved intent. Working-tree edits do not affect template selection. Advanced
-users may override it with `templates.sdkRevision: <full-commit>`; normal specs
-omit `templates`. Apply keeps the frozen revision even if the checkout advances.
+Reth has its own release lineage; its tag must be selected explicitly. Both
+starters pin `templates.sdkRevision` to `58acf6b9b64adf59f2e0d4a095010958d4e16472`,
+the reviewed application-owned ALB/NLB charts in [SDK PR #175](https://github.com/DogeOS69/scroll-sdk/pull/175).
+Fetch that commit into the SDK checkout used by `--sdk-dir` before planning:
+
+```bash
+git -C /path/to/scroll-sdk fetch origin 58acf6b9b64adf59f2e0d4a095010958d4e16472
+```
+
+The pin selects committed templates and matching chart versions; working-tree
+edits do not affect it. After #175 merges, a newer reviewed revision containing
+that support can replace the pin. Install the matching published chart versions,
+or build and use the charts from that exact SDK revision locally. Plan checks
+selected binding support before querying CubeSigner or resolving proof releases.
+Apply keeps the frozen revision even if the checkout advances.
 
 Use a CLI build containing `setup plan` and `setup apply`. Check `scrollsdk setup
 plan --help` before starting. AWS, Kubernetes and the external RPCs
@@ -154,40 +164,53 @@ upload is a separate operator step in this example. The selected archive step cr
 does not provision resources;
 generated configuration does not establish runtime access.
 
-## Public TSO and proof worker ingress
+## Public application ALBs and other ingresses
 
-The SDK production templates select `ingressClassName: alb` for TSO and Proof
-Coordinator. Spec generation fills their public hostnames and routes; the
-controller, certificate, WAF, source allowlist and load-balancer settings stay in
-`values/tso-service-production.yaml` and
-`values/proof-coordinator-production.yaml`. Re-running generation preserves
-operator changes to these settings. It does not provision ACM certificates or
-migrate an existing load balancer or DNS record.
+Both starters explicitly select `infrastructure.aws.alb.mode: existing`. Before
+`setup plan`, fill the three ALB/HTTPS-443 listener pairs and all seven HTTP/IP
+target groups. Resources must belong to the configured AWS account, region and
+EKS VPC. Set `infrastructure.kubeContext` to that EKS cluster. The TSO and Proof
+Coordinator must use separate ALBs; the other public applications may share the
+`public` ALB. Each binding uses a distinct target group. `serviceRef` names and
+ports match the pinned templates and Makefile release names; review them if you
+change a release name or Service override.
 
-Once bootstrap has populated the deployment values, set
-`ingress.main.annotations.alb.ingress.kubernetes.io/certificate-arn` in each
-public service's values file to an **issued ACM certificate in the ALB region**
-covering that service's hostname. A wildcard certificate may cover both hosts;
-each service still gets its own ALB. Do not set `alb.ingress.kubernetes.io/group.name`.
-An optional regional WAF web ACL ARN and inbound CIDRs belong in the same
-annotations block. Leave the WAF annotation absent if WAF is not used.
+ALBs, ACM certificates, DNS, security groups and forwarding rules are externally
+managed. Application Helm releases own only their TargetGroupBindings. Generation
+disables the selected Kubernetes Ingresses and retains their host/path metadata
+for verification. Do not enable those Ingresses or use their certificate/group
+annotations to configure the external ALBs. Other applications, such as dstack
+and an enabled Grafana ingress, retain their ordinary ingress configuration.
 
-`setup prep-charts` (including the chart preparation stage of `setup apply`)
-rejects an enabled ALB ingress with a missing/placeholder certificate, a shared
-ALB group, unresolved annotation placeholders, or a Proof Coordinator idle
-timeout below 120 seconds. Bootstrap itself accepts placeholders so these
-operator-owned files can be prepared. Fill these values before chart preparation;
-if apply reaches this check first, complete the files and resume apply.
-ALB uses ACM, so generation removes stale cert-manager/nginx annotations and
-Kubernetes `tls` entries from ALB ingresses. TSO exposes only `/health`
-and `/signer/*`; its private management routes remain internal.
+Configure the external HTTPS listener certificates for the generated hostnames.
+HTTP RPC (`rpc.<baseDomain>`) and WebSocket RPC (`ws-rpc.<baseDomain>`) need
+separate host rules and target groups. Blockscout `/api` and `/api/*` rules must
+precede its frontend `/*` rule. TSO exposes only `/health`, `/signer` and
+`/signer/*`; do not forward its private management routes. Proof Coordinator
+requires an ALB idle timeout of at least 120 seconds. Target-group health checks
+must match the retained application values, including success codes.
 
-All generated HTTP ingresses now use ALB. Explicit nginx/other controller
-selections are rejected until the operator updates the values. `setup tls
---certificate-arn <issued-ACM-ARN> -N` configures certificates locally, without
-cert-manager. Bootnode TCP P2P NLBs remain separate. See
-[network and IAM preparation](network-and-iam.md) for the required TSO ALB
-subnet CIDRs, CNI enforcement checks and workload permission matrix.
+Set the chosen TSO ALB subnet CIDRs in
+`values/tso-service-production.yaml` under `networkPolicy.allowFrom.edge` before
+final render. Keep `preparation.tsoAlbEdge` disabled for existing ALBs. The
+remaining internal peer restrictions and CNI enforcement still apply.
+
+Run these read-only checks from the generated deployment directory:
+
+```bash
+scrollsdk setup alb
+# After application installation:
+scrollsdk setup alb --require-services
+scrollsdk test ingress --config config.toml
+```
+
+Final AWS chart preparation rejects enabled public application ingresses without
+an existing binding. To omit a public endpoint, remove its binding and explicitly
+disable its corresponding ingress in operator values; remove any stale binding
+and `existingAlbBinding` marker when migrating an already generated deployment.
+See the [pinned existing-ALB guide](https://github.com/DogeOS69/scroll-sdk/blob/58acf6b9b64adf59f2e0d4a095010958d4e16472/examples/existing-alb.md)
+for routing, NetworkPolicy and lifecycle checks. Bootnode TCP P2P NLBs remain
+separate. These templates and checks do not establish live deployment acceptance.
 
 ## Prepare the private inputs
 
@@ -217,7 +240,7 @@ placeholders, not working identities or credentials.
 
 | Input | Required action |
 | --- | --- |
-| Infrastructure, endpoints and domains | Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Review the public execution/beacon URLs in the selected spec; use private `deployment.env` references for authenticated providers. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
+| Infrastructure, endpoints and domains | Fill the existing ALB/listener/target-group references and EKS kubeContext as described above. Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Review the public execution/beacon URLs in the selected spec; use private `deployment.env` references for authenticated providers. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
 | Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults in the spec. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
 | Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
