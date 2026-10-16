@@ -12,21 +12,69 @@ metadata:
   environment: testnet
   description: "beta.7 / rc.7 preparation with production Bridge initialization"
 
-# Plan locks the committed HEAD of --sdk-dir automatically.
-# Optional advanced override: templates: {sdkRevision: <full-reviewed-commit>}
+# Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
+# Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
+# After #175 merges, update only to a reviewed SDK revision containing it.
+templates:
+  sdkRevision: 58acf6b9b64adf59f2e0d4a095010958d4e16472
 
 # Reference existing infrastructure; this spec does not create a cluster.
-# Apply creates AWS KMS keys and IAM/IRSA resources for all four signing identities:
+# Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
 # eth-da-submitter, fee-oracle and both sequencers. P2P nodekeys remain local.
 infrastructure:
   provider: aws
+  kubeContext: REPLACE_WITH_EKS_CONTEXT
   aws:
     accountId: REPLACE_WITH_AWS_ACCOUNT_ID
     region: us-west-2
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
     # Optional: secretsPrefix: your-reviewed-existing-prefix
-  namespace: dogeos-testnet
+    # Existing HTTPS ALBs and HTTP/IP target groups are externally managed.
+    # Fill every reference before setup plan. TSO and proof need separate ALBs.
+    # Service names below match Makefile release names and the pinned templates.
+    alb:
+      mode: existing
+      endpoints:
+        public:
+          loadBalancerArn: REPLACE_WITH_PUBLIC_ALB_ARN
+          listenerArn: REPLACE_WITH_PUBLIC_HTTPS_LISTENER_ARN
+        tso:
+          loadBalancerArn: REPLACE_WITH_TSO_ALB_ARN
+          listenerArn: REPLACE_WITH_TSO_HTTPS_LISTENER_ARN
+        proof:
+          loadBalancerArn: REPLACE_WITH_PROOF_ALB_ARN
+          listenerArn: REPLACE_WITH_PROOF_HTTPS_LISTENER_ARN
+      bindings:
+        frontends:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_FRONTENDS_TARGET_GROUP_ARN
+          serviceRef: {name: frontends, port: 80}
+        l2-reth-rpc-public:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_RPC_HTTP_TARGET_GROUP_ARN
+          serviceRef: {name: l2-reth-rpc-public, port: 8545}
+        l2-reth-rpc-public-ws:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_RPC_WS_TARGET_GROUP_ARN
+          serviceRef: {name: l2-reth-rpc-public, port: 8546}
+        blockscout-api:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_API_TARGET_GROUP_ARN
+          serviceRef: {name: blockscout-blockscout-svc, port: 80}
+        blockscout-frontend:
+          endpoint: public
+          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_FRONTEND_TARGET_GROUP_ARN
+          serviceRef: {name: blockscout-frontend-svc, port: 80}
+        tso-service:
+          endpoint: tso
+          targetGroupArn: REPLACE_WITH_TSO_TARGET_GROUP_ARN
+          serviceRef: {name: tso-service, port: 3000}
+        proof-coordinator:
+          endpoint: proof
+          targetGroupArn: REPLACE_WITH_PROOF_TARGET_GROUP_ARN
+          serviceRef: {name: proof-coordinator, port: 7788}
+  namespace: default
   sequencerCount: 2
   bootnodeCount: 2
 
@@ -105,9 +153,11 @@ ethereumDa:
   # Optional override: publish: {maxPendingBlobTxs: 10}
   chain: sepolia
   chainId: 11155111
-  # Full URLs may contain provider credentials; keep their values in deployment.env.
-  l1RpcUrl: "$ENV:ETHEREUM_RPC_URL"
-  beaconRpcUrl: "$ENV:ETHEREUM_BEACON_RPC_URL"
+  # Public, credential-free defaults. For authenticated providers, use
+  # $ENV:ETHEREUM_RPC_URL and $ENV:ETHEREUM_BEACON_RPC_URL instead,
+  # with the full URLs stored only in private deployment.env.
+  l1RpcUrl: https://ethereum-sepolia-rpc.publicnode.com
+  beaconRpcUrl: https://ethereum-sepolia-beacon-api.publicnode.com
   # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
   # These do not replace Ethereum safe/finalized block-tag checks.
   confirmationDepth: 1
@@ -160,6 +210,7 @@ bridge:
     feeWallet: 100000000  # Rehearsal funding budget; review before funding.
     bridge: 1000000000
   confirmationsRequired: 6
+  # Bridge service fees, separate from network gas and initial wallet funding.
   fees:
     depositFeeSats: "100000000" # 1 DOGE (Dogecoin uses 8 decimals)
     withdrawalFeeWei: "100000000000000000" # 0.1 DOGE (L2 uses 18 decimals)
@@ -171,7 +222,11 @@ bridge:
 
 signing:
   cubesigner:
-    mode: transport_only
+    # Complete policy publication, Council approval and attachment on testnet too.
+    # setup proof-materials writes a receipts.json input and waits before charts;
+    # fill it and rerun that command without editing this spec.
+    # See deployment-spec.md for the receipt handoff and required inputs.
+    mode: production_verifier_key_policy
     # Read-only query during plan; the public key and role metadata are frozen.
     identity:
       roleId: REPLACE_WITH_CUBESIGNER_ROLE_ID
@@ -183,7 +238,8 @@ signing:
 feeOracle:
   contractWriteMode: live
   # Fee sampling can use Ethereum mainnet even when DA publication uses Sepolia.
-  ethereumRpcUrl: "$ENV:FEE_ORACLE_ETHEREUM_RPC_URL"
+  # For an authenticated provider, use $ENV:FEE_ORACLE_ETHEREUM_RPC_URL.
+  ethereumRpcUrl: https://ethereum-rpc.publicnode.com
 
 frontend:
   protocol: https
@@ -193,10 +249,11 @@ frontend:
   baseDomain: dogeos.example.invalid
   externalUrls:
     l1Rpc: https://dogecoin.example.invalid
-    l1Explorer: https://dogecoin-explorer.example.invalid
+    l1Explorer: https://sochain.com/dogetest
   subdomains:
     frontend: portal
     rpcGateway: rpc
+    rpcGatewayWs: ws-rpc  # Separate host and target group for WebSocket RPC.
     blockscout: blockscout
     grafana: grafana
     tso: tso

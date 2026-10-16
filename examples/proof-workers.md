@@ -31,7 +31,7 @@ No Core checkout or manually assembled task manifest is required.
 
 ## Defaults and an eight-hour example
 
-The starter [deployment spec](deployment-spec.example.yaml) includes every
+The starter [deployment spec](deployment-spec.testnet.example.yaml) includes every
 supported capacity setting. Defaults are one RTX 3090 (24 GB VRAM), at least
 8 CPUs, 64 GB host RAM and 200 GB disk, US Texas/Colorado/Washington, minimum
 Vast.ai reliability 95%, on-demand allocation, and **no automatic retry**.
