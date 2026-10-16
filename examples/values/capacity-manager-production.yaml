@@ -4,8 +4,10 @@ fullnameOverride: capacity-manager
 prepared: false
 image:
   repository: dogeos69/capacity-manager
-  # dogeos69/capacity-manager:develop-50653e7b
-  digest: sha256:4535d8ae9ce9adf7d84dc129de28606e0471216037cbf7c4ad985636eb735620
+  # TODO: digest of a capacity-manager image that includes dogeos-core #1598
+  # (--worker-credential-master-file). develop-50653e7b predates it; the
+  # placeholder fails preparation instead of starting an incompatible manager.
+  digest: "<TODO>"
 wpAuth:
   existingSecret: proof-coordinator-secrets
   key: proof-work-token
