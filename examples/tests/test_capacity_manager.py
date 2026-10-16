@@ -13,7 +13,6 @@ def config():
             'manager': {'workerIdPrefix': 'test-provers',
                         'workerImage': 'example.invalid/worker@sha256:' + 'b' * 64,
                         'workerCommand': 'exec prover-worker --worker-id {worker_id}',
-                        'workerTokenSecret': 'cm_test_token',
                         'policy': '[global]\nmax_workers = 2\n',
                         'dstack': {'project': 'test-project', 'fleets': ['test-fleet'],
                                    'regions': ['us-east-1'], 'instanceTypes': ['g6.4xlarge']}}}
@@ -40,11 +39,32 @@ class CapacityManagerTests(unittest.TestCase):
         self.assertFalse(pod['automountServiceAccountToken'])
         container = pod['containers'][0]
         self.assertIn('--dstack-max-price-usd', container['args'])
-        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_test_token }}', container['args'])
+        self.assertEqual(container['args'][container['args'].index('--worker-credential-master-file') + 1],
+                         '/run/secrets/worker-credential-master/master')
+        self.assertFalse(any(arg.startswith('DOGEOS_PROVER_WORKER_TOKEN=') for arg in container['args']))
         self.assertNotIn('--scale-down-on-shutdown', container['args'])
+        # The master comes from the coordinator Secret as a file, never as worker env.
+        master = next(v for v in pod['volumes'] if v['name'] == 'worker-credential-master')
+        self.assertEqual(master['secret'], {'secretName': 'proof-coordinator-secrets', 'defaultMode': 0o440,
+                                            'items': [{'key': 'prover-worker-token', 'path': 'master'}]})
         self.assertIn('secretKeyRef', container['env'][0]['valueFrom'])
         pvc = next(d for d in docs if d['kind'] == 'PersistentVolumeClaim')
         self.assertEqual(pvc['metadata']['annotations']['helm.sh/resource-policy'], 'keep')
+
+    def test_legacy_shared_token_is_explicit_and_exclusive(self):
+        values = config()
+        values['manager']['workerTokenSecret'] = 'cm_test_token'
+        result = render('capacity-manager', values)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('not both', result.stderr)
+        values['workerCredentialMaster'] = None
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        pod = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Deployment')['spec']['template']['spec']
+        args = pod['containers'][0]['args']
+        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_test_token }}', args)
+        self.assertNotIn('--worker-credential-master-file', args)
+        self.assertFalse(any(v['name'] == 'worker-credential-master' for v in pod['volumes']))
 
     def test_refuses_unprepared_mutable_or_multiple_writer_deployment(self):
         for change in [{'prepared': False}, {'replicaCount': 2}, {'image': {'digest': 'latest'}}]:

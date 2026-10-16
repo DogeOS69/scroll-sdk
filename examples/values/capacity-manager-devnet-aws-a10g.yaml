@@ -78,6 +78,10 @@ manager:
     instanceTypes:
     - g5.4xlarge
     maxPricePerHourUsd: 1.75
+# Recorded pre-dogeos-core #1591 snapshot: legacy shared worker token. Migrate
+# to workerCredentialMaster with a #1598 manager image during the master
+# rotation (see ../capacity-manager.md#worker-credentials).
+workerCredentialMaster: null
 wpAuth:
   existingSecret: devnet-capacity-manager-active-wp-token
   key: proof-work-token

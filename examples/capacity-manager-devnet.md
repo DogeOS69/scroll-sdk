@@ -66,7 +66,9 @@ The profile reuses these externally managed resources in `dstack-system`:
 
 The remote worker token is the dstack **project Secret reference**
 `cm_active_worker_token_1013`, not a credential in values. No Secret is created
-by this profile. Check the Secret references, account metadata and retained PVC
+by this profile. This is the legacy shared-token mode, which a dogeos-core
+#1591 coordinator rejects. Migrate it as described in
+[capacity-manager.md](capacity-manager.md#worker-credentials). Check the Secret references, account metadata and retained PVC
 before installing; never copy real token values into this repository. A fresh
 deployment must provision these external resources first or explicitly choose
 chart-created account/state with fresh names. Do not replace an existing
