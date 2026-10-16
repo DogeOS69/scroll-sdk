@@ -1,0 +1,32 @@
+{{- $p2p := .Values.reth.p2pExternal -}}
+{{- if and $p2p.enabled (eq (default "service" $p2p.mode) "existing") -}}
+{{- $serviceName := printf "%s-p2p" (include "scroll.common.lib.chart.names.fullname" .) -}}
+{{- if gt (len $serviceName) 63 -}}
+{{- fail "existing NLB P2P Service name exceeds 63 characters; shorten release or fullname" -}}
+{{- end }}
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  targetGroupARN: {{ $p2p.existingNlb.targetGroupARN | quote }}
+  targetType: ip
+  serviceRef:
+    name: {{ $serviceName }}
+    port: 30303
+  networking:
+    ingress:
+      - from:
+        {{- range $id := $p2p.existingNlb.securityGroupIds }}
+          - securityGroup:
+              groupID: {{ $id | quote }}
+        {{- end }}
+        ports:
+          - protocol: TCP
+            port: 30303
+{{- end }}

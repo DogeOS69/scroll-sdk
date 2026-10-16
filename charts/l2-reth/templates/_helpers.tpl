@@ -79,7 +79,17 @@ Validate l2-reth role constraints before generating common chart values.
     {{- end -}}
   {{- end -}}
   {{- with .Values.reth.p2pExternal -}}
+  {{- $mode := default "service" .mode -}}
+  {{- if not (has $mode (list "service" "existing")) -}}
+    {{- fail "reth.p2pExternal.mode must be service or existing" -}}
+  {{- end -}}
+  {{- if and (ne $mode "existing") .existingNlb -}}
+    {{- fail "reth.p2pExternal.existingNlb requires mode existing" -}}
+  {{- end -}}
   {{- if .enabled -}}
+    {{- if eq $mode "existing" -}}
+      {{- include "l2-reth.existingNlb.validate" $ -}}
+    {{- end -}}
     {{- if ne (default "ClusterIP" $.Values.service.main.type) "ClusterIP" -}}
       {{- fail "reth.p2pExternal requires service.main.type ClusterIP; a public main Service would publish RPC, WS and metrics" -}}
     {{- end -}}
@@ -485,12 +495,16 @@ main:
 {{- if .Values.reth.p2pExternal.enabled }}
 p2p:
   enabled: true
+  {{- if eq (default "service" .Values.reth.p2pExternal.mode) "existing" }}
+  type: ClusterIP
+  {{- else }}
   type: LoadBalancer
   annotations:
     {{- include "l2-reth.p2pExternal.annotations" . | nindent 4 }}
   {{- with .Values.reth.p2pExternal.sourceRanges }}
   loadBalancerSourceRanges:
     {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- end }}
   extraSelectorLabels:
     statefulset.kubernetes.io/pod-name: {{ printf "%s-%d" (include "scroll.common.lib.chart.names.fullname" .) (int .Values.reth.p2pExternal.ordinal) | quote }}
@@ -598,4 +612,61 @@ readiness:
 {{- if not $readinessHandlers }}
 {{ toYaml (omit $readinessSpec "exec" "tcpSocket" "httpGet" "grpc") | nindent 4 }}
 {{- end }}
+{{- end -}}
+
+{{/* Existing NLB ownership stays outside Helm. AWS reality is checked by CLI. */}}
+{{- define "l2-reth.existingNlb.validate" -}}
+{{- $p := .Values.reth.p2pExternal -}}
+{{- $binding := default dict $p.existingNlb -}}
+{{- if or (ne .Values.role "bootnode") (kindIs "string" .Values.reth.ports.p2p) (ne (float64 .Values.reth.ports.p2p) 30303.0) -}}
+{{- fail "existing NLB requires role bootnode and TCP P2P port 30303" -}}
+{{- end -}}
+{{- $prefix := "^arn:aws:elasticloadbalancing:[a-z0-9-]+:[0-9]{12}:" -}}
+{{- range $field, $suffix := dict "loadBalancerARN" "loadbalancer/net/[a-zA-Z0-9-]+/[a-f0-9]{16}$" "listenerARN" "listener/net/[a-zA-Z0-9-]+/[a-f0-9]{16}/[a-f0-9]{16}$" "targetGroupARN" "targetgroup/[a-zA-Z0-9-]+/[a-f0-9]{16}$" -}}
+{{- if not (regexMatch (printf "%s%s" $prefix $suffix) (default "" (get $binding $field))) -}}
+{{- fail (printf "existing NLB requires valid %s" $field) -}}
+{{- end -}}
+{{- end -}}
+{{- $lbPrefix := regexFind $prefix $binding.loadBalancerARN -}}
+{{- if or (ne $lbPrefix (regexFind $prefix $binding.listenerARN)) (ne $lbPrefix (regexFind $prefix $binding.targetGroupARN)) -}}
+{{- fail "existing NLB ARNs must use the same AWS account and region" -}}
+{{- end -}}
+{{- $listenerPrefix := printf "%slistener/%s/" $lbPrefix (trimPrefix (printf "%sloadbalancer/" $lbPrefix) $binding.loadBalancerARN) -}}
+{{- if not (hasPrefix $listenerPrefix $binding.listenerARN) -}}
+{{- fail "existing NLB listenerARN must belong to loadBalancerARN" -}}
+{{- end -}}
+{{- if or (not $p.sourceRanges) $p.allowOpenPeering -}}
+{{- fail "existing NLB requires nonempty sourceRanges and allowOpenPeering false" -}}
+{{- end -}}
+{{- range $cidr := $p.sourceRanges -}}
+{{- if not (regexMatch "^([0-9]{1,3}\\.){3}[0-9]{1,3}/([1-9]|[12][0-9]|3[0-2])$" $cidr) -}}
+{{- fail "existing NLB sourceRanges must be IPv4 CIDRs with prefix 1 through 32" -}}
+{{- end -}}
+{{- range $octet := splitList "." (first (splitList "/" $cidr)) -}}
+{{- if or (gt (int $octet) 255) (and (gt (len $octet) 1) (hasPrefix "0" $octet)) -}}
+{{- fail "existing NLB sourceRanges must contain valid IPv4 addresses" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if not $binding.securityGroupIds -}}
+{{- fail "existing NLB requires securityGroupIds for backend reachability" -}}
+{{- end -}}
+{{- range $group := $binding.securityGroupIds -}}
+{{- if not (regexMatch "^sg-([a-f0-9]{8}|[a-f0-9]{17})$" $group) -}}
+{{- fail "existing NLB requires valid securityGroupIds" -}}
+{{- end -}}
+{{- end -}}
+{{- if $p.annotations -}}
+{{- fail "existing NLB does not accept Service annotations; manage NLB settings in infrastructure" -}}
+{{- end -}}
+{{- range $key, $_ := (include "scroll.common.lib.metadata.globalAnnotations" . | fromYaml) -}}
+{{- if hasPrefix "service.beta.kubernetes.io/aws-load-balancer-" $key -}}
+{{- fail "existing NLB does not accept inherited AWS LoadBalancer annotations" -}}
+{{- end -}}
+{{- end -}}
+{{- range $name, $other := .Values.targetGroupBindings -}}
+{{- if eq $other.targetGroupARN $binding.targetGroupARN -}}
+{{- fail "existing NLB target group must not be shared with an HTTP binding" -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}

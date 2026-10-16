@@ -168,3 +168,11 @@ ALB/listener/TG ARNs are unchanged and targets are deregistered, then reinstall
 and verify new targets become healthy. Offline tests render all supported
 application charts and check their bindings and Services belong to the same
 release; they do not claim this live AWS test ran.
+
+
+## Bootnode TCP P2P
+
+Bootnodes use a separate NLB for each node, not an ALB. The matching
+[infrastructure-owned NLB runbook](existing-nlb.md) describes `mode: existing`,
+frontend source restrictions and preserving both the NLB/EIP and node key across
+application reinstalls. HTTP `targetGroupBindings` must not be reused for P2P.

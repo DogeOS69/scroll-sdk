@@ -141,6 +141,37 @@ Service, StatefulSet, and PVC names are likewise release-derived. Do not set
 For an AWS KMS sequencer, retain an explicit `serviceAccount.name` when the EKS
 IRSA role trust policy pins that namespace/ServiceAccount OIDC subject.
 
+## Infrastructure-owned bootnode NLB
+
+Set `reth.p2pExternal.mode: existing` to keep a bootnode's NLB independent of
+its application release. Use one NLB per bootnode, each with a dedicated TCP
+30303 listener and TCP/IP target group; do not load-balance different node keys
+behind one enode endpoint. See [the infrastructure runbook](../../examples/existing-nlb.md)
+for prerequisites, migration and lifecycle acceptance.
+
+In this mode the chart renders only a dedicated ClusterIP P2P Service selecting
+one StatefulSet ordinal, and a `TargetGroupBinding` to the supplied target group.
+It renders no LoadBalancer Service or AWS LoadBalancer annotations. NLB, EIPs,
+listeners, target groups and frontend security-group rules belong to the
+infrastructure owner and survive application uninstall. The controller uses the
+binding's `networking` rules to permit backend TCP 30303 from the supplied NLB
+security groups; the caller must authorize the controller to reconcile backend
+security groups. `sourceRanges` records the intended frontend allowlist but does
+not enforce it in a ClusterIP Service: configure it on the external NLB's security
+groups and verify AWS state before installation.
+
+Required `existingNlb` fields are `loadBalancerARN`, `listenerARN`,
+`targetGroupARN`, and `securityGroupIds`. A render fixture is available at
+`ci/existing-nlb-values.yaml` (synthetic identifiers). Existing mode requires
+nonempty IPv4 `sourceRanges`, refuses `/0` and `allowOpenPeering`, and rejects
+Service NLB annotations. The listener ARN must identify the specified network
+load balancer; all ARNs must belong to the same account and region. Helm does not
+query AWS: resource type, port, health, SG rules, EIPs and AZ coverage must also
+pass the CLI's live read-only checks and deployment acceptance.
+
+The default `mode: service` retains the existing Controller-managed NLB behavior
+below. Supplying `existingNlb` in that mode is an error rather than a fallback.
+
 ## External P2P (opt-in)
 
 An external partner's L2 nodes can peer with designated non-sequencer bootnodes
