@@ -149,9 +149,9 @@ dogecoin:
   # funding; do not transcribe a previous deployment's heights here.
 
 ethereumDa:
-  # Pending blob transactions default to 8 for Ethereum DA mainnet, otherwise 10.
-  # The DA chain below selects the default, not metadata.environment.
-  # Optional override: publish: {maxPendingBlobTxs: 8}
+  # Ethereum DA mainnet policy is fixed; conflicting explicit values are rejected.
+  publish:
+    maxPendingBlobTxs: 10
   chain: mainnet
   chainId: 1
   # Public, credential-free defaults. For authenticated providers, use
@@ -161,8 +161,8 @@ ethereumDa:
   beaconRpcUrl: https://ethereum-beacon-api.publicnode.com
   # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
   # These do not replace Ethereum safe/finalized block-tag checks.
-  confirmationDepth: 1
-  finalizationDepth: 64
+  confirmationDepth: 8
+  finalizationDepth: 8
   # Existing DA blob bucket. This is NOT the proof artifact bucket below.
   blobArchive:
     s3:

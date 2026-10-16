@@ -117,12 +117,19 @@ plaintext RPC entries, wait for ExternalSecret readiness, and restart the affect
 workloads as part of the endpoint change. A Helm upgrade alone may not restart a
 Pod when only an external secret's contents changed.
 
-The beta.6 eth-da-submitter still consumes `ethereumDa.confirmationDepth` and
-`finalizationDepth`. The example explicitly selects `1` and `64`, matching core's
-submitter `.env.example`. These depths use Ethereum tip height minus transaction
-inclusion height, controlling confirmation and later settlement finalization.
-They do not replace the DA readers' `safe`/`finalized` checks. The Rust fallback
-for omitted finalization depth is `1`; `64` is the explicit policy selected here.
+Ethereum DA mainnet requires `publish.maxPendingBlobTxs: 10`,
+`confirmationDepth: 8` and `finalizationDepth: 8`. The CLI fills omitted values
+and rejects conflicting explicit settings when `ethereumDa.chain` resolves to
+`mainnet`. Update existing mainnet inputs before regenerating; older CLI releases
+may still apply the previous policy. Sepolia/devnet retain their existing behavior;
+the testnet spec explicitly selects confirmation/finalization depths of `1/64`.
+For direct Helm installations, set the three corresponding
+`DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS`,
+`DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMATION_DEPTH` and
+`DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__FINALIZATION_DEPTH` values to `"10"`, `"8"`,
+and `"8"`; the generic values template is not a network-aware validator.
+These depths use Ethereum tip height minus transaction inclusion height. They
+do not replace the DA readers' `safe`/`finalized` checks.
 
 Bridge fees match `config.toml.example`: 1 DOGE per deposit, 0.1 DOGE per
 withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoin's
