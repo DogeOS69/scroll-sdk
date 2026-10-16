@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   echo 'Usage: init-keys.sh --name <signer-name> --network <mainnet|testnet|regtest> --out <private-directory>'
   echo '  [--release-version VERSION --git-commit FULL_SHA --signing-policy-version NUMBER]'
-  echo 'Provide all three approved binary pins together, or retain the beta.7 defaults.'
+  echo 'Provide all three approved binary pins together, or retain the beta.8 defaults.'
 }
 signer_name='' signer_network='' output_dir=''
 pins=()

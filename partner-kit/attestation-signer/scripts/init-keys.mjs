@@ -131,7 +131,7 @@ function initialize(out, name, network, pins, kms) {
       '# Approved signer binary. Review these pins together with the runtime image.',
       ...Object.entries(pins ?? {
         ATTESTATION_SIGNER_ALLOWED_RELEASE_VERSION: '0.3.0',
-        ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT: '50653e7b67e2a6a8eadef06fabdec8037e6f61ef',
+        ATTESTATION_SIGNER_ALLOWED_GIT_COMMIT: 'a0bc76bbdc85e1600c257768c417f2ea14981957',
         ATTESTATION_SIGNER_ALLOWED_SIGNING_POLICY_VERSION: '1',
       }).map(([field, value]) => `${field}=${value}`),
       '',

@@ -23,13 +23,6 @@ private; the output deployment directory starts empty.
 For supported public applications on AWS, follow [existing ALB setup](existing-alb.md) to select
 pre-provisioned ALBs and retain them when uninstalling application charts.
 
-For a proposed separation of core and public workloads, see the
-[two-cluster architecture design](https://github.com/DogeOS69/scroll-sdk/blob/14d70e2a1855f9ad4ca78033a89f65e544893546/docs/two-cluster-design.md). It covers both
-P2P relay options, private service discovery, network boundaries and controller
-ownership. It is a reference proposal, not an implemented multi-cluster deployment
-mode; keep actual infrastructure inventories and operator receipts in the
-deployment repository.
-
 Production service overlays are intentionally operator-readable and repeat all
 runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
@@ -183,8 +176,8 @@ policy comes from SDK templates rather than a second set of CLI defaults.
 
 ## Core release configuration
 
-The core service examples target **v0.3.0-beta.7**. See the
-[beta.7 image update](core-beta7-images.md) and follow the
+The core service examples target **v0.3.0-beta.8**. See the
+[beta.8 image update](core-beta8-images.md) and follow the
 [beta.6 configuration checklist](core-beta6-configuration.md) for the signer
 format, independent S3 targets, binary approval pins and proof identities.
 Update the generated deployment configuration together with the images;
@@ -204,17 +197,17 @@ instructions describe beta.5 to beta.5a only.
 
 ## Contracts images
 
-Use the matching `dogeos69/scroll-stack-contracts` rc.7 images for the three
+Use the matching `dogeos69/scroll-stack-contracts` rc.9 images for the three
 contracts operations:
 
 | Operation | Image tag |
 | --- | --- |
-| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.7` |
-| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.7` |
-| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.7` |
+| Generate L2 genesis and configuration with the CLI | `gen-configs-dogeos-v0.3.0-rc.9` |
+| Deploy contracts using `values/contracts-production.yaml` | `deploy-dogeos-v0.3.0-rc.9` |
+| Verify contracts with the CLI | `verify-dogeos-v0.3.0-rc.9` |
 
 The deployment example pins `image.tag`. The CLI selects the generation and
-verification images separately; use a CLI release configured for rc.7 or supply
+verification images separately; use a CLI release configured for rc.9 or supply
 the matching explicit `--image-tag` to `setup gen-l2-artifacts` and
 `setup verify-contracts`.
 
