@@ -1,11 +1,12 @@
 image:
   repository: dogeos69/scroll-stack-contracts
-  tag: deploy-dogeos-v0.3.0-rc.7
+  tag: deploy-dogeos-v0.3.0-rc.9
 
 configMaps:
   contracts-deployment-env:
     enabled: true
     data:
+      BATCH_SIZE: "10"
       L1_RPC_ENDPOINT: ""
       L2_RPC_ENDPOINT: "http://l2-rpc:8545"
       CHAIN_ID_L1: ""

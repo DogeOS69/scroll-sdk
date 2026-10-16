@@ -5,7 +5,7 @@ global:
 image:
   repository: dogeos69/eth-da-submitter
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.7
+  tag: v0.3.0-beta.8
 
 # Empty command/args explicitly retain the image ENTRYPOINT and CMD.
 command: []
@@ -87,6 +87,8 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__KMS_REGION: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__KMS_EXPECTED_ADDRESS: "<TODO>"
       # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__KMS_ENDPOINT_URL: "<TODO>" # Optional for LocalStack/custom KMS endpoints.
+      # Ethereum DA mainnet requires both depths to be 8. The spec workflow
+      # projects that fixed policy; direct Helm users must set both explicitly.
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMATION_DEPTH: "1"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__FINALIZATION_DEPTH: "1"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMER_POLL_INTERVAL_MS: "12000"
@@ -127,10 +129,8 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BATCH_WAIT: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_LIVENESS_DELAY: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__HIGH_BACKLOG_THRESHOLD: "12"
-      # Mainnet: 8; all other deployment environments: 10 (core PR #1466).
-      # The spec workflow derives this from metadata.environment; manual values
-      # deployments must select the appropriate value here.
-      DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS: "8"
+      # Ethereum DA mainnet requires 10; other DA networks default to 10.
+      DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS: "10"
       # DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BLOBS_PER_WINDOW: "<TODO>" # Optional per-window budget; unset by default.
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__BUDGET_WINDOW: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__ALLOW_LIVENESS_BUDGET_OVERRIDE: "true"

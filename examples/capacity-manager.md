@@ -143,14 +143,18 @@ chart refuses both at once. A #1591 coordinator rejects the shared token.
    and wait until its runs have stopped and been deleted.
 2. Create a fresh master. Never reuse the old shared token: every existing worker
    knows it. `scrollsdk setup proof-aws-init` adds a fresh `prover-worker-master`
-   property to the proof secret, and `--rotate-tokens` replaces it later.
-3. Re-render, and wait until the coordinator Secret has synchronized the new
-   master. The coordinator and the manager both read it from that Secret.
-4. Restart the coordinator, then restart the manager
+   property to the proof secret and preserves `proof-work-token`. Full rotation
+   with `--rotate-tokens` replaces both values.
+3. Re-render and apply the updated Secret mappings. Wait until all affected
+   ExternalSecrets and Kubernetes Secrets have synchronized the new values.
+   The coordinator and the manager read the master from the coordinator Secret.
+4. After full rotation, restart the Withdrawal Processor (WP) as well: its
+   proof-work token mount uses `subPath` and cannot refresh in place. Restart
+   the coordinator, then restart the manager
    (`kubectl rollout restart deployment/capacity-manager`). A later rotation
    often leaves the rendered Deployment unchanged, so `helm upgrade` alone does
    not restart it, and a manager still holding the old master mints credentials
-   the coordinator rejects. Confirm both restarted before you restore capacity.
+   the coordinator rejects. Confirm all affected services restarted before you restore capacity.
 5. Delete the old `cm_worker_*` dstack project secret, which held the shared token.
 
 Before chart publication, use the local chart explicitly:

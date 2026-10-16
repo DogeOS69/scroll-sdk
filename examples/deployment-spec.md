@@ -117,12 +117,19 @@ plaintext RPC entries, wait for ExternalSecret readiness, and restart the affect
 workloads as part of the endpoint change. A Helm upgrade alone may not restart a
 Pod when only an external secret's contents changed.
 
-The beta.6 eth-da-submitter still consumes `ethereumDa.confirmationDepth` and
-`finalizationDepth`. The example explicitly selects `1` and `64`, matching core's
-submitter `.env.example`. These depths use Ethereum tip height minus transaction
-inclusion height, controlling confirmation and later settlement finalization.
-They do not replace the DA readers' `safe`/`finalized` checks. The Rust fallback
-for omitted finalization depth is `1`; `64` is the explicit policy selected here.
+Ethereum DA mainnet requires `publish.maxPendingBlobTxs: 10`,
+`confirmationDepth: 8` and `finalizationDepth: 8`. The CLI fills omitted values
+and rejects conflicting explicit settings when `ethereumDa.chain` resolves to
+`mainnet`. Update existing mainnet inputs before regenerating; older CLI releases
+may still apply the previous policy. Sepolia/devnet retain their existing behavior;
+the testnet spec explicitly selects confirmation/finalization depths of `1/64`.
+For direct Helm installations, set the three corresponding
+`DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_PENDING_BLOB_TXS`,
+`DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMATION_DEPTH` and
+`DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__FINALIZATION_DEPTH` values to `"10"`, `"8"`,
+and `"8"`; the generic values template is not a network-aware validator.
+These depths use Ethereum tip height minus transaction inclusion height. They
+do not replace the DA readers' `safe`/`finalized` checks.
 
 Bridge fees match `config.toml.example`: 1 DOGE per deposit, 0.1 DOGE per
 withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoin's
@@ -131,9 +138,9 @@ withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoi
 and minimum withdrawal values already use L2 wei.
 
 Core service images, including the KMS-enabled withdrawal-processor, use
-`v0.3.0-beta.7`. See [the release pins and publication prerequisites](core-beta7-images.md).
+`v0.3.0-beta.8`. See [the release pins and publication prerequisites](core-beta8-images.md).
 That image supports KMS sequencing; its fee wallet still uses a local key.
-The contracts deployment example uses rc.7. Select the matching rc.7 genesis
+The contracts deployment example uses rc.9. Select the matching rc.9 genesis
 and verification images explicitly when using a CLI release whose defaults are
 older; see [Contracts images](README.md#contracts-images). Fresh-chain defaults
 are 30,000,000 gas, 2-second blocks and a 1,400 ms build window.
@@ -247,12 +254,12 @@ placeholders, not working identities or credentials.
 | Infrastructure, endpoints and domains | Fill the existing ALB/listener/target-group references and EKS kubeContext as described above. Select the existing cluster/namespace, PostgreSQL host/user and the matching Dogecoin RPC. Review the public execution/beacon URLs in the selected spec; use private `deployment.env` references for authenticated providers. Select Fee Oracle Ethereum sampling independently. Set `frontend.baseDomain` once. The proof URL derives from its `proofCoordinator` subdomain and dstack ingress defaults to `dstack.<baseDomain>`; explicit endpoint overrides remain supported. |
 | Environment file | Fill the referenced environment variables, `DOGECOIN_FEE_WALLET_KEY` and `VASTAI_API_KEY`; review the three Ethereum endpoint defaults in the spec. The KMS/SQLite example does not use `DOGECOIN_SEQUENCER_KEY`, `SEQUENCER_SIGNING_KEY` or `DSTACK_DATABASE_URL`. |
 | Owner, fee-vault recipient and deployment salt | Select the owner address, an independently controlled Dogecoin P2PKH fee-vault recipient, and a unique deployment salt. Apply creates the deployer account unless the spec explicitly imports one. |
-| Reth image tags | Replace all three `TODO_APPROVED_RETH_TAG` values with the reviewed compatible Reth release. |
+| Reth image tags | The examples select `dogeos69/rollup-node:v0.3.0-beta.2` for RPC, sequencer and bootnodes. Review compatibility with the selected chain configuration before deployment; keep all three roles on the same release. Reth and Core use independent release versions. |
 | Bridge public keys | Select the CubeSigner role ID (and key ID for a multi-key role); plan queries the TEE public key. Apply obtains the Bridge sequencer public key from KMS and derives the fee-wallet public key from its environment WIF. Supply three recovery public keys using [Prepare the Bridge keys](#prepare-the-bridge-keys). |
 | Bridge policy | Replace `timelock: 100` with a reviewed future Dogecoin block height below 500,000,000. Attestation and recovery each select 2-of-3; funding requires 6 confirmations. Review these policies and funding budgets. The initial sequencer amount remains exactly 42,069,000 satoshis. |
 | Ethereum anchor | Keep `ethereumAnchor.blockTag: finalized` for a fresh deployment. Apply resolves and saves the finalized block hash/height with transaction index 0 before DA starts. An explicit historical `blockNumber` and `transactionIndex` pair is available for reviewed overrides; do not combine it with `blockTag`. |
 | Attestation identities | Fill `attestationSigners` from approved Governance records: one `name`, `attestationPubkey` and `transportPubkey` per signer. Selected names must match `bridge.initialAttestationKeyset.signerIds`. No descriptor files or publicly reachable signer endpoints are required. |
-| Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.7` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
+| Proof software release | Keep `preparation.proofRelease.version: v0.3.0-beta.8` or select the reviewed compatible version. Plan retrieves the official release manifest and checksum, validates them and freezes image pins. No manifest file or SHA256 is an operator input. If the release is missing, plan reports a core release dependency before resource creation. |
 | Proof resources | The example selects `preparation.proofAws.action: create`; apply provisions/reconciles the proof bucket, IAM/IRSA roles and token Secret, then writes `proof-aws.json`. For existing resources use `action: reuse` with `existing-public-s3` or `existing-gateway`. Optional role names and Secret name select nonstandard resources; ARNs are queried. Reuse makes no AWS changes and verifies account, bucket region, EKS trust and current Secret metadata. Access/readback still needs validation during publication. |
 | dstack credentials | Set `VASTAI_API_KEY` in the private environment file. `vastaiApiKeyEnv` names that variable; no extra key file is needed. The alternative `vastaiApiKeyFile` remains supported; choose only one. Importing credentials does not rent GPUs. |
 | Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
@@ -682,7 +689,7 @@ selected KMS operations; do not put cloud credentials in the spec.
 ## Real proof generation and completion limits
 
 The operator selects `preparation.proofRelease.version`, for example
-`v0.3.0-beta.7`. Plan reads the official `DogeOS69/dogeos-core` release
+`v0.3.0-beta.8`. Plan reads the official `DogeOS69/dogeos-core` release
 `proof-release-<version>`, downloads `dogeos-proof-release-v1.json` and its
 published `.sha256`, verifies the checksum and schema, and caches the verified
 manifest by digest. The immutable plan records the manifest path, checksum and
@@ -690,13 +697,12 @@ compiler/Worker image digests; apply uses these pins without selecting a newer
 release. The checksum verifies the artifact against the publisher's release; it
 is not an independent publisher signature. No operator-generated hash is needed.
 
-**Release dependency:** the beta.7 image workflow includes the proof release pipeline.
-The example requires `proof-release-v0.3.0-beta.7` with its manifest and checksum;
-a Git tag or successful service-image build alone is insufficient. At this update
-(2026-10-15), the image workflow is still running and that proof release is not yet
-available. Plan fails clearly until the required assets are published; do not
-substitute the beta.6 proofexp release or invent a checksum. See
-[beta.7 image update](core-beta7-images.md) for the validation boundary.
+**Release dependency:** `proof-release-v0.3.0-beta.8` and its manifest/checksum
+were published on 2026-10-16. The beta.8 image and proof-release workflow completed
+successfully. Plan still verifies the published checksum and freezes the matching
+image digests; a service tag alone does not select proof materials. See the
+[beta.8 image update](core-beta8-images.md) for the release pins and the separate
+per-worker credential integration required before enabling proof workers.
 
 For an offline/private release handoff only, replace `version` with
 `manifest: /private/approved/dogeos-proof-release-v1.json` and `sha256` from the

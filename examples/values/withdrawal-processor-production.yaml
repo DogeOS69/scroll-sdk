@@ -17,7 +17,7 @@ global:
 image:
   repository: dogeos69/withdrawal-processor
   pullPolicy: IfNotPresent
-  tag: v0.3.0-beta.7
+  tag: v0.3.0-beta.8
 
 # The image entrypoint is retained; args select the checked-in native config.
 command: []

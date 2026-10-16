@@ -10,7 +10,7 @@ version: "1.0"
 metadata:
   name: dogeos-mainnet
   environment: mainnet
-  description: "beta.7 / rc.7 preparation with production Bridge initialization"
+  description: "beta.8 / rc.9 preparation with production Bridge initialization"
 
 # Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
 # Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
@@ -149,9 +149,9 @@ dogecoin:
   # funding; do not transcribe a previous deployment's heights here.
 
 ethereumDa:
-  # Pending blob transactions default to 8 for Ethereum DA mainnet, otherwise 10.
-  # The DA chain below selects the default, not metadata.environment.
-  # Optional override: publish: {maxPendingBlobTxs: 8}
+  # Ethereum DA mainnet policy is fixed; conflicting explicit values are rejected.
+  publish:
+    maxPendingBlobTxs: 10
   chain: mainnet
   chainId: 1
   # Public, credential-free defaults. For authenticated providers, use
@@ -161,8 +161,8 @@ ethereumDa:
   beaconRpcUrl: https://ethereum-beacon-api.publicnode.com
   # beta.6 eth-da-submitter transaction lifecycle depths (tip - inclusion height).
   # These do not replace Ethereum safe/finalized block-tag checks.
-  confirmationDepth: 1
-  finalizationDepth: 64
+  confirmationDepth: 8
+  finalizationDepth: 8
   # Existing DA blob bucket. This is NOT the proof artifact bucket below.
   blobArchive:
     s3:
@@ -282,18 +282,18 @@ genesis:
 
 images:
   services:
-    # Reth is released separately. Select a reviewed compatible release;
-    # do not assume that the core beta.6 tag is also a Reth image tag.
-    l2Rpc: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
-    l2Sequencer: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
-    l2Bootnode: {repository: dogeos69/rollup-node, tag: TODO_APPROVED_RETH_TAG}
-    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.7}
-    l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.7}
-    tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.7}
-    proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.7}
-    ethDaSubmitter: {repository: dogeos69/eth-da-submitter, tag: v0.3.0-beta.7}
-    feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.7}
-    cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.7}
+    # Reth is released separately from Core; keep all three roles on the
+    # same compatible rollup-node release.
+    l2Rpc: {repository: dogeos69/rollup-node, tag: v0.3.0-beta.2}
+    l2Sequencer: {repository: dogeos69/rollup-node, tag: v0.3.0-beta.2}
+    l2Bootnode: {repository: dogeos69/rollup-node, tag: v0.3.0-beta.2}
+    withdrawalProcessor: {repository: dogeos69/withdrawal-processor, tag: v0.3.0-beta.8}
+    l1Interface: {repository: dogeos69/l1-interface, tag: v0.3.0-beta.8}
+    tsoService: {repository: dogeos69/tso-service, tag: v0.3.0-beta.8}
+    proofCoordinator: {repository: dogeos69/proof-coordinator, tag: v0.3.0-beta.8}
+    ethDaSubmitter: {repository: dogeos69/eth-da-submitter, tag: v0.3.0-beta.8}
+    feeOracle: {repository: dogeos69/fee-oracle, tag: v0.3.0-beta.8}
+    cubesignerSigner: {repository: dogeos69/cubesigner-signer, tag: v0.3.0-beta.8}
 
 # Real proof materials are imported from release/Worker receipts after Bridge
 # context exists. Their hashes and public identities are tool-produced, never invented.
@@ -364,7 +364,7 @@ preparation:
   # Put external inputs in its sibling 'inputs' directory or use absolute paths.
   bridge:
     mode: production
-    image: dogeos69/bridge-genesis-tools@sha256:d165e828ae53f9a4af5bc60d7ed9244176b3db2307f567eedb4d7f3c01db6339
+    image: dogeos69/bridge-genesis-tools@sha256:0d2d28be08cd44505a07fa822aa3f73ee00bde1fdac363ffc8891ec4a0160da8
     # Apply creates the funding input at the default path when payments are needed.
     production:
       # Apply creates/reuses the derived KMS alias and pins its public key.
@@ -372,7 +372,7 @@ preparation:
       sequencerKms: {action: create}
       # Existing key: sequencerKms: {action: reuse, keyId: alias/EXISTING_KEY}
       # The workload role defaults to the proofAws withdrawal role.
-      # beta.7 supports KMS for the sequencer only; fee wallet remains local.
+      # beta.8 supports KMS for the sequencer only; fee wallet remains local.
       # Set DOGECOIN_FEE_WALLET_KEY in private deployment.env only.
       # Apply derives and pins the fee-wallet public key and funding address.
       recoveryPublicKeys:
@@ -390,7 +390,7 @@ preparation:
   proofRelease:
     # CLI retrieves the official manifest/checksum and freezes immutable image pins.
     # Requires the core release owner to publish this version's proof release.
-    version: v0.3.0-beta.7
+    version: v0.3.0-beta.8
   proofMaterials:
     mode: real
   # Explicitly request publication using the same pinned release manifest.
