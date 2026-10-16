@@ -158,11 +158,15 @@ reth:
     extra: {}
 
   # Opt-in external P2P for a designated non-sequencer node. When enabled, the
-  # chart renders <fullname>-p2p: an internet-facing AWS NLB (IP targets) that
-  # forwards TCP ports.p2p to one pod of this release, <fullname>-<ordinal>.
+  # chart renders <fullname>-p2p for one pod, <fullname>-<ordinal>. In service
+  # mode it creates an internet-facing NLB; existing mode binds an external TG.
   # See the README section "External P2P (opt-in)".
   p2pExternal:
     enabled: false
+    # service: Controller owns the NLB; existing: bind an infrastructure-owned NLB.
+    mode: service
+    existingNlb: {}
+    # existingNlb fields: loadBalancerARN, listenerARN, targetGroupARN, securityGroupIds.
     ordinal: 0
     # Allowed peer CIDRs, enforced by the NLB security group. Required unless
     # allowOpenPeering is true.
@@ -178,3 +182,7 @@ reth:
 ingress: {}
 serviceMonitor: {}
 externalSecrets: {}
+
+# Existing ALB target groups. Installed and removed with this application.
+# See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.
+targetGroupBindings: {}

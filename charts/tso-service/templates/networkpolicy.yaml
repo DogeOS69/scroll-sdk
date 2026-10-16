@@ -19,8 +19,8 @@ only the Ingress paths limit public callers to /health and signed /signer/*.
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if and .Values.ingress.main.enabled (empty $from.edge) }}
-{{- fail "networkPolicy.allowFrom.edge must list ALB subnet CIDRs when TSO ingress is enabled" }}
+{{- if and (or .Values.ingress.main.enabled (not (empty .Values.targetGroupBindings))) (empty $from.edge) }}
+{{- fail "networkPolicy.allowFrom.edge must list ALB subnet CIDRs when TSO ingress or an existing ALB binding is enabled" }}
 {{- end }}
 
 {{- if empty $from.withdrawalProcessor }}

@@ -262,3 +262,6 @@ externalSecrets:
           key: dogeos/proof-coordinator-rpc-env
           property: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
         secretKey: DOGEOS_PROOF_COORDINATOR_MATERIALIZER__SCROLL_BATCH__SUBPROCESS__ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL
+
+# Optional bindings owned by this application Helm release.
+targetGroupBindings: {}

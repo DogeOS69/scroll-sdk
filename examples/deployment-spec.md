@@ -1,5 +1,9 @@
 # Prepare from a complete DeploymentSpec
 
+Supported public applications use [existing ALB references](existing-alb.md) on AWS. Add
+`infrastructure.aws.alb` for exposed endpoints before final chart preparation;
+application Helm releases must not own the ALB lifecycle.
+
 Choose [deployment-spec.testnet.example.yaml](deployment-spec.testnet.example.yaml) or
 [deployment-spec.mainnet.example.yaml](deployment-spec.mainnet.example.yaml), together with
 [deployment.env.example](deployment.env.example). The spec selects deployment

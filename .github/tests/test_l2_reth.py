@@ -70,6 +70,65 @@ class L2RethP2PTests(unittest.TestCase):
         annotations = service["metadata"].get("annotations") or {}
         self.assertFalse([key for key in annotations if key.startswith(AWS_ANNOTATION)])
 
+    def test_existing_nlb_owns_only_internal_service_and_binding(self):
+        docs = self.render(CHART / "ci/existing-nlb-values.yaml")
+        services = self.services(docs)
+        for service in services.values():
+            self.assert_internal(service)
+        p2p = services["review-l2-reth-p2p"]
+        self.assertEqual(p2p["spec"]["ports"], P2P_PORTS)
+        self.assertEqual(p2p["spec"]["selector"][POD_NAME], "review-l2-reth-0")
+        bindings = [d for d in docs if d["kind"] == "TargetGroupBinding"]
+        self.assertEqual(len(bindings), 1)
+        binding = bindings[0]
+        self.assertEqual(binding["spec"]["serviceRef"], {"name": p2p["metadata"]["name"], "port": 30303})
+        self.assertEqual(binding["spec"]["targetType"], "ip")
+        self.assertEqual(binding["metadata"]["labels"]["app.kubernetes.io/instance"], "review")
+        self.assertNotIn("ownerReferences", binding["metadata"])
+        self.assertNotIn("annotations", binding["metadata"])
+        self.assertEqual(binding["spec"]["networking"]["ingress"], [{
+            "from": [{"securityGroup": {"groupID": "sg-00000000000000000"}}],
+            "ports": [{"protocol": "TCP", "port": 30303}],
+        }])
+        self.assertFalse(any(d["kind"] == "Ingress" for d in docs))
+
+    def test_existing_nlb_rejects_unsafe_or_ambiguous_bindings(self):
+        fixture = CHART / "ci/existing-nlb-values.yaml"
+        cases = [
+            ({"mode": "typo"}, "mode must be"),
+            ({"mode": "service"}, "requires mode existing"),
+            ({"sourceRanges": []}, "nonempty sourceRanges"),
+            ({"allowOpenPeering": True}, "allowOpenPeering false"),
+            ({"sourceRanges": ["0.0.0.0/0"]}, "IPv4 CIDRs"),
+            ({"sourceRanges": ["::/0"]}, "IPv4 CIDRs"),
+            ({"sourceRanges": ["999.0.0.1/32"]}, "valid IPv4"),
+            ({"sourceRanges": ["010.0.0.1/32"]}, "valid IPv4"),
+            ({"sourceRanges": ["203.0.113.10"]}, "IPv4 CIDRs"),
+            ({"existingNlb": {"loadBalancerARN": "REPLACE_WITH_ARN"}}, "valid loadBalancerARN"),
+            ({"existingNlb": {"listenerARN": "arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/net/other/0000000000000001/0000000000000002"}}, "must belong"),
+            ({"existingNlb": {"targetGroupARN": "arn:aws:elasticloadbalancing:us-west-2:000000000000:targetgroup/bootnode-a/0000000000000003"}}, "same AWS account and region"),
+            ({"existingNlb": {"securityGroupIds": []}}, "requires securityGroupIds"),
+            ({"existingNlb": {"securityGroupIds": ["sg-wrong"]}}, "valid securityGroupIds"),
+            ({"annotations": {AWS_ANNOTATION + "name": "new-lb"}}, "does not accept Service annotations"),
+        ]
+        for overlay, message in cases:
+            with self.subTest(overlay=overlay):
+                self.assert_fails(message, fixture, values=p2p_external(**overlay))
+        self.assert_fails("inherited AWS LoadBalancer annotations", fixture,
+                          values={"global": {"annotations": {AWS_ANNOTATION + "type": "external"}}})
+        self.assert_fails("requires role bootnode", fixture, values={"role": "rpc"})
+        for port in [30304, 30303.5, "30303"]:
+            self.assert_fails("TCP P2P port 30303", fixture, values={"reth": {"ports": {"p2p": port}}})
+
+    def test_existing_nlb_handles_release_names_and_disabled_binding(self):
+        fixture = CHART / "ci/existing-nlb-values.yaml"
+        docs = self.render(fixture, values={"global": {"fullnameOverride": "partner-bootnode"}})
+        binding = next(d for d in docs if d["kind"] == "TargetGroupBinding")
+        self.assertIn(binding["spec"]["serviceRef"]["name"], self.services(docs))
+        docs = self.render(fixture, values=p2p_external(enabled=False))
+        self.assertFalse(any(d["kind"] == "TargetGroupBinding" for d in docs))
+        self.assertEqual(len(self.services(docs)), 1)
+
     def test_disabled_by_default(self):
         for role in ["rpc", "bootnode"]:
             with self.subTest(role=role):
@@ -81,6 +140,18 @@ class L2RethP2PTests(unittest.TestCase):
                     {port["name"]: port["port"] for port in main["spec"]["ports"]},
                     {"http": 8545, "ws": 8546, "metrics": 6060},
                 )
+
+    def test_http_rpc_is_required_by_rollup_node_even_with_ws_enabled(self):
+        for role in ["bootnode", "rpc", "sequencer"]:
+            for ws in [False, True]:
+                with self.subTest(role=role, ws=ws):
+                    self.assert_fails(
+                        "rollup-node requires its local HTTP RPC",
+                        values={"role": role, "reth": {
+                            "http": {"enabled": False}, "ws": {"enabled": ws},
+                            "signer": {"type": "awsKms", "awsKmsKeyId": "test-placeholder"},
+                        }},
+                    )
 
     def test_bootnode_example_keeps_p2p_internal(self):
         services = self.services(self.render(BOOTNODE_EXAMPLE))
