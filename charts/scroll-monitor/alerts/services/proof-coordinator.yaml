@@ -162,3 +162,26 @@ groups:
     annotations:
       summary: Proof coordinator found conflicting bytes for an eager locator.
       description: The receipt remains authoritative. Investigate producer consistency and competing locator writes.
+  - alert: ProverWorkerRepeatedFailures
+    # One series per authenticated worker name; names exist only when the operator mints them.
+    # Core creates the counter on the first failure, so its first sample need not be zero.
+    # Include that initial count only while there is no series history before this window.
+    # Check a preceding window, not one offset sample, to tolerate short scrape gaps.
+    expr: |
+      sum by (namespace, job, instance, worker_id) (
+        increase(proof_coordinator_worker_failed_results_total[15m])
+      ) >= 5
+      or
+      sum by (namespace, job, instance, worker_id) (
+        proof_coordinator_worker_failed_results_total
+        unless max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+      ) >= 5
+    labels:
+      severity: warning
+      service: proof-coordinator
+    annotations:
+      summary: Prover worker {{ $labels.worker_id }} failed 5 or more proof results in 15 minutes.
+      description: A work item fails only after three distinct workers fail it, so nothing stops this worker automatically.
+        If many workers fail together it is a shared outage, not this worker. Otherwise stop the worker, and rotate
+        the coordinator master and re-mint the fleet if its credential may have leaked.
+      runbook_url: https://github.com/DogeOS69/dogeos-core/blob/1515af039cab116d1c4d89246c03b13c545e2a30/docs/engineering/aws-gpu-dstack.md#L618-L653
