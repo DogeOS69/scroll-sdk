@@ -14,9 +14,9 @@ metadata:
 
 # Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
 # Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
-# After #175 merges, update only to a reviewed SDK revision containing it.
+# Includes Core beta.8 image defaults and per-worker credential charts (#180).
 templates:
-  sdkRevision: 58acf6b9b64adf59f2e0d4a095010958d4e16472
+  sdkRevision: c2eb8bab629f16bb8ea982223351aaa08d52ed81
 
 # Reference existing infrastructure; this spec does not create a cluster.
 # Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
