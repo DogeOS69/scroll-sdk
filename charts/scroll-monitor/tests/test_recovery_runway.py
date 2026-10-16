@@ -83,10 +83,15 @@ class RecoveryRunwayTests(unittest.TestCase):
         check('exact expiry', 0, expected=('RecoveryRunwayCritical',))
         check('expired retired funded script', -12, expected=('RecoveryRunwayCritical',))
         check('nothing funded is quiet', 'NaN')
+        # The success timestamp freezes at the last good observation.
         check('failed observations keep the last good hazard', -12,
-              valid=f'1x{EVAL - 2} 0 0', expected=('RecoveryRunwayCritical',))
-        check('failing monitor is stale before its timestamp ages out', -12,
-              valid=f'1x13 0x{EVAL - 13}', timestamp=f'0+60x13 780x{EVAL - 13}',
+              valid=f'1x{EVAL - 2} 0 0', timestamp=f'0+60x{EVAL - 2} 1380 1380',
+              expected=('RecoveryRunwayCritical',))
+        check('hazard stays up until the stale alert takes over', -12,
+              valid=f'1x11 0x{EVAL - 11}', timestamp=f'0+60x11 660x{EVAL - 11}',
+              expected=('RecoveryRunwayCritical', 'RecoveryRunwayObservationStale'))
+        check('hazard older than 15 minutes hands over to stale', -12,
+              valid=f'1x9 0x{EVAL - 9}', timestamp=f'0+60x9 540x{EVAL - 9}',
               expected=('RecoveryRunwayObservationStale',))
         check('stale success timestamp', 1, timestamp=f'0x{EVAL}',
               expected=('RecoveryRunwayObservationStale',))

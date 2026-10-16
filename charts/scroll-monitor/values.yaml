@@ -400,7 +400,7 @@ serviceAlerts:
 recoveryRunwayAlerts:
   warningBlocks: 129600
   criticalBlocks: 86400
-  runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/develop/docs/runbooks/recovery-runway-monitor.md
+  runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/v0.3.0-develop/docs/runbooks/recovery-runway-monitor.md
 
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
