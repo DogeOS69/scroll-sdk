@@ -823,7 +823,8 @@ near its recovery timelock; it does not cover dust or unmarked receipts.
 with the portal's 90/60 nominal days at 1,440 blocks/day; they are operator
 policy, not protocol constants. Warning and critical fire only while the last
 successful observation is under 2 minutes old. `RecoveryRunwayObservationStale`
-fires when observations keep failing or the last success is over 10 minutes old.
+fires when observations keep failing, the last success is over 10 minutes old,
+or a WP target exports protocol metrics but no runway metrics.
 A target missing from Prometheus entirely is covered by the existing target alerts.
 
 Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and

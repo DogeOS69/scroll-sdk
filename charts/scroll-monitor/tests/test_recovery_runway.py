@@ -57,11 +57,18 @@ class RecoveryRunwayTests(unittest.TestCase):
         cases = []
         fresh = f'0+60x{EVAL}'
 
-        def check(name, runway, valid=f'1x{EVAL}', timestamp=fresh, expected=()):
+        def check(name, runway, valid=f'1x{EVAL}', timestamp=fresh, expected=(), runway_metrics=True):
             minimum = ' '.join(['NaN'] * (EVAL + 1)) if runway == 'NaN' else f'{runway}x{EVAL}'
             series = [{'series': PREFIX + k + labels(TARGET), 'values': v}
                       for k, v in (('minimum_blocks', minimum), ('observation_valid', valid),
-                                   ('timestamp_seconds', timestamp))]
+                                   ('timestamp_seconds', timestamp)) if runway_metrics]
+            # Every WP target exports protocol metrics; a healthy replica stays quiet.
+            healthy = {**TARGET, 'instance': 'wp-healthy'}
+            series += [{'series': 'withdrawal_processor_protocol_snapshot_valid' + labels({**t, 'source': 'jobs'}),
+                        'values': f'1x{EVAL}'} for t in (TARGET, healthy)]
+            series += [{'series': PREFIX + k + labels(healthy), 'values': v}
+                       for k, v in (('minimum_blocks', 'NaN ' * EVAL + 'NaN'),
+                                    ('observation_valid', f'1x{EVAL}'), ('timestamp_seconds', fresh))]
             cases.append({'name': name, 'interval': '1m', 'input_series': series,
                           'alert_rule_test': [{
                               'eval_time': f'{EVAL}m', 'alertname': alert,
@@ -82,6 +89,8 @@ class RecoveryRunwayTests(unittest.TestCase):
               valid=f'1x13 0x{EVAL - 13}', timestamp=f'0+60x13 780x{EVAL - 13}',
               expected=('RecoveryRunwayObservationStale',))
         check('stale success timestamp', 1, timestamp=f'0x{EVAL}',
+              expected=('RecoveryRunwayObservationStale',))
+        check('runway metrics missing from a scraped WP', 1, runway_metrics=False,
               expected=('RecoveryRunwayObservationStale',))
         with tempfile.TemporaryDirectory(prefix='runway-promql-') as directory:
             root = Path(directory)

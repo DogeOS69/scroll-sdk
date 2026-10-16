@@ -24,12 +24,13 @@ groups:
       description: 'Minimum runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Escalate through existing on-call routing; zero or negative means the CLTV height has been reached. Rotation alone does not refresh funds left on old scripts. No spending or rotation is automated.'
       runbook_url: __RUNWAY_RUNBOOK__
   - alert: RecoveryRunwayObservationStale
-    expr: withdrawal_processor_recovery_runway_observation_valid == 0 or time() - withdrawal_processor_recovery_runway_timestamp_seconds > 600
+    # A WP target that exports protocol metrics but no runway metrics is broken too.
+    expr: withdrawal_processor_recovery_runway_observation_valid == 0 or time() - withdrawal_processor_recovery_runway_timestamp_seconds > 600 or (max by (namespace,job,instance) (withdrawal_processor_protocol_snapshot_valid) unless on(namespace,job,instance) withdrawal_processor_recovery_runway_observation_valid)
     for: 10m
     labels:
       severity: warning
       service: withdrawal-processor
     annotations:
       summary: Recovery runway monitor is failing or stale.
-      description: Runway observations are failing or the last success is over 10 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
+      description: Runway observations are failing, missing, or the last success is over 10 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
       runbook_url: __RUNWAY_RUNBOOK__
