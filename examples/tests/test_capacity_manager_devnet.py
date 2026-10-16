@@ -81,7 +81,9 @@ class DevNetCapacityManagerTests(unittest.TestCase):
             self.assertEqual(args[args.index(key) + 1], expected)
         self.assertIn('--scale-down-on-shutdown', args)
         self.assertIn('DOGEOS_PROVER_WORKER_READY_FILE=/dogeos/artifacts/prover-worker-ready-v1.json', args)
-        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_active_worker_token_1013 }}', args)
+        self.assertEqual(args[args.index('--worker-credential-master-file') + 1],
+                         '/run/secrets/worker-credential-master/master')
+        self.assertFalse(any(arg.startswith('DOGEOS_PROVER_WORKER_TOKEN=') for arg in args))
 
     def test_verified_worker_contract_is_not_rewritten_by_rendering(self):
         command = self.values['manager']['workerCommand']

@@ -88,8 +88,9 @@ class CapacityManagerAwsTests(unittest.TestCase):
     def test_credentials_remain_references_without_provider_or_api_credentials(self):
         self.assertEqual(self.values['wpAuth'], self.rtx['wpAuth'])
         self.assertEqual(self.values['dstackAuth'], self.rtx['dstackAuth'])
-        self.assertIn('DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.cm_active_worker_token_1013 }}',
-                      self.args)
+        self.assertEqual(self.args[self.args.index('--worker-credential-master-file') + 1],
+                         '/run/secrets/worker-credential-master/master')
+        self.assertFalse(any(arg.startswith('DOGEOS_PROVER_WORKER_TOKEN=') for arg in self.args))
         env = {v['name']: v for v in self.container['env']}
         self.assertEqual(set(env), {'RUST_LOG', 'DOGEOS_PROOF_WORK_BEARER_TOKEN'})
         self.assertEqual(env['DOGEOS_PROOF_WORK_BEARER_TOKEN']['valueFrom']['secretKeyRef'],

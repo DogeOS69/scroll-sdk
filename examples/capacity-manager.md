@@ -99,11 +99,10 @@ period is separate from Core's worker drain/scale-down time and is not a maximum
 worker lifetime. A warm worker (`minWorkers: 1`) remains busy running the worker
 process even when no proof is being processed.
 
-Finally the preflight synchronizes the existing worker token into the dstack
-project's Secret store. The proof chart's ExternalSecret must have synchronized
-the token first. A failed preflight stops before Helm; fix the cause and retry.
-The controller must be running because dstack 0.21.5 creates fleets and project
-Secrets through its API, not through server startup YAML. This preparation
+The preflight no longer copies any worker secret into dstack (see "Worker
+credentials" below). A failed preflight stops before Helm; fix the cause and retry.
+The controller must be running because dstack 0.21.5 creates fleets through its
+API, not through server startup YAML. This preparation
 starts no runs. The subsequent Helm installation starts the manager and can
 allocate paid workers. Empty fleet creation does not establish GPU availability,
 price or a successful proof; those are live acceptance checks.
@@ -113,6 +112,39 @@ it does not create another copy of the admin token. WP's existing `proof-work-to
 is also mounted by reference. `gen-secrets` and `push-secrets` retain their existing
 credential generation/publication responsibilities; neither requires a running
 dstack server. No token is written to values, stdout, or a ConfigMap.
+
+### Worker credentials
+
+Since dogeos-core #1591 the Proof Coordinator authenticates each worker with its
+own credential, `<name>.<hex HMAC-SHA256(master, "dogeos-prover-worker-v1" ||
+0x00 || name)>`, derived from one coordinator-only **master**
+(`prover_api.worker_auth_token_file`). A worker's id must equal `name`, and the
+old shared raw token is rejected. With dogeos-core #1598 the manager mounts
+that master (`workerCredentialMaster`, by default the coordinator Secret's
+`prover-worker-token` key) and passes it as `--worker-credential-master-file`.
+For every run `{prefix}-{slot}` it mints that name's credential into the run's
+`DOGEOS_PROVER_WORKER_TOKEN`. The master is never in a run spec, worker env or
+log, and no dstack project secret is used. Core's rules are in
+`docs/engineering/aws-gpu-dstack.md` ("Worker credentials") and
+`crates/proof_coordinator/README.md` in dogeos-core.
+
+**Never copy the master to a worker.** It can mint a credential for any worker
+name. Run the manager only next to the coordinator, never on a GPU host.
+
+This chart needs a capacity-manager image that includes dogeos-core #1598.
+Older images do not accept `--worker-credential-master-file`.
+
+**Rotation**, from a shared token or for a later rotation:
+
+1. With the old manager configuration still running, set desired capacity to zero
+   and wait until its runs have stopped and been deleted.
+2. Create a fresh master. Never reuse the old shared token: every existing worker
+   knows it. `scrollsdk setup proof-aws-init` adds a fresh `prover-worker-master`
+   property to the proof secret, and `--rotate-tokens` replaces it later.
+3. Re-render. The coordinator and the manager both read the new master from the
+   coordinator Secret.
+4. Restart the coordinator so it loads the new master, then install the manager.
+5. Delete the old `cm_worker_*` dstack project secret, which held the shared token.
 
 Before chart publication, use the local chart explicitly:
 `make install-capacity-manager CAPACITY_MANAGER_CHART=../scroll-sdk/charts/capacity-manager`.

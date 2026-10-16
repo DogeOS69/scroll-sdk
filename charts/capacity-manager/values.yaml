@@ -14,7 +14,6 @@ manager:
   workerIdPrefix: ""
   workerImage: ""
   workerCommand: ""
-  workerTokenSecret: ""
   # Worker startup evidence; this is not a manager Pod readiness probe.
   workerReadinessFile: ""
   proofWorkBaseUrl: http://withdrawal-processor:9300
@@ -37,6 +36,12 @@ manager:
 wpAuth:
   existingSecret: proof-coordinator-secrets
   key: proof-work-token
+# Coordinator-only worker-credential master: the coordinator Secret key behind
+# its prover_api.worker_auth_token_file. The manager mints per-run worker
+# credentials from it. Never point a Worker at this key.
+workerCredentialMaster:
+  existingSecret: proof-coordinator-secrets
+  key: prover-worker-token
 dstackAuth:
   existingSecret: capacity-manager-dstack-auth
   key: token

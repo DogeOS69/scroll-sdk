@@ -93,9 +93,10 @@ Otherwise the old workers remain untouched and reserve the allocation slot.
 Reuse the existing `devnet-capacity-manager-active` release, worker prefix and
 unannotated ServiceAccount, external `devnet-capacity-manager-active-state` PVC,
 WP Secret `devnet-capacity-manager-active-wp-token`/`proof-work-token` and dstack
-Secret `dstack-controller-auth`/`admin-token` in `dstack-system`. Prepare and
-verify project Secret `cm_active_worker_token_1013` in `devnet-provers-aws`;
-same-named secrets in another project do not supply worker auth here. Never put
+Secret `dstack-controller-auth`/`admin-token` and the worker-credential master
+Secret `devnet-capacity-manager-active-worker-master`/`master` in
+`dstack-system`. The manager mints each run's credential from that master
+(dogeos-core #1598); no dstack project Secret supplies worker auth. Never put
 credential values in this profile or overwrite unrelated auth.
 
 Follow the single-owner handoff in `capacity-manager-devnet-aws.md`. Drain using

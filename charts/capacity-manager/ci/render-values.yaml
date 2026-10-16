@@ -7,7 +7,6 @@ manager:
   workerIdPrefix: render-only
   workerImage: example.invalid/worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
   workerCommand: exit 1
-  workerTokenSecret: nonfunctional_test_reference
   policy: "[global]\nmax_workers = 1\n"
   dstack:
     project: nonfunctional-test

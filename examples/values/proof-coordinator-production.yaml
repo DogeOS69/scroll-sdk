@@ -237,7 +237,7 @@ externalSecrets:
         secretKey: proof-work-token
       - remoteRef:
           key: scroll/proof-coordinator-secrets
-          property: prover-worker-token
+          property: prover-worker-master
         secretKey: prover-worker-token
 
   proof-coordinator-rpc-env:

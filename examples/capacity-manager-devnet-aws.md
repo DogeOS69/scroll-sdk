@@ -62,14 +62,14 @@ The profile requires these external resources in `dstack-system`:
 - unannotated ServiceAccount `devnet-capacity-manager-active`, token automount off;
 - retained PVC `devnet-capacity-manager-active-state`;
 - Secret `devnet-capacity-manager-active-wp-token`, key `proof-work-token`;
-- Secret `dstack-controller-auth`, key `admin-token`.
+- Secret `dstack-controller-auth`, key `admin-token`;
+- Secret `devnet-capacity-manager-active-worker-master`, key `master`: the
+  coordinator-only worker-credential master. See
+  [capacity-manager.md](capacity-manager.md#worker-credentials).
 
-Prepare dstack project Secret `cm_active_worker_token_1013` **inside
-`devnet-provers-aws`**, containing the approved worker bearer value. A same-named
-Secret in `main` is not available in the AWS project. Check an existing target
-Secret for equality before reuse; never overwrite unrelated auth or put a real
-token in values. The remote worker token in this profile is only a project
-Secret reference. The manager image is pinned by digest in Docker Hub.
+The manager mints each run's credential from the master (dogeos-core #1598), so
+no dstack project Secret is needed in `devnet-provers-aws`. Never put a real
+credential in values. The manager image is pinned by digest in Docker Hub.
 
 ## Provider handoff without a second allocator
 

@@ -58,8 +58,11 @@ spec:
             - {{ .Values.manager.workerImage | quote }}
             - --dstack-worker-command
             - {{ required "Generated workerCommand is required" .Values.manager.workerCommand | quote }}
-            - --dstack-worker-env
-            - {{ printf "DOGEOS_PROVER_WORKER_TOKEN=${{ secrets.%s }}" (required "workerTokenSecret is required" .Values.manager.workerTokenSecret) | quote }}
+            # Coordinator-only master (dogeos-core #1591/#1598). The manager mints
+            # each run's own credential into DOGEOS_PROVER_WORKER_TOKEN and
+            # rejects an operator-supplied one; the master never reaches a run.
+            - --worker-credential-master-file
+            - /run/secrets/worker-credential-master/master
             - --dstack-worker-env
             - NVIDIA_DRIVER_CAPABILITIES=compute,utility
             {{- if .Values.manager.workerReadinessFile }}
@@ -102,6 +105,7 @@ spec:
             - {name: policy, mountPath: /etc/capacity-manager, readOnly: true}
             - {name: state, mountPath: /var/lib/capacity-manager}
             - {name: dstack-token, mountPath: /run/secrets/dstack, readOnly: true}
+            - {name: worker-credential-master, mountPath: /run/secrets/worker-credential-master, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
         - name: policy
@@ -115,6 +119,12 @@ spec:
             defaultMode: 0440
             items:
               - {key: {{ .Values.dstackAuth.key }}, path: token}
+        - name: worker-credential-master
+          secret:
+            secretName: {{ required "workerCredentialMaster.existingSecret is required" .Values.workerCredentialMaster.existingSecret }}
+            defaultMode: 0440
+            items:
+              - {key: {{ required "workerCredentialMaster.key is required" .Values.workerCredentialMaster.key }}, path: master}
         - name: tmp
           emptyDir: {}
       {{- with .Values.nodeSelector }}
