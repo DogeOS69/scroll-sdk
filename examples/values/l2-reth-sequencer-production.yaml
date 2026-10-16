@@ -53,19 +53,19 @@ reth:
     # DogeOS/Chikyu configs). This is not a network-wide block validity rule.
     - "--sequencer.max-l1-messages"
     - "10"
-    # Explicit code-witness limits, matching the node defaults. These flags are
-    # optional; omitting them enables the same defaults below.
+    # Optional code-witness overrides; omission enables the defaults below.
+    # The chart does not inject these flags; uncomment to override node defaults.
     # All three values must be nonzero. Use a rollup-node image supporting them.
     # Distinct contract bytecode per block and per transaction admission
     # simulation: 33554432 bytes (32 MiB), not the total witness size.
-    - "--scroll.max-code-witness-bytes"
-    - "33554432"
+    # - "--scroll.max-code-witness-bytes"
+    # - "33554432"
     # EVM instruction steps per transaction admission simulation.
-    - "--txpool.code-witness-max-steps"
-    - "1000000"
+    # - "--txpool.code-witness-max-steps"
+    # - "1000000"
     # Queued + running transaction admission validations, combined.
-    - "--txpool.code-witness-max-inflight"
-    - "64"
+    # - "--txpool.code-witness-max-inflight"
+    # - "64"
 
   ports:
     http: 8545

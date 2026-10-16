@@ -40,9 +40,9 @@ when selecting the rollup-node image and runtime policy:
 | Argument | Example / default | Scope |
 | --- | --- | --- |
 | `--sequencer.max-l1-messages` | Explicitly set to `10` | Maximum L1 messages included per L2 block; local sequencer policy |
-| `--scroll.max-code-witness-bytes` | Explicitly set to the default `33554432` (32 MiB) | Distinct contract bytecode per block and per transaction admission simulation |
-| `--txpool.code-witness-max-steps` | Explicitly set to the default `1000000` | EVM instruction steps per transaction admission simulation |
-| `--txpool.code-witness-max-inflight` | Explicitly set to the default `64` | Combined queued and running admission validations |
+| `--scroll.max-code-witness-bytes` | Omitted; defaults to `33554432` (32 MiB) | Distinct contract bytecode per block and per transaction admission simulation |
+| `--txpool.code-witness-max-steps` | Omitted; defaults to `1000000` | EVM instruction steps per transaction admission simulation |
+| `--txpool.code-witness-max-inflight` | Omitted; defaults to `64` | Combined queued and running admission validations |
 
 Set the intended L1-message cap explicitly. If omitted, the sequencer uses
 `numL1MessagesPerBlock` from the chain config, which is `10` in the bundled
@@ -51,9 +51,13 @@ block validity rule.
 
 The three code-witness arguments are optional; omitting them enables the defaults
 above. All three must be nonzero when supplied. The 32 MiB limit covers bytecode,
-not total witness size. The example sets all three explicitly under
-`reth.extraArgs`. Select a rollup-node image that implements these settings and
-defaults; the example's image tag is a deployment placeholder.
+not total witness size. The example includes commented overrides under
+`reth.extraArgs`. The chart defaults this list to `[]` and passes supplied entries
+through to the node; it does not inject any of these three flags or override their
+node defaults. If adding a later Helm values file, retain the existing arguments:
+Helm replaces lists rather than appending to them. Select a rollup-node image that
+implements these settings and defaults; the example's image tag is a deployment
+placeholder.
 
 There is no default signer: a sequencer without one fails startup. Replace any raw
 private key passed as a positional node CLI argument with `--signer.key-file` or
