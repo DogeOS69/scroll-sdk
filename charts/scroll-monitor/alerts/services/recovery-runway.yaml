@@ -1,35 +1,35 @@
-# Wallet-backed facts; coverage unknown must never suppress a known hazard.
+# The last good runway keeps alerting while its success timestamp is fresh.
 groups:
 - name: dogeos.services.recovery-runway
   interval: 1m
   rules:
   - alert: RecoveryRunwayWarning
-    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_WARN_BLOCKS__ and withdrawal_processor_recovery_runway_minimum_blocks > __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (withdrawal_processor_recovery_runway_known_valid == 1 and withdrawal_processor_recovery_runway_timestamp_seconds <= time() and time() - withdrawal_processor_recovery_runway_timestamp_seconds < 120 and up == 1)
+    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_WARN_BLOCKS__ and withdrawal_processor_recovery_runway_minimum_blocks > __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (time() - withdrawal_processor_recovery_runway_timestamp_seconds < 120)
     for: 5m
     labels:
       severity: warning
       service: withdrawal-processor
     annotations:
       summary: Funded bridge script recovery runway is low.
-      description: 'Minimum known runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Inspect all funded historical scripts and plan an authorized attestation-class CLTV refresh and old-key drain. Calendar dates are estimates; coverage unknown is a separate alert.'
+      description: 'Minimum runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Plan an authorized attestation-class CLTV refresh and the old-key drain. Calendar dates are estimates.'
       runbook_url: __RUNWAY_RUNBOOK__
   - alert: RecoveryRunwayCritical
-    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (withdrawal_processor_recovery_runway_known_valid == 1 and withdrawal_processor_recovery_runway_timestamp_seconds <= time() and time() - withdrawal_processor_recovery_runway_timestamp_seconds < 120 and up == 1)
+    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (time() - withdrawal_processor_recovery_runway_timestamp_seconds < 120)
     for: 2m
     labels:
       severity: critical
       service: withdrawal-processor
     annotations:
       summary: Funded bridge script recovery runway is critical or expired.
-      description: 'Minimum known runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Escalate through existing on-call routing; zero or negative means the CLTV height has been reached. Rotation alone does not refresh funds left on old scripts. No spending or rotation is automated.'
+      description: 'Minimum runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Escalate through existing on-call routing; zero or negative means the CLTV height has been reached. Rotation alone does not refresh funds left on old scripts. No spending or rotation is automated.'
       runbook_url: __RUNWAY_RUNBOOK__
-  - alert: RecoveryRunwayObservationUnknown
-    expr: up{job=~__RUNWAY_JOB_REGEX__} unless on(namespace,job,instance) (withdrawal_processor_recovery_runway_known_valid == 1 and withdrawal_processor_recovery_runway_inventory_complete == 1 and withdrawal_processor_recovery_runway_timestamp_seconds <= time() and time() - withdrawal_processor_recovery_runway_timestamp_seconds < 120 and up == 1)
-    for: 5m
+  - alert: RecoveryRunwayObservationStale
+    expr: withdrawal_processor_recovery_runway_observation_valid == 0 or time() - withdrawal_processor_recovery_runway_timestamp_seconds > 600
+    for: 10m
     labels:
       severity: warning
       service: withdrawal-processor
     annotations:
-      summary: Complete recovery runway inventory cannot be established.
-      description: Check RPC tip freshness, wallet watch history/rescan, digest attestation, replay convergence and registry changes. Missing metrics and scrape failure are unknown; do not interpret as an empty bridge. Existing target-discovery alerts must cover entirely missing scrape targets.
+      summary: Recovery runway monitor is failing or stale.
+      description: Runway observations are failing or the last success is over 10 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
       runbook_url: __RUNWAY_RUNBOOK__

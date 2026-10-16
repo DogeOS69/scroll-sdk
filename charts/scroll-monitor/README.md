@@ -813,20 +813,19 @@ cluster-wide replacements, and distinct conditions that remain monitored.
 
 ### Recovery CLTV runway
 
-The shared service-alert pipeline includes wallet-backed recovery runway warning,
-critical and observation-unknown rules for WP. Requires the paired dogeos-core
-`recovery_runway` collector; older images produce unknown rather than healthy.
-`recoveryRunwayAlerts` configures warning/critical blocks and target job regex.
-Defaults align with the portal's working 90/60 nominal days at 1,440 blocks/day;
-these are operator policy, not protocol constants. Fresh known hazards alert even
-with incomplete coverage. An attested complete empty wallet is quiet.
+The shared service-alert pipeline includes recovery runway warning, critical and
+stale-monitor rules for WP. They read the paired dogeos-core `recovery_runway`
+metrics: the minimum blocks left before the recovery CLTV opens on any bridge
+script WP tracks as funded. A quiet monitor means no tracked funded script is
+near its recovery timelock; it does not cover dust or unmarked receipts.
 
-Core's `docs/runbooks/recovery-runway-monitor.md` documents historical script
-inventory, digest-bound rescan attestation, source freshness, limits and response.
-In particular, protocol `bridge_utxos` cannot establish all retired holdings.
-These rules inherit existing service-alert enable/pause and notification routing.
-This addition configures no receiver, credentials or production destination, and
-Git/rendered rules do not establish deployed or tested notification delivery.
-Review source rollout, job matching, existing missing-target coverage, configured
-thresholds and on-call receiver wiring before activation. No portal UI or separate
-monitoring service is added.
+`recoveryRunwayAlerts` sets `warningBlocks` and `criticalBlocks`. Defaults align
+with the portal's 90/60 nominal days at 1,440 blocks/day; they are operator
+policy, not protocol constants. Warning and critical fire only while the last
+successful observation is under 2 minutes old. `RecoveryRunwayObservationStale`
+fires when observations keep failing or the last success is over 10 minutes old.
+A target missing from Prometheus entirely is covered by the existing target alerts.
+
+Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and
+response. These rules inherit existing service-alert enable/pause and routing;
+this change configures no receiver or destination.
