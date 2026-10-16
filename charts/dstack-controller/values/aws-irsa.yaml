@@ -1,0 +1,12 @@
+# Credential-chain preparation only; this does not prepare a backend or rent GPUs.
+# Replace the nonfunctional role placeholder in site-specific values applied LAST.
+# See README for public SSH exposure and operator-specific source restrictions.
+defaultCredentialsEnabled: true
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/REPLACE_WITH_DSTACK_CONTROLLER_ROLE
+# Fail closed instead of using the EKS node's instance role if IRSA is missing.
+# extraEnv is a Helm list: preserve this entry when adding site-specific entries.
+extraEnv:
+  - name: AWS_EC2_METADATA_DISABLED
+    value: "true"

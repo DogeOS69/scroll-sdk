@@ -138,6 +138,104 @@ installation/upgrade. `extraEnv` cannot override the chart's reserved credential
 flag. Native AWS backend configuration and IAM permissions remain separate inputs;
 the CLI's Vast.ai/GCP credential importer does not create an AWS backend.
 
+### AWS region selection and the IRSA overlay
+
+`values/aws-irsa.yaml` prepares the existing credential-chain inputs without
+changing the chart API. Apply it before site-specific values, replace its
+nonfunctional role ARN there, and retain `defaultCredentialsEnabled: true` and
+the `AWS_EC2_METADATA_DISABLED: "true"` entry. Helm replaces `extraEnv` lists;
+site-specific entries must include the metadata-disable entry as well. Preserve
+the existing release's Secret references, service-account identity and PVC.
+For offline inspection:
+
+```bash
+helm template dstack-controller ./charts/dstack-controller \
+  --namespace dstack-system \
+  -f charts/dstack-controller/values/aws-irsa.yaml \
+  -f /path/to/site-values.yaml
+```
+
+The role trust must match the actual release namespace and service account.
+This overlay creates no IAM policy, role, backend or configuration Secret, and
+does not verify their contents. It grants no Kubernetes API permissions and
+does not submit fleets or tasks. Native AWS backend setup remains an explicit
+step in the external `serverConfig` Secret.
+
+Stock dstack **0.21.5** uses an eleven-region `DEFAULT_REGIONS` list when the
+AWS backend's `regions` field is omitted. That is not all account-enabled or
+GPU-capable regions; NVIDIA Deep Learning AMIs can exist outside that default
+list. To prepare an explicit list from the current account, run the read-only
+AWS CLI helper:
+
+```bash
+python3 charts/dstack-controller/scripts/discover-aws-regions.py \
+  --profile your-existing-profile --query-region us-east-1 \
+  --output /path/to/new-aws-regions.json
+```
+
+`--profile` is optional. `--query-region` selects only the bootstrap API
+endpoint, not the returned placement regions. The JSON output is also a valid
+YAML fragment, `{"regions": [...]}`, sorted and deduplicated from entries marked
+`opt-in-not-required` or `opted-in`. Missing/malformed/unknown statuses and an
+empty enabled set fail closed; AWS diagnostics are not printed. The helper
+requires the AWS CLI, makes only `ec2 describe-regions --all-regions`, and
+refuses to overwrite an existing output file. It does not opt in regions or
+change IAM, networking, Secrets, fleets or GPUs.
+
+Review and merge that explicit list into only the intended native AWS backend,
+preserving the rest of its configuration. This overrides stock dstack's
+eleven-region default; it does not prove quotas, supported GPU images,
+availability, routes or the public-worker allocation gate below. Discovery is
+account/credential-partition scoped. Rerun it during deployment preparation when
+account eligibility changes; it is neither a Helm hook nor continuous price
+migration. Preserve a deliberate explicit regional subset instead of replacing
+it automatically with discovery output. Capacity Manager must also
+use `manager.dstack.regions: []` to omit its run-level filter, and the external
+fleet must not retain a narrower region list. Existing region overrides remain
+valid; none of these layers overrides another layer's restriction.
+Before changing an active manager's region/fleet selectors, follow the
+[drain-confirmed handoff](../../examples/capacity-manager-devnet-aws.md) using
+its previous configuration; do not bypass retained worker ownership.
+
+The following is an **AWS backend fragment**, not a complete native server
+configuration. Merge only the intended project's backend into the existing
+Secret, preserving encryption keys, other projects, backends and credentials:
+
+```yaml
+type: aws
+creds:
+  type: default
+# Replace this example with the reviewed discovery output, or a deliberate subset.
+regions: [us-east-1, us-west-2]
+default_vpcs: true
+public_ips: true
+```
+
+The fragment selects public workers and default VPC discovery; it is not a
+private-network preset. Use it only when that network posture is authorized.
+For private workers, preserve `public_ips: false`, `default_vpcs: false` and
+explicit regional `vpc_ids`, with approved routing in both directions. Stock
+0.21.5 validates the VPC mappings for every selected region when default VPCs
+are disabled. Do not silently switch a private deployment to the public
+fragment to make regional validation pass.
+
+**Public-worker SSH exposure:** stock 0.21.5's AWS
+`create_security_group` path adds TCP/22 from `0.0.0.0/0`, including when the
+named security group already exists. Public SSH is permitted only with explicit
+operator acceptance and SSH key authentication. If the operator requires
+controller-CIDR-only SSH, a pre-created
+restricted group alone does not preserve that restriction. Under that
+requirement, keep allocation disabled until a durable independent network
+restriction (for example, an appropriately reviewed network ACL) enforces the
+intended controller source range despite the security-group rule. IRSA setup,
+successful offer planning and the overlay's offline tests do not verify that
+restriction. This chart manages neither security groups nor network ACLs.
+
+After credential/backend preparation, use a bounded offer-only plan to inspect
+eligible regions, compatible instances and prices. Do not apply a fleet or task
+as a connectivity check. Removing a region restriction does not prove worker
+connectivity, globally cheapest placement or automatic migration/fallback.
+
 For provider options, refer to the [dstack backend documentation](https://dstack.ai/docs/concepts/backends/)
 and the schema for the pinned server version. The controller needs outbound
 connectivity to provider APIs and its managed hosts. GPU workers separately
