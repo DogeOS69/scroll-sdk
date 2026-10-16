@@ -23,6 +23,13 @@ private; the output deployment directory starts empty.
 For supported public applications on AWS, follow [existing ALB setup](existing-alb.md) to select
 pre-provisioned ALBs and retain them when uninstalling application charts.
 
+For a proposed separation of core and public workloads, see the
+[two-cluster architecture design](https://github.com/DogeOS69/scroll-sdk/blob/14d70e2a1855f9ad4ca78033a89f65e544893546/docs/two-cluster-design.md). It covers both
+P2P relay options, private service discovery, network boundaries and controller
+ownership. It is a reference proposal, not an implemented multi-cluster deployment
+mode; keep actual infrastructure inventories and operator receipts in the
+deployment repository.
+
 Production service overlays are intentionally operator-readable and repeat all
 runtime-affecting chart values. See the
 [production values contract](../docs/production-values.md) before adapting the
