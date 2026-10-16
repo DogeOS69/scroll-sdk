@@ -32,6 +32,42 @@ For sequencer CPU, memory, storage, and block-production settings, see the
 [sequencer sizing recommendations](../docs/sequencer-sizing.md), including
 measured transfer and full-gas workload results from the devnet test.
 
+### Sequencer deployment settings
+
+Review [the Reth sequencer example](values/l2-reth-sequencer-production.yaml)
+when selecting the rollup-node image and runtime policy:
+
+| Argument | Example / default | Scope |
+| --- | --- | --- |
+| `--sequencer.max-l1-messages` | Explicitly set to `10` | Maximum L1 messages included per L2 block; local sequencer policy |
+| `--scroll.max-code-witness-bytes` | Omitted; defaults to `33554432` (32 MiB) | Distinct contract bytecode per block and per transaction admission simulation |
+| `--txpool.code-witness-max-steps` | Omitted; defaults to `1000000` | EVM instruction steps per transaction admission simulation |
+| `--txpool.code-witness-max-inflight` | Omitted; defaults to `64` | Combined queued and running admission validations |
+
+Set the intended L1-message cap explicitly. If omitted, the sequencer uses
+`numL1MessagesPerBlock` from the chain config, which is `10` in the bundled
+DogeOS/Chikyu configs. This cap is local sequencing policy, not a network-wide
+block validity rule.
+
+The three code-witness arguments are optional; omitting them enables the defaults
+above. All three must be nonzero when supplied. The 32 MiB limit covers bytecode,
+not total witness size. The example includes commented overrides under
+`reth.extraArgs`. The chart defaults this list to `[]` and passes supplied entries
+through to the node; it does not inject any of these three flags or override their
+node defaults. If adding a later Helm values file, retain the existing arguments:
+Helm replaces lists rather than appending to them. Select a rollup-node image that
+implements these settings and defaults; the example's image tag is a deployment
+placeholder.
+
+There is no default signer: a sequencer without one fails startup. Replace any raw
+private key passed as a positional node CLI argument with `--signer.key-file` or
+`--signer.aws-kms-key-id`. In Helm values, select `reth.signer.type: localFile`
+with a Secret-backed key file, or `reth.signer.type: awsKms` with the intended KMS
+key ID. The chart emits the corresponding flag. Existing key-file/KMS setups need
+no change; keep private key material out of values files and command arguments.
+
+### Other service configuration guides
+
 For the eight DogeOS core services, see the
 [source-aligned example review and operator steps](core-service-review.md),
 including secret ownership, native-config generation and local validation.

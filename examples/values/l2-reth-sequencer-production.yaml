@@ -48,8 +48,24 @@ reth:
   extraArgs:
     - "--network.legacy-geth-header-transform"
     - "true"
+    # Explicit local sequencer policy: cap L1 messages included per L2 block.
+    # If omitted, uses chain config numL1MessagesPerBlock (10 in bundled
+    # DogeOS/Chikyu configs). This is not a network-wide block validity rule.
     - "--sequencer.max-l1-messages"
     - "10"
+    # Optional code-witness overrides; omission enables the defaults below.
+    # The chart does not inject these flags; uncomment to override node defaults.
+    # All three values must be nonzero. Use a rollup-node image supporting them.
+    # Distinct contract bytecode per block and per transaction admission
+    # simulation: 33554432 bytes (32 MiB), not the total witness size.
+    # - "--scroll.max-code-witness-bytes"
+    # - "33554432"
+    # EVM instruction steps per transaction admission simulation.
+    # - "--txpool.code-witness-max-steps"
+    # - "1000000"
+    # Queued + running transaction admission validations, combined.
+    # - "--txpool.code-witness-max-inflight"
+    # - "64"
 
   ports:
     http: 8545
@@ -72,6 +88,10 @@ reth:
   nodeKey:
     mode: secret
 
+  # No default signer: a sequencer without a signer fails startup.
+  # Replace raw positional private-key arguments with one of these backends:
+  # awsKms -> --signer.aws-kms-key-id; localFile -> --signer.key-file.
+  # Existing key-file/KMS setups need no migration. Keep key material in Secrets.
   signer:
     type: awsKms
     awsKmsKeyId: "<TODO>"
