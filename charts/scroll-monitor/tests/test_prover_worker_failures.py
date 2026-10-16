@@ -11,6 +11,9 @@ from test_monitoring_templates import render, resource, grafana_rules
 NAME = 'ProverWorkerRepeatedFailures'
 TARGET = {'namespace': 'monitoring', 'job': 'proof-coordinator', 'instance': 'coordinator'}
 EVAL = 20  # minutes
+RUNBOOK = ('https://github.com/DogeOS69/dogeos-core/blob/'
+           '1515af039cab116d1c4d89246c03b13c545e2a30/'
+           'docs/engineering/aws-gpu-dstack.md#L618-L653')
 
 
 def labels(values):
@@ -38,8 +41,20 @@ class ProverWorkerFailureTests(unittest.TestCase):
         self.assertNotIn('contactPoint', grafana)
         self.assertEqual(prom['labels'], {'severity': 'warning', 'service': 'proof-coordinator'})
         self.assertIn('{{ $labels.worker_id }}', prom['annotations']['summary'])
-        self.assertTrue(prom['annotations']['runbook_url'].endswith('aws-gpu-dstack.md#misbehaving-worker'))
+        self.assertEqual(prom['annotations']['runbook_url'], RUNBOOK)
         self.assertFalse(rules('prometheus', '--set', 'serviceAlerts.enabled=false'))
+
+    def run_promtool(self, shipped, tests):
+        with tempfile.TemporaryDirectory(prefix='worker-failures-promql-') as directory:
+            root = Path(directory)
+            root.chmod(0o755)
+            (root/'rules.yaml').write_text(yaml.safe_dump({'groups': [{'name': 'workers', 'rules': [shipped]}]}))
+            (root/'tests.yaml').write_text(yaml.safe_dump({'rule_files': ['rules.yaml'], 'evaluation_interval': '1m', 'tests': tests}))
+            (root/'rules.yaml').chmod(0o644)
+            (root/'tests.yaml').chmod(0o644)
+            subprocess.run(['docker', 'run', '--rm', '--network=none', '--entrypoint', 'promtool',
+                            '-v', f'{root}:/work:ro', 'prom/prometheus:v2.52.0',
+                            'test', 'rules', '/work/tests.yaml'], check=True)
 
     @unittest.skipUnless(os.environ.get('SCROLL_STATUS_RUNTIME_TEST') == '1', 'requires Docker/promtool')
     def test_real_promql_threshold_is_per_worker(self):
@@ -56,16 +71,40 @@ class ProverWorkerFailureTests(unittest.TestCase):
                   'alert_rule_test': [{'eval_time': f'{EVAL}m', 'alertname': NAME, 'exp_alerts': [{
                       'exp_labels': {**TARGET, 'worker_id': 'gpu-bad', **shipped['labels']},
                       'exp_annotations': {**shipped['annotations'], 'summary': summary}}]}]}]
-        with tempfile.TemporaryDirectory(prefix='worker-failures-promql-') as directory:
-            root = Path(directory)
-            root.chmod(0o755)
-            (root/'rules.yaml').write_text(yaml.safe_dump({'groups': [{'name': 'workers', 'rules': [shipped]}]}))
-            (root/'tests.yaml').write_text(yaml.safe_dump({'rule_files': ['rules.yaml'], 'evaluation_interval': '1m', 'tests': tests}))
-            (root/'rules.yaml').chmod(0o644)
-            (root/'tests.yaml').chmod(0o644)
-            subprocess.run(['docker', 'run', '--rm', '--network=none', '--entrypoint', 'promtool',
-                            '-v', f'{root}:/work:ro', 'prom/prometheus:v2.52.0',
-                            'test', 'rules', '/work/tests.yaml'], check=True)
+        self.run_promtool(shipped, tests)
+
+    @unittest.skipUnless(os.environ.get('SCROLL_STATUS_RUNTIME_TEST') == '1', 'requires Docker/promtool')
+    def test_new_counters_expiry_scrape_gaps_and_resets(self):
+        shipped = rules()[NAME]
+        worker = 'gpu-new'
+        expected = {'exp_labels': {**TARGET, 'worker_id': worker, **shipped['labels']},
+                    'exp_annotations': {**shipped['annotations'], 'summary':
+                        shipped['annotations']['summary'].replace('{{ $labels.worker_id }}', worker)}}
+        # Real Core counters are absent until a failure, not exported as zero.
+        # The second window must not keep alerting on their old lifetime total.
+        cases = [
+            ('first two failures before first scrape', '_x5 2 3 4 5+0x30', [(10, True), (21, False)]),
+            ('entire burst before first scrape', '_x15 5+0x25', [(16, True), (20, True), (31, False)]),
+            ('new counter below threshold', '_x15 4+0x25', [(20, False)]),
+            ('old quiet counter', '9+0x40', [(20, False)]),
+            ('old counter after scrape gap', '9x1 _x14 9+0x24', [(22, False)]),
+            ('established counter reset', '10x15 0 1 2 3 4 5+0x19', [(20, False), (21, True)]),
+        ]
+        tests = [
+            {'name': name, 'interval': '1m', 'input_series': [{
+                'series': 'proof_coordinator_worker_failed_results_total' + labels({**TARGET, 'worker_id': worker}),
+                'values': values}],
+             'alert_rule_test': [{'eval_time': f'{minute}m', 'alertname': NAME,
+                                 'exp_alerts': [expected] if fires else []}
+                                for minute, fires in evaluations]}
+            for name, values, evaluations in cases
+        ]
+        # Neither new worker is individually over threshold; don't combine their totals.
+        tests.append({'name': 'new workers stay separate', 'interval': '1m', 'input_series': [
+            {'series': 'proof_coordinator_worker_failed_results_total' + labels({**TARGET, 'worker_id': w}),
+             'values': '_x15 4+0x5'} for w in ('gpu-a', 'gpu-b')],
+            'alert_rule_test': [{'eval_time': '20m', 'alertname': NAME, 'exp_alerts': []}]})
+        self.run_promtool(shipped, tests)
 
 
 if __name__ == '__main__':
