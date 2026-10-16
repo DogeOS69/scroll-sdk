@@ -31,7 +31,7 @@ automatically; tracked public templates/scripts do not block it.
 Only a private output file that is already tracked needs to be untracked first.
 Review your own TOML before any commit: ignore rules do not hide tracked files.
 
-The supplied `.env.example` pins the official beta.7 image and its matching
+The supplied `.env.example` pins the official beta.8 image and its matching
 binary identity. If your bridge uses another approved release, copy it to
 `.env`, fill `COMPOSE_PROJECT_NAME`, and update all four `SIGNER_*` image/pin
 fields as directed by the release owner **before initialization**. These are
@@ -300,7 +300,7 @@ signer's directory, check the rotation export the bridge operator sends you:
 
 It re-verifies the active kit, then runs the signer image's `inspect-rotation`
 offline with only the kit's network and protocol context; your keys, TOML and AWS files are not
-passed to it. The beta.7 image pinned in `.env.example` includes this subcommand.
+passed to it. The beta.8 image pinned in `.env.example` includes this subcommand.
 It prints the decoded old/new sets, the grace and the exact `allowed_next_bridge_script_hashes` line. After
 your team's review, add that line to `attestation-signer.toml` and restart with
 `./signer.sh start`, one signer at a time. The new signers are set up as new
