@@ -2,6 +2,8 @@
 {{- include "scroll.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
+podAnnotations:
+  checksum/frontend-config: {{ .Values.scrollConfig | sha256sum }}
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:

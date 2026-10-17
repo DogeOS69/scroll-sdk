@@ -1,6 +1,8 @@
 # Frontend deployment and live Bridge address
 
 The example uses `dogeos69/scroll-sdk-frontends:0.3.0-test.20261011.4`.
+The frontends chart hashes `scrollConfig` into the Pod template, so a Helm upgrade
+that changes runtime configuration recreates Pods and regenerates `runtime-env.js`.
 Use an image containing the dynamic deposit destination implementation; the older
 `0.3.0-rc3` and `3.0.2-beta.1` images do not support this configuration.
 
@@ -52,9 +54,9 @@ After preparation, use the normal frontend target from the deployment directory:
 make install-frontends KUBE_CONTEXT="$KUBE_CONTEXT" NAMESPACE="$NAMESPACE"
 ```
 
-The same target upgrades an existing release. If only the ConfigMap changed,
-restart the frontend deployment so its
-entrypoint reloads runtime configuration:
+The same target upgrades an existing release. Chart `0.1.5-dogeos` and later
+automatically roll out Pods when `scrollConfig` changes through Helm. For an
+older chart, or a ConfigMap edited directly outside Helm, restart the deployment:
 
 ```sh
 kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" rollout restart deployment/frontends

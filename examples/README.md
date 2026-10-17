@@ -32,6 +32,22 @@ For sequencer CPU, memory, storage, and block-production settings, see the
 [sequencer sizing recommendations](../docs/sequencer-sizing.md), including
 measured transfer and full-gas workload results from the devnet test.
 
+### Installation target scope
+
+`make install-all` installs the application releases after configuration and
+Secrets preparation. It does not manage the independent Dogecoin node or
+Blockbook, deploy contracts, fund accounts, start testnet activity, or release
+the L1 genesis hold. Review service readiness and the deployment runbook before
+those separate actions. `install-scroll-core` installs monitoring first;
+`install-metrics-exporter` is also available as a standalone target.
+
+After L2 is ready, `make install-chain-contracts` explicitly runs preinstalls
+before contracts. `install-blockscout`, `install-testnet-activity-helper`, and
+`start-l1-sync` remain explicit optional or lifecycle actions. The proof-service
+group waits for TSO before installing WP. Capacity Manager requires its own
+prepared plan; a bounded `proofWorkers` deployment uses the separate CLI worker
+workflow.
+
 ### Follower restart on signer rotation
 
 The internal RPC, public RPC, and bootnode examples enable

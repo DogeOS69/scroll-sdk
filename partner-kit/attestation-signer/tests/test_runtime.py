@@ -193,6 +193,20 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.install()
 
+    def test_mainnet_runtime_alias_preserves_identity_and_rejects_other_networks(self):
+        identity = {**self.identity, 'network': 'mainnet'}
+        report = {'contract': 'attestation_evidence_v2', 'public_key': identity['publicKey'],
+                  'policy_mode': 'enforce', 'v2_capabilities': [
+                      {'capability': name, 'production_serving': True} for name in ['advance_l1', 'advance_l2']]}
+        for network in ['mainnet', 'bitcoin']:
+            self.assertTrue(runtime.check_report(identity, {**report, 'network': network})['identityMatches'])
+        for network in ['testnet', 'regtest', 'unknown', None]:
+            with self.assertRaisesRegex(ValueError, 'network mismatch'):
+                runtime.check_report(identity, {**report, 'network': network})
+        self.assertEqual(identity['network'], 'mainnet')
+        with self.assertRaisesRegex(ValueError, 'network mismatch'):
+            runtime.check_report(self.identity, {**report, 'network': 'bitcoin'})
+
     def test_unapproved_future_rotations_do_not_block_normal_readiness(self):
         report = {'contract': 'attestation_evidence_v2', 'network': 'testnet', 'public_key': self.identity['publicKey'], 'policy_mode': 'enforce', 'production_v2_ready': False, 'v2_capabilities': [{'capability': name, 'production_serving': serving} for name, serving in [('advance_l1', True), ('advance_l2', True), ('rotate_key', False), ('rotate_sequencer_signer', False)]]}
         self.assertTrue(runtime.check_report(self.identity, report)['advanceL2'])

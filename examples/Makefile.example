@@ -8,7 +8,7 @@ NAMESPACE ?= default
 # Applies to every Helm/Kubectl cluster operation, including recursive targets.
 # Spec bootstrap fills this default from infrastructure.kubeContext.
 # Empty uses the current kubeconfig context; no global context is changed.
-# Example: make install-dogecoin KUBE_CONTEXT=regtest-cluster NAMESPACE=default
+# Example: make install-l1-interface KUBE_CONTEXT=selected-cluster NAMESPACE=default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
@@ -52,10 +52,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	values/l2-reth-bootnode-production-0.yaml \
 	values/l2-reth-bootnode-production-1.yaml \
 	values/l2-reth-rpc-production.yaml \
-	values/preinstalls-production.yaml \
-	values/contracts-production.yaml \
-	values/scroll-common-config-contracts.yaml \
-	values/scroll-common-config.yaml \
+	values/l2-reth-rpc-public-production.yaml \
 	values/eth-da-submitter-production.yaml \
 	values/fee-oracle-production.yaml \
 	values/cubesigner-signer-production.yaml \
@@ -66,8 +63,7 @@ INSTALL_ALL_REQUIRED_VALUES = \
 	withdrawal-processor/WithdrawalProcessor.toml \
 	proof-coordinator/ProofCoordinator.toml \
 	values/frontends-production.yaml \
-	values/frontends-config.yaml \
-	values/testnet-activity-helper-production.yaml
+	values/frontends-config.yaml
 L2_RETH_GENESIS_NORMALIZER_ARGS =
 ifneq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)),)
 ifeq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)),)
@@ -81,16 +77,16 @@ L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) 
 INSTALL_ALL_REQUIRED_VALUES += $(L2_RETH_GENESIS_NORMALIZER_VALUES) $(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 endif
 
-.PHONY: prepare install-dogecoin install-scroll-core \
+.PHONY: prepare install-scroll-core install-l1-interface install-scroll-common install-metrics-exporter \
 	install-dstack-controller install-scroll-monitor \
-	install-preinstalls install-contracts install-eth-da-submitter \
+	install-preinstalls install-contracts install-chain-contracts start-l1-sync install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
 	check-install-all-values \
 	install-fee-oracle \
 	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
 	install-blockscout install-frontends install-testnet-activity-helper install-all \
-	delete-all delete-preinstalls delete-dogecoin delete-frontends \
+	delete-all delete-preinstalls delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
@@ -99,16 +95,6 @@ endif
 prepare:
 	helm repo add grafana https://grafana.github.io/helm-charts
 	helm repo update
-
-install-dogecoin:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogecoin-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/dogecoin -n "$(NAMESPACE)" \
-		--version=0.1.13 \
-		--values values/dogecoin-production.yaml
-
-install-blockbook:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockbook-testnet oci://ghcr.io/dogeos69/scroll-sdk/helm/blockbook -n "$(NAMESPACE)" \
-		--version=0.1.4 \
-		--values values/blockbook-production.yaml
 
 install-l1-interface:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-interface oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-interface -n "$(NAMESPACE)" \
@@ -125,7 +111,7 @@ install-l1-devnet:
 install-scroll-monitor:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i scroll-monitor $(SCROLL_MONITOR_CHART) -n "$(NAMESPACE)" \
 		--version=$(SCROLL_MONITOR_CHART_VERSION) \
-		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS)
+		--values values/scroll-monitor-production.yaml $(SCROLL_MONITOR_DSTACK_ARGS) --wait --timeout 10m
 
 # Independent release: prepare/publish dstack Secrets and install the monitor's
 # Prometheus Operator CRDs first. See dstack-monitoring/README.md.
@@ -141,15 +127,17 @@ install-scroll-common:
 		--values values/genesis.yaml \
 		--values values/protocol_context.yaml
 
-install-scroll-core:
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-monitor
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-common
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l1-interface
-
+# Requires the Prometheus Operator CRDs installed by install-scroll-monitor.
+install-metrics-exporter:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i metrics-exporter oci://ghcr.io/dogeos69/scroll-sdk/helm/metrics-exporter -n "$(NAMESPACE)" \
 		--version=0.1.9 \
 		--values values/metrics-exporter-production.yaml
 
+install-scroll-core:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-monitor
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-common
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l1-interface
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-metrics-exporter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l2-reth-sequencer
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l2-reth-bootnode
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-l2-reth-rpc
@@ -249,8 +237,8 @@ install-eager-materializer:
 # runs; production/external keeps it absent and emits a verified GPU-host bundle.
 reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-tso
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
@@ -266,7 +254,7 @@ install-blockscout:
 
 install-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n "$(NAMESPACE)" \
-		--version=0.1.4-dogeos \
+		--version=0.1.5-dogeos \
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
@@ -298,20 +286,20 @@ check-install-all-values:
 		exit 1; \
 	fi
 
+# Application releases only. Dogecoin is independently managed. Chain deployment,
+# funding, testnet activity and releasing the L1 genesis hold are explicit actions.
 install-all: check-install-all-values
-	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=dogecoin-testnet -n "$(NAMESPACE)" && scrollsdk setup dogecoin-wallet-import
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-core
 	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n "$(NAMESPACE)"
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-preinstalls
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts
-	scrollsdk helper fund-accounts -l 2 -f 0.2 -d
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-testnet-activity-helper
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) start-l1-sync
+
+# Explicit on-chain deployment after L2 readiness; preinstalls must finish first.
+install-chain-contracts:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-preinstalls
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts
 
 delete-preinstalls:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" preinstalls
@@ -342,12 +330,6 @@ delete-l1-interface:
 
 delete-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" l1-devnet
-
-delete-dogecoin:
-	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" dogecoin-testnet
-
-delete-blockbook:
-	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockbook-testnet
 
 delete-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" frontends

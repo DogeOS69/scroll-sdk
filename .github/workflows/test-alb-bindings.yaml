@@ -9,6 +9,8 @@ on:
       - charts/tso-service/**
       - .github/tests/test_existing_alb.py
       - examples/Makefile.example
+      - examples/values/blockscout-production.yaml
+      - examples/tests/test_blockscout_frontend.py
       - .github/workflows/test-alb-bindings.yaml
   push:
     paths:
@@ -19,6 +21,8 @@ on:
       - charts/tso-service/**
       - .github/tests/test_existing_alb.py
       - examples/Makefile.example
+      - examples/values/blockscout-production.yaml
+      - examples/tests/test_blockscout_frontend.py
       - .github/workflows/test-alb-bindings.yaml
 permissions:
   contents: read
@@ -41,3 +45,5 @@ jobs:
             helm dependency build "charts/$chart" --skip-refresh
           done
       - run: python3 -m unittest discover -s .github/tests -p test_existing_alb.py -v
+      - run: python3 -m unittest discover -s charts/frontends/tests -v
+      - run: python3 -m unittest discover -s examples/tests -p test_blockscout_frontend.py -v

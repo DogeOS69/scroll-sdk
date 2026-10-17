@@ -59,17 +59,37 @@ class MakefileContextTests(unittest.TestCase):
         self.assert_context(self.expanded_commands('', 'default'), '', 'default')
 
     def test_preinstalls_runs_before_contracts_and_waits_for_the_hook(self):
-        commands = self.expanded_commands('selected', 'chain', targets=['install-all'])
+        commands = self.expanded_commands('selected', 'chain', targets=['install-chain-contracts'])
         preinstalls = next(command for command in commands if 'preinstalls' in command)
         contracts = next(command for command in commands if 'contracts' in command)
         self.assertLess(commands.index(preinstalls), commands.index(contracts))
         self.assertIn('values/preinstalls-production.yaml', preinstalls)
         self.assertEqual(preinstalls[preinstalls.index('--timeout') + 1], '20m')
         self.assertNotIn('--no-hooks', preinstalls)
-        # Each recursive make is a separate recipe: failure must stop install-all.
+        # Each recursive make is a separate recipe: failure must stop chain deployment.
         source = MAKEFILE.read_text()
         self.assertIn('\t$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-preinstalls\n'
                       '\t$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts\n', source)
+
+    def test_application_install_excludes_independent_optional_and_chain_actions(self):
+        commands = self.expanded_commands('selected', 'chain', targets=['install-all'])
+        releases = [c[c.index('-i') + 1] for c in commands if 'upgrade' in c]
+        for excluded in ['dogecoin-testnet', 'blockbook-testnet', 'preinstalls', 'contracts', 'testnet-activity-helper', 'blockscout']:
+            self.assertNotIn(excluded, releases)
+        self.assertLess(releases.index('scroll-monitor'), releases.index('l1-interface'))
+        self.assertLess(releases.index('tso-service'), releases.index('withdrawal-processor'))
+        self.assertEqual(releases.count('eth-da-submitter'), 1)
+        self.assertFalse(any('run' in c for c in commands))
+        source = MAKEFILE.read_text()
+        self.assertNotIn('fund-accounts', source)
+        self.assertNotIn('dogecoin-wallet-import', source)
+        self.assertNotRegex(source, r'(?m)^(install|delete)-(dogecoin|blockbook):')
+
+    def test_metrics_exporter_is_independently_installable(self):
+        commands = self.expanded_commands('selected', 'chain', targets=['install-metrics-exporter'])
+        self.assertEqual(len(commands), 1)
+        self.assertIn('metrics-exporter', commands[0])
+        self.assertIn('values/metrics-exporter-production.yaml', commands[0])
 
     def test_preinstalls_chart_can_be_validated_locally(self):
         commands = self.expanded_commands('selected', 'chain', {
