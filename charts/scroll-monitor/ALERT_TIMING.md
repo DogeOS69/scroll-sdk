@@ -46,7 +46,7 @@ businessAlerts:
 | `rules.<AlertName>.latencySeconds` | Mean operation latency threshold; sample count requirements remain unchanged. | Positive number of seconds, including fractional seconds. |
 | `rules.<AlertName>.snapshotMaxAgeSeconds` | Freshness guard for a cached WP/TSO snapshot. | Positive number of seconds. |
 | `rules.<AlertName>.predictionSeconds` | Inode-exhaustion prediction horizon. | Positive number of seconds. |
-| `groupIntervals.<GroupName>` | Evaluation frequency for a rule group. | Positive duration. |
+| `groupIntervals.<GroupName>` | Evaluation frequency for a rule group. | Positive duration; groups evaluated by Grafana must use multiples of its 10s scheduler interval. |
 
 Durations use one integer and unit: `s`, `m`, `h`, `d`, or `w` (for example `90m`).
 Use only the parameters listed for a rule below; misspelled names, unsupported
@@ -74,7 +74,7 @@ The following existing settings remain supported:
 | `businessAlerts.proofStuckFor` | 5m | Exhausted proof retries and terminal L2 proof ranges. |
 | `businessAlerts.recoveryFor` | 15m | `ProtocolReorgRecoveryStalled`. |
 | `businessAlerts.signerFailureFor` | 5m | TSO communication and attestation signing/callback failures. |
-| `diskAlerts.warningFor`, `criticalFor` | 15m, 5m | Disk usage and inode usage alerts. |
+| `diskAlerts.warningFor`, `criticalFor` | 5m, 5m | Disk usage and inode usage alerts. |
 | `diskAlerts.predictionWarningHours`, `predictionCriticalHours` | 24, 4 | Disk exhaustion forecast horizons. |
 | `diskAlerts.predictionWarningFor`, `predictionCriticalFor` | 30m, 5m | Disk exhaustion pending periods. |
 | `resourceAlerts.memoryWarningFor`, `memoryCriticalFor` | 10m, 5m | Node/container memory alerts. |

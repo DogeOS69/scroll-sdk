@@ -29,7 +29,12 @@
 {{- end -}}
 {{- range $name, $interval := $settings.groupIntervals -}}
 {{- if not (hasKey $groups $name) -}}{{- fail (printf "unknown alertTiming group %s" $name) -}}{{- end -}}
-{{- if le (int (include "scroll-monitor.durationSeconds" $interval)) 0 -}}{{- fail "alertTiming group intervals must be positive" -}}{{- end -}}
+{{- $seconds := int (include "scroll-monitor.durationSeconds" $interval) -}}
+{{- if le $seconds 0 -}}{{- fail "alertTiming group intervals must be positive" -}}{{- end -}}
+{{- $grafanaEvaluates := and $.Values.grafana.enabled $.Values.grafanaAlerting.enabled (or (eq $.Values.alerting.backend "grafana") (eq $name "dogeos.logs")) -}}
+{{- if and $grafanaEvaluates (ne (mod $seconds 10) 0) -}}
+{{- fail (printf "alertTiming.groupIntervals.%s must be a multiple of Grafana's 10s scheduler interval" $name) -}}
+{{- end -}}
 {{- end -}}
 {{- range $name, $overrides := $settings.rules -}}
 {{- if not (hasKey $catalog $name) -}}{{- fail (printf "unknown alertTiming rule %s" $name) -}}{{- end -}}

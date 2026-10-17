@@ -24,6 +24,15 @@ def fingerprint(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def duration_milliseconds(value):
+    """Compare Prometheus durations by value despite Grafana's normalization."""
+    if not isinstance(value, str) or not re.fullmatch(r"(?:[0-9]+(?:ms|[smhdwy]))+", value):
+        return value  # Preserve unrecognized UI values conservatively.
+    units = {"ms": 1, "s": 1000, "m": 60000, "h": 3600000,
+             "d": 86400000, "w": 604800000, "y": 31536000000}
+    return sum(int(amount) * units[unit] for amount, unit in re.findall(r"([0-9]+)(ms|[smhdwy])", value))
+
+
 def managed_fields(rule):
     """Only manage expression A, pending period and chart annotations.
 
@@ -32,7 +41,7 @@ def managed_fields(rule):
     change prevents an expression update against a different source.
     """
     queries = [q for q in rule.get("data", []) if q.get("refId") == "A"]
-    fields = {"for": rule.get("for", "0s")}
+    fields = {"for": duration_milliseconds(rule.get("for", "0s"))}
     if len(queries) == 1:
         fields["queryA"] = {
             "expr": queries[0].get("model", {}).get("expr"),
@@ -75,7 +84,12 @@ def reconcile_rule(existing, source, desired, pause=None, timing=None):
         if current == target:
             next_baseline[field] = fingerprint(target)
             continue
-        if field not in authoritative and (field not in baseline or fingerprint(current) != baseline[field]):
+        untouched = fingerprint(current) == baseline.get(field)
+        if field == "for":
+            # Older chart versions hashed the raw API string. Accept that
+            # baseline once and migrate to a duration value without adopting UI edits.
+            untouched = untouched or fingerprint(updated.get("for", "0s")) == baseline.get(field)
+        if field not in authoritative and not untouched:
             conflicts.append(field)
             continue
         if field == "queryA":
@@ -86,7 +100,7 @@ def reconcile_rule(existing, source, desired, pause=None, timing=None):
                     if "datasource" in query["model"]:
                         query["model"]["datasource"]["uid"] = target["datasourceUid"]
         elif field == "for":
-            updated["for"] = target
+            updated["for"] = desired["for"]
         else:
             updated.setdefault("annotations", {})[field.removeprefix("annotation:")] = target
         next_baseline[field] = fingerprint(target)

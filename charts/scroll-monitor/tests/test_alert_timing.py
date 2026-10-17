@@ -4,9 +4,13 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 import tempfile
+import time
 import unittest
+from unittest.mock import patch
+from urllib.request import urlopen
 
 import yaml
 
@@ -113,6 +117,9 @@ class AlertTimingTests(unittest.TestCase):
             {"rules": {"DogecoinIndexerLag": {"window": "0s"}}},
             {"rules": {"ReplayHeadWFTxNumberStalled": {"window": "1m", "step": "2m"}}},
             {"groupIntervals": {"dogeos.metrics": "0s"}},
+            {"groupIntervals": {"dogeos.metrics": "1s"}},
+            {"groupIntervals": {"dogeos.metrics": "15s"}},
+            {"groupIntervals": {"dogeos.logs": "15s"}},
             {"groupIntervals": {"unknown.group": "1m"}},
         ]
         for value in invalid:
@@ -121,6 +128,15 @@ class AlertTimingTests(unittest.TestCase):
                 result = subprocess.run(["helm", "template", "monitor", str(CHART), "-f", file.name], text=True, capture_output=True)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("alertTiming", result.stderr)
+
+    def test_prometheus_group_intervals_do_not_inherit_grafana_constraints(self):
+        values = {"alertTiming": {"groupIntervals": {"dogeos.metrics": "15s"}}}
+        for args in (("--set", "grafanaAlerting.enabled=false"),
+                     ("--set", "alerting.backend=prometheus", "--set",
+                      "kube-prometheus-stack.alertmanager.alertmanagerSpec.useExistingSecret=true", "--set",
+                      "kube-prometheus-stack.alertmanager.alertmanagerSpec.configSecret=scroll-monitor-alertmanager-config")):
+            groups = resource(render_values(values, *args), "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
+            self.assertEqual(next(g for g in groups if g["name"] == "dogeos.metrics")["interval"], "15s")
 
     @unittest.skipUnless(os.environ.get("SCROLL_STATUS_RUNTIME_TEST") == "1", "requires Docker/promtool")
     def test_custom_age_and_pending_period_control_firing(self):
@@ -144,6 +160,83 @@ class AlertTimingTests(unittest.TestCase):
 
 
 class GrafanaTimingTests(unittest.TestCase):
+    def test_normalized_pending_period_is_idempotent_and_can_return_to_default(self):
+        cfg = {"folderUID": "test", "folderTitle": "Test", "datasourceUID": "prometheus",
+               "groups": [{"name": "test", "rules": [{"alert": "Test", "expr": "up == 0", "for": "60s"}]}],
+               "timingOverrides": {"Test": {"for": "60s"}}}
+        client = MemoryGrafana()
+        SEED.seed(client, cfg)
+        client.group["rules"][0]["for"] = "1m"  # Grafana 11 API readback.
+        client.writes.clear()
+        SEED.seed(client, cfg)
+        self.assertEqual(client.writes, [])
+        cfg.pop("timingOverrides")
+        cfg["groups"][0]["rules"][0]["for"] = "5m"
+        SEED.seed(client, cfg)
+        self.assertEqual(client.group["rules"][0]["for"], "5m")
+
+    def test_legacy_string_baseline_migrates_without_overwriting_ui_edits(self):
+        cfg = {"folderUID": "test", "folderTitle": "Test", "datasourceUID": "prometheus",
+               "groups": [{"name": "test", "rules": [{"alert": "Test", "expr": "up == 0", "for": "5m"}]}]}
+        for current, expected in (("5m", "7m"), ("19m", "19m")):
+            with self.subTest(current=current):
+                client = MemoryGrafana()
+                SEED.seed(client, cfg)
+                existing = client.group["rules"][0]
+                baseline = json.loads(existing["annotations"][SEED.BASELINE])
+                baseline["for"] = SEED.fingerprint("5m")
+                existing["annotations"][SEED.BASELINE] = json.dumps(baseline)
+                existing["for"] = current
+                changed = copy.deepcopy(cfg)
+                changed["groups"][0]["rules"][0]["for"] = "7m"
+                SEED.seed(client, changed)
+                self.assertEqual(client.group["rules"][0]["for"], expected)
+
+    @unittest.skipUnless(os.environ.get("SCROLL_STATUS_RUNTIME_TEST") == "1", "requires Docker/Grafana")
+    def test_real_grafana_normalization_and_group_interval(self):
+        name = "scroll-monitor-timing-test-" + secrets.token_hex(6)
+        password = secrets.token_hex(24)
+        subprocess.run(["docker", "run", "--rm", "-d", "--name", name,
+                        "-p", "127.0.0.1::3000", "-e", "GF_SECURITY_ADMIN_PASSWORD",
+                        "-e", "GF_ANALYTICS_REPORTING_ENABLED=false", "grafana/grafana:11.1.5"],
+                       env={**os.environ, "GF_SECURITY_ADMIN_PASSWORD": password},
+                       check=True, stdout=subprocess.DEVNULL)
+        self.addCleanup(lambda: subprocess.run(["docker", "rm", "-f", name],
+                                              check=True, stdout=subprocess.DEVNULL))
+        port = subprocess.check_output(["docker", "port", name, "3000/tcp"], text=True).strip().rsplit(":", 1)[1]
+        url = "http://127.0.0.1:" + port
+        for _ in range(60):
+            try:
+                with urlopen(url + "/api/health", timeout=1):
+                    break
+            except OSError:
+                time.sleep(0.5)
+        else:
+            self.fail("Disposable Grafana did not become healthy")
+        with patch.dict(os.environ, {"GRAFANA_URL": url, "GRAFANA_USER": "admin",
+                                     "GRAFANA_PASSWORD": password, "GRAFANA_TOKEN": ""}):
+            client = SEED.Grafana()
+        client.request("POST", "/api/datasources", {"name": "test-prom", "uid": "test-prom", "type": "prometheus",
+                                                 "access": "proxy", "url": "http://127.0.0.1:9090"})
+        cfg = {"folderUID": "test", "folderTitle": "Test", "datasourceUID": "test-prom",
+               "groups": [{"name": "test", "rules": [{"alert": "Test", "expr": "up == 0", "for": "60s"}]}],
+               "timingOverrides": {"Test": {"for": "60s"}}, "groupIntervals": {"test": "30s"}}
+        path = "/api/v1/provisioning/folder/test/rule-groups/test"
+        SEED.seed(client, cfg)
+        group = client.request("GET", path)
+        self.assertEqual(group["interval"], 30)
+        self.assertEqual(group["rules"][0]["for"], "1m")
+        with patch.object(client, "request", wraps=client.request) as requests:
+            SEED.seed(client, cfg)
+            self.assertTrue(all(call.args[0] == "GET" for call in requests.call_args_list))
+        cfg.pop("timingOverrides")
+        cfg["groups"][0]["rules"][0]["for"] = "5m"
+        SEED.seed(client, cfg)
+        self.assertEqual(client.request("GET", path)["rules"][0]["for"], "5m")
+        cfg["groupIntervals"]["test"] = "15s"
+        with self.assertRaisesRegex(RuntimeError, "HTTP 400"):
+            SEED.seed(client, cfg)
+
     def test_explicit_timing_reconciles_existing_rule_and_preserves_other_ui_fields(self):
         values = {"alertTiming": {"rules": {"FeeOracleStale": {"for": "10m", "maxAgeSeconds": 1800}},
                                   "groupIntervals": {"dogeos.metrics": "30s"}}}
