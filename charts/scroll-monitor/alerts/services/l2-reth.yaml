@@ -4,7 +4,7 @@ groups:
   interval: 1m
   rules:
   - alert: L2RethNoPeers
-    expr: reth_network_connected_peers{job=~".*l2-reth.*"} == 0
+    expr: reth_network_connected_peers{job=~".*l2-reth.*|l2-rpc"} == 0
     for: 10m
     labels:
       severity: critical
@@ -14,9 +14,9 @@ groups:
       description: Check static peers, discovery, firewall rules, and network ID. Leave paused for nodes intentionally
         deployed without peers.
   - alert: L2RethHeadStalled
-    expr: max_over_time((reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*"} > bool reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*"}
-      offset 1m)[15m:1m]) == 0 and reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*"} offset 15m and
-      reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*"}
+    expr: max_over_time((reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*|l2-rpc"} > bool reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*|l2-rpc"}
+      offset 1m)[15m:1m]) == 0 and reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*|l2-rpc"} offset 15m and
+      reth_blockchain_tree_canonical_chain_height{job=~".*l2-reth.*|l2-rpc"}
     labels:
       severity: critical
       service: l2-reth
@@ -25,8 +25,8 @@ groups:
       description: Inspect sequencer production, engine validation, derivation, and peers on {{ $labels.instance
         }}. Enable only on lanes expected to advance continuously.
   - alert: L2RethDerivationStalled
-    expr: sum by (namespace, job, instance) ({__name__=~"reth_derivation_pipeline_(batch|payload_attributes)_queue_size",job=~".*l2-reth.*"})
-      > 0 and (sum by (namespace, job, instance) (increase(reth_derivation_pipeline_derived_blocks{job=~".*l2-reth.*"}[15m]))
+    expr: sum by (namespace, job, instance) ({__name__=~"reth_derivation_pipeline_(batch|payload_attributes)_queue_size",job=~".*l2-reth.*|l2-rpc"})
+      > 0 and (sum by (namespace, job, instance) (increase(reth_derivation_pipeline_derived_blocks{job=~".*l2-reth.*|l2-rpc"}[15m]))
       == 0)
     for: 15m
     labels:
@@ -36,10 +36,10 @@ groups:
       summary: L2 derivation has queued work but produces no blocks.
       description: Check L1 Interface batch data, blob availability, payload validation, and the derivation loop.
   - alert: L2RethPayloadValidationFailed
-    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_consensus_engine_beacon_new_payload_invalid{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_invalid", "", "")
-      or label_replace(increase(reth_consensus_engine_beacon_new_payload_error{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_error", "", "")
-      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_invalid{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_invalid", "", "")
-      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_error{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_error", "", "")))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_consensus_engine_beacon_new_payload_invalid{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_invalid", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_new_payload_error{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_consensus_engine_beacon_new_payload_error", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_invalid{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_invalid", "", "")
+      or label_replace(increase(reth_consensus_engine_beacon_forkchoice_updated_error{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_consensus_engine_beacon_forkchoice_updated_error", "", "")))
       > 0
     labels:
       severity: critical
@@ -48,12 +48,12 @@ groups:
       summary: L2 Reth rejected a payload or forkchoice update.
       description: Inspect engine validation errors and canonical data before replaying the affected payload.
   - alert: L2RethDownloaderErrors
-    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_downloaders_headers_timeout_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_timeout_errors", "", "")
-      or label_replace(increase(reth_downloaders_headers_unexpected_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_unexpected_errors", "", "")
-      or label_replace(increase(reth_downloaders_headers_validation_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_headers_validation_errors", "", "")
-      or label_replace(increase(reth_downloaders_bodies_timeout_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_timeout_errors", "", "")
-      or label_replace(increase(reth_downloaders_bodies_unexpected_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_unexpected_errors", "", "")
-      or label_replace(increase(reth_downloaders_bodies_validation_errors{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_downloaders_bodies_validation_errors", "", "")))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_downloaders_headers_timeout_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_headers_timeout_errors", "", "")
+      or label_replace(increase(reth_downloaders_headers_unexpected_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_headers_unexpected_errors", "", "")
+      or label_replace(increase(reth_downloaders_headers_validation_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_headers_validation_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_timeout_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_bodies_timeout_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_unexpected_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_bodies_unexpected_errors", "", "")
+      or label_replace(increase(reth_downloaders_bodies_validation_errors{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_downloaders_bodies_validation_errors", "", "")))
       > 0
     for: 10m
     labels:
@@ -63,9 +63,9 @@ groups:
       summary: L2 Reth block downloads keep failing.
       description: Check peer health, network transport, and block validation errors.
   - alert: L2RethRPCErrors
-    expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_failed_total{job=~".*l2-reth.*"}[10m]))
-      / sum by (namespace, job, instance) (rate(reth_rpc_server_calls_started_total{job=~".*l2-reth.*"}[10m])) >
-      0.1 and sum by (namespace, job, instance) (increase(reth_rpc_server_calls_started_total{job=~".*l2-reth.*"}[10m]))
+    expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_failed_total{job=~".*l2-reth.*|l2-rpc"}[10m]))
+      / sum by (namespace, job, instance) (rate(reth_rpc_server_calls_started_total{job=~".*l2-reth.*|l2-rpc"}[10m])) >
+      0.1 and sum by (namespace, job, instance) (increase(reth_rpc_server_calls_started_total{job=~".*l2-reth.*|l2-rpc"}[10m]))
       >= 100
     for: 5m
     labels:
@@ -76,9 +76,9 @@ groups:
       description: At least 100 calls were observed in ten minutes. Separate malformed client requests from server
         and dependency faults.
   - alert: L2RethRPCSlow
-    expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_time_seconds_sum{job=~".*l2-reth.*"}[10m]))
-      / sum by (namespace, job, instance) (rate(reth_rpc_server_calls_time_seconds_count{job=~".*l2-reth.*"}[10m]))
-      > 2 and sum by (namespace, job, instance) (increase(reth_rpc_server_calls_time_seconds_count{job=~".*l2-reth.*"}[10m]))
+    expr: sum by (namespace, job, instance) (rate(reth_rpc_server_calls_time_seconds_sum{job=~".*l2-reth.*|l2-rpc"}[10m]))
+      / sum by (namespace, job, instance) (rate(reth_rpc_server_calls_time_seconds_count{job=~".*l2-reth.*|l2-rpc"}[10m]))
+      > 2 and sum by (namespace, job, instance) (increase(reth_rpc_server_calls_time_seconds_count{job=~".*l2-reth.*|l2-rpc"}[10m]))
       >= 5
     for: 5m
     labels:
@@ -89,8 +89,8 @@ groups:
       description: L2 RPC calls average more than two seconds. Inspect expensive methods and CPU, storage, and database
         contention.
   - alert: L2RethBlobStoreFailure
-    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_transaction_pool_blobstore_failed_inserts{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_inserts", "", "")
-      or label_replace(increase(reth_transaction_pool_blobstore_failed_deletes{job=~".*l2-reth.*"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_deletes", "", "")))
+    expr: sum by (namespace, job, instance) ((label_replace(increase(reth_transaction_pool_blobstore_failed_inserts{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_inserts", "", "")
+      or label_replace(increase(reth_transaction_pool_blobstore_failed_deletes{job=~".*l2-reth.*|l2-rpc"}[5m]), "error_counter", "reth_transaction_pool_blobstore_failed_deletes", "", "")))
       > 0
     labels:
       severity: critical
@@ -99,7 +99,7 @@ groups:
       summary: L2 Reth transaction-pool blob storage operations failed.
       description: Check disk space, filesystem health, and blobstore errors.
   - alert: L2RethTransactionQueueLarge
-    expr: reth_transaction_pool_queued_pool_transactions{job=~".*l2-reth.*"} > 1000
+    expr: reth_transaction_pool_queued_pool_transactions{job=~".*l2-reth.*|l2-rpc"} > 1000
     for: 15m
     labels:
       severity: warning
@@ -109,7 +109,7 @@ groups:
       description: Check nonce gaps, gas prices, account balances, and admission pressure. Calibrate against normal
         traffic.
   - alert: L2RethL1ReorgObserved
-    expr: sum by (namespace, job, instance) (increase(reth_l1_watcher_reorgs{job=~".*l2-reth.*"}[5m])) > 0
+    expr: sum by (namespace, job, instance) (increase(reth_l1_watcher_reorgs{job=~".*l2-reth.*|l2-rpc"}[5m])) > 0
     labels:
       severity: warning
       service: l2-reth

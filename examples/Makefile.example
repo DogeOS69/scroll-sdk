@@ -15,7 +15,7 @@ DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-control
 DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.5
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
-SCROLL_MONITOR_CHART_VERSION ?= 0.1.47-dogeos
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.48-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades, including install-all.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
