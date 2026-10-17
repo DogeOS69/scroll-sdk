@@ -4,9 +4,11 @@ groups:
   interval: 1m
   rules:
   - alert: TSOSigningCycleSlow
-    expr: sum by (namespace, job, instance) (rate(tso_core_signing_cycle_latency_seconds_sum[10m])) / sum by (namespace,
-      job, instance) (rate(tso_core_signing_cycle_latency_seconds_count[10m])) > 120 and sum by (namespace, job,
-      instance) (increase(tso_core_signing_cycle_latency_seconds_count[10m])) >= 5
+    timing: {"window": "10m", "latencySeconds": 120}
+    timingAnnotations: {"summary": "TSO signing cycles average more than __TIME_latencySeconds__ seconds.", "description": "Completed signing cycles average more than __TIME_latencySeconds__ seconds. Check signer response paths and quorum latency."}
+    expr: sum by (namespace, job, instance) (rate(tso_core_signing_cycle_latency_seconds_sum[__TIME_window__])) / sum by (namespace,
+      job, instance) (rate(tso_core_signing_cycle_latency_seconds_count[__TIME_window__])) > __TIME_latencySeconds__ and sum by (namespace, job,
+      instance) (increase(tso_core_signing_cycle_latency_seconds_count[__TIME_window__])) >= 5
     for: 5m
     labels:
       severity: warning
@@ -16,9 +18,11 @@ groups:
       description: Completed signing cycles average more than two minutes. Check signer response paths and quorum
         latency.
   - alert: TSOSignerResponseSlow
-    expr: sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum[10m]))
-      / sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count[10m]))
-      > 60 and sum by (namespace, job, instance, signer_pubkey) (increase(tso_core_signer_response_latency_seconds_count[10m]))
+    timing: {"window": "10m", "latencySeconds": 60}
+    timingAnnotations: {"summary": "A TSO signer takes more than __TIME_latencySeconds__ seconds on average to respond.", "description": "Signer {{ $labels.signer_pubkey }} responses average more than __TIME_latencySeconds__ seconds. Check network and signer backend latency."}
+    expr: sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_sum[__TIME_window__]))
+      / sum by (namespace, job, instance, signer_pubkey) (rate(tso_core_signer_response_latency_seconds_count[__TIME_window__]))
+      > __TIME_latencySeconds__ and sum by (namespace, job, instance, signer_pubkey) (increase(tso_core_signer_response_latency_seconds_count[__TIME_window__]))
       >= 5
     for: 5m
     labels:
@@ -29,9 +33,11 @@ groups:
       description: Signer {{ $labels.signer_pubkey }} responses average more than one minute. Check network and
         signer backend latency.
   - alert: TSORoleQuorumSlow
-    expr: sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_sum[10m])) /
-      sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_count[10m])) > 120
-      and sum by (namespace, job, instance, role) (increase(tso_core_signing_role_path_latency_seconds_count[10m]))
+    timing: {"window": "10m", "latencySeconds": 120}
+    timingAnnotations: {"summary": "TSO {{ $labels.role }} quorum takes more than __TIME_latencySeconds__ seconds on average.", "description": "Role {{ $labels.role }} takes more than __TIME_latencySeconds__ seconds on average to complete its required input thresholds. Check readiness and response latency of this role's signers."}
+    expr: sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_sum[__TIME_window__])) /
+      sum by (namespace, job, instance, role) (rate(tso_core_signing_role_path_latency_seconds_count[__TIME_window__])) > __TIME_latencySeconds__
+      and sum by (namespace, job, instance, role) (increase(tso_core_signing_role_path_latency_seconds_count[__TIME_window__]))
       >= 5
     for: 5m
     labels:
@@ -53,7 +59,8 @@ groups:
       description: Calibrate this capacity threshold against throughput. Check admission pressure, quorum availability,
         and completion rate.
   - alert: TSOShadowforkSentinelAccepted
-    expr: sum by (namespace, job, instance) (increase(tso_core_sentinel_signatures_accepted_total[5m])) > 0
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(tso_core_sentinel_signatures_accepted_total[__TIME_window__])) > 0
     labels:
       severity: warning
       service: tso-service

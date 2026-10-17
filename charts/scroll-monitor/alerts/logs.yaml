@@ -22,6 +22,8 @@ groups:
           | alert_json_level=~"(?i)error|fatal|panic" or alert_json_severity=~"(?i)error|fatal|panic" or alert_logfmt_level!="" or alert_plain_error!=""
           [5m])
       ) > 0
+    timing: {"window": "5m"}
+    timingAnnotations: {"description": "{{ $value | printf \"%.0f\" }} matching log line(s) in the last __TIME_window__ for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate."}
     expr: |-
       sum by (namespace, service, pod, container) (
         count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
@@ -37,7 +39,7 @@ groups:
           | alert_logfmt_level!~"(?i)fatal|panic"
           | alert_logfmt_severity!~"(?i)fatal|panic"
           | alert_plain_severe=""
-          [5m])
+          [__TIME_window__])
       ) > 0
     labels:
       severity: warning
@@ -56,6 +58,8 @@ groups:
   - alert: ServicePanicOrFatalLogs
     inheritOperatorSettingsFrom: ServiceErrorOrPanickedLogs
     datasourceType: loki
+    timing: {"window": "5m"}
+    timingAnnotations: {"description": "{{ $value | printf \"%.0f\" }} matching log line(s) in the last __TIME_window__ for {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}). Open the service logs in Explore to investigate."}
     expr: |-
       sum by (namespace, service, pod, container) (
         count_over_time({namespace=~"__NAMESPACES__", service!="rollup-explorer-backend"}
@@ -66,7 +70,7 @@ groups:
           | regexp `(?i)^\s*(?:(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*level="?(?P<alert_logfmt_level>error|fatal|panic)"?(?:\s|$)|(?:\d{4}-\d{2}-\d{2}[T ][\d:.]+(?:Z|[+-]\d{2}:\d{2})?\s+)?(?:⨯\s*)?(?:(?P<alert_plain_error>ERROR\b|(?:[A-Za-z]+)?Error:)|(?P<alert_plain_severe>FATAL\b|panic:|thread '[^']+'(?: \([0-9]+\))? panicked at)))`
           | regexp `(?i)^\s*(?:[\w.-]+=(?:"(?:\\.|[^"\\])*"|[^\s"]*)\s+)*severity="?(?P<alert_logfmt_severity>error|fatal|panic)"?(?:\s|$)`
           | alert_json_level=~"(?i)fatal|panic" or alert_json_severity=~"(?i)fatal|panic" or alert_logfmt_level=~"(?i)fatal|panic" or alert_logfmt_severity=~"(?i)fatal|panic" or alert_plain_severe!=""
-          [5m])
+          [__TIME_window__])
       ) > 0
     labels:
       severity: critical

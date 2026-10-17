@@ -400,6 +400,20 @@ dogecoinIndexerAlerts:
   # Generator: match the actual Prometheus job names; no confirmation input needed.
   jobRegex: "l1-interface|withdrawal-processor"
 
+# Optional alert timing overrides; omitted fields retain the shipped defaults.
+# See charts/scroll-monitor/ALERT_TIMING.md for every rule and parameter.
+alertTiming:
+  groupIntervals: {}  # e.g. {dogeos.metrics: 30s}; explicit values also update Grafana.
+  rules: {}
+  # rules:
+  #   FeeOracleStale: {for: 10m, maxAgeSeconds: 1800}
+  #   DogecoinIndexerLag: {window: 5m}  # Includes the left-boundary comparison.
+  #   ProtocolStateWFTxNumberStalled: {window: 90m, step: 1m}
+  #   ProofWorkerQueueStalled: {for: 15m, maxAgeSeconds: 7200}
+  #   TSOSignerResponseSlow: {for: 10m, window: 15m, latencySeconds: 90}
+  #   ServiceErrorLogs: {for: 0s, window: 10m}
+  # L2BatchHeightStalled's shared window remains businessAlerts.l2BatchStallSeconds.
+
 businessAlerts:
   enabled: true
   # Shared by L2BatchHeightStalled and Withdrawals health; integer seconds >= 60.

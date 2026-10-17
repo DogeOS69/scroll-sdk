@@ -3,6 +3,7 @@ groups:
     interval: 1m
     rules:
       - alert: MetricsTargetDown
+        timingAnnotations: {"description": "Target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for __TIME_for__. Inspect the metrics listener, discovery and network path. Other healthy replicas do not mask this target."}
         expr: up == 0
         for: 5m
         labels:

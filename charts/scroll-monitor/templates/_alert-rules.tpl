@@ -25,7 +25,7 @@
 
 {{/* Cached facts require source success and age, not just a fresh scrape. */}}
 {{- define "scroll-monitor.snapshotGuard" -}}
-{{- printf "(%s == 1 and on (namespace, job, instance) (%s <= time() and time() - %s < 120) and on (namespace, job, instance) (up == 1))" .valid .timestamp .timestamp -}}
+{{- printf "(%s == 1 and on (namespace, job, instance) (%s <= time() and time() - %s < __TIME_snapshotMaxAgeSeconds__) and on (namespace, job, instance) (up == 1))" .valid .timestamp .timestamp -}}
 {{- end -}}
 
 {{/* Keep Grafana and Prometheus fallback definitions identical. */}}
@@ -124,7 +124,12 @@
 {{- $rules := list -}}
 {{- range $rule := $group.rules -}}
 {{- range $marker, $guard := $guards -}}
+{{- if contains $marker $rule.expr -}}
+{{- $parameters := $rule.timing | default dict -}}
+{{- $_ := set $parameters "snapshotMaxAgeSeconds" 120 -}}
+{{- $_ := set $rule "timing" $parameters -}}
 {{- $_ := set $rule "expr" (replace $marker $guard $rule.expr) -}}
+{{- end -}}
 {{- end -}}
 {{/* Expand historical expressions too, so exact-match Grafana migration works. */}}
 {{- if hasKey $rule "previousExpr" -}}
@@ -132,7 +137,7 @@
 {{- $expanded := list -}}
 {{- range $expr := (ternary $previous (list $previous) (kindIs "slice" $previous)) -}}
 {{- range $marker, $guard := $guards -}}
-{{- $expr = replace $marker $guard $expr -}}
+{{- $expr = replace $marker (replace "__TIME_snapshotMaxAgeSeconds__" "120" $guard) $expr -}}
 {{- end -}}
 {{- $expanded = append $expanded $expr -}}
 {{- end -}}
@@ -156,5 +161,5 @@
 {{- $filteredGroups = append $filteredGroups $group -}}
 {{- end -}}
 {{- end -}}
-{{- dict "groups" $filteredGroups | toYaml -}}
+{{- include "scroll-monitor.applyAlertTiming" (dict "root" . "groups" $filteredGroups) -}}
 {{- end -}}
