@@ -246,7 +246,9 @@ def prestart(root, compose, host_root):
 def check_report(identity, report):
     require(report.get('contract') == 'attestation_evidence_v2', 'Unexpected policy contract')
     require(report.get('public_key', '').removeprefix('0x').lower() == identity['publicKey'], 'Running attestation identity mismatch')
-    require(report.get('network') == identity['network'], 'Running network mismatch')
+    # The pinned runtime serializes Dogecoin mainnet using bitcoin::Network.
+    expected_network = 'bitcoin' if identity['network'] == 'mainnet' else identity['network']
+    require(report.get('network') in (identity['network'], expected_network), 'Running network mismatch')
     require(report.get('policy_mode') == 'enforce', 'Signer is not enforcing policy')
     for capability in ['advance_l1', 'advance_l2']:
         rows = [row for row in report.get('v2_capabilities', []) if row.get('capability') == capability]

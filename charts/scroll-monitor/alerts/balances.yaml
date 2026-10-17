@@ -20,7 +20,8 @@ groups:
           summary: Ethereum DA submitter account balance is below __ETH_DA_MIN_ETH__ ETH.
           description: 'Address {{ $labels.address }} on chain {{ $labels.chain_id }} has {{ $value | printf "%.4f" }} ETH. Blob publication stops when it cannot pay fees. Replenish funds for blob publication and transaction replacement.'
       - alert: AccountBalanceCollectionFailed
-        expr: scroll_account_balance_scrape_success == 0 or (time() - scroll_account_balance_last_success_timestamp_seconds > 180)
+        timing: {"maxAgeSeconds": 180}
+        expr: scroll_account_balance_scrape_success == 0 or (time() - scroll_account_balance_last_success_timestamp_seconds > __TIME_maxAgeSeconds__)
         for: 5m
         labels:
           severity: warning

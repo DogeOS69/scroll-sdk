@@ -59,8 +59,9 @@ groups:
         is working set divided by its own memory limit. Inspect growth, OOM events and limits; working set is not
         an exact OOM predictor.
   - alert: NodeCPUUsageHigh
+    timing: {"window": "5m"}
     expr: |
-      (100 * (1 - avg by (cluster, instance) (rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[5m])))) >= __resourceAlerts.cpuWarningPercent__
+      (100 * (1 - avg by (cluster, instance) (rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[__TIME_window__])))) >= __resourceAlerts.cpuWarningPercent__
     for: __resourceAlerts.cpuFor__
     labels:
       severity: warning
@@ -72,8 +73,9 @@ groups:
       description: CPU usage is {{ $value | printf "%.1f" }}%. Inspect latency, backlog and capacity. High utilization
         alone does not prove an outage; batch work may legitimately saturate CPU.
   - alert: ContainerCPUUsageHigh
+    timing: {"window": "5m"}
     expr: |
-      (100 * max by (cluster, namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[5m])) / on (cluster, namespace, pod, container) (max by (cluster, namespace, pod, container) (kube_pod_container_resource_limits{__POD_SELECTOR__, resource="cpu", unit="core"}) > 0)) >= __resourceAlerts.cpuWarningPercent__
+      (100 * max by (cluster, namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", __POD_SELECTOR__, container!="", container!="POD", image!=""}[__TIME_window__])) / on (cluster, namespace, pod, container) (max by (cluster, namespace, pod, container) (kube_pod_container_resource_limits{__POD_SELECTOR__, resource="cpu", unit="core"}) > 0)) >= __resourceAlerts.cpuWarningPercent__
     for: __resourceAlerts.cpuFor__
     labels:
       severity: warning
@@ -85,8 +87,9 @@ groups:
       description: CPU usage is {{ $value | printf "%.1f" }}%. Inspect latency, backlog and capacity. High utilization
         alone does not prove an outage; batch work may legitimately saturate CPU.
   - alert: ContainerCPUThrottlingHigh
+    timing: {"window": "5m"}
     expr: |
-      100 * max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[5m])) / (max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[5m])) > 0) >= __resourceAlerts.cpuThrottlingPercent__
+      100 * max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[__TIME_window__])) / (max by (cluster, namespace, pod, container) (rate(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD", image!=""}[__TIME_window__])) > 0) >= __resourceAlerts.cpuThrottlingPercent__
     for: __resourceAlerts.cpuFor__
     labels:
       severity: warning

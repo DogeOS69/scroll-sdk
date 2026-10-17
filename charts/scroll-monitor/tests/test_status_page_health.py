@@ -12,6 +12,8 @@ from unittest.mock import patch
 
 import yaml
 
+from test_monitoring_templates import render_source_groups
+
 
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
@@ -276,7 +278,7 @@ class PolicyTests(unittest.TestCase):
             for target in panel['targets']:
                 scenario('dashboard-'+str(panel['id'])+target['refId'],target['expr'],{},None)
         with tempfile.TemporaryDirectory() as directory:
-            Path(directory,'alerts.yaml').write_text((SCRIPTS.parent / 'alerts/status-page.yaml').read_text())
+            Path(directory,'alerts.yaml').write_text(yaml.safe_dump(render_source_groups(SCRIPTS.parent / 'alerts/status-page.yaml')))
             Path(directory,'rules.json').write_text(json.dumps({'rule_files':['/fixtures/alerts.yaml'],'evaluation_interval':'1m','tests':tests}))
             result=subprocess.run(['docker','run','--rm','--user',str(os.getuid()),'--entrypoint','promtool','-v',directory+':/fixtures:ro',
                     'prom/prometheus:v2.52.0','test','rules','/fixtures/rules.json'],text=True,capture_output=True,timeout=120)

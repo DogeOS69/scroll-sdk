@@ -50,6 +50,7 @@ reth:
   logFormat: log-fmt
   verbosity: 3
   extraArgs:
+    - "--consensus.exit-on-signer-rotation"
     - "--gpo.maxprice"
     - "420000000000000"
     - "--network.legacy-geth-header-transform"

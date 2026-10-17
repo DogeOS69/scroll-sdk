@@ -492,3 +492,12 @@ Fee-oracle balances are denominated in the transaction chain's native token
 (DOGE on DogeOS L2). The existing `minimumEth` values key and
 `scroll_account_balance_eth` metric retain their historical names and 18-decimal
 conversion; they do not imply that the L2 gas currency is ETH.
+
+## Alert timing in production values
+
+Use the optional `alertTiming` block in `values/scroll-monitor-production.yaml`
+to configure per-alert `for` delays, query windows, age/latency thresholds and
+group evaluation intervals. Partial overrides are supported; omitted fields use
+the existing defaults. Explicit timing overrides also apply to existing Grafana
+rules. See the [complete timing reference](../charts/scroll-monitor/ALERT_TIMING.md)
+for supported names, defaults, shared L2 batch configuration and UI ownership.

@@ -32,6 +32,40 @@ For sequencer CPU, memory, storage, and block-production settings, see the
 [sequencer sizing recommendations](../docs/sequencer-sizing.md), including
 measured transfer and full-gas workload results from the devnet test.
 
+### Installation target scope
+
+`make install-all` installs the application releases after configuration and
+Secrets preparation. It does not manage the independent Dogecoin node or
+Blockbook, deploy contracts, fund accounts, start testnet activity, or release
+the L1 genesis hold. Review service readiness and the deployment runbook before
+those separate actions. `install-scroll-core` installs monitoring first;
+`install-metrics-exporter` is also available as a standalone target.
+
+After L2 is ready, `make install-chain-contracts` explicitly runs preinstalls
+before contracts. `install-blockscout`, `install-testnet-activity-helper`, and
+`start-l1-sync` remain explicit optional or lifecycle actions. The proof-service
+group waits for TSO before installing WP. Capacity Manager requires its own
+prepared plan; a bounded `proofWorkers` deployment uses the separate CLI worker
+workflow.
+
+### Follower restart on signer rotation
+
+The internal RPC, public RPC, and bootnode examples enable
+`--consensus.exit-on-signer-rotation` through `reth.extraArgs`. When a follower
+confirms an authorized-signer change from L1, it shuts down with exit code `70`.
+Kubernetes restarts the container so the node can load the new signer.
+
+This requires `--l1.url`, system-contract consensus (the node default), and a
+supervisor that restarts exited nodes. Do not combine the flag with
+`--consensus.authorized-signer`: a pinned signer remains pinned after a restart.
+Do not enable it on sequencers; the node rejects that combination, and sequencer
+rotation remains a manual operation. Preserve this flag when replacing the
+followers' `reth.extraArgs` lists in a later Helm values file.
+
+The standalone `dogeos-rpc-package` also enables the flag in
+`scripts/l2reth_entrypoint.sh`; its `l2reth-node` Compose service uses
+`restart: on-failure` to restart after exit code `70`.
+
 ### Sequencer deployment settings
 
 Review [the Reth sequencer example](values/l2-reth-sequencer-production.yaml)

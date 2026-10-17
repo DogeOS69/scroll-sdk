@@ -4,7 +4,8 @@ groups:
   interval: 1m
   rules:
   - alert: WFFundingDataCorrupt
-    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_corrupt_funding_row_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_corrupt_funding_row_total[__TIME_window__]))
       > 0
     labels:
       severity: critical
@@ -14,7 +15,8 @@ groups:
       description: Inspect funding amounts, outpoints, and the affected {{ $labels.lane }} lane. Repair the durable
         data before retrying.
   - alert: WFBridgeFundingDeferred
-    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding"}[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, lane) (increase(withdrawal_processor_wf_lane_funding_deferred_total{reason="insufficient_bridge_funding"}[__TIME_window__]))
       > 0
     for: 15m
     labels:
@@ -25,7 +27,8 @@ groups:
       description: Lane {{ $labels.lane }} is repeatedly withheld from scheduling. Check bridge UTXO availability
         and reservations; this differs from the fee-wallet inventory balance.
   - alert: WFOperatorIntentHeadDrift
-    expr: sum by (namespace, job, instance, action_kind) (increase(withdrawal_processor_operator_intent_head_drift_terminal_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, action_kind) (increase(withdrawal_processor_operator_intent_head_drift_terminal_total[__TIME_window__]))
       > 0
     labels:
       severity: critical
@@ -35,11 +38,12 @@ groups:
       description: Review {{ $labels.action_kind }} and submit a fresh operator request with a new idempotency key
         after reconciling the canonical head.
   - alert: WFProofGateInvariantViolation
-    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
-      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome="invariant_error"}[5m]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome="invariant_error"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome="invariant_error"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome="invariant_error"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
+      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome="invariant_error"}[__TIME_window__]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome="invariant_error"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
       > 0
     labels:
       severity: critical
@@ -48,7 +52,8 @@ groups:
       summary: A WF proof gate or witness invariant failed.
       description: Inspect bridge witness, attestation evidence, and proof-gate diagnostics. Do not bypass the gate.
   - alert: WFWitnessInvariantViolation
-    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_invariant_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_invariant_total[__TIME_window__]))
       > 0
     labels:
       severity: critical
@@ -57,11 +62,12 @@ groups:
       summary: Bridge witness materialization hit a terminal invariant.
       description: Inspect persisted witness inputs and the proof control plane before resubmission.
   - alert: WFProofRuntimeUnavailable
-    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
-      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
-      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome=~"retryable_error|backend_unavailable"}[5m]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_bridge_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_envelope_enrichment_total{outcome=~"retryable_error|backend_unavailable"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_envelope_enrichment_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_local_runtime_total{outcome=~"retryable_error|backend_unavailable"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_local_runtime_total", "", "")
+      or label_replace(increase(withdrawal_processor_scroll_batch_gate_checks_total{outcome=~"retryable_error|backend_unavailable"}[__TIME_window__]), "error_counter", "withdrawal_processor_scroll_batch_gate_checks_total", "", "")
+      or label_replace(increase(withdrawal_processor_bridge_witness_runtime_total{outcome=~"retryable_error|backend_unavailable"}[__TIME_window__]), "error_counter", "withdrawal_processor_bridge_witness_runtime_total", "", "")))
       > 0
     for: 10m
     labels:
@@ -72,7 +78,8 @@ groups:
       description: Check prover backends, artifact access, and control-plane RPCs. Ordinary not_ready and skipped
         outcomes are excluded.
   - alert: WFWitnessArtifactMissing
-    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_artifact_bytes_missing_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_bridge_witness_runtime_artifact_bytes_missing_total[__TIME_window__]))
       > 0
     for: 5m
     labels:
@@ -82,8 +89,9 @@ groups:
       summary: Bridge witness artifact bytes remain unavailable.
       description: Check materialization receipts and artifact storage before retrying the WF build.
   - alert: WFTSOHandoffRecoveryFailures
-    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_tso_handoff_recovery_failures_total[5m]), "error_counter", "withdrawal_processor_tso_handoff_recovery_failures_total", "", "")
-      or label_replace(increase(withdrawal_processor_tso_handoff_recovery_age_probe_failures_total[5m]), "error_counter", "withdrawal_processor_tso_handoff_recovery_age_probe_failures_total", "", "")))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) ((label_replace(increase(withdrawal_processor_tso_handoff_recovery_failures_total[__TIME_window__]), "error_counter", "withdrawal_processor_tso_handoff_recovery_failures_total", "", "")
+      or label_replace(increase(withdrawal_processor_tso_handoff_recovery_age_probe_failures_total[__TIME_window__]), "error_counter", "withdrawal_processor_tso_handoff_recovery_age_probe_failures_total", "", "")))
       > 0
     for: 5m
     labels:
@@ -93,7 +101,8 @@ groups:
       summary: TSO handoff recovery cannot complete or observe its backlog.
       description: Check TSO job lookup, callback correlation, and durable job storage.
   - alert: WFTSOHandoffRecoveryBlocked
-    expr: withdrawal_processor_tso_handoff_recovery_blocked_age_seconds > 900
+    timing: {"maxAgeSeconds": 900}
+    expr: withdrawal_processor_tso_handoff_recovery_blocked_age_seconds > __TIME_maxAgeSeconds__
     for: 5m
     labels:
       severity: critical
@@ -112,7 +121,8 @@ groups:
       summary: The L2 proof pipeline keeps failing.
       description: Inspect the pipeline error class and data-source availability.
   - alert: WFL2ProofPipelineStale
-    expr: (time() - withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds > 900) and on (namespace,
+    timing: {"maxAgeSeconds": 900}
+    expr: (time() - withdrawal_processor_l2_proof_pipeline_last_success_timestamp_seconds > __TIME_maxAgeSeconds__) and on (namespace,
       job, instance) (withdrawal_processor_l2_proof_pipeline_enabled == 1)
     for: 5m
     labels:
@@ -127,6 +137,7 @@ groups:
       - "(withdrawal_processor_protocol_job_oldest_age_seconds{status=~\"queued|building|built|failed_retryable|bug\"} and on (namespace, job, instance) __WP_JOBS_VALID__) > 1800"
     # Fall back per target only if it exposes none of the head-aware series.
     # Invalid head observations must not resurrect historical failures.
+    timing: {"maxAgeSeconds": 1800}
     expr: >-
       (
         (withdrawal_processor_protocol_job_head_oldest_age_seconds{status=~"queued|building|built|failed_retryable|bug"}
@@ -138,7 +149,7 @@ groups:
           (withdrawal_processor_protocol_job_head_oldest_age_seconds
             or withdrawal_processor_protocol_snapshot_valid{source="job_head"}
             or withdrawal_processor_protocol_snapshot_timestamp_seconds{source="job_head"}))
-      ) > 1800
+      ) > __TIME_maxAgeSeconds__
     for: 10m
     labels:
       severity: critical
@@ -148,7 +159,8 @@ groups:
       description: Oldest {{ $labels.action_kind }} job in {{ $labels.status }} has waited {{ $value | humanizeDuration }}. Inspect
         funding, proof gates, and scheduler errors.
   - alert: WFProtocolMetricsReadFailure
-    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_protocol_metrics_scrape_errors_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(withdrawal_processor_protocol_metrics_scrape_errors_total[__TIME_window__]))
       > 0
     for: 5m
     labels:
@@ -158,9 +170,11 @@ groups:
       summary: Withdrawal processor protocol metrics cannot read their source state.
       description: Other gauges may be stale. Check database access and metrics refresh errors.
   - alert: WFDatabasePoolSlow
-    expr: sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_sum[10m]))
-      / sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_count[10m]))
-      > 1 and sum by (namespace, job, instance) (increase(withdrawal_processor_db_pool_checkout_wait_seconds_count[10m]))
+    timing: {"window": "10m", "latencySeconds": 1}
+    timingAnnotations: {"summary": "Withdrawal processor database checkout averages more than __TIME_latencySeconds__ seconds.", "description": "Database checkout averages more than __TIME_latencySeconds__ seconds with at least five observations in __TIME_window__. Check pool saturation and long transactions."}
+    expr: sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_sum[__TIME_window__]))
+      / sum by (namespace, job, instance) (rate(withdrawal_processor_db_pool_checkout_wait_seconds_count[__TIME_window__]))
+      > __TIME_latencySeconds__ and sum by (namespace, job, instance) (increase(withdrawal_processor_db_pool_checkout_wait_seconds_count[__TIME_window__]))
       >= 5
     for: 5m
     labels:

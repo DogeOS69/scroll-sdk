@@ -8,9 +8,12 @@
 {{- if and .Values.grafanaAlerting.logs.enabled .Values.monitoring.datasources.loki.enabled }}
 {{- $namespaces := .Values.alloy.logs.namespaces | default (list .Release.Namespace) }}
 {{- $logGroups := (.Files.Get "alerts/logs.yaml" | replace "__NAMESPACES__" (join "|" $namespaces) | fromYaml).groups }}
+{{- $logGroups = (include "scroll-monitor.applyAlertTiming" (dict "root" . "groups" $logGroups) | fromYaml).groups }}
 {{- $groups = concat $groups $logGroups }}
 {{- end }}
 {{- $config := dict "folderUID" .Values.grafanaAlerting.folderUID "folderTitle" .Values.grafanaAlerting.folderTitle "datasourceUID" .Values.monitoring.datasources.prometheus.uid "lokiDatasourceUID" .Values.monitoring.datasources.loki.uid "groups" $groups "pauseRules" (include "scroll-monitor.pauseRules" . | fromYaml) }}
+{{- $_ := set $config "groupIntervals" .Values.alertTiming.groupIntervals }}
+{{- $_ := set $config "timingOverrides" .Values.alertTiming.rules }}
 {{- if eq .Values.alerting.backend "prometheus" }}
 {{- $_ := set $config "forwardAlertmanager" (dict "url" .Values.alerting.alertmanager.url "name" "scroll-external-alertmanager" "uid" "scroll-external-alertmanager") }}
 {{- else }}

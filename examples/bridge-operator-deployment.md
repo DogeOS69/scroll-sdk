@@ -223,8 +223,10 @@ make start-l1-sync
 Blockscout is not installed by default, including by `install-all`. To opt in,
 prepare its database and `values/blockscout-production.yaml`, then run
 `make install-blockscout`. This installs both Blockscout and its contract verifier.
-Do not use `install-all` for this staged flow: it also installs optional
-components and invokes initialization.
+Use the explicit targets above for this staged flow so readiness and funding can
+be checked between services. `install-all` installs application releases only;
+contract deployment, account funding, testnet activity and `start-l1-sync` remain
+separate actions. Dogecoin is managed independently of this Makefile.
 
 Grafana and Dogecoin have ingress disabled in the default values. Their services
 remain available inside the cluster; generating a hostname does not enable

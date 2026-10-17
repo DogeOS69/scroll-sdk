@@ -10,7 +10,9 @@ groups:
           summary: Dstack metrics cannot be collected.
           description: Check ServiceMonitor namespace discovery, metrics Secret, RBAC, endpoint latency and sample limit. Successful scraping establishes controller observability only, not GPU reachability or telemetry freshness.
       - alert: DstackRunFailures
-        expr: sum by (dstack_namespace, dstack_controller, dstack_project_name) (increase(dstack_run_count_failed_total{dstack_source="native",dstack_namespace="__DSTACK_NAMESPACE__",dstack_controller="__DSTACK_CONTROLLER__"}[10m])) >= __DSTACK_FAILED_RUNS__
+        timing: {"window": "10m"}
+        timingAnnotations: {"summary": "Multiple dstack runs failed in the last __TIME_window__."}
+        expr: sum by (dstack_namespace, dstack_controller, dstack_project_name) (increase(dstack_run_count_failed_total{dstack_source="native",dstack_namespace="__DSTACK_NAMESPACE__",dstack_controller="__DSTACK_CONTROLLER__"}[__TIME_window__])) >= __DSTACK_FAILED_RUNS__
         labels: {severity: warning, service: dstack-controller, visibility: internal}
         annotations:
           summary: Multiple dstack runs failed in the last ten minutes.
