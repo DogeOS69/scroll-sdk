@@ -46,6 +46,7 @@ reth:
   logFormat: log-fmt
   verbosity: 3
   extraArgs:
+    - "--consensus.exit-on-signer-rotation"
     - "--network.legacy-geth-header-transform"
     - "true"
 
