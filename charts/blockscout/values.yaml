@@ -2,8 +2,7 @@ blockscout-stack:
   nameOverride: "blockscout"
   fullnameOverride: "blockscout"
 
-  imagePullSecrets:
-    - name: docker-secret
+  imagePullSecrets: []
 
   blockscout:
     image:
@@ -44,12 +43,7 @@ blockscout-stack:
     ingress:
       enabled: true
       className: "nginx"
-      annotations:
-        nginx.ingress.kubernetes.io/enable-cors: "true"
-        nginx.ingress.kubernetes.io/cors-allow-origin: "http://blockscout.scrollsdk"
-        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
-        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
-        nginx.ingress.kubernetes.io/cors-max-age: "86400"
+      annotations: {}
       hostname: blockscout.scrollsdk
 
     volumes:
@@ -79,19 +73,13 @@ blockscout-stack:
       NEXT_PUBLIC_HOMEPAGE_STATS: '["total_blocks", "average_block_time", "total_txs", "wallet_addresses", "gas_tracker"]'
       NEXT_PUBLIC_API_PROTOCOL: http
       NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
-      NEXT_PUBLIC_API_HOST: "blockscout.scrollsdk"
       NEXT_PUBLIC_APP_PROTOCOL: http
       NEXT_PUBLIC_AD_BANNER_PROVIDER: none
       NEXT_PUBLIC_AD_TEXT_PROVIDER: none
 
     ingress:
       enabled: true
-      annotations:
-        nginx.ingress.kubernetes.io/enable-cors: "true"
-        nginx.ingress.kubernetes.io/cors-allow-origin: "http://blockscout.scrollsdk"
-        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
-        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
-        nginx.ingress.kubernetes.io/cors-max-age: "86400"
+      annotations: {}
       className: "nginx"
       hostname: blockscout.scrollsdk
 

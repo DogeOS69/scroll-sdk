@@ -220,7 +220,7 @@ reconcile-proof-services:
 # Optional: prepare the database and values, then invoke this target explicitly.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
-		--version=0.1.11-dogeos \
+		--version=0.1.12-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n "$(NAMESPACE)" \

@@ -1,5 +1,8 @@
 blockscout-stack:
   config:
+    prometheus:
+      ingressWhitelist:
+        enabled: false # NGINX-only extra metrics Ingress is not used with ALB.
     network:
       id: "221122"
       name: "DogeOS Devnet"
@@ -18,8 +21,6 @@ blockscout-stack:
       # BLOCK_TRANSFORMER: clique
       INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: true
       CHAIN_TYPE: scroll
-      COIN: "DOGE"
-      COIN_NAME: "DOGE"
       INDEXER_SCROLL_L1_CHAIN_CONTRACT: ""  # value of L1_SCROLL_CHAIN_PROXY_ADDR on config-contracts.toml
       INDEXER_SCROLL_L1_BATCH_START_BLOCK: ""  # value of L1_CONTRACT_DEPLOYMENT_BLOCK on config.toml
       INDEXER_SCROLL_L1_MESSENGER_CONTRACT: ""  # value of L1_SCROLL_MESSENGER_PROXY_ADDR on config-contracts.toml
@@ -52,20 +53,14 @@ blockscout-stack:
       enabled: false
       className: alb
       annotations:
-        nginx.ingress.kubernetes.io/enable-cors: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-origin: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-headers: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-methods: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-max-age: null # Remove inherited chart default.
         alb.ingress.kubernetes.io/scheme: internet-facing
         alb.ingress.kubernetes.io/target-type: ip
         alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
         alb.ingress.kubernetes.io/certificate-arn: <TODO>
         alb.ingress.kubernetes.io/group.name: REPLACE_WITH_UNIQUE_BLOCKSCOUT_GROUP
+        alb.ingress.kubernetes.io/group.order: "10"
+        alb.ingress.kubernetes.io/healthcheck-path: /api/health/readiness
       hostname: blockscout.scrollsdk
-      paths:
-      - path: /api
-        pathType: Prefix
 
   frontend:
     env:
@@ -89,20 +84,14 @@ blockscout-stack:
       enabled: false
       className: alb
       annotations:
-        nginx.ingress.kubernetes.io/enable-cors: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-origin: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-headers: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-allow-methods: null # Remove inherited chart default.
-        nginx.ingress.kubernetes.io/cors-max-age: null # Remove inherited chart default.
         alb.ingress.kubernetes.io/scheme: internet-facing
         alb.ingress.kubernetes.io/target-type: ip
         alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
         alb.ingress.kubernetes.io/certificate-arn: <TODO>
         alb.ingress.kubernetes.io/group.name: REPLACE_WITH_UNIQUE_BLOCKSCOUT_GROUP
+        alb.ingress.kubernetes.io/group.order: "100"
+        alb.ingress.kubernetes.io/healthcheck-path: /api/healthz
       hostname: blockscout.scrollsdk
-      paths:
-      - path: /
-        pathType: Prefix
 
 externalSecrets:
   blockscout-secret-env:
