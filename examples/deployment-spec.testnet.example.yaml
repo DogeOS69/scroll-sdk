@@ -30,15 +30,23 @@ infrastructure:
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
     # Optional: secretsPrefix: your-reviewed-existing-prefix
-    # Existing HTTPS ALBs and HTTP/IP target groups are externally managed.
-    # Fill every reference before setup plan. TSO and proof need separate ALBs.
+    # Controller-managed shared ALB for public RPC, Portal and Blockscout.
+    # Fill the group name and an issued ACM certificate ARN before setup plan.
+    # The certificate must cover all selected public service hostnames.
+    sharedAlb:
+      groupName: REPLACE_WITH_SHARED_ALB_GROUP_NAME
+      certificateArn: REPLACE_WITH_SHARED_ALB_CERTIFICATE_ARN
+      services:
+        - l2-reth-rpc-public
+        - l2-reth-rpc-public-ws
+        - frontends
+        - blockscout-api
+        - blockscout-frontend
+    # TSO and Proof use separate, externally managed HTTPS ALBs and target groups.
     # Service names below match Makefile release names and the pinned templates.
     alb:
       mode: existing
       endpoints:
-        public:
-          loadBalancerArn: REPLACE_WITH_PUBLIC_ALB_ARN
-          listenerArn: REPLACE_WITH_PUBLIC_HTTPS_LISTENER_ARN
         tso:
           loadBalancerArn: REPLACE_WITH_TSO_ALB_ARN
           listenerArn: REPLACE_WITH_TSO_HTTPS_LISTENER_ARN
@@ -46,26 +54,6 @@ infrastructure:
           loadBalancerArn: REPLACE_WITH_PROOF_ALB_ARN
           listenerArn: REPLACE_WITH_PROOF_HTTPS_LISTENER_ARN
       bindings:
-        frontends:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_FRONTENDS_TARGET_GROUP_ARN
-          serviceRef: {name: frontends, port: 80}
-        l2-reth-rpc-public:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_RPC_HTTP_TARGET_GROUP_ARN
-          serviceRef: {name: l2-reth-rpc-public, port: 8545}
-        l2-reth-rpc-public-ws:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_RPC_WS_TARGET_GROUP_ARN
-          serviceRef: {name: l2-reth-rpc-public, port: 8546}
-        blockscout-api:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_API_TARGET_GROUP_ARN
-          serviceRef: {name: blockscout-blockscout-svc, port: 80}
-        blockscout-frontend:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_FRONTEND_TARGET_GROUP_ARN
-          serviceRef: {name: blockscout-frontend-svc, port: 80}
         tso-service:
           endpoint: tso
           targetGroupArn: REPLACE_WITH_TSO_TARGET_GROUP_ARN
