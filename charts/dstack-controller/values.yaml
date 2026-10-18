@@ -49,7 +49,7 @@ service:
   annotations: {}
 ingress:
   enabled: false
-  className: ""
+  className: alb
   annotations: {}
   hosts: []
   # Example: [{secretName: dstack-tls, hosts: [dstack.example.com]}]

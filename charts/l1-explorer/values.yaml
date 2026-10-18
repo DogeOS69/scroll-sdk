@@ -1,4 +1,8 @@
 blockscout-stack:
+  config:
+    prometheus:
+      ingressWhitelist:
+        enabled: false
   nameOverride: &app_name "l1-explorer"
   fullnameOverride: *app_name
 
@@ -19,14 +23,9 @@ blockscout-stack:
           name: l1-explorer-env
 
     ingress:
-      enabled: true
-      className: "nginx"
-      annotations:
-        nginx.ingress.kubernetes.io/enable-cors: "true"
-        nginx.ingress.kubernetes.io/cors-allow-origin: "http://l1-explorer.scrollsdk"
-        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
-        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
-        nginx.ingress.kubernetes.io/cors-max-age: "86400"
+      enabled: false
+      className: alb
+      annotations: {}
       hostname: l1-explorer.scrollsdk
 
   frontend:
@@ -51,12 +50,7 @@ blockscout-stack:
       NEXT_PUBLIC_AD_TEXT_PROVIDER: none
 
     ingress:
-      enabled: true
-      annotations:
-        nginx.ingress.kubernetes.io/enable-cors: "true"
-        nginx.ingress.kubernetes.io/cors-allow-origin: "http://l1-explorer.scrollsdk"
-        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
-        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
-        nginx.ingress.kubernetes.io/cors-max-age: "86400"
-      className: "nginx"
+      enabled: false
+      annotations: {}
+      className: alb
       hostname: l1-explorer.scrollsdk

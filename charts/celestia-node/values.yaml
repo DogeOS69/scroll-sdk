@@ -45,21 +45,15 @@ service:
       protocol: TCP
 
 ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  enabled: false
+  className: alb
+  annotations: {}
   hosts:
     - host: "celestia.testnet.dogeos.com"
       paths:
         - path: "/"
           pathType: Prefix
-  tls:
-    - secretName: "celestia-tls"
-      hosts:
-        - "celestia.testnet.dogeos.com"
-
+  tls: []
 resources:
   requests:
     cpu: "500m"

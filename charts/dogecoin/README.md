@@ -1,6 +1,6 @@
 # dogecoin
 
-![Version: 0.1.13](https://img.shields.io/badge/Version-0.1.13-informational?style=flat-square)  ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)  ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
+![Version: 0.1.14](https://img.shields.io/badge/Version-0.1.14-informational?style=flat-square)  ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)  ![AppVersion: 1.14.9](https://img.shields.io/badge/AppVersion-1.14.9-informational?style=flat-square)
 Deploy a Dogecoin FullNode in Kubernetes
 
 ## Single-node lifecycle and storage
@@ -112,14 +112,13 @@ python3 charts/dogecoin/tests/smoke_regtest.py
 | fullnameOverride | string | `"dogecoin"` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/dogecoin"` |  |
-| ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
-| ingress.className | string | `"nginx"` |  |
+| ingress.annotations | object | `{}` |  |
+| ingress.className | string | `"alb"` |  |
 | ingress.enabled | bool | `false` |  |
 | ingress.hosts[0].host | string | `"dogecoin.example.com"` |  |
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.tls[0].hosts[0] | string | `"dogecoin.example.com"` |  |
-| ingress.tls[0].secretName | string | `"dogecoin-tls"` |  |
+| ingress.tls | list | `[]` | TLS terminates at the ALB with ACM. |
 | nameOverride | string | `"dogecoin"` |  |
 | nodeSelector | object | `{}` |  |
 | probes.liveness.failureThreshold | int | `6` |  |

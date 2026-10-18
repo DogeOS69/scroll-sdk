@@ -2,7 +2,7 @@
 apiVersion: v2
 description: scroll helm charts to deploy scroll sdk for dogeos
 name: scroll-sdk
-version: 0.1.22-dogeos
+version: 0.1.23-dogeos
 appVersion: v0.1.0
 kubeVersion: ">=1.22.0-0"
 maintainers:
@@ -30,7 +30,7 @@ dependencies:
   #   repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
   #   condition: balance-checker.enabled
   - name: blockscout
-    version: 0.1.9-dogeos
+    version: 0.1.13-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: blockscout.enabled
   # - name: blockscout-sc-verifier
@@ -70,7 +70,7 @@ dependencies:
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: gas-oracle.enabled
   - name: l1-devnet
-    version: 0.1.5-dogeos
+    version: 0.1.7-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l1-devnet.enabled
   # - name: l1-explorer
@@ -82,7 +82,7 @@ dependencies:
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-bootnode.enabled
   - name: l2-rpc
-    version: 0.1.4-dogeos
+    version: 0.1.17
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: l2-rpc.enabled
   - name: l2-sequencer
@@ -94,7 +94,7 @@ dependencies:
     version: 15.5.0
     condition: postgresql.enabled
   - name: rollup-explorer-backend
-    version: 0.1.3-dogeos
+    version: 0.1.4-dogeos
     repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
     condition: rollup-explorer-backend.enabled
   - name: rollup-relayer
@@ -110,6 +110,6 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: scroll-common.enabled
   - name: scroll-monitor
-    version: 0.1.47-dogeos
+    version: 0.1.50-dogeos
     repository: "file://../scroll-monitor"
     condition: scroll-monitor.enabled

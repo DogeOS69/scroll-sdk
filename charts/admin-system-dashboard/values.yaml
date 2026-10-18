@@ -88,11 +88,11 @@ serviceMonitor:
 
 ingress:
   main:
-    enabled: true
+    enabled: false
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: "nginx"
+    ingressClassName: alb
     hosts:
       - host: admin-system-dashboard.scrollsdk
         paths:

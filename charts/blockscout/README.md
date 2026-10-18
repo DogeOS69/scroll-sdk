@@ -1,6 +1,6 @@
 # blockscout
 
-![Version: 0.1.12-dogeos](https://img.shields.io/badge/Version-0.1.12--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.13-dogeos](https://img.shields.io/badge/Version-0.1.13--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout scroll helm charts
 
@@ -44,8 +44,8 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.blockscout.image.repository | string | `"ghcr.io/blockscout/blockscout-scroll"` |  |
 | blockscout-stack.blockscout.image.tag | string | `"8.0.2"` |  |
 | blockscout-stack.blockscout.ingress.annotations | object | `{}` |  |
-| blockscout-stack.blockscout.ingress.className | string | `"nginx"` |  |
-| blockscout-stack.blockscout.ingress.enabled | bool | `true` |  |
+| blockscout-stack.blockscout.ingress.className | string | `"alb"` |  |
+| blockscout-stack.blockscout.ingress.enabled | bool | `false` |  |
 | blockscout-stack.blockscout.ingress.hostname | string | `"blockscout.scrollsdk"` |  |
 | blockscout-stack.blockscout.volumeMounts[0].mountPath | string | `"/app/genesis"` |  |
 | blockscout-stack.blockscout.volumeMounts[0].name | string | `"genesis-config"` |  |
@@ -69,8 +69,8 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.frontend.image.pullPolicy | string | `"Always"` |  |
 | blockscout-stack.frontend.image.tag | string | `"v1.38.2"` |  |
 | blockscout-stack.frontend.ingress.annotations | object | `{}` |  |
-| blockscout-stack.frontend.ingress.className | string | `"nginx"` |  |
-| blockscout-stack.frontend.ingress.enabled | bool | `true` |  |
+| blockscout-stack.frontend.ingress.className | string | `"alb"` |  |
+| blockscout-stack.frontend.ingress.enabled | bool | `false` |  |
 | blockscout-stack.frontend.ingress.hostname | string | `"blockscout.scrollsdk"` |  |
 | blockscout-stack.fullnameOverride | string | `"blockscout"` |  |
 | blockscout-stack.imagePullSecrets | list | `[]` |  |

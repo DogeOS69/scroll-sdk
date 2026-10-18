@@ -12,10 +12,10 @@ NAMESPACE ?= default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.5
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.6
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
-SCROLL_MONITOR_CHART_VERSION ?= 0.1.55-dogeos
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.57-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
@@ -23,9 +23,9 @@ SCROLL_MONITOR_DSTACK_ARGS = $(if $(strip $(SCROLL_MONITOR_DSTACK_VALUES)),--val
 EAGER_MATERIALIZER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eager-materializer
 EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.1
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
-ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
+ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.5
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.6
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.7
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
 PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
@@ -80,7 +80,7 @@ install-l1-interface:
 install-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
-		--version=0.1.6-dogeos \
+		--version=0.1.7-dogeos \
 		--values values/l1-devnet-production.yaml
 
 install-scroll-monitor:
@@ -179,7 +179,7 @@ install-cubesigner-signer:
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.13 \
+		--version=0.1.14 \
 		--values values/tso-service-production.yaml \
 		--wait
 
@@ -220,7 +220,7 @@ reconcile-proof-services:
 # Optional: prepare the database and values, then invoke this target explicitly.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
-		--version=0.1.12-dogeos \
+		--version=0.1.13-dogeos \
 		--values values/blockscout-production.yaml
 
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n "$(NAMESPACE)" \
@@ -228,7 +228,7 @@ install-blockscout:
 
 install-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n "$(NAMESPACE)" \
-		--version=0.1.5-dogeos \
+		--version=0.1.6-dogeos \
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 

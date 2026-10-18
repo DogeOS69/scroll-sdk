@@ -73,7 +73,6 @@ ingress:
   className: alb
   tls: [] # Override the legacy packaged chart TLS Secret default.
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: null # Remove inherited chart default.
     alb.ingress.kubernetes.io/scheme: internet-facing
     # JSON-RPC GET may return 400/401/405; 5xx and timeouts remain unhealthy.
     alb.ingress.kubernetes.io/success-codes: "200-499"

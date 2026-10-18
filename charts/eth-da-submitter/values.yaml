@@ -81,6 +81,7 @@ serviceMonitor:
 
 ingress:
   main:
+    ingressClassName: alb
     enabled: false
 
 externalSecrets: {}

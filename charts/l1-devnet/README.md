@@ -1,6 +1,6 @@
 # l1-devnet
 
-![Version: 0.1.6-dogeos](https://img.shields.io/badge/Version-0.1.6--dogeos-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.1.7-dogeos](https://img.shields.io/badge/Version-0.1.7--dogeos-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 Private Ethereum PoS devnet with JSON-RPC + Beacon API
 
@@ -35,11 +35,11 @@ Kubernetes: `>=1.22.0-0`
 | images.lighthouse.repository | string | `"sigp/lighthouse"` |  |
 | images.lighthouse.tag | string | `"latest"` |  |
 | ingress.main.annotations | object | `{}` |  |
-| ingress.main.enabled | bool | `true` |  |
+| ingress.main.enabled | bool | `false` |  |
 | ingress.main.hosts[0].host | string | `"l1-devnet.scrollsdk"` |  |
 | ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.main.ingressClassName | string | `"nginx"` |  |
+| ingress.main.ingressClassName | string | `"alb"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |
 | jwtSecret | string | `"0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"` |  |

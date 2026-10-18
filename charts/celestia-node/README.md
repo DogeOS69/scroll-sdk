@@ -1,6 +1,6 @@
 # celestia-node
 
-![Version: 0.1.13](https://img.shields.io/badge/Version-0.1.13-informational?style=flat-square) ![AppVersion: v0.28.2-mocha](https://img.shields.io/badge/AppVersion-v0.28.2--mocha-informational?style=flat-square)
+![Version: 0.1.14](https://img.shields.io/badge/Version-0.1.14-informational?style=flat-square) ![AppVersion: v0.28.2-mocha](https://img.shields.io/badge/AppVersion-v0.28.2--mocha-informational?style=flat-square)
 
 A Helm chart for deploying Celestia light node on Kubernetes
 
@@ -26,15 +26,13 @@ A Helm chart for deploying Celestia light node on Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/celestiaorg/celestia-node"` |  |
 | image.tag | string | `"v0.28.2-mocha"` |  |
-| ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
-| ingress.annotations."nginx.ingress.kubernetes.io/ssl-redirect" | string | `"true"` |  |
-| ingress.className | string | `"nginx"` |  |
-| ingress.enabled | bool | `true` |  |
+| ingress.annotations | object | `{}` |  |
+| ingress.className | string | `"alb"` |  |
+| ingress.enabled | bool | `false` |  |
 | ingress.hosts[0].host | string | `"celestia.testnet.dogeos.com"` |  |
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.tls[0].hosts[0] | string | `"celestia.testnet.dogeos.com"` |  |
-| ingress.tls[0].secretName | string | `"celestia-tls"` |  |
+| ingress.tls | list | `[]` | TLS terminates at the ALB with ACM. |
 | logLevel | string | `"INFO"` |  |
 | mnemonic | string | `""` |  |
 | network | string | `"mocha"` |  |

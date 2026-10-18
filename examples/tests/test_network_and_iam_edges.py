@@ -27,6 +27,26 @@ def render(chart, config, success=True):
 
 
 class ProductionNetworkTests(unittest.TestCase):
+    def test_application_defaults_do_not_publish_ingress(self):
+        for chart in [
+            'admin-system-dashboard', 'blockbook', 'blockscout', 'bridge-history-api',
+            'celestia-node', 'coordinator-api', 'dogecoin', 'dstack-controller',
+            'eth-da-submitter', 'frontends', 'l1-devnet', 'l1-explorer', 'l2-rpc',
+            'proof-coordinator', 'rollup-explorer-backend', 'scroll-monitor', 'tso-service',
+        ]:
+            with self.subTest(chart=chart):
+                docs = render(chart, {})
+                self.assertFalse(any(doc['kind'] == 'Ingress' for doc in docs))
+
+    def test_portal_production_explicitly_enables_alb(self):
+        config = values('frontends')
+        self.assertTrue(config['ingress']['main']['enabled'])
+        config['ingress']['main']['annotations']['alb.ingress.kubernetes.io/certificate-arn'] = CERT
+        docs = render('frontends', config)
+        ingress = next(doc for doc in docs if doc['kind'] == 'Ingress')
+        self.assertEqual(ingress['spec']['ingressClassName'], 'alb')
+        self.assertEqual(ingress['spec']['rules'][0]['http']['paths'][0]['path'], '/')
+
     def test_optional_l1_devnet_keeps_rpc_internal_by_default(self):
         docs = render('l1-devnet', values('l1-devnet'))
         self.assertTrue(any(doc['kind'] == 'Service' for doc in docs))

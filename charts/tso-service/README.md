@@ -1,6 +1,6 @@
 # tso-service
 
-![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.14](https://img.shields.io/badge/Version-0.1.14-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart for the DOGEOS TSO Service
 
@@ -65,13 +65,13 @@ so a match or block action on oversize bodies would reject legitimate signers.
 | image.repository | string | `"dogeos69/tso-service"` |  |
 | image.tag | string | `"110625-00"` |  |
 | ingress.main.annotations | object | `{}` |  |
-| ingress.main.enabled | bool | `true` |  |
+| ingress.main.enabled | bool | `false` |  |
 | ingress.main.hosts[0].host | string | `"tso.scrollsdk"` |  |
 | ingress.main.hosts[0].paths[0].path | string | `"/health"` |  |
 | ingress.main.hosts[0].paths[0].pathType | string | `"Exact"` |  |
 | ingress.main.hosts[0].paths[1].path | string | `"/signer"` | Transport-signed signer routes (poll, submit, reject) |
 | ingress.main.hosts[0].paths[1].pathType | string | `"Prefix"` |  |
-| ingress.main.ingressClassName | string | `"nginx"` |  |
+| ingress.main.ingressClassName | string | `"alb"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |
 | probes.liveness.<<.custom | bool | `true` |  |

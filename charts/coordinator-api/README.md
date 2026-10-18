@@ -1,6 +1,6 @@
 # coordinator-api
 
-![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.6](https://img.shields.io/badge/Version-0.1.6-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 coordinator-api helm charts
 
@@ -50,11 +50,11 @@ Kubernetes: `>=1.22.0-0`
 | image.repository | string | `"scrolltech/coordinator-api"` |  |
 | image.tag | string | `"v4.7.9"` |  |
 | ingress.main.annotations | object | `{}` |  |
-| ingress.main.enabled | bool | `true` |  |
+| ingress.main.enabled | bool | `false` |  |
 | ingress.main.hosts[0].host | string | `"coordinator-api.scrollsdk"` |  |
 | ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.main.ingressClassName | string | `"nginx"` |  |
+| ingress.main.ingressClassName | string | `"alb"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |
 | initContainers.parameter-download.command[0] | string | `"sh"` |  |

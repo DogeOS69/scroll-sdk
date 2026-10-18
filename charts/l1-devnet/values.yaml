@@ -104,11 +104,11 @@ service:
 
 ingress:
   main:
-    enabled: true
+    enabled: false
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: "nginx"
+    ingressClassName: alb
     hosts:
       - host: l1-devnet.scrollsdk
         paths:

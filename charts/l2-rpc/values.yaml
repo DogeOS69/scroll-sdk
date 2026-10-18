@@ -153,19 +153,19 @@ volumeClaimTemplates:
 
 ingress:
   main:
-    enabled: true
+    enabled: false
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: "nginx"
+    ingressClassName: alb
     hosts:
       - host: l2-rpc.scrollsdk
         paths:
           - path: /
             pathType: Prefix
   websocket:  #  dedicated websocket ingress
-    enabled: true
-    ingressClassName: "nginx"
+    enabled: false
+    ingressClassName: alb
     hosts:
       - host: l2-rpc-ws.scrollsdk
         paths:

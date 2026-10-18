@@ -1,6 +1,6 @@
 # blockbook
 
-![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
+![Version: 0.1.5](https://img.shields.io/badge/Version-0.1.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: latest](https://img.shields.io/badge/AppVersion-latest-informational?style=flat-square)
 
 Deploy Blockbook for Dogecoin in Kubernetes
 
@@ -27,15 +27,13 @@ Deploy Blockbook for Dogecoin in Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.repository | string | `"docker.io/dogeos69/blockbook"` |  |
 | image.tag | string | `"testnet"` |  |
-| ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt-prod"` |  |
-| ingress.annotations."nginx.ingress.kubernetes.io/backend-protocol" | string | `"TCP"` |  |
-| ingress.className | string | `"nginx"` |  |
+| ingress.annotations | object | `{}` |  |
+| ingress.className | string | `"alb"` |  |
 | ingress.enabled | bool | `false` |  |
 | ingress.hosts[0].host | string | `"blockbook.example.com"` |  |
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.tls[0].hosts[0] | string | `"blockbook.example.com"` |  |
-| ingress.tls[0].secretName | string | `"blockbook-tls"` |  |
+| ingress.tls | list | `[]` | TLS terminates at the ALB with ACM. |
 | nodeSelector | object | `{}` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.cpu | string | `"3"` |  |

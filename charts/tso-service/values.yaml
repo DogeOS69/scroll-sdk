@@ -63,15 +63,15 @@ serviceMonitor:
 # Public edge. Only /health and the transport-signed /signer/* routes are
 # public; every other TSO route (/propose, /register-*, /status, /metrics and
 # the unprefixed callbacks used by in-cluster signers) stays in-cluster.
-# ingressClassName "alb" (AWS Load Balancer Controller) or "nginx"; see
-# values/production.yaml for the annotations each one needs.
+# ingressClassName "alb" (AWS Load Balancer Controller); see
+# values/production.yaml for the required annotations.
 ingress:
   main:
-    enabled: true
+    enabled: false
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: "nginx"
+    ingressClassName: alb
     hosts:
       - host: tso.scrollsdk
         paths:

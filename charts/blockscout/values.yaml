@@ -1,4 +1,8 @@
 blockscout-stack:
+  config:
+    prometheus:
+      ingressWhitelist:
+        enabled: false
   nameOverride: "blockscout"
   fullnameOverride: "blockscout"
 
@@ -41,8 +45,8 @@ blockscout-stack:
           name: blockscout-env
 
     ingress:
-      enabled: true
-      className: "nginx"
+      enabled: false
+      className: alb
       annotations: {}
       hostname: blockscout.scrollsdk
 
@@ -78,9 +82,9 @@ blockscout-stack:
       NEXT_PUBLIC_AD_TEXT_PROVIDER: none
 
     ingress:
-      enabled: true
+      enabled: false
       annotations: {}
-      className: "nginx"
+      className: alb
       hostname: blockscout.scrollsdk
 
 # Existing ALB target groups. Installed and removed with this application.

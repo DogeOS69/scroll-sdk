@@ -1,6 +1,6 @@
 # scroll-sdk
 
-![Version: 0.1.22-dogeos](https://img.shields.io/badge/Version-0.1.22--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.23-dogeos](https://img.shields.io/badge/Version-0.1.23--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 scroll helm charts to deploy scroll sdk for dogeos
 
@@ -20,16 +20,16 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.9-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.13-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.14 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.5-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.7-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.4-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.17 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.3-dogeos |
+| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-relayer | 0.1.11-dogeos |
-| file://../scroll-monitor | scroll-monitor | 0.1.47-dogeos |
+| file://../scroll-monitor | scroll-monitor | 0.1.50-dogeos |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-common | 0.1.0 |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 15.5.0 |
 
@@ -40,7 +40,7 @@ Kubernetes: `>=1.22.0-0`
 | admin-system-backend.enabled | bool | `false` |  |
 | admin-system-cron.enabled | bool | `false` |  |
 | admin-system-dashboard.enabled | bool | `false` |  |
-| admin-system-dashboard.ingress.main.enabled | bool | `true` |  |
+| admin-system-dashboard.ingress.main.enabled | bool | `false` |  |
 | admin-system-dashboard.ingress.main.hosts[0].host | string | `"admin-system-dashboard.scrollsdk"` |  |
 | admin-system-dashboard.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | admin-system-dashboard.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
@@ -50,11 +50,11 @@ Kubernetes: `>=1.22.0-0`
 | blockscout.enabled | bool | `true` |  |
 | bridge-history-api.enabled | bool | `false` |  |
 | bridge-history-api.ingress.main.annotations | object | `{}` |  |
-| bridge-history-api.ingress.main.enabled | bool | `true` |  |
+| bridge-history-api.ingress.main.enabled | bool | `false` |  |
 | bridge-history-api.ingress.main.hosts[0].host | string | `"bridge-history-api.scrollsdk"` |  |
 | bridge-history-api.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | bridge-history-api.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| bridge-history-api.ingress.main.ingressClassName | string | `"nginx"` |  |
+| bridge-history-api.ingress.main.ingressClassName | string | `"alb"` |  |
 | bridge-history-api.ingress.main.labels | object | `{}` |  |
 | bridge-history-api.ingress.main.primary | bool | `true` |  |
 | bridge-history-fetcher.enabled | bool | `false` |  |
@@ -72,30 +72,30 @@ Kubernetes: `>=1.22.0-0`
 | db.rollup_node_password | string | `"test1234"` |  |
 | db.rpc_gateway_password | string | `"test1234"` |  |
 | frontends.enabled | bool | `false` |  |
-| frontends.ingress.main.enabled | bool | `true` |  |
+| frontends.ingress.main.enabled | bool | `false` |  |
 | frontends.ingress.main.hosts[0].host | string | `"frontends.scrollsdk"` |  |
 | frontends.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | frontends.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | gas-oracle.enabled | bool | `false` |  |
 | l1-devnet.enabled | bool | `true` |  |
-| l1-devnet.ingress.main.enabled | bool | `true` |  |
+| l1-devnet.ingress.main.enabled | bool | `false` |  |
 | l1-devnet.ingress.main.hosts[0].host | string | `"l1-devnet.scrollsdk"` |  |
 | l1-devnet.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | l1-devnet.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | l1-explorer.blockscout-stack.frontend.replicaCount | int | `1` |  |
 | l1-explorer.enabled | bool | `false` |  |
-| l1-explorer.ingress.main.enabled | bool | `true` |  |
+| l1-explorer.ingress.main.enabled | bool | `false` |  |
 | l1-explorer.ingress.main.hosts[0].host | string | `"l1-explorer.scrollsdk"` |  |
 | l1-explorer.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | l1-explorer.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| l1-explorer.ingress.main.ingressClassName | string | `"nginx"` |  |
+| l1-explorer.ingress.main.ingressClassName | string | `"alb"` |  |
 | l2-bootnode.enabled | bool | `true` |  |
 | l2-rpc.enabled | bool | `true` |  |
-| l2-rpc.ingress.main.enabled | bool | `true` |  |
+| l2-rpc.ingress.main.enabled | bool | `false` |  |
 | l2-rpc.ingress.main.hosts[0].host | string | `"l2-rpc.scrollsdk"` |  |
 | l2-rpc.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | l2-rpc.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| l2-rpc.ingress.main.ingressClassName | string | `"nginx"` |  |
+| l2-rpc.ingress.main.ingressClassName | string | `"alb"` |  |
 | l2-sequencer.enabled | bool | `true` |  |
 | postgresql.auth.enablePostgresUser | bool | `true` |  |
 | postgresql.auth.postgresPassword | string | `"qwerty12345"` |  |
@@ -118,26 +118,26 @@ Kubernetes: `>=1.22.0-0`
 | postgresql.volumePermissions.enabled | bool | `true` |  |
 | rollup-explorer-backend.enabled | bool | `false` |  |
 | rollup-explorer-backend.ingress.main.annotations | object | `{}` |  |
-| rollup-explorer-backend.ingress.main.enabled | bool | `true` |  |
+| rollup-explorer-backend.ingress.main.enabled | bool | `false` |  |
 | rollup-explorer-backend.ingress.main.hosts[0].host | string | `"rollup-explorer-backend.scrollsdk"` |  |
 | rollup-explorer-backend.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | rollup-explorer-backend.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| rollup-explorer-backend.ingress.main.ingressClassName | string | `"nginx"` |  |
+| rollup-explorer-backend.ingress.main.ingressClassName | string | `"alb"` |  |
 | rollup-explorer-backend.ingress.main.labels | object | `{}` |  |
 | rollup-explorer-backend.ingress.main.primary | bool | `true` |  |
 | rollup-relayer.enabled | bool | `false` |  |
 | rpc-gateway.enabled | bool | `false` |  |
-| rpc-gateway.ingress.main.enabled | bool | `true` |  |
+| rpc-gateway.ingress.main.enabled | bool | `false` |  |
 | rpc-gateway.ingress.main.hosts[0].host | string | `"l2-rpc-gateway.scrollsdk"` |  |
 | rpc-gateway.ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | rpc-gateway.ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| rpc-gateway.ingress.main.ingressClassName | string | `"nginx"` |  |
+| rpc-gateway.ingress.main.ingressClassName | string | `"alb"` |  |
 | scroll-common.enabled | bool | `true` |  |
 | scroll-monitor.enabled | bool | `true` |  |
 | scroll-monitor.grafana.enabled | bool | `true` |  |
-| scroll-monitor.grafana.ingress.enabled | bool | `true` |  |
+| scroll-monitor.grafana.ingress.enabled | bool | `false` |  |
 | scroll-monitor.grafana.ingress.hosts[0] | string | `"grafana.scrollsdk"` |  |
-| scroll-monitor.grafana.ingress.ingressClassName | string | `"nginx"` |  |
+| scroll-monitor.grafana.ingress.ingressClassName | string | `"alb"` |  |
 | scroll-monitor.kube-prometheus-stack.alertmanager.enabled | bool | `false` |  |
 | scroll-monitor.kube-prometheus-stack.enabled | bool | `true` |  |
 | scroll-monitor.loki.enabled | bool | `true` |  |
