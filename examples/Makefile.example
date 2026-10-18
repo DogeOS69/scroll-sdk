@@ -17,7 +17,7 @@ DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
 SCROLL_MONITOR_CHART_VERSION ?= 0.1.49-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
-# Keep applying it on subsequent monitor upgrades, including install-all.
+# Keep applying it on subsequent monitor upgrades.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
 SCROLL_MONITOR_DSTACK_ARGS = $(if $(strip $(SCROLL_MONITOR_DSTACK_VALUES)),--values "$(SCROLL_MONITOR_DSTACK_VALUES)")
 EAGER_MATERIALIZER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eager-materializer
@@ -41,29 +41,6 @@ L2_RETH_CHART_VERSION ?= 0.1.9
 # To perform a reviewed migration, supply BOTH paths explicitly.
 L2_RETH_GENESIS_NORMALIZER_VALUES ?=
 L2_RETH_GENESIS_NORMALIZER_SCRIPT ?=
-INSTALL_ALL_REQUIRED_VALUES = \
-	values/scroll-monitor-production.yaml \
-	values/genesis.yaml \
-	values/protocol_context.yaml \
-	values/l1-interface-production.yaml \
-	values/metrics-exporter-production.yaml \
-	values/l2-reth-sequencer-production-0.yaml \
-	values/l2-reth-sequencer-production-1.yaml \
-	values/l2-reth-bootnode-production-0.yaml \
-	values/l2-reth-bootnode-production-1.yaml \
-	values/l2-reth-rpc-production.yaml \
-	values/l2-reth-rpc-public-production.yaml \
-	values/eth-da-submitter-production.yaml \
-	values/fee-oracle-production.yaml \
-	values/cubesigner-signer-production.yaml \
-	values/tso-service-production.yaml \
-	values/withdrawal-processor-production.yaml \
-	values/proof-coordinator-production.yaml \
-	values/prover-worker-production.yaml \
-	withdrawal-processor/WithdrawalProcessor.toml \
-	proof-coordinator/ProofCoordinator.toml \
-	values/frontends-production.yaml \
-	values/frontends-config.yaml
 L2_RETH_GENESIS_NORMALIZER_ARGS =
 ifneq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)),)
 ifeq ($(strip $(L2_RETH_GENESIS_NORMALIZER_VALUES)),)
@@ -74,7 +51,6 @@ $(error Supply L2_RETH_GENESIS_NORMALIZER_SCRIPT together with L2_RETH_GENESIS_N
 endif
 L2_RETH_GENESIS_NORMALIZER_ARGS = --values $(L2_RETH_GENESIS_NORMALIZER_VALUES) \
 	--set-file configMaps.reth-genesis-normalizer.data.normalize-reth-genesis=$(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
-INSTALL_ALL_REQUIRED_VALUES += $(L2_RETH_GENESIS_NORMALIZER_VALUES) $(L2_RETH_GENESIS_NORMALIZER_SCRIPT)
 endif
 
 .PHONY: prepare install-scroll-core install-l1-interface install-scroll-common install-metrics-exporter \
@@ -82,10 +58,9 @@ endif
 	install-preinstalls install-contracts install-chain-contracts start-l1-sync install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
 	install-l2-reth-bootnode \
-	check-install-all-values \
 	install-fee-oracle \
 	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
-	install-blockscout install-frontends install-testnet-activity-helper install-all \
+	install-blockscout install-frontends install-testnet-activity-helper \
 	delete-all delete-preinstalls delete-frontends \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
@@ -101,7 +76,7 @@ install-l1-interface:
 		--version=0.0.22 \
 		--values values/l1-interface-production.yaml
 
-# Development only: requires ethereumDa.chain: devnet; not part of install-all.
+# Development only: requires ethereumDa.chain: devnet.
 install-l1-devnet:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l1-devnet oci://ghcr.io/dogeos69/scroll-sdk/helm/l1-devnet -n "$(NAMESPACE)" \
 		--wait  \
@@ -243,7 +218,6 @@ reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
 # Optional: prepare the database and values, then invoke this target explicitly.
-# install-all does not install Blockscout or its contract verifier.
 install-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout -n "$(NAMESPACE)" \
 		--version=0.1.11-dogeos \
@@ -274,27 +248,6 @@ start-l1-sync:
 		--quiet \
 		--command -- \
 		curl -fsS -X POST http://l1-interface:9091/disable-genesis-hold
-
-check-install-all-values:
-	@set -eu; \
-	missing=""; \
-	for file in $(INSTALL_ALL_REQUIRED_VALUES); do \
-		if [ ! -f "$$file" ]; then missing="$$missing\n  - $$file"; fi; \
-	done; \
-	if [ -n "$$missing" ]; then \
-		printf 'install-all requires values files that are currently missing:%b\n' "$$missing" >&2; \
-		exit 1; \
-	fi
-
-# Application releases only. Dogecoin is independently managed. Chain deployment,
-# funding, testnet activity and releasing the L1 genesis hold are explicit actions.
-install-all: check-install-all-values
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-scroll-core
-	kubectl --context "$(KUBE_CONTEXT)" wait --for=condition=Ready --timeout=600s pod -l app.kubernetes.io/instance=l1-interface -n "$(NAMESPACE)"
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-fee-oracle
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-cubesigner-signer
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) reconcile-proof-services
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-frontends
 
 # Explicit on-chain deployment after L2 readiness; preinstalls must finish first.
 install-chain-contracts:

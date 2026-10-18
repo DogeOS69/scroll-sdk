@@ -1,5 +1,5 @@
 # Generated worker command and policy come from setup prep-charts (or setup render).
-# Installing this independent release can allocate paid GPUs; install-all excludes it.
+# Installing this independent release explicitly can allocate paid GPUs.
 fullnameOverride: capacity-manager
 prepared: false
 image:

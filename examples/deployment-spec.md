@@ -602,8 +602,8 @@ Bridge artifacts. Do not enter a static Bridge address in frontend values. See
 [frontend configuration](frontend-configuration.md) for identity sources, readiness
 requirements, cache handling and rotation behavior.
 Blockscout/explorer links require a separately configured Blockscout deployment.
-Blockscout and its contract verifier are excluded from `install-all`; after
-preparing the database and values, opt in with `make install-blockscout`.
+After preparing the database and values, install Blockscout and its contract
+verifier explicitly with `make install-blockscout`.
 
 Grafana and Dogecoin ingress are disabled in the SDK example values. They remain
 accessible inside the cluster, with local operator access through
@@ -611,12 +611,10 @@ accessible inside the cluster, with local operator access through
 An operator can explicitly enable the corresponding ingress in the values;
 subsequent configuration generation preserves that choice.
 
-The Makefile also includes both releases in `install-all` (monitoring through
-`install-scroll-core`). Do not rerun `install-all` to add a missing release to an
-existing deployment: it also invokes contract deployment and other initialization
-steps. Use the individual targets above, then check each release's Pods and
-public endpoint. See [monitoring configuration](scroll-monitor-configuration.md)
-for collection and alerting details.
+Use the individual targets above, then check each release's Pods and public
+endpoint. `install-scroll-core` also includes monitoring as its first step. See
+[monitoring configuration](scroll-monitor-configuration.md) for collection and
+alerting details.
 
 ## Slack notification configuration
 

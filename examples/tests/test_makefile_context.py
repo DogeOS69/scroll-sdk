@@ -72,7 +72,7 @@ class MakefileContextTests(unittest.TestCase):
                       '\t$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-contracts\n', source)
 
     def test_application_install_excludes_independent_optional_and_chain_actions(self):
-        commands = self.expanded_commands('selected', 'chain', targets=['install-all'])
+        commands = self.expanded_commands('selected', 'chain', targets=['install-scroll-core', 'reconcile-proof-services', 'install-frontends'])
         releases = [c[c.index('-i') + 1] for c in commands if 'upgrade' in c]
         for excluded in ['dogecoin-testnet', 'blockbook-testnet', 'preinstalls', 'contracts', 'testnet-activity-helper', 'blockscout']:
             self.assertNotIn(excluded, releases)
@@ -143,7 +143,7 @@ class MakefileContextTests(unittest.TestCase):
 
     def test_monitor_applies_generated_dstack_overlay_after_base_values(self):
         overlay = 'values/scroll-monitor-dstack.yaml'
-        for targets in [['install-scroll-monitor'], ['install-all']]:
+        for targets in [['install-scroll-monitor'], ['install-scroll-core']]:
             for present in [False, True]:
                 with self.subTest(targets=targets, present=present):
                     commands = self.expanded_commands('selected', 'chain', targets=targets,

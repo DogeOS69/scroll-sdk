@@ -34,11 +34,11 @@ measured transfer and full-gas workload results from the devnet test.
 
 ### Installation target scope
 
-`make install-all` installs the application releases after configuration and
-Secrets preparation. It does not manage the independent Dogecoin node or
-Blockbook, deploy contracts, fund accounts, start testnet activity, or release
-the L1 genesis hold. Review service readiness and the deployment runbook before
-those separate actions. `install-scroll-core` installs monitoring first;
+Install application releases with the individual Makefile targets after
+configuration and Secrets preparation. Review service readiness between steps.
+Dogecoin and Blockbook are independently managed; contract deployment, funding,
+testnet activity and releasing the L1 genesis hold are separate actions.
+`install-scroll-core` installs monitoring first;
 `install-metrics-exporter` is also available as a standalone target.
 
 After L2 is ready, `make install-chain-contracts` explicitly runs preinstalls

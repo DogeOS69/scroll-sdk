@@ -82,7 +82,7 @@ publish the controller's Secrets before installing the controller.
 
 `install-scroll-monitor` automatically loads `values/scroll-monitor-dstack.yaml`
 after the base production values when it exists, including when called by
-`install-all`. Override `SCROLL_MONITOR_DSTACK_VALUES` for another overlay path;
+`install-scroll-core`. Override `SCROLL_MONITOR_DSTACK_VALUES` for another overlay path;
 an explicit empty value skips the overlay. To disable an existing integration,
 regenerate an overlay with monitoring disabled rather than just omitting it.
 
@@ -92,7 +92,7 @@ regenerate an overlay with monitoring disabled rather than just omitting it.
 The CLI derives the monitoring namespace from `infrastructure.namespace`. Override `DSTACK_CONTROLLER_CHART`,
 `DSTACK_CONTROLLER_CHART_VERSION` or `DSTACK_CONTROLLER_VALUES` for a local chart,
 another version or another generated values path. The controller is installed
-explicitly and is not part of the chain's `install-all` or `delete-all` targets.
+explicitly and is not part of `install-scroll-core` or `delete-all`.
 
 These commands change the selected cluster; generation itself does not. For
 manual chart usage, `charts/scroll-monitor/values/dstack.yaml` is the equivalent

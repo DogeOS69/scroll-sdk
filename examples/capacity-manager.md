@@ -3,7 +3,7 @@
 This is an optional alternative to SDK `setup proof-workers`, not another
 controller for the same worker session. Core computes capacity from WP prove
 backlog and owns worker lifecycle; dstack still provisions the cloud instances.
-`install-all` never installs it. Installing the independent release is the
+Installing the independent release with `install-capacity-manager` is the
 explicit paid-resource action; with the example policy it keeps one worker warm.
 
 ## Release and infrastructure prerequisites
