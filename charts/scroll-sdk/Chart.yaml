@@ -31,7 +31,7 @@ dependencies:
   #   condition: balance-checker.enabled
   - name: blockscout
     version: 0.1.13-dogeos
-    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    repository: "file://../blockscout"
     condition: blockscout.enabled
   # - name: blockscout-sc-verifier
   #   version: 0.1.1
@@ -71,7 +71,7 @@ dependencies:
     condition: gas-oracle.enabled
   - name: l1-devnet
     version: 0.1.7-dogeos
-    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    repository: "file://../l1-devnet"
     condition: l1-devnet.enabled
   # - name: l1-explorer
   #   version: 0.1.2
@@ -83,7 +83,7 @@ dependencies:
     condition: l2-bootnode.enabled
   - name: l2-rpc
     version: 0.1.17
-    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    repository: "file://../l2-rpc"
     condition: l2-rpc.enabled
   - name: l2-sequencer
     version: 0.1.4-dogeos
@@ -95,7 +95,7 @@ dependencies:
     condition: postgresql.enabled
   - name: rollup-explorer-backend
     version: 0.1.4-dogeos
-    repository: "oci://ghcr.io/dogeos69/scroll-sdk/helm"
+    repository: "file://../rollup-explorer-backend"
     condition: rollup-explorer-backend.enabled
   - name: rollup-relayer
     version: 0.1.11-dogeos
@@ -110,6 +110,6 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: scroll-common.enabled
   - name: scroll-monitor
-    version: 0.1.50-dogeos
+    version: 0.1.57-dogeos
     repository: "file://../scroll-monitor"
     condition: scroll-monitor.enabled

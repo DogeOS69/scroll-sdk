@@ -20,16 +20,16 @@ Kubernetes: `>=1.22.0-0`
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | blockscout | 0.1.13-dogeos |
+| file://../blockscout | blockscout | 0.1.13-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | contracts | 0.1.14 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | gas-oracle | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l1-devnet | 0.1.7-dogeos |
+| file://../l1-devnet | l1-devnet | 0.1.7-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-bootnode | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-rpc | 0.1.17 |
+| file://../l2-rpc | l2-rpc | 0.1.17 |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | l2-sequencer | 0.1.4-dogeos |
-| oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-explorer-backend | 0.1.4-dogeos |
+| file://../rollup-explorer-backend | rollup-explorer-backend | 0.1.4-dogeos |
 | oci://ghcr.io/dogeos69/scroll-sdk/helm | rollup-relayer | 0.1.11-dogeos |
-| file://../scroll-monitor | scroll-monitor | 0.1.50-dogeos |
+| file://../scroll-monitor | scroll-monitor | 0.1.57-dogeos |
 | oci://ghcr.io/scroll-tech/scroll-sdk/helm | scroll-common | 0.1.0 |
 | oci://registry-1.docker.io/bitnamicharts | postgresql | 15.5.0 |
 
