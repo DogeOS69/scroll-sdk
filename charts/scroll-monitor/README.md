@@ -810,7 +810,6 @@ Duplicate service checks and upstream rule families have one retained owner.
 See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
 cluster-wide replacements, and distinct conditions that remain monitored.
 
-
 ### Recovery CLTV runway
 
 The shared service-alert pipeline includes recovery runway warning, critical and
@@ -833,3 +832,11 @@ A target missing from Prometheus entirely is covered by the existing target aler
 Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and
 response. These rules inherit existing service-alert enable/pause and routing;
 this change configures no receiver or destination.
+
+## Optional alert timing
+
+Production values can override each alert's pending period, query window and
+age/latency thresholds through `alertTiming.rules`, and evaluation intervals
+through `alertTiming.groupIntervals`. Omitted settings retain existing defaults.
+See [Alert timing configuration](ALERT_TIMING.md) for examples, the complete
+rule/default catalog, existing shared settings and Grafana upgrade behavior.

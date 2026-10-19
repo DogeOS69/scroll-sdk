@@ -3,14 +3,15 @@ groups:
   interval: 1m
   rules:
   - alert: BusinessPodContainerRestarted
+    timing: {"window": "10m"}
     expr: |
       (max by (namespace, pod, uid, container) (
-        (increase({__name__=~"kube_pod_(init_)?container_status_restarts_total", __POD_SELECTOR__}[10m]) > 0)
+        (increase({__name__=~"kube_pod_(init_)?container_status_restarts_total", __POD_SELECTOR__}[__TIME_window__]) > 0)
         or
         (
           ({__name__=~"kube_pod_(init_)?container_status_restarts_total", __POD_SELECTOR__} > 0)
           and on (namespace, pod, uid)
-          (time() - kube_pod_created{__POD_SELECTOR__} < 600)
+          (time() - kube_pod_created{__POD_SELECTOR__} < __TIME_windowSeconds__)
         )
       ))
       unless on (namespace, pod, uid) (kube_pod_owner{__POD_SELECTOR__, owner_kind="Job", owner_is_controller="true"} == 1)
@@ -27,14 +28,15 @@ groups:
         logs, exit reason, memory limits, and probes. A recovered container still triggers this alert; successful
         process exits followed by a restart also count.
   - alert: BusinessPodContainerFailed
+    timing: {"window": "10m"}
     expr: |
       (max by (namespace, pod, uid, container, reason) (
-        (max_over_time({__name__=~"kube_pod_(init_)?container_status_terminated_reason", __POD_SELECTOR__, reason!="Completed", reason!=""}[10m]) == 1)
+        (max_over_time({__name__=~"kube_pod_(init_)?container_status_terminated_reason", __POD_SELECTOR__, reason!="Completed", reason!=""}[__TIME_window__]) == 1)
         or
         (
           (kube_pod_container_status_last_terminated_reason{__POD_SELECTOR__, reason!="Completed", reason!=""} == 1)
           and on (namespace, pod, uid, container)
-          ((kube_pod_container_status_last_terminated_timestamp{__POD_SELECTOR__} > time() - 600)
+          ((kube_pod_container_status_last_terminated_timestamp{__POD_SELECTOR__} > time() - __TIME_windowSeconds__)
            and (kube_pod_container_status_last_terminated_timestamp{__POD_SELECTOR__} <= time()))
         )
       ))
@@ -51,8 +53,9 @@ groups:
         reason {{ $labels.reason }}. Inspect previous logs and exit status; for OOMKilled check memory usage and
         limits. Normal Completed exits are excluded.
   - alert: BusinessPodCrashLooping
+    timing: {"window": "5m"}
     expr: |
-      (max by (namespace, pod, uid, container) (max_over_time({__name__=~"kube_pod_(init_)?container_status_waiting_reason", reason="CrashLoopBackOff"}[5m])) == 1
+      (max by (namespace, pod, uid, container) (max_over_time({__name__=~"kube_pod_(init_)?container_status_waiting_reason", reason="CrashLoopBackOff"}[__TIME_window__])) == 1
       and on (namespace, pod, uid) (kube_pod_status_ready{condition="true"} == 0))
       unless on (namespace, pod, uid) (kube_pod_owner{owner_kind="Job", owner_is_controller="true"} == 1)
     for: __businessPodAlerts.crashLoopFor__
@@ -66,9 +69,11 @@ groups:
       description: Pod {{ $labels.namespace }}/{{ $labels.pod }} remains unready with recent crash-loop evidence.
         Check previous logs, probes and dependencies. Readiness recovery resets the pending period.
   - alert: BusinessPodFailed
+    timing: {"window": "10m"}
+    timingAnnotations: {"description": "Pod {{ $labels.namespace }}/{{ $labels.pod }} was observed in Failed phase during the last __TIME_window__, excluding Job pods; final Job failure is monitored separately. Inspect pod events, termination status, and node health. Successfully completed Jobs are excluded."}
     expr: |
       (max by (namespace, pod, uid) (
-        max_over_time(kube_pod_status_phase{__POD_SELECTOR__, phase="Failed"}[10m])
+        max_over_time(kube_pod_status_phase{__POD_SELECTOR__, phase="Failed"}[__TIME_window__])
       ) == 1)
       unless on (namespace, pod, uid) (kube_pod_owner{__POD_SELECTOR__, owner_kind="Job", owner_is_controller="true"} == 1)
     for: 0s

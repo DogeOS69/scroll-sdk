@@ -11,6 +11,24 @@ import yaml
 CHART = Path(__file__).resolve().parents[1]
 
 
+def render_source_groups(path):
+    """Render a rule fixture through the real timing helper, without deployments."""
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        (root / "templates").mkdir()
+        (root / "Chart.yaml").write_text("apiVersion: v2\nname: timing-fixture\nversion: 0.1.0\n")
+        (root / "values.yaml").write_text(yaml.safe_dump({
+            "alertTiming": {"rules": {}, "groupIntervals": {}},
+            "grafana": {"enabled": False}, "grafanaAlerting": {"enabled": False},
+            "alerting": {"backend": "prometheus"},
+        }))
+        (root / "rules.yaml").write_text(Path(path).read_text())
+        (root / "templates/_alert-timing.tpl").write_text((CHART / "templates/_alert-timing.tpl").read_text())
+        (root / "templates/rules.yaml").write_text(
+            '{{ include "scroll-monitor.applyAlertTiming" (dict "root" . "groups" (.Files.Get "rules.yaml" | fromYaml).groups) }}')
+        return yaml.safe_load(subprocess.check_output(["helm", "template", "fixture", str(root)], text=True))
+
+
 @lru_cache
 def render(*args):
     output = subprocess.check_output([

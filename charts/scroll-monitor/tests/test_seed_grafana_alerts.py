@@ -9,6 +9,8 @@ from unittest.mock import patch
 
 import yaml
 
+from test_monitoring_templates import render_source_groups
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/seed-grafana-alerts.py"
 SPEC = importlib.util.spec_from_file_location("seed_grafana_alerts", SCRIPT)
@@ -211,7 +213,7 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(rule["for"], "0s")
 
     def test_split_log_upgrade_reuses_legacy_uid_and_is_idempotent(self):
-        sources = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"]
+        sources = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"]
         self.config["lokiDatasourceUID"] = "loki"
         self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
         legacy_source = {**sources[0], "alert": sources[0]["previousTitle"],
@@ -237,7 +239,7 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(self.client.writes, [])
 
     def test_split_new_rule_inherits_operator_pause_and_routing(self):
-        sources = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"]
+        sources = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"]
         self.config["lokiDatasourceUID"] = "loki"
         self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
         legacy = SEED.alert_rule(sources[0], self.config, "dogeos.logs")
@@ -262,7 +264,7 @@ class SeedTests(unittest.TestCase):
         self.assertFalse(added["isPaused"])
 
     def test_split_migration_preserves_custom_query_title_and_severity(self):
-        source = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]["rules"][0]
+        source = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"][0]
         self.config["lokiDatasourceUID"] = "loki"
         desired = SEED.alert_rule(source, self.config, "dogeos.logs")
         existing = copy.deepcopy(desired)
@@ -481,7 +483,7 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(updated["annotations"]["description"], "Operator explanation")
 
     def install_legacy_log_rule(self):
-        group = yaml.safe_load((SCRIPT.parents[1] / "alerts/logs.yaml").read_text())["groups"][0]
+        group = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]
         group["rules"] = group["rules"][:1]
         self.config["groups"] = [group]
         self.config["lokiDatasourceUID"] = "custom-loki"

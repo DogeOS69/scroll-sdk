@@ -8,7 +8,7 @@ AWS profile and one-owner handoff; these profiles are never concurrent releases.
 Use `values/capacity-manager-devnet-rtx3090.yaml` with the independent
 `capacity-manager` chart in namespace `dstack-system`. This is a snapshot of the
 October 13, 2026 full-mode deployment, not a default for other networks. It can
-keep one paid worker running indefinitely; `install-all` remains unchanged.
+keep one paid worker running indefinitely; installation is an explicit action.
 
 The profile updates the manager to `dogeos69/capacity-manager:develop-50653e7b`
 by digest and preserves the pinned worker image, exact worker command,

@@ -24,6 +24,15 @@ def fingerprint(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def duration_milliseconds(value):
+    """Compare Prometheus durations by value despite Grafana's normalization."""
+    if not isinstance(value, str) or not re.fullmatch(r"(?:[0-9]+(?:ms|[smhdwy]))+", value):
+        return value  # Preserve unrecognized UI values conservatively.
+    units = {"ms": 1, "s": 1000, "m": 60000, "h": 3600000,
+             "d": 86400000, "w": 604800000, "y": 31536000000}
+    return sum(int(amount) * units[unit] for amount, unit in re.findall(r"([0-9]+)(ms|[smhdwy])", value))
+
+
 def managed_fields(rule):
     """Only manage expression A, pending period and chart annotations.
 
@@ -32,7 +41,7 @@ def managed_fields(rule):
     change prevents an expression update against a different source.
     """
     queries = [q for q in rule.get("data", []) if q.get("refId") == "A"]
-    fields = {"for": rule.get("for", "0s")}
+    fields = {"for": duration_milliseconds(rule.get("for", "0s"))}
     if len(queries) == 1:
         fields["queryA"] = {
             "expr": queries[0].get("model", {}).get("expr"),
@@ -44,7 +53,7 @@ def managed_fields(rule):
     return fields
 
 
-def reconcile_rule(existing, source, desired, pause=None):
+def reconcile_rule(existing, source, desired, pause=None, timing=None):
     """Three-way merge; unknown legacy differences are reported, never guessed."""
     if existing.get("labels", {}).get("managed_by") != "scroll-monitor":
         print(f'DRIFT {desired["title"]}: UID belongs to an unmanaged rule; preserved', flush=True)
@@ -60,6 +69,14 @@ def reconcile_rule(existing, source, desired, pause=None):
     desired_fields = managed_fields(desired)
     changed = []
     conflicts = []
+    # Explicit production values own timing; absent overrides retain UI ownership.
+    authoritative = set()
+    if timing:
+        if "for" in timing:
+            authoritative.add("for")
+        if set(timing) - {"for"}:
+            authoritative.add("queryA")
+        authoritative.update("annotation:" + key for key in source.get("timingAnnotationKeys", []))
     # Track only known untouched fields; never adopt a differing legacy field.
     next_baseline = {k: v for k, v in baseline.items() if k in desired_fields}
     for field, target in desired_fields.items():
@@ -67,7 +84,12 @@ def reconcile_rule(existing, source, desired, pause=None):
         if current == target:
             next_baseline[field] = fingerprint(target)
             continue
-        if field not in baseline or fingerprint(current) != baseline[field]:
+        untouched = fingerprint(current) == baseline.get(field)
+        if field == "for":
+            # Older chart versions hashed the raw API string. Accept that
+            # baseline once and migrate to a duration value without adopting UI edits.
+            untouched = untouched or fingerprint(updated.get("for", "0s")) == baseline.get(field)
+        if field not in authoritative and not untouched:
             conflicts.append(field)
             continue
         if field == "queryA":
@@ -78,7 +100,7 @@ def reconcile_rule(existing, source, desired, pause=None):
                     if "datasource" in query["model"]:
                         query["model"]["datasource"]["uid"] = target["datasourceUid"]
         elif field == "for":
-            updated["for"] = target
+            updated["for"] = desired["for"]
         else:
             updated.setdefault("annotations", {})[field.removeprefix("annotation:")] = target
         next_baseline[field] = fingerprint(target)
@@ -478,6 +500,14 @@ def seed(client, config, dry_run=False):
     for group in config["groups"]:
         path = f'/api/v1/provisioning/folder/{folder}/rule-groups/{quote(group["name"], safe="")}'
         existing = client.request("GET", path, allow_missing=True)
+        explicit_interval = config.get("groupIntervals", {}).get(group["name"])
+        desired_interval = None
+        if explicit_interval is not None:
+            match = re.fullmatch(r"([0-9]+)([smhdw])", explicit_interval)
+            if not match or int(match[1]) <= 0:
+                raise ValueError("Alert group interval must be a positive duration")
+            desired_interval = int(match[1]) * {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}[match[2]]
+        interval_changed = desired_interval is not None and (existing or {}).get("interval") != desired_interval
         rules = copy.deepcopy((existing or {}).get("rules", []))
         if any(rule.get("provenance") == "file" for rule in rules):
             raise RuntimeError(
@@ -507,11 +537,12 @@ def seed(client, config, dry_run=False):
             current = next((item for item in rules if item["uid"] == rule["uid"]), None)
             if current is not None:
                 migrated = reconcile_rule(current, source, rule,
-                                          config.get("pauseRules", {}).get(source["alert"]))
+                                          config.get("pauseRules", {}).get(source["alert"]),
+                                          config.get("timingOverrides", {}).get(source["alert"]))
                 if migrated is not None:
                     migrations.append(migrated)
         unlock = any(rule.get("provenance") == "api" for rule in rules)
-        if not additions and not unlock and not migrations:
+        if not additions and not unlock and not migrations and not interval_changed:
             print(f'Preserved {group["name"]}: {len(rules)} existing rules', flush=True)
             continue
         if dry_run:
@@ -535,6 +566,16 @@ def seed(client, config, dry_run=False):
             client.request("POST", "/api/v1/provisioning/alert-rules", rule)
         for rule in migrations:
             client.request("PUT", f'/api/v1/provisioning/alert-rules/{quote(rule["uid"], safe="")}', rule)
+        if interval_changed:
+            # Reread after rule updates: group PUT must contain only existing UIDs
+            # and must preserve unrelated rules, routing, pauses and UI changes.
+            current = client.request("GET", path)
+            current_rules = copy.deepcopy(current["rules"])
+            for rule in current_rules:
+                for field in ("id", "updated", "provenance"):
+                    rule.pop(field, None)
+            client.request("PUT", path, {"title": group["name"], "folderUid": config["folderUID"],
+                                         "interval": desired_interval, "rules": current_rules})
         print(f'Seeded {group["name"]}: {len(additions)} new, '
               f'{len(migrations)} rules updated, {len(rules)} existing', flush=True)
 

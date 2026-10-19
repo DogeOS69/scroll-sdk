@@ -181,7 +181,7 @@ make install-contracts
 
 Wait for transaction receipts and verify deployed contracts, owner assignments,
 and bindings. A timed-out or interrupted deployment is a reconciliation task:
-do not blindly repeat `install-contracts` or `install-all` after ownership moves.
+do not blindly repeat `install-contracts` after ownership moves.
 Retain the deployment logs/broadcast records. After successful deployment, update
 the runtime values from the actual contract output:
 
@@ -220,11 +220,12 @@ the exported policy and live TSO. After contracts and bridge services are verifi
 make start-l1-sync
 ```
 
-Blockscout is not installed by default, including by `install-all`. To opt in,
-prepare its database and `values/blockscout-production.yaml`, then run
+To install Blockscout, prepare its database and
+`values/blockscout-production.yaml`, then run
 `make install-blockscout`. This installs both Blockscout and its contract verifier.
-Do not use `install-all` for this staged flow: it also installs optional
-components and invokes initialization.
+Use the explicit targets above for this staged flow so readiness and funding can
+be checked between services. Contract deployment, account funding, testnet
+activity and `start-l1-sync` remain separate actions. Dogecoin is managed independently of this Makefile.
 
 Grafana and Dogecoin have ingress disabled in the default values. Their services
 remain available inside the cluster; generating a hostname does not enable

@@ -107,7 +107,7 @@ class AlertmanagerSlackRenderTests(unittest.TestCase):
             alert["Labels"]["alertname"] = name
             alert["Annotations"]["grafana_state_reason"] = "NoData"
             text = self.render([alert])
-            self.assertIn("last 5 minutes", text)
+            self.assertIn("configured observation window", text)
             self.assertIn("does not by itself confirm service recovery", text)
 
     def test_other_alerts_preserve_valid_annotations_and_reject_raw_templates(self):

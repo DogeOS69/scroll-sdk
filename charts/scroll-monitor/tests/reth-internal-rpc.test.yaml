@@ -1,0 +1,32 @@
+rule_files: []
+evaluation_interval: 1m
+tests:
+- name: Internal l2-rpc and existing Reth jobs retain peer and RPC error coverage
+  interval: 1m
+  input_series:
+  - series: reth_network_connected_peers{namespace="monitoring",job="l2-rpc",instance="internal"}
+    values: '0x30'
+  - series: reth_network_connected_peers{namespace="monitoring",job="l2-reth-rpc-public",instance="public"}
+    values: '0x30'
+  - series: reth_network_connected_peers{namespace="monitoring",job="unrelated",instance="other"}
+    values: '0x30'
+  - series: reth_rpc_server_calls_failed_total{namespace="monitoring",job="l2-rpc",instance="internal"}
+    values: 0+20x30
+  - series: reth_rpc_server_calls_started_total{namespace="monitoring",job="l2-rpc",instance="internal"}
+    values: 0+100x30
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="L2RethNoPeers",alertstate="firing"})
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 2
+  - expr: count(ALERTS{alertname="L2RethNoPeers",alertstate="firing",job="l2-rpc"})
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="L2RethRPCErrors",alertstate="firing",job="l2-rpc"})
+    eval_time: 20m
+    exp_samples:
+    - labels: '{}'
+      value: 1

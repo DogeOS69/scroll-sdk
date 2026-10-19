@@ -22,7 +22,8 @@ groups:
       description: Repair the WP contract or authentication fault, then restart the coordinator as required by the
         claim latch.
   - alert: ProofCoordinatorUploadIssuanceFailing
-    expr: sum by (namespace, job, instance) (increase(proof_coordinator_local_upload_issuance_failures_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(proof_coordinator_local_upload_issuance_failures_total[__TIME_window__]))
       > 0
     for: 5m
     labels:
@@ -41,7 +42,9 @@ groups:
       summary: Proof coordinator work loop keeps failing.
       description: Inspect classified run-loop errors, WP authentication, and materializer backends.
   - alert: ProofCoordinatorRunLoopStale
-    expr: time() - proof_coordinator_run_loop_last_success_timestamp_seconds > 900
+    timing: {"maxAgeSeconds": 900}
+    timingAnnotations: {"summary": "Proof coordinator has had no successful or idle tick for __TIME_maxAgeSeconds__ seconds."}
+    expr: time() - proof_coordinator_run_loop_last_success_timestamp_seconds > __TIME_maxAgeSeconds__
     for: 5m
     labels:
       severity: critical
@@ -51,7 +54,8 @@ groups:
       description: Check blocked materialize/verify operations and WP connectivity; calibrate this timeout for legitimate
         long-running proof work.
   - alert: ProofCoordinatorWorkerFencesRecurring
-    expr: sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_fence_rejections_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_fence_rejections_total[__TIME_window__]))
       > 0
     for: 10m
     labels:
@@ -62,9 +66,11 @@ groups:
       description: Handler {{ $labels.handler }} is rejecting stale lease fences. Check worker heartbeats, lease
         duration, and duplicate worker execution.
   - alert: ProofCoordinatorWorkerAPIErrors
-    expr: sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_requests_total{status=~"5.."}[10m]))
-      / sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_requests_total[10m])) > 0.05 and
-      sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_requests_total[10m])) >= 20
+    timing: {"window": "10m"}
+    timingAnnotations: {"description": "Handler {{ $labels.handler }} has at least 20 requests in __TIME_window__. Check WP, artifact storage, and coordinator errors; expected 409 lease fences are excluded."}
+    expr: sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_requests_total{status=~"5.."}[__TIME_window__]))
+      / sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_requests_total[__TIME_window__])) > 0.05 and
+      sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_requests_total[__TIME_window__])) >= 20
     for: 5m
     labels:
       severity: warning
@@ -74,7 +80,8 @@ groups:
       description: Handler {{ $labels.handler }} has at least 20 requests in ten minutes. Check WP, artifact storage,
         and coordinator errors; expected 409 lease fences are excluded.
   - alert: ProofCoordinatorWorkerAuthorizationFailures
-    expr: sum by (namespace, job, instance) (increase(proof_coordinator_worker_requests_total{status=~"401|403"}[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(proof_coordinator_worker_requests_total{status=~"401|403"}[__TIME_window__]))
       > 0
     for: 5m
     labels:
@@ -84,9 +91,11 @@ groups:
       summary: Proof worker authentication or authorization is failing.
       description: Check worker bearer tokens and coordinator authorization configuration.
   - alert: ProofCoordinatorWorkerAPISlow
-    expr: sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_sum[10m]))
-      / sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_count[10m]))
-      > 5 and sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_request_duration_seconds_count[10m]))
+    timing: {"window": "10m", "latencySeconds": 5}
+    timingAnnotations: {"summary": "Proof coordinator worker API {{ $labels.handler }} averages more than __TIME_latencySeconds__ seconds.", "description": "Worker handler {{ $labels.handler }} averages more than __TIME_latencySeconds__ seconds. Inspect WP and artifact storage latency."}
+    expr: sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_sum[__TIME_window__]))
+      / sum by (namespace, job, instance, handler) (rate(proof_coordinator_worker_request_duration_seconds_count[__TIME_window__]))
+      > __TIME_latencySeconds__ and sum by (namespace, job, instance, handler) (increase(proof_coordinator_worker_request_duration_seconds_count[__TIME_window__]))
       >= 5
     for: 5m
     labels:
@@ -100,7 +109,9 @@ groups:
     previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} > 1800"
     previousAnnotations:
       description: "WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator dispatch, eager locators, and materializer capacity."
-    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
+    timing: {"maxAgeSeconds": 1800}
+    timingAnnotations: {"description": "WP reports {{ $labels.proof_family }} materialization waiting more than __TIME_maxAgeSeconds__ seconds. Check coordinator dispatch, eager locators, and materializer capacity."}
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds__"
     for: 10m
     labels:
       severity: critical
@@ -113,7 +124,9 @@ groups:
     previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} > 1800"
     previousAnnotations:
       description: "WP reports {{ $labels.family }} verification work older than 30 minutes. Inspect verifier material, artifact readback, and coordinator import."
-    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 1800"
+    timing: {"maxAgeSeconds": 1800}
+    timingAnnotations: {"description": "WP reports {{ $labels.proof_family }} verification work older than __TIME_maxAgeSeconds__ seconds. Inspect verifier material, artifact readback, and coordinator import."}
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"verify\",status=~\"pending|blocked|failed_retryable|remote_result_submitted\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds__"
     for: 10m
     labels:
       severity: critical
@@ -126,7 +139,9 @@ groups:
     previousExpr: "withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} > 3600"
     previousAnnotations:
       description: "Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family }}. Running long proofs are excluded."
-    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > 3600"
+    timing: {"maxAgeSeconds": 3600}
+    timingAnnotations: {"summary": "Proof work waits more than __TIME_maxAgeSeconds__ seconds for progress."}
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds__"
     for: 10m
     labels:
       severity: critical
@@ -136,7 +151,8 @@ groups:
       description: Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.proof_family
         }}. Running long proofs are excluded.
   - alert: ProofCoordinatorObserveDegraded
-    expr: sum by (namespace, job, instance, family) (increase(proof_coordinator_terminal_proofs_degraded_under_observe_total[5m]))
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, family) (increase(proof_coordinator_terminal_proofs_degraded_under_observe_total[__TIME_window__]))
       > 0
     labels:
       severity: warning
@@ -146,7 +162,8 @@ groups:
       description: Review observe-mode policy and the failing {{ $labels.family }} proof. This is a diagnostic warning,
         not proof that enforce mode accepted a mock.
   - alert: ProofCoordinatorEagerLocatorInvalid
-    expr: sum by (namespace, job, instance, check) (increase(eager_locator_invalid_total[5m])) > 0
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance, check) (increase(eager_locator_invalid_total[__TIME_window__])) > 0
     labels:
       severity: warning
       service: proof-coordinator
@@ -155,7 +172,8 @@ groups:
       description: Check locator integrity, config identity, and the bounded {{ $labels.check }} failure. Invalid
         locators force subprocess materialization.
   - alert: ProofCoordinatorEagerLocatorConflict
-    expr: sum by (namespace, job, instance) (increase(eager_locator_conflicts_total[5m])) > 0
+    timing: {"window": "5m"}
+    expr: sum by (namespace, job, instance) (increase(eager_locator_conflicts_total[__TIME_window__])) > 0
     labels:
       severity: warning
       service: proof-coordinator

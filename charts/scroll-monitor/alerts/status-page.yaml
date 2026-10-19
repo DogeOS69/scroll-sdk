@@ -3,7 +3,8 @@ groups:
     interval: 30s
     rules:
       - alert: StatusEvaluatorUnavailable
-        expr: absent(up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"}) or (up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 0) or (time() - scroll_status_delivery_last_tick_seconds{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} > 120)
+        timing: {"maxAgeSeconds": 120}
+        expr: absent(up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"}) or (up{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} == 0) or (time() - scroll_status_delivery_last_tick_seconds{namespace="__STATUS_NAMESPACE__",service="__STATUS_SERVICE__"} > __TIME_maxAgeSeconds__)
         for: 3m
         labels: {severity: warning, service: scroll-status-health, audience: internal}
         annotations:

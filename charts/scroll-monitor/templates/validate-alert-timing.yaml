@@ -1,0 +1,53 @@
+{{- $settings := .Values.alertTiming -}}
+{{- if not (kindIs "map" $settings) -}}{{- fail "alertTiming must be a map" -}}{{- end -}}
+{{- range $key, $_ := $settings -}}
+{{- if not (has $key (list "rules" "groupIntervals")) -}}{{- fail (printf "unknown alertTiming field %s" $key) -}}{{- end -}}
+{{- end -}}
+{{- if or (not (kindIs "map" $settings.rules)) (not (kindIs "map" $settings.groupIntervals)) -}}
+{{- fail "alertTiming.rules and alertTiming.groupIntervals must be maps" -}}
+{{- end -}}
+{{- $catalog := dict -}}
+{{- $groups := dict "dogeos.quorum" true "dogeos.dstack-hosts" true -}}
+{{- range $path, $_ := .Files.Glob "alerts/**.yaml" -}}
+{{- range $group := ($.Files.Get $path | fromYaml).groups -}}
+{{- $_ := set $groups $group.name true -}}
+{{- range $rule := $group.rules -}}
+{{- $parameters := $rule.timing | default dict -}}
+{{- if regexMatch "__(TSO_(REGISTRY|STATUS)|WP_(JOBS|JOB_HEAD|PROOF_WORK))_VALID__" $rule.expr -}}
+{{- $_ := set $parameters "snapshotMaxAgeSeconds" 120 -}}
+{{- end -}}
+{{- $_ := set $parameters "for" "0s" -}}
+{{- $_ := set $catalog $rule.alert $parameters -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- range $role, $_ := .Values.businessAlerts.requiredSignersByRole -}}
+{{- $_ := set $catalog (printf "TSO%sQuorumUnavailable" $role) (dict "for" "5m" "snapshotMaxAgeSeconds" 120) -}}
+{{- end -}}
+{{- range $name := list "DstackHostTelemetryUnavailable" "DstackHostDiskSpaceLow" -}}
+{{- $_ := set $catalog $name (dict "for" "0s") -}}
+{{- end -}}
+{{- range $name, $interval := $settings.groupIntervals -}}
+{{- if not (hasKey $groups $name) -}}{{- fail (printf "unknown alertTiming group %s" $name) -}}{{- end -}}
+{{- $seconds := int (include "scroll-monitor.durationSeconds" $interval) -}}
+{{- if le $seconds 0 -}}{{- fail "alertTiming group intervals must be positive" -}}{{- end -}}
+{{- $grafanaEvaluates := and $.Values.grafana.enabled $.Values.grafanaAlerting.enabled (or (eq $.Values.alerting.backend "grafana") (eq $name "dogeos.logs")) -}}
+{{- if and $grafanaEvaluates (ne (mod $seconds 10) 0) -}}
+{{- fail (printf "alertTiming.groupIntervals.%s must be a multiple of Grafana's 10s scheduler interval" $name) -}}
+{{- end -}}
+{{- end -}}
+{{- range $name, $overrides := $settings.rules -}}
+{{- if not (hasKey $catalog $name) -}}{{- fail (printf "unknown alertTiming rule %s" $name) -}}{{- end -}}
+{{- if not (kindIs "map" $overrides) -}}{{- fail (printf "alertTiming.rules.%s must be a map" $name) -}}{{- end -}}
+{{- range $key, $value := $overrides -}}
+{{- if not (hasKey (index $catalog $name) $key) -}}{{- fail (printf "unknown alertTiming.rules.%s parameter %s" $name $key) -}}{{- end -}}
+{{- if hasSuffix "Seconds" $key -}}
+{{- if or (kindIs "string" $value) (not (regexMatch "^[0-9]+([.][0-9]+)?$" (toString $value))) (le (float64 $value) 0.0) -}}
+{{- fail (printf "alertTiming.rules.%s.%s must be a positive number of seconds" $name $key) -}}
+{{- end -}}
+{{- else -}}
+{{- $seconds := include "scroll-monitor.durationSeconds" $value | int -}}
+{{- if and (ne $key "for") (le $seconds 0) -}}{{- fail (printf "alertTiming.rules.%s.%s must be positive" $name $key) -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
