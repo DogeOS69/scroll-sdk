@@ -176,14 +176,21 @@ the NLB SG; it does not override restrictive NACLs or Kubernetes NetworkPolicies
 
 ## 4. Create one independent NLB per bootnode
 
-Repeat this section for every public bootnode, using a unique short name (NLB and
-TG names have a 32-character limit), dedicated EIP, NLB, TG and frontend SG. Reuse
+Repeat this section for every public bootnode, using a unique name of at most
+28 characters (the TG name adds `-p2p` and must fit AWS's 32-character limit), dedicated EIP,
+NLB, TG and frontend SG. Use letters, digits and hyphens; start and end with a
+letter or digit, and do not start with the reserved NLB prefix `internal-`. Reuse
 a public subnet if appropriate. This example enables one AZ containing the node's
 Pod and EBS; a second bootnode in another AZ provides a separate failure domain.
 
 ```bash
 P2P_NAME='REPLACE_BOOTNODE_RESOURCE_NAME'
 P2P_SUBNET_ID='REPLACE_PUBLIC_SUBNET_ID'
+# Validate before allocating resources: the TG name appends four characters.
+if [[ ! "$P2P_NAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,26}[a-zA-Z0-9])?$ || "$P2P_NAME" == internal-* ]]; then
+  echo 'P2P_NAME must be 1-28 letters/digits/hyphens, start/end with a letter or digit, and not start with internal-.' >&2
+  exit 1
+fi
 P2P_EIP_ALLOC_ID=$("${P2P_AWS[@]}" ec2 allocate-address --domain vpc \
   --query AllocationId --output text)
 P2P_SG_ID=$("${P2P_AWS[@]}" ec2 create-security-group --vpc-id "$P2P_VPC_ID" \
