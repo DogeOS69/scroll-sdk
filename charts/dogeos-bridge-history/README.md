@@ -25,9 +25,9 @@ Production routes `/api/history/v1` on the Portal's host through the Portal's AL
 
 The index is rebuildable from public chain data. To rebuild replica `<n>` from an empty volume:
 
-1. `kubectl scale statefulset dogeos-bridge-history --replicas=0`, or scale down to below `<n>` to keep the others serving.
+1. `kubectl scale statefulset dogeos-bridge-history --replicas=<n>`. This stops replica `<n>` and every replica above it; replicas below `<n>` keep serving.
 2. `kubectl delete pvc data-dogeos-bridge-history-<n>`
-3. Scale back up. The pod starts on a new, empty volume, and `/health` is 503 until the rebuild has caught up.
+3. Scale back to the full count. Replica `<n>` starts on a new, empty volume, and its `/health` is 503 until the rebuild has caught up. Any higher replicas restart on their existing volumes.
 
 `helm uninstall` keeps the `data-dogeos-bridge-history-<n>` claims, as Kubernetes does for every StatefulSet claim. Delete them yourself if you don't want the index back on reinstall.
 
