@@ -8,10 +8,14 @@ scrollConfig: |
 
   REACT_APP_EXTERNAL_RPC_URI_L1 = "https://l1-devnet.scrollsdk"
   REACT_APP_EXTERNAL_RPC_URI_L2 = "https://rpc.scrollsdk"
-  REACT_APP_BRIDGE_API_URI = "https://bridge-history-api.scrollsdk/api"
+  REACT_APP_HISTORY_API_URI = "/api/history/v1"
+  REACT_APP_HISTORY_EXPECT_INCLUDED = "Waiting for the next batch. Batches close every few hours, depending on chain activity"
+  REACT_APP_HISTORY_EXPECT_POSTED = "Payout usually within about an hour after the batch is posted"
+  REACT_APP_DEPOSIT_PITFALLS_URI = ""
   REACT_APP_ROLLUPSCAN_API_URI = "https://rollup-explorer-backend.scrollsdk/api"
   REACT_APP_EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
   REACT_APP_EXTERNAL_EXPLORER_URI_L2 = "https://blockscout.scrollsdk"
+  REACT_APP_EXTERNAL_EXPLORER_URI_ETH = ""
   
   ADMIN_SYSTEM_DASHBOARD_URI = "https://admin-system-dashboard.scrollsdk"
   GRAFANA_URI = "https://grafana.scrollsdk"

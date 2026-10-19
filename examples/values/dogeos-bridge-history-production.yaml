@@ -1,0 +1,184 @@
+---
+# Production values for the bridge history service: the Portal's history API.
+global:
+  nameOverride: dogeos-bridge-history
+  fullnameOverride: dogeos-bridge-history
+
+image:
+  repository: "dogeos69/dogeos-bridge-history"
+  pullPolicy: "IfNotPresent"
+  tag: "TODO_TAG_TO_REPLACE"
+
+command:
+  - /usr/local/bin/dogeos-bridge-history
+  - --config
+  - /app/conf/config.toml
+
+# Above config.shutdown_timeout_ms, so Kubernetes doesn't kill a clean shutdown.
+termination:
+  gracePeriodSeconds: 100
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 8080
+        targetPort: 8080
+        protocol: TCP
+
+# /live answers while the process runs. /health is 503 until the initial sync or
+# a rebuild finishes, which can take hours: it only gates traffic.
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/history/v1/live, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/history/v1/health, port: http}
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet: {path: /api/history/v1/live, port: http}
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 30
+
+# Rendered to /app/conf/config.toml. Any key can be overridden with
+# DOGEOS_BRIDGE_HISTORY_<KEY>, nested keys joined with "__". RPC URLs and
+# credentials come from the secret env below, not from here.
+config:
+  network: "testnet"                                       # mainnet, testnet
+  database_path: "/data/index.sqlite"                      # predefined
+  api_listen_address: "0.0.0.0:8080"                       # predefined
+  protocol_context_json: "/app/protocol_context.json"      # predefined, see persistence.protocol-context
+  genesis_json_path: "/app/genesis/genesis.json"           # predefined, see persistence.genesis
+  shutdown_timeout_ms: 90000                               # below termination.gracePeriodSeconds
+  dogecoin_indexer:
+    start_height: 0                                        # <TODO> the DogeOS genesis boundary on Dogecoin
+    confirmations: 1                                       # predefined
+    poll_interval_ms: 10000                                # predefined
+  l2: {}                                                   # later PRs: rpc_url from the secret env
+  ethereum: {}                                             # later PRs: rpc_url from the secret env
+
+env:
+  - name: "RUST_LOG"
+    value: "info"     # info,dogeos_bridge_history=debug
+
+envFrom:
+  - secretRef:
+      name: "dogeos-bridge-history-secret-env"
+
+externalSecrets:
+  dogeos-bridge-history-secret-env:
+    provider: "aws"
+    data:
+      - remoteRef:
+          key: "dogeos/dogeos-bridge-history-secret-env"
+          property: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__URL"
+        secretKey: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__URL"
+      - remoteRef:
+          key: "dogeos/dogeos-bridge-history-secret-env"
+          property: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__USER"
+        secretKey: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__USER"
+      - remoteRef:
+          key: "dogeos/dogeos-bridge-history-secret-env"
+          property: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__PASS"
+        secretKey: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__PASS"
+      # Enable once the service reads them (L2 indexer, Ethereum DA inbox):
+      # - remoteRef:
+      #     key: "dogeos/dogeos-bridge-history-secret-env"
+      #     property: "DOGEOS_BRIDGE_HISTORY_L2__RPC_URL"
+      #   secretKey: "DOGEOS_BRIDGE_HISTORY_L2__RPC_URL"
+      # - remoteRef:
+      #     key: "dogeos/dogeos-bridge-history-secret-env"
+      #     property: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
+      #   secretKey: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
+    refreshInterval: "2m"
+    serviceAccount: "external-secrets"
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "250m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+# One volume per replica, holding the rebuildable index.sqlite.
+volumeClaimTemplates:
+  - name: data
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    mountPath: /app/conf/
+    name: dogeos-bridge-history-config
+    readOnly: true
+  genesis:
+    enabled: true
+    type: configMap
+    name: genesis-config
+    mountPath: /app/genesis/genesis.json
+    subPath: genesis.json
+    items:
+      - key: genesis.json
+        path: genesis.json
+    readOnly: true
+  protocol-context:
+    enabled: true
+    type: configMap
+    name: protocol-context-config
+    mountPath: /app/protocol_context.json
+    subPath: protocol_context.json
+    items:
+      - key: protocol_context.json
+        path: protocol_context.json
+    readOnly: true
+
+# Same-origin with the Portal: /api/history/v1 on the Portal's host, in the
+# Portal's ALB IngressGroup (see examples/shared-alb.md). group.order 10 puts this
+# rule ahead of the Portal's "/" catch-all. The service serves the prefix itself.
+ingress:
+  main:
+    enabled: true
+    primary: true
+    ingressClassName: alb
+    labels: {}
+    annotations:
+      alb.ingress.kubernetes.io/group.name: <TODO>                # the Portal's IngressGroup
+      alb.ingress.kubernetes.io/group.order: "10"
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: <TODO>
+      alb.ingress.kubernetes.io/healthcheck-path: /api/history/v1/live
+      alb.ingress.kubernetes.io/success-codes: "200"
+    hosts:
+      - host: portal.scrollsdk                                    # the Portal's host
+        paths:
+          - path: /api/history/v1
+            pathType: Prefix
+
+serviceMonitor:
+  main:
+    enabled: false

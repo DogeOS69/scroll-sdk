@@ -1,0 +1,144 @@
+global:
+  nameOverride: &app_name dogeos-bridge-history
+  fullnameOverride: *app_name
+
+# Each replica is independent: its own volume, its own rebuild, nothing shared.
+# Parallel, so a second replica doesn't wait for the first one's initial sync.
+controller:
+  type: statefulset
+  replicas: 1
+  strategy: RollingUpdate
+  podManagementPolicy: Parallel
+
+# Above the service's default shutdown_timeout_ms (90 s), so Kubernetes doesn't
+# kill a clean shutdown in progress.
+termination:
+  gracePeriodSeconds: 100
+
+# The image doesn't exist yet; set the tag once it's published.
+image:
+  repository: dogeos69/dogeos-bridge-history
+  pullPolicy: Always
+  tag: "TODO_TAG_TO_REPLACE"
+
+command: ["/usr/local/bin/dogeos-bridge-history", "--config", "/app/conf/config.toml"]
+
+service:
+  main:
+    enabled: true
+    ports:
+      http:
+        enabled: true
+        port: 8080
+        targetPort: 8080
+        protocol: TCP
+
+# Liveness and startup use /live only. /health is 503 until the initial sync or a
+# rebuild finishes, which can take hours, so it only gates traffic.
+probes:
+  liveness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/api/history/v1/live"
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/api/history/v1/health"
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+  startup:
+    enabled: true
+    custom: true
+    spec:
+      httpGet:
+        path: "/api/history/v1/live"
+        port: http
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 30
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "250m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+# One volume per replica, holding the rebuildable index.sqlite.
+volumeClaimTemplates:
+  - name: data
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    mountPath: /app/conf/
+    name: dogeos-bridge-history-config
+    readOnly: true
+  # The L2 genesis.json and the network's protocol_context.json come from the
+  # shared scroll-common ConfigMaps. Production values declare those mounts.
+
+# Rendered to /app/conf/config.toml. Every key can also be set through a
+# DOGEOS_BRIDGE_HISTORY_<KEY> environment variable, nested keys joined with "__".
+# The Dogecoin RPC URL and credentials, and the L2 and Ethereum RPC URLs, come
+# from the secret env (see envFrom and externalSecrets), not from here.
+config:
+  network: "testnet"
+  database_path: "/data/index.sqlite"
+  api_listen_address: "0.0.0.0:8080"
+  protocol_context_json: "/app/protocol_context.json"
+  genesis_json_path: "/app/genesis/genesis.json"
+  # Keep it below termination.gracePeriodSeconds.
+  shutdown_timeout_ms: 90000
+  dogecoin_indexer:
+    # The DogeOS genesis boundary on Dogecoin.
+    start_height: 0
+    confirmations: 1
+    poll_interval_ms: 10000
+  # Read by later parts of the service. Rendered only when set.
+  l2: {}
+  ethereum: {}
+
+env:
+  - name: "RUST_LOG"
+    value: "info"
+
+envFrom:
+  - secretRef:
+      name: "dogeos-bridge-history-secret-env"
+
+# Same-origin with the Portal: route /api/history/v1 on the Portal's host to this
+# service. The service serves that prefix itself, so there's no rewrite.
+ingress:
+  main:
+    enabled: false
+    primary: true
+    annotations: {}
+    labels: {}
+    ingressClassName: "nginx"
+    hosts:
+      - host: frontends.scrollsdk
+        paths:
+          - path: /api/history/v1
+            pathType: Prefix
+
+serviceMonitor:
+  main:
+    enabled: false

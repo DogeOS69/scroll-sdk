@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "controller": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "statefulset",
+          "description": "dogeos-bridge-history has a fixed StatefulSet workload model."
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Each replica has its own volume and rebuilds on its own, so more than one is supported."
+        },
+        "strategy": {
+          "const": "RollingUpdate",
+          "description": "dogeos-bridge-history uses the chart-owned RollingUpdate strategy."
+        },
+        "podManagementPolicy": {
+          "const": "Parallel",
+          "description": "Replicas start independently; one doesn't wait for another's initial sync."
+        }
+      }
+    }
+  }
+}
