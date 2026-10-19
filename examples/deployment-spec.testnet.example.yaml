@@ -12,11 +12,11 @@ metadata:
   environment: testnet
   description: "beta.8 / rc.9 preparation with production Bridge initialization"
 
-# Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
+# Pin the shared-ALB templates and minimal existing-NLB chart interface.
 # Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
-# Includes Core beta.8 image defaults and per-worker credential charts (#180).
+# Includes Core beta.8 defaults and the Blockscout metrics-policy correction.
 templates:
-  sdkRevision: c2eb8bab629f16bb8ea982223351aaa08d52ed81
+  sdkRevision: 41334952f2185b2dc1d324f68d3838be3e8cfaf6
 
 # Reference existing infrastructure; this spec does not create a cluster.
 # Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
