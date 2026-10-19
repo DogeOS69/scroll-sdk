@@ -97,6 +97,25 @@ class RecoveryRunwayTests(unittest.TestCase):
               expected=('RecoveryRunwayObservationStale',))
         check('runway metrics missing from a scraped WP', 1, runway_metrics=False,
               expected=('RecoveryRunwayObservationStale',))
+        # A stalled task can keep exposing valid=1 while its success timestamp
+        # freezes. Check the handover itself, not just the eventual stale alert.
+        for offset in (0, 30):
+            cases.append({'name': f'stalled observer handover, timestamp offset {offset}s',
+                          'interval': '1m',
+                          'input_series': [{'series': PREFIX + k + labels(TARGET), 'values': v}
+                                           for k, v in (
+                                               ('minimum_blocks', '-12x25'),
+                                               ('observation_valid', '1x25'),
+                                               ('timestamp_seconds', f'{offset}x25'))],
+                          'alert_rule_test': [
+                              {'eval_time': f'{minute}m', 'alertname': alert,
+                               'exp_alerts': [{'exp_labels': {**TARGET, **shipped[alert]['labels']},
+                                               'exp_annotations': annotations(shipped[alert], -12)}]
+                               if fires else []}
+                              for minute in (10, 14, 15, 16, 20, 21)
+                              for alert, fires in (
+                                  ('RecoveryRunwayCritical', minute * 60 - offset < 900),
+                                  ('RecoveryRunwayObservationStale', minute * 60 - offset >= 900))]})
         with tempfile.TemporaryDirectory(prefix='runway-promql-') as directory:
             root = Path(directory)
             root.chmod(0o755)

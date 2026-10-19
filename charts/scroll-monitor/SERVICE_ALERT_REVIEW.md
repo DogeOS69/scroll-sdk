@@ -326,8 +326,11 @@ period; evaluation and notification intervals still apply.
 | `ProverWorkerRepeatedFailures` | One authenticated worker name failed 5 or more proof results in 15 minutes (`proof_coordinator_worker_failed_results_total`, per `worker_id`). No automatic per-worker limit exists; the runbook is dogeos-core's `aws-gpu-dstack.md` "Misbehaving worker". | Immediate | warning |
 
 The worker failure counter is created on its first failure. For newly observed
-series, the rule includes the initial counter value until there is history before
-the current 15-minute window; established series use the reset-aware increase.
+series, the rule pads the interval before the first observation with zero and
+computes a reset-aware increase, so the initial count and failures after a restart
+are counted together. Observed values carry forward through scrape gaps; the
+one-second subquery assumes scrape intervals of at least one second. Once there
+is history before the current 15-minute window, only the raw-sample increase is used.
 The history check scans the preceding 15 minutes so a short scrape gap does not
 make an old counter appear new. With no retained history (for example after a
 fresh Prometheus installation or a long monitoring outage), an existing counter

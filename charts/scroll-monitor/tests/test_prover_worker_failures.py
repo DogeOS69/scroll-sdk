@@ -88,6 +88,11 @@ class ProverWorkerFailureTests(unittest.TestCase):
             ('new counter below threshold', '_x15 4+0x25', [(20, False)]),
             ('old quiet counter', '9+0x40', [(20, False)]),
             ('old counter after scrape gap', '9x1 _x14 9+0x24', [(22, False)]),
+            ('initial nonzero then reset', '_x10 4 1 2+0x25', [(13, True), (28, False)]),
+            ('initial nonzero, growth, then reset stays below threshold', '_x10 1 2 3 0 1+0x25', [(15, False)]),
+            ('initial nonzero and multiple resets', '_x10 2 3 1 0 1+0x25', [(15, True), (30, False)]),
+            ('new counter with a short scrape gap', '_x10 3 _ _ 4+0x25', [(15, False)]),
+            ('new counter gap then reset', '_x10 4 _ _ 1 2+0x25', [(15, True)]),
             ('established counter reset', '10x15 0 1 2 3 4 5+0x19', [(20, False), (21, True)]),
         ]
         tests = [
@@ -104,6 +109,12 @@ class ProverWorkerFailureTests(unittest.TestCase):
             {'series': 'proof_coordinator_worker_failed_results_total' + labels({**TARGET, 'worker_id': w}),
              'values': '_x15 4+0x5'} for w in ('gpu-a', 'gpu-b')],
             'alert_rule_test': [{'eval_time': '20m', 'alertname': NAME, 'exp_alerts': []}]})
+        tests.append({'name': 'reset between minute evaluations', 'interval': '15s',
+                      'input_series': [{'series': 'proof_coordinator_worker_failed_results_total'
+                                        + labels({**TARGET, 'worker_id': worker}),
+                                        'values': '_x43 4 1 2+0x20'}],
+                      'alert_rule_test': [{'eval_time': '12m', 'alertname': NAME,
+                                           'exp_alerts': [expected]}]})
         self.run_promtool(shipped, tests)
 
 

@@ -824,8 +824,10 @@ with the portal's 90/60 nominal days at 1,440 blocks/day; they are operator
 policy, not protocol constants. Warning and critical fire only while the last
 successful observation is under 15 minutes old, so a failing monitor keeps
 the last known hazard up until the stale alert takes over. `RecoveryRunwayObservationStale`
-fires when observations keep failing, the last success is over 10 minutes old,
-or a WP target exports protocol metrics but no runway metrics.
+fires after 10 minutes of failed or missing observations. If the observer stops
+refreshing while its valid flag remains set, timestamp age starts the pending
+period at 5 minutes and the alert fires at age 15 minutes, when the last-good
+hazard expires. This avoids an unmonitored gap.
 A target missing from Prometheus entirely is covered by the existing target alerts.
 
 Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and
