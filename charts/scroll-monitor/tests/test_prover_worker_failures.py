@@ -106,6 +106,17 @@ class ProverWorkerFailureTests(unittest.TestCase):
              [(13, False), (18, False), (24, False), (30, False)]),
             ('old quiet series disappears and returns', '9x10 stale _x3 9+0x30',
              [(15, False), (20, False), (30, False)]),
+            # Raw increase extrapolates sparse new counters above their actual
+            # lifetime total (1 -> 4 -> stale becomes 5.5 at minute 13).
+            # Only the padded branch should evaluate these new series.
+            ('four failures then stale', '_x10 1 4 stale _x30',
+             [(11, False), (12, False), (13, False), (20, False), (25, False)]),
+            ('three failures then stale', '_x10 1 3 stale _x30',
+             [(12, False), (13, False), (20, False)]),
+            ('four failures then scrape gap', '_x10 1 4 _x30',
+             [(12, False), (13, False), (18, False), (24, False)]),
+            ('five failures then stale', '_x10 1 5 stale _x30',
+             [(12, True), (13, True), (20, True), (24, True), (26, False)]),
             ('established counter reset', '10x15 0 1 2 3 4 5+0x19', [(20, False), (21, True)]),
         ]
         tests = [

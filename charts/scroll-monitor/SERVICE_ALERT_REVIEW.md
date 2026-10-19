@@ -333,6 +333,8 @@ window, so a counter temporarily disappearing after restart does not erase its
 initial failures. Observed values carry forward through scrape gaps; the
 one-second subquery assumes scrape intervals of at least one second. Once there
 is history before the current 15-minute window, only the raw-sample increase is used.
+The raw branch is excluded for new series because extrapolation over sparse samples
+can exceed their lifetime failure count.
 The history check scans the preceding 15 minutes so a short scrape gap does not
 make an old counter appear new. With no retained history (for example after a
 fresh Prometheus installation or a long monitoring outage), an existing counter

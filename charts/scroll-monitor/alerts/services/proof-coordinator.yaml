@@ -171,10 +171,12 @@ groups:
     # last_over_time carries observed counts through scrape gaps without false resets.
     # Multiplication strips the metric name so real and padded samples form one series.
     # The 1s subquery preserves resets between consecutive scrapes (scrape interval >= 1s).
-    # Established series use raw samples above; preceding history prevents replaying old totals.
+    # Gate raw increase on preceding history: extrapolation over sparse new samples
+    # can exceed their lifetime total. The two branches must be mutually exclusive.
     expr: |
       sum by (namespace, job, instance, worker_id) (
         increase(proof_coordinator_worker_failed_results_total[15m])
+        and ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
       ) >= 5
       or
       sum by (namespace, job, instance, worker_id) (
@@ -185,6 +187,18 @@ groups:
         unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
       ) >= 5
     previousExpr:
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          increase((
+            (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
+            or (0 * last_over_time(proof_coordinator_worker_failed_results_total[15m] @ end()))
+          )[15m:1s])
+          unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
       - |
         sum by (namespace, job, instance, worker_id) (
           increase(proof_coordinator_worker_failed_results_total[15m])
