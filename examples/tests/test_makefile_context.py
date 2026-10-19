@@ -151,6 +151,36 @@ class MakefileContextTests(unittest.TestCase):
             self.assertTrue(calls[0].startswith('scrollsdk setup capacity-manager credentials'))
             self.assertTrue(calls[1].startswith('helm --kube-context selected'))
 
+    def test_signer_activation_guard_stops_before_helm_and_uses_the_same_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            log = root / 'calls'
+            for name in ['scrollsdk', 'helm']:
+                tool = root / name
+                tool.write_text('#!/bin/sh\nprintf "%s\\n" "' + name + ' $*" >> "$CALL_LOG"\n'
+                                + ('exit "$ACTIVATION_EXIT"\n' if name == 'scrollsdk' else 'exit 0\n'))
+                tool.chmod(0o755)
+            env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'],
+                       CALL_LOG=str(log), ACTIVATION_EXIT='2')
+            command = ['make', '--no-print-directory', '-f', str(MAKEFILE),
+                       'install-cubesigner-signer', 'KUBE_CONTEXT=selected', 'NAMESPACE=chain']
+            result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(len(log.read_text().splitlines()), 1)
+            self.assertIn('verify-activation --dir . --kube-context selected', log.read_text())
+            self.assertIn('--namespace chain', log.read_text())
+            log.unlink()
+            env['ACTIVATION_EXIT'] = '0'
+            result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            calls = log.read_text().splitlines()
+            self.assertEqual(len(calls), 2)
+            self.assertTrue(calls[0].startswith('scrollsdk setup cubesigner-policy verify-activation'))
+            self.assertTrue(calls[1].startswith('helm --kube-context selected'))
+            for call in calls:
+                self.assertIn('values/cubesigner-signer-production.yaml', call)
+                self.assertIn('0.1.9', call)
+
     def test_monitor_applies_generated_dstack_overlay_after_base_values(self):
         overlay = 'values/scroll-monitor-dstack.yaml'
         for targets in [['install-scroll-monitor'], ['install-scroll-core']]:
