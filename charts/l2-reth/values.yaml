@@ -63,6 +63,11 @@ probes:
       failureThreshold: 3
 
 reth:
+  # Built-in chain name supported by the selected image (e.g. dogeos-mainnet).
+  # When set, skip the genesis ConfigMap mount and pass this name to --chain.
+  # Empty preserves the custom genesis configuration below.
+  chain: ""
+  # Set to "" to use the selected chain's network ID without an override.
   networkId: "4444444"
   l1Url: http://l1-interface:8545
   l1LivenessThreshold: "2147483647"
@@ -166,10 +171,11 @@ reth:
     # service: Controller owns the NLB; existing: bind an infrastructure-owned NLB.
     mode: service
     existingNlb: {}
-    # existingNlb fields: loadBalancerARN, listenerARN, targetGroupARN, securityGroupIds.
+    # Required existingNlb fields: targetGroupARN, securityGroupIds.
+    # CLI discovers NLB, listener, subnets and EIPs from the target group.
     ordinal: 0
-    # Allowed peer CIDRs, enforced by the NLB security group. Required unless
-    # allowOpenPeering is true.
+    # Service mode only: allowed peer CIDRs, required unless allowOpenPeering.
+    # Existing mode: omit/leave empty; AWS infrastructure owns the allowlist.
     sourceRanges: []
     allowOpenPeering: false
     # Deployment-owned subnet and Elastic IP allocation IDs, one EIP per subnet

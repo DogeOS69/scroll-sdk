@@ -12,11 +12,11 @@ metadata:
   environment: testnet
   description: "beta.8 / rc.9 preparation with production Bridge initialization"
 
-# Pin the reviewed application-owned ALB/NLB charts from SDK PR #175.
+# Pin the shared-ALB templates and minimal existing-NLB chart interface.
 # Fetch this commit into --sdk-dir before planning; see deployment-spec.md.
-# Includes Core beta.8 image defaults and per-worker credential charts (#180).
+# Includes Core beta.8 defaults and the Blockscout metrics-policy correction.
 templates:
-  sdkRevision: c2eb8bab629f16bb8ea982223351aaa08d52ed81
+  sdkRevision: 41334952f2185b2dc1d324f68d3838be3e8cfaf6
 
 # Reference existing infrastructure; this spec does not create a cluster.
 # Apply creates AWS KMS keys and IAM/IRSA resources for the service signing identities:
@@ -30,15 +30,23 @@ infrastructure:
     eksClusterName: REPLACE_WITH_EXISTING_EKS_CLUSTER
     # Secret names default to dogeos/<eksClusterName>/<namespace>/<metadata.name>.
     # Optional: secretsPrefix: your-reviewed-existing-prefix
-    # Existing HTTPS ALBs and HTTP/IP target groups are externally managed.
-    # Fill every reference before setup plan. TSO and proof need separate ALBs.
+    # Controller-managed shared ALB for public RPC, Portal and Blockscout.
+    # Fill the group name and an issued ACM certificate ARN before setup plan.
+    # The certificate must cover all selected public service hostnames.
+    sharedAlb:
+      groupName: REPLACE_WITH_SHARED_ALB_GROUP_NAME
+      certificateArn: REPLACE_WITH_SHARED_ALB_CERTIFICATE_ARN
+      services:
+        - l2-reth-rpc-public
+        - l2-reth-rpc-public-ws
+        - frontends
+        - blockscout-api
+        - blockscout-frontend
+    # TSO and Proof use separate, externally managed HTTPS ALBs and target groups.
     # Service names below match Makefile release names and the pinned templates.
     alb:
       mode: existing
       endpoints:
-        public:
-          loadBalancerArn: REPLACE_WITH_PUBLIC_ALB_ARN
-          listenerArn: REPLACE_WITH_PUBLIC_HTTPS_LISTENER_ARN
         tso:
           loadBalancerArn: REPLACE_WITH_TSO_ALB_ARN
           listenerArn: REPLACE_WITH_TSO_HTTPS_LISTENER_ARN
@@ -46,26 +54,6 @@ infrastructure:
           loadBalancerArn: REPLACE_WITH_PROOF_ALB_ARN
           listenerArn: REPLACE_WITH_PROOF_HTTPS_LISTENER_ARN
       bindings:
-        frontends:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_FRONTENDS_TARGET_GROUP_ARN
-          serviceRef: {name: frontends, port: 80}
-        l2-reth-rpc-public:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_RPC_HTTP_TARGET_GROUP_ARN
-          serviceRef: {name: l2-reth-rpc-public, port: 8545}
-        l2-reth-rpc-public-ws:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_RPC_WS_TARGET_GROUP_ARN
-          serviceRef: {name: l2-reth-rpc-public, port: 8546}
-        blockscout-api:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_API_TARGET_GROUP_ARN
-          serviceRef: {name: blockscout-blockscout-svc, port: 80}
-        blockscout-frontend:
-          endpoint: public
-          targetGroupArn: REPLACE_WITH_BLOCKSCOUT_FRONTEND_TARGET_GROUP_ARN
-          serviceRef: {name: blockscout-frontend-svc, port: 80}
         tso-service:
           endpoint: tso
           targetGroupArn: REPLACE_WITH_TSO_TARGET_GROUP_ARN
@@ -79,16 +67,17 @@ infrastructure:
   bootnodeCount: 2
 
 # Public P2P is opt-in. [] keeps all bootnodes internal in the spec workflow.
-# Before enabling a selected index, obtain approved partner egress IPv4 CIDRs
-# and deployment-owned subnet/EIP IDs. See bootnode-public-p2p.md.
+# AWS prepares one independent NLB per bootnode and owns partner allowlists.
+# No sourceRanges in existing mode. See existing-nlb.md for creation commands.
 bootnodePublicP2p: []
-# Example activation (replace documentation-only addresses and IDs):
+# Example activation (replace all placeholders with AWS resource references):
 # bootnodePublicP2p:
 #   - index: 0
 #     enabled: true
-#     sourceRanges: ["203.0.113.10/32"]
-#     subnets: ["subnet-0123456789abcdef0"]
-#     eipAllocations: ["eipalloc-0123456789abcdef0"]
+#     mode: existing
+#     existingNlb:
+#       targetGroupArn: "<TCP_IP_TARGET_GROUP_ARN>"
+#       securityGroupIds: ["<NLB_FRONTEND_SG_ID>"]
 
 network:
   l1ChainName: DOGE

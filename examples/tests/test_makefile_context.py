@@ -58,6 +58,16 @@ class MakefileContextTests(unittest.TestCase):
     def test_empty_context_is_an_empty_argument_not_the_next_option(self):
         self.assert_context(self.expanded_commands('', 'default'), '', 'default')
 
+    def test_reth_installs_use_the_bundled_chart_version(self):
+        chart = MAKEFILE.parent.parent / 'charts/l2-reth/Chart.yaml'
+        version = re.search(r'^version:\s*(\S+)', chart.read_text(), re.MULTILINE)[1]
+        commands = self.expanded_commands('selected', 'chain', targets=[
+            'install-l2-reth-bootnode', 'install-l2-reth-rpc', 'install-l2-reth-sequencer',
+        ])
+        self.assertTrue(commands)
+        for command in commands:
+            self.assertEqual(command[command.index('--version') + 1], version)
+
     def test_preinstalls_runs_before_contracts_and_waits_for_the_hook(self):
         commands = self.expanded_commands('selected', 'chain', targets=['install-chain-contracts'])
         preinstalls = next(command for command in commands if 'preinstalls' in command)

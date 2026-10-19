@@ -31,6 +31,14 @@ Resolve the primary Service name, including service.main.fullname when set.
 Validate l2-reth role constraints before generating common chart values.
 */}}
 {{- define "l2-reth.validate" -}}
+  {{- if .Values.reth.chain -}}
+    {{- if not (kindIs "string" .Values.reth.chain) -}}
+      {{- fail "reth.chain must be a built-in chain name string" -}}
+    {{- end -}}
+    {{- if not (regexMatch "^[a-zA-Z0-9][a-zA-Z0-9_-]*$" .Values.reth.chain) -}}
+      {{- fail "reth.chain must be a built-in chain name; use reth.genesis.chainPath for a genesis file" -}}
+    {{- end -}}
+  {{- end -}}
   {{- $role := required "role is required and must be one of: rpc, sequencer, bootnode" .Values.role -}}
   {{- if not (has $role (list "rpc" "sequencer" "bootnode")) -}}
     {{- fail (printf "invalid role %q: expected rpc, sequencer, or bootnode" $role) -}}
@@ -135,7 +143,7 @@ Validate l2-reth role constraints before generating common chart values.
     {{- if and .eipAllocations (ne (len .eipAllocations) (len .subnets)) -}}
       {{- fail "reth.p2pExternal.eipAllocations needs one entry per reth.p2pExternal.subnets entry" -}}
     {{- end -}}
-    {{- if and (not .sourceRanges) (not (and (kindIs "bool" .allowOpenPeering) .allowOpenPeering)) -}}
+    {{- if and (ne $mode "existing") (not .sourceRanges) (not (and (kindIs "bool" .allowOpenPeering) .allowOpenPeering)) -}}
       {{- fail "reth.p2pExternal is internet-facing: set sourceRanges, or allowOpenPeering: true to accept peers from any address" -}}
     {{- end -}}
     {{- /* Check what the Service renders: its annotations merged over global.annotations. */ -}}
@@ -213,12 +221,16 @@ initContainers:
 {{- end }}
 persistence:
   genesis:
+{{- if .Values.reth.chain }}
+    enabled: false
+{{- else }}
     enabled: true
     type: configMap
     mountPath: {{ .Values.reth.genesis.mountPath | quote }}
     subPath: {{ .Values.reth.genesis.subPath | quote }}
     name: {{ .Values.reth.genesis.configMapName | quote }}
     readOnly: true
+{{- end }}
   wait-for-l1-script:
     enabled: true
     type: configMap
@@ -325,9 +337,15 @@ Generate rollup-node argv without shell interpolation.
 {{- define "l2-reth.args" -}}
 - node
 - --chain
+{{- if .Values.reth.chain }}
+- {{ .Values.reth.chain | quote }}
+{{- else }}
 - {{ .Values.reth.genesis.chainPath | quote }}
+{{- end }}
+{{- if and (ne .Values.reth.networkId nil) (ne (toString .Values.reth.networkId) "") }}
 - --network-id
 - {{ .Values.reth.networkId | quote }}
+{{- end }}
 - --datadir={{ .Values.reth.data.mountPath }}
 - --metrics=0.0.0.0:{{ .Values.reth.ports.metrics }}
 - --port={{ .Values.reth.ports.p2p }}
@@ -623,30 +641,24 @@ readiness:
 {{- end -}}
 {{- $prefix := "^arn:aws:elasticloadbalancing:[a-z0-9-]+:[0-9]{12}:" -}}
 {{- range $field, $suffix := dict "loadBalancerARN" "loadbalancer/net/[a-zA-Z0-9-]+/[a-f0-9]{16}$" "listenerARN" "listener/net/[a-zA-Z0-9-]+/[a-f0-9]{16}/[a-f0-9]{16}$" "targetGroupARN" "targetgroup/[a-zA-Z0-9-]+/[a-f0-9]{16}$" -}}
-{{- if not (regexMatch (printf "%s%s" $prefix $suffix) (default "" (get $binding $field))) -}}
+{{- if and (or (eq $field "targetGroupARN") (hasKey $binding $field)) (not (regexMatch (printf "%s%s" $prefix $suffix) (default "" (get $binding $field)))) -}}
 {{- fail (printf "existing NLB requires valid %s" $field) -}}
 {{- end -}}
 {{- end -}}
-{{- $lbPrefix := regexFind $prefix $binding.loadBalancerARN -}}
-{{- if or (ne $lbPrefix (regexFind $prefix $binding.listenerARN)) (ne $lbPrefix (regexFind $prefix $binding.targetGroupARN)) -}}
+{{- $tgPrefix := regexFind $prefix $binding.targetGroupARN -}}
+{{- range $field := list "loadBalancerARN" "listenerARN" -}}
+{{- if and (hasKey $binding $field) (ne $tgPrefix (regexFind $prefix (get $binding $field))) -}}
 {{- fail "existing NLB ARNs must use the same AWS account and region" -}}
 {{- end -}}
-{{- $listenerPrefix := printf "%slistener/%s/" $lbPrefix (trimPrefix (printf "%sloadbalancer/" $lbPrefix) $binding.loadBalancerARN) -}}
+{{- end -}}
+{{- if and $binding.loadBalancerARN $binding.listenerARN -}}
+{{- $listenerPrefix := printf "%slistener/%s/" $tgPrefix (trimPrefix (printf "%sloadbalancer/" $tgPrefix) $binding.loadBalancerARN) -}}
 {{- if not (hasPrefix $listenerPrefix $binding.listenerARN) -}}
 {{- fail "existing NLB listenerARN must belong to loadBalancerARN" -}}
 {{- end -}}
-{{- if or (not $p.sourceRanges) $p.allowOpenPeering -}}
-{{- fail "existing NLB requires nonempty sourceRanges and allowOpenPeering false" -}}
 {{- end -}}
-{{- range $cidr := $p.sourceRanges -}}
-{{- if not (regexMatch "^([0-9]{1,3}\\.){3}[0-9]{1,3}/([1-9]|[12][0-9]|3[0-2])$" $cidr) -}}
-{{- fail "existing NLB sourceRanges must be IPv4 CIDRs with prefix 1 through 32" -}}
-{{- end -}}
-{{- range $octet := splitList "." (first (splitList "/" $cidr)) -}}
-{{- if or (gt (int $octet) 255) (and (gt (len $octet) 1) (hasPrefix "0" $octet)) -}}
-{{- fail "existing NLB sourceRanges must contain valid IPv4 addresses" -}}
-{{- end -}}
-{{- end -}}
+{{- if or $p.sourceRanges $p.allowOpenPeering -}}
+{{- fail "existing NLB allowlists belong to AWS infrastructure: omit sourceRanges and keep allowOpenPeering false" -}}
 {{- end -}}
 {{- if not $binding.securityGroupIds -}}
 {{- fail "existing NLB requires securityGroupIds for backend reachability" -}}

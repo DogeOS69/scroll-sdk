@@ -7,12 +7,6 @@ reth:
     enabled: true
     mode: existing
     ordinal: 0
-    sourceRanges: [203.0.113.10/32]
-    allowOpenPeering: false
-    subnets: [subnet-00000000000000000]
-    eipAllocations: [eipalloc-00000000000000000]
     existingNlb:
-      loadBalancerARN: arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/net/bootnode-a/0000000000000001
-      listenerARN: arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/net/bootnode-a/0000000000000001/0000000000000002
       targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/bootnode-a/0000000000000003
       securityGroupIds: [sg-00000000000000000]

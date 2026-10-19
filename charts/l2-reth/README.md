@@ -10,6 +10,36 @@ This chart supports three roles through `role`:
 
 The chart generates `rollup-node node` as Kubernetes `command`/`args` instead of using shell string concatenation. This avoids argument quoting issues for flags such as `--signer.aws-kms-key-id`.
 
+For DogeOS mainnet, select the image's built-in chain instead of supplying a
+genesis ConfigMap:
+
+```yaml
+image:
+  repository: dogeos69/rollup-node
+  tag: "0.3.0-beta.2"
+reth:
+  chain: dogeos-mainnet
+  networkId: ""
+```
+
+This is an overlay for chain selection, not a complete production configuration.
+`reth.chain` takes precedence over `reth.genesis.*` and disables the genesis
+volume and mount, including when an older values file still contains genesis
+settings. No external `genesis.json` or `genesis-config` ConfigMap is needed.
+The selected image must support the chain name; the chart's default Scroll image
+does not provide the DogeOS built-in chains. The DogeOS image above supports
+`dogeos-mainnet`, `dogeos-chikyu`, and `dev`.
+
+Set `reth.networkId: ""` (or `null`) to omit `--network-id` and use the chain's
+own network ID. Leaving this field out of an overlay retains the chart's legacy
+`4444444` override, so explicitly clear it for built-in mainnet configuration.
+
+For custom networks, leave `reth.chain` empty (the default). The chart continues
+to mount the ConfigMap specified by `reth.genesis.configMapName` and pass
+`reth.genesis.chainPath` to `--chain`. Existing custom-genesis releases therefore
+keep their current behavior. Chain selection does not convert an existing data
+directory to a different chain.
+
 Use `reth.extraArgs` for rollup-node flags that are not modeled by the chart yet. It can be configured as a whitespace-delimited string:
 
 ```yaml
@@ -156,23 +186,25 @@ listeners, target groups and frontend security-group rules belong to the
 infrastructure owner and survive application uninstall. The controller uses the
 binding's `networking` rules to permit backend TCP 30303 from the supplied NLB
 security groups; the caller must authorize the controller to reconcile backend
-security groups. `sourceRanges` records the intended frontend allowlist but does
-not enforce it in a ClusterIP Service: configure it on the external NLB's security
-groups and verify AWS state before installation.
+security groups. Partner allowlists belong only to AWS infrastructure. Omit
+`sourceRanges` in existing mode; configure the external NLB security groups and verify AWS state
+before installation. Adding or removing partners requires no spec/values edits
+or Helm upgrade.
 
-Required `existingNlb` fields are `loadBalancerARN`, `listenerARN`,
-`targetGroupARN`, and `securityGroupIds`. A render fixture is available at
+Required `existingNlb` fields are only `targetGroupARN` and `securityGroupIds`.
+The CLI discovers the attached NLB, listener, subnets and EIPs from AWS.
+Legacy `loadBalancerARN` and `listenerARN` remain optional assertions. A render fixture is available at
 `ci/existing-nlb-values.yaml` (synthetic identifiers). Existing mode requires
-nonempty IPv4 `sourceRanges`, refuses `/0` and `allowOpenPeering`, and rejects
-Service NLB annotations. The listener ARN must identify the specified network
-load balancer; all ARNs must belong to the same account and region. Helm does not
+omitted/empty `sourceRanges`, refuses `allowOpenPeering`, and rejects
+Service NLB annotations. If both legacy ARNs are supplied, the listener ARN must identify the specified
+network load balancer; all supplied ARNs must belong to the same account and region. Helm does not
 query AWS: resource type, port, health, SG rules, EIPs and AZ coverage must also
 pass the CLI's live read-only checks and deployment acceptance.
 
 The default `mode: service` retains the existing Controller-managed NLB behavior
 below. Supplying `existingNlb` in that mode is an error rather than a fallback.
 
-## External P2P (opt-in)
+## External P2P (opt-in, service-owned mode)
 
 An external partner's L2 nodes can peer with designated non-sequencer bootnodes
 through one P2P-only AWS Network Load Balancer per bootnode. It is off by
@@ -180,15 +212,16 @@ default: the chart renders only the main ClusterIP Service, which carries RPC
 8545, WS 8546, metrics 6060 and, when `reth.service.p2p.enabled`, internal P2P.
 The main Service is never used for external exposure.
 
-Enable it with `reth.p2pExternal`. The block in
-`examples/values/l2-reth-bootnode-production.yaml` is the reference (disabled),
-and `ci/external-p2p-values.yaml` is the same block enabled, as a lint and test
-fixture:
+Enable service-owned mode explicitly with `reth.p2pExternal.mode: service`.
+`ci/external-p2p-values.yaml` exercises this mode. The shipped production example
+selects independent mode instead; do not carry its `existingNlb` references into
+a service-mode configuration:
 
 ```yaml
 reth:
   p2pExternal:
     enabled: true
+    mode: service
     ordinal: 0
     sourceRanges:
       - "<partner CIDR>"
@@ -292,7 +325,8 @@ annotations differ from the fixed values, plan a Service/NLB replacement rather
 than changing its controller-selection annotations in place. Check the address
 that partners use after the upgrade. Their NLBs
 also open UDP 30303 (`p2p-udp`), which serves nothing because discovery is
-disabled; the move drops it. Mainnet uses `sourceRanges` and TCP 30303 only.
+disabled; the move drops it. Service mode uses `sourceRanges` and TCP 30303
+only; independent NLBs keep the partner list exclusively in AWS infrastructure.
 
 Before adding source restrictions to an existing NLB, inspect the actual AWS
 load balancer's attached security groups. Upgrading the controller to v2.6.0
@@ -342,7 +376,7 @@ rollup-node opens no other peer-facing listener.
    managed frontend security group attached. Replace older NLBs created without
    security groups before relying on `reth.p2pExternal.sourceRanges`.
 3. Infra has allocated one Elastic IP per node and chosen its subnet, in the AZ
-   of that node's EBS volume (or cross-zone is enabled).
+   of that node's EBS volume. Multiple enabled AZs additionally require cross-zone.
 4. The source policy (partner CIDRs) is approved and set in
    `reth.p2pExternal.sourceRanges`.
 5. The enodes `enode://<pubkey>@<EIP>:30303` are given to the partner, and the
