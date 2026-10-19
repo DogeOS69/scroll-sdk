@@ -24,6 +24,34 @@ class BlockscoutFrontendTests(unittest.TestCase):
         self.assertEqual(values['NEXT_PUBLIC_NETWORK_ID'], '221122')
         self.assertEqual(values['NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL'], 'DOGE')
 
+    def test_chart_production_keeps_metrics_disabled_and_network_env_unique(self):
+        output = subprocess.check_output([
+            'helm', 'template', 'blockscout', str(ROOT / 'charts/blockscout'),
+            '-f', str(ROOT / 'charts/blockscout/values/production.yaml'),
+        ], text=True)
+        docs = [d for d in yaml.safe_load_all(output) if d]
+        frontend = next(d for d in docs if d['kind'] == 'Deployment' and 'frontend' in d['metadata']['name'])
+        env = frontend['spec']['template']['spec']['containers'][0]['env']
+        names = [e['name'] for e in env]
+        self.assertEqual(len(names), len(set(names)))
+        values = {e['name']: e.get('value') for e in env}
+        self.assertEqual(values['PROMETHEUS_METRICS_ENABLED'], 'false')
+        self.assertEqual(values['NEXT_PUBLIC_NETWORK_SHORT_NAME'], 'DogeOS')
+        self.assertEqual(values['NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS'], '18')
+        self.assertFalse(any(d['kind'] == 'ServiceMonitor' and
+                             not d['metadata']['name'].endswith('-bb') for d in docs))
+
+    def test_spec_examples_declare_required_dedicated_alb_references(self):
+        for path in sorted((ROOT / 'examples').glob('deployment-spec.*.example.yaml')):
+            with self.subTest(profile=path.name):
+                spec = yaml.safe_load(path.read_text())
+                alb = spec['infrastructure']['aws']['alb']
+                for name in ('tso', 'proof'):
+                    endpoint = alb['endpoints'][name]
+                    self.assertIsInstance(endpoint, dict)
+                    for field in ('loadBalancerArn', 'listenerArn'):
+                        self.assertTrue(endpoint[field].startswith('REPLACE_WITH_'))
+
     def test_shared_alb_renders_inherited_routes_and_unique_environment(self):
         values = yaml.safe_load((ROOT / 'examples/values/blockscout-production.yaml').read_text())
         stack = values['blockscout-stack']

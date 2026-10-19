@@ -1,6 +1,6 @@
 # blockscout
 
-![Version: 0.1.13-dogeos](https://img.shields.io/badge/Version-0.1.13--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.14-dogeos](https://img.shields.io/badge/Version-0.1.14--dogeos-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 blockscout scroll helm charts
 
@@ -88,3 +88,10 @@ target groups remain. See [configuration and prerequisites](../../examples/exist
 
 Use controller-managed Ingresses for shared public RPC, Portal and Blockscout.
 See [production configuration and operator responsibilities](../../examples/shared-alb.md).
+
+The chart-local `values/production.yaml` explicitly disables the upstream
+Prometheus integration and keeps frontend metrics disabled. To opt in, set
+`blockscout-stack.config.prometheus.enabled: true` and remove
+`PROMETHEUS_METRICS_ENABLED` from `frontend.env` so the upstream template owns
+that variable. The shared-ALB example under `examples/values/` retains the
+upstream Prometheus default and separately disables the NGINX metrics ingress.
