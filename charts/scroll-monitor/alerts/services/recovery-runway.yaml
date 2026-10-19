@@ -1,0 +1,44 @@
+# The last good runway keeps alerting for 15 minutes after its last success, past
+# the point where the stale alert takes over (failing for 10 minutes). Runway
+# falls about one block a minute, so a 15-minute-old minimum is at most about 15
+# blocks optimistic, which is small against the thresholds.
+groups:
+- name: dogeos.services.recovery-runway
+  interval: 1m
+  rules:
+  - alert: RecoveryRunwayWarning
+    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_WARN_BLOCKS__ and withdrawal_processor_recovery_runway_minimum_blocks > __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (time() - withdrawal_processor_recovery_runway_timestamp_seconds < 900)
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Funded bridge script recovery runway is low.
+      description: 'Minimum runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Plan an authorized attestation-class CLTV refresh and the old-key drain. Calendar dates are estimates.'
+      runbook_url: __RUNWAY_RUNBOOK__
+  - alert: RecoveryRunwayCritical
+    expr: (withdrawal_processor_recovery_runway_minimum_blocks <= __RUNWAY_CRITICAL_BLOCKS__) and on(namespace,job,instance) (time() - withdrawal_processor_recovery_runway_timestamp_seconds < 900)
+    for: 2m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Funded bridge script recovery runway is critical or expired.
+      description: 'Minimum runway is {{ $value | printf "%.0f" }} Dogecoin blocks. Escalate through existing on-call routing; zero or negative means the CLTV height has been reached. Rotation alone does not refresh funds left on old scripts. No spending or rotation is automated.'
+      runbook_url: __RUNWAY_RUNBOOK__
+  - alert: RecoveryRunwayObservationStale
+    # Timestamp age starts pending at 5m: with for=10m this fires by age 15m,
+    # when the last-good hazard expires, even if a stalled observer leaves valid=1.
+    # A WP target that exports protocol metrics but no runway metrics is broken too.
+    expr: withdrawal_processor_recovery_runway_observation_valid == 0 or time() - withdrawal_processor_recovery_runway_timestamp_seconds >= 300 or (max by (namespace,job,instance) (withdrawal_processor_protocol_snapshot_valid) unless on(namespace,job,instance) withdrawal_processor_recovery_runway_observation_valid)
+    previousExpr: withdrawal_processor_recovery_runway_observation_valid == 0 or time() - withdrawal_processor_recovery_runway_timestamp_seconds > 600 or (max by (namespace,job,instance) (withdrawal_processor_protocol_snapshot_valid) unless on(namespace,job,instance) withdrawal_processor_recovery_runway_observation_valid)
+    previousAnnotations:
+      description: Runway observations are failing, missing, or the last success is over 10 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
+    for: 10m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Recovery runway monitor is failing or stale.
+      description: Runway observations are failing, missing, or the last success is at least 15 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
+      runbook_url: __RUNWAY_RUNBOOK__

@@ -354,8 +354,12 @@ class SeedTests(unittest.TestCase):
             "FeeOracleStale", "TSONoRegisteredSigners", "DogecoinIndexerLag",
             "TSOSignerMetricMissing", "WFJobStalled", "ProofWorkRetryBudgetExhausted",
         }.issubset({r["alert"] for r in sources}))
+        # Exercise every shipped expression, including consecutive fixes to one rule.
+        sources = [{**source, "previousExpr": previous}
+                   for source in sources
+                   for previous in SEED.alternatives(source["previousExpr"])]
         for source in sources:
-            with self.subTest(alert=source["alert"]):
+            with self.subTest(alert=source["alert"], previous=source["previousExpr"]):
                 client = MemoryGrafana()
                 config = copy.deepcopy(self.config)
                 old = {**source, "expr": SEED.alternatives(source["previousExpr"])[0],
