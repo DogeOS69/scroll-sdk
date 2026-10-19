@@ -7,6 +7,9 @@
 global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
+# The service reads its config only at startup: a config change rolls the pods.
+podAnnotations:
+  checksum/config: {{ include "dogeos-bridge-history.configToml" . | sha256sum }}
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
