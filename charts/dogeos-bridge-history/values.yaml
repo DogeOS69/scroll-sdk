@@ -15,6 +15,10 @@ controller:
 termination:
   gracePeriodSeconds: 100
 
+# Off: Kubernetes would inject DOGEOS_BRIDGE_HISTORY_* variables for this Service,
+# which the service reads as its own config overrides and rejects.
+enableServiceLinks: false
+
 # The image doesn't exist yet; set the tag once it's published.
 image:
   repository: dogeos69/dogeos-bridge-history

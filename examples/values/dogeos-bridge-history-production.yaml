@@ -14,6 +14,10 @@ command:
   - --config
   - /app/conf/config.toml
 
+# Off: Kubernetes would inject DOGEOS_BRIDGE_HISTORY_* variables for this Service,
+# which the service reads as its own config overrides and rejects.
+enableServiceLinks: false
+
 # Above config.shutdown_timeout_ms, so Kubernetes doesn't kill a clean shutdown.
 termination:
   gracePeriodSeconds: 100
@@ -173,6 +177,9 @@ ingress:
       alb.ingress.kubernetes.io/certificate-arn: <TODO>
       alb.ingress.kubernetes.io/healthcheck-path: /api/history/v1/live
       alb.ingress.kubernetes.io/success-codes: "200"
+      # With controller.replicas > 1, keep a browser on one replica: each has its
+      # own index and can be a tick ahead of another.
+      # alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.type=lb_cookie,stickiness.lb_cookie.duration_seconds=3600
     hosts:
       - host: portal.scrollsdk                                    # the Portal's host
         paths:

@@ -45,7 +45,7 @@ REQUIRED_TOP_LEVEL = {
         "volumeClaimTemplates", "resources", "serviceMonitor",
     },
     "dogeos-bridge-history": {
-        "global", "image", "command", "termination", "service", "probes",
+        "global", "image", "command", "enableServiceLinks", "termination", "service", "probes",
         "config", "env", "envFrom", "externalSecrets", "persistence",
         "volumeClaimTemplates", "resources", "ingress", "serviceMonitor",
     },
