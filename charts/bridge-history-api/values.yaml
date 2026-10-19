@@ -108,11 +108,11 @@ additionalContainers:
 
 ingress:
   main:
-    enabled: false
+    enabled: true
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: alb
+    ingressClassName: "nginx"
     hosts:
       - host: bridge-history-api.scrollsdk
         paths:

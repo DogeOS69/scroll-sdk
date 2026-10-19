@@ -45,17 +45,19 @@ blockscout-stack:
 
     ingress:
       enabled: true
-      className: alb
-      annotations:
-        alb.ingress.kubernetes.io/group.name: REPLACE_WITH_SHARED_ALB_GROUP_NAME
-        alb.ingress.kubernetes.io/group.order: "10"
-        alb.ingress.kubernetes.io/healthcheck-path: /api/health/readiness
-        alb.ingress.kubernetes.io/scheme: internet-facing
-        alb.ingress.kubernetes.io/target-type: ip
-        alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-        alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
+      className: "nginx"
+      annotations:  # Add annotations here. Might be necessary to allow CORS from updated-gas-oracle. Example below
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+        nginx.ingress.kubernetes.io/cors-allow-origin: "https://blockscout.scrollsdk"
+        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
+        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+        nginx.ingress.kubernetes.io/cors-max-age: "86400"
       hostname: "blockscout.scrollsdk"
-      tls: {enabled: false}
+      tls:
+        enabled: true
+        secretName: blockscout-tls  # Set here the name of the secret. Example : blockscout.scrollsdk
+
   frontend:
     env:
       NEXT_PUBLIC_API_PROTOCOL: https
@@ -74,17 +76,19 @@ blockscout-stack:
       NEXT_PUBLIC_HOMEPAGE_HERO_BANNER_CONFIG: "{'background':['rgba(255, 238, 218, 1)'], 'text_color':['rgba(25, 6, 2, 1)']}"
     ingress:
       enabled: true
-      className: alb
-      annotations:
-        alb.ingress.kubernetes.io/group.name: REPLACE_WITH_SHARED_ALB_GROUP_NAME
-        alb.ingress.kubernetes.io/group.order: "100"
-        alb.ingress.kubernetes.io/healthcheck-path: /api/healthz
-        alb.ingress.kubernetes.io/scheme: internet-facing
-        alb.ingress.kubernetes.io/target-type: ip
-        alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-        alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
+      className: "nginx"  # Set here your ingress class name
+      annotations:  # Add annotations here. Might be necessary to allow CORS from updated-gas-oracle. Example below
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+        nginx.ingress.kubernetes.io/cors-allow-origin: "https://blockscout.scrollsdk"
+        nginx.ingress.kubernetes.io/cors-allow-headers: "updated-gas-oracle, Content-Type, Authorization"
+        nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+        nginx.ingress.kubernetes.io/cors-max-age: "86400"
       hostname: "blockscout.scrollsdk"  # Set the hostname for the frontend. Example : blockscout.scrollsdk
-      tls: {enabled: false}
+      tls:
+        enabled: true
+        secretName: blockscout-front-tls  # Set here the hostname for the ingress. Example : blockscout.scrollsdk
+
 externalSecrets:
   blockscout-secret-env:
     provider: aws

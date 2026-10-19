@@ -7,7 +7,7 @@ and reconciles the ALB listener rules and target groups. In this pattern, TSO an
 Proof Coordinator use separate dedicated ALBs; do not add them to this group. See
 [external ALB bindings](existing-alb.md) for those services.
 
-Use Blockscout chart **0.1.12-dogeos** or later and the matching CLI sharedAlb
+Use Blockscout chart **0.1.13-dogeos** or later and the matching CLI sharedAlb
 support. The example Makefile pins this chart version. Publish the chart before
 using the generated Makefile against the OCI registry; a local source change
 alone does not publish it.

@@ -1,9 +1,5 @@
 # Production network and workload IAM
 
-Application charts disable Ingress by default and select `alb`. Production values
-must explicitly enable the intended edge and provide its ACM certificate and
-hosts. CLI-generated shared ALB values enable only the selected public edges.
-
 The AWS production examples use the AWS Load Balancer Controller (ALB for
 HTTPS). They do not require ingress-nginx or cert-manager. The frontend image's
 own static-file nginx server is unrelated and remains part of that image.

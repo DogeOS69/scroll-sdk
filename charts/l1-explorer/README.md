@@ -1,6 +1,6 @@
 # l1-explorer
 
-![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l1-explorer helm charts
 
@@ -31,9 +31,13 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.blockscout.image.pullPolicy | string | `"IfNotPresent"` |  |
 | blockscout-stack.blockscout.image.repository | string | `"blockscout/blockscout"` |  |
 | blockscout-stack.blockscout.image.tag | string | `"6.9.0"` |  |
-| blockscout-stack.blockscout.ingress.annotations | object | `{}` |  |
-| blockscout-stack.blockscout.ingress.className | string | `"alb"` |  |
-| blockscout-stack.blockscout.ingress.enabled | bool | `false` |  |
+| blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-headers" | string | `"updated-gas-oracle, Content-Type, Authorization"` |  |
+| blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-methods" | string | `"GET, POST, OPTIONS"` |  |
+| blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-origin" | string | `"http://l1-explorer.scrollsdk"` |  |
+| blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/cors-max-age" | string | `"86400"` |  |
+| blockscout-stack.blockscout.ingress.annotations."nginx.ingress.kubernetes.io/enable-cors" | string | `"true"` |  |
+| blockscout-stack.blockscout.ingress.className | string | `"nginx"` |  |
+| blockscout-stack.blockscout.ingress.enabled | bool | `true` |  |
 | blockscout-stack.blockscout.ingress.hostname | string | `"l1-explorer.scrollsdk"` |  |
 | blockscout-stack.frontend.env.FAVICON_MASTER_URL | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/favicons/scroll_180x180.png"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_AD_BANNER_PROVIDER | string | `"none"` |  |
@@ -51,9 +55,13 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.frontend.env.NEXT_PUBLIC_NETWORK_LOGO_DARK | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll-dark.svg"` |  |
 | blockscout-stack.frontend.env.NEXT_PUBLIC_OG_IMAGE_URL | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/og-images/scroll-sepolia.png"` |  |
 | blockscout-stack.frontend.image.tag | string | `"v1.35.2"` |  |
-| blockscout-stack.frontend.ingress.annotations | object | `{}` |  |
-| blockscout-stack.frontend.ingress.className | string | `"alb"` |  |
-| blockscout-stack.frontend.ingress.enabled | bool | `false` |  |
+| blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-headers" | string | `"updated-gas-oracle, Content-Type, Authorization"` |  |
+| blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-methods" | string | `"GET, POST, OPTIONS"` |  |
+| blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-allow-origin" | string | `"http://l1-explorer.scrollsdk"` |  |
+| blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/cors-max-age" | string | `"86400"` |  |
+| blockscout-stack.frontend.ingress.annotations."nginx.ingress.kubernetes.io/enable-cors" | string | `"true"` |  |
+| blockscout-stack.frontend.ingress.className | string | `"nginx"` |  |
+| blockscout-stack.frontend.ingress.enabled | bool | `true` |  |
 | blockscout-stack.frontend.ingress.hostname | string | `"l1-explorer.scrollsdk"` |  |
 | blockscout-stack.fullnameOverride | string | `"l1-explorer"` |  |
 | blockscout-stack.nameOverride | string | `"l1-explorer"` |  |

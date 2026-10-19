@@ -1,6 +1,6 @@
 # bridge-history-api
 
-![Version: 0.1.4](https://img.shields.io/badge/Version-0.1.4-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 bridge-history-api helm charts
 
@@ -44,11 +44,11 @@ Kubernetes: `>=1.22.0-0`
 | image.repository | string | `"scrolltech/bridgehistoryapi-api"` |  |
 | image.tag | string | `"v4.4.71"` |  |
 | ingress.main.annotations | object | `{}` |  |
-| ingress.main.enabled | bool | `false` |  |
+| ingress.main.enabled | bool | `true` |  |
 | ingress.main.hosts[0].host | string | `"bridge-history-api.scrollsdk"` |  |
 | ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.main.ingressClassName | string | `"alb"` |  |
+| ingress.main.ingressClassName | string | `"nginx"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |
 | initContainers.1-wait-for-l1.command[0] | string | `"/bin/sh"` |  |

@@ -24,7 +24,6 @@ command:
 
 ingress:
   main:
-    enabled: true
     ingressClassName: alb
     hosts:
     - host: portal.scrollsdk

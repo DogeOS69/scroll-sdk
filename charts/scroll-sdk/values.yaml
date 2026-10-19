@@ -3,8 +3,7 @@ l1-devnet:
   enabled: true
   ingress:
     main:
-      ingressClassName: alb
-      enabled: false
+      enabled: true
       hosts:
         - host: l1-devnet.scrollsdk
           paths:
@@ -14,29 +13,18 @@ l1-devnet:
 blockscout:
   enabled: true
   blockscout-stack:
-    config:
-      prometheus:
-        ingressWhitelist:
-          enabled: false
-    blockscout:
-      ingress:
-        enabled: false
-        className: alb
     frontend:
       replicaCount: 1
-      ingress:
-        enabled: false
-        className: alb
 
 bridge-history-api:
   enabled: false
   ingress:
     main:
-      enabled: false
+      enabled: true
       primary: true
       annotations: {}
       labels: {}
-      ingressClassName: alb
+      ingressClassName: "nginx"
       hosts:
         - host: bridge-history-api.scrollsdk
           paths:
@@ -65,8 +53,7 @@ frontends:
   enabled: false
   ingress:
     main:
-      ingressClassName: alb
-      enabled: false
+      enabled: true
       hosts:
         - host: frontends.scrollsdk
           paths:
@@ -80,11 +67,11 @@ rollup-explorer-backend:
   enabled: false
   ingress:
     main:
-      enabled: false
+      enabled: true
       primary: true
       annotations: {}
       labels: {}
-      ingressClassName: alb
+      ingressClassName: "nginx"
       hosts:
         - host: rollup-explorer-backend.scrollsdk
           paths:
@@ -97,23 +84,12 @@ rollup-relayer:
 l1-explorer:
   enabled: false
   blockscout-stack:
-    config:
-      prometheus:
-        ingressWhitelist:
-          enabled: false
-    blockscout:
-      ingress:
-        enabled: false
-        className: alb
     frontend:
       replicaCount: 1
-      ingress:
-        enabled: false
-        className: alb
   ingress:
     main:
-      enabled: false
-      ingressClassName: alb
+      enabled: true
+      ingressClassName: "nginx"
       hosts:
         - host: l1-explorer.scrollsdk
           paths:
@@ -126,12 +102,9 @@ l2-sequencer:
 l2-rpc:
   enabled: true
   ingress:
-    websocket:
-      enabled: false
-      ingressClassName: alb
     main:
-      enabled: false
-      ingressClassName: alb
+      enabled: true
+      ingressClassName: "nginx"
       hosts:
         - host: l2-rpc.scrollsdk
           paths:
@@ -148,8 +121,8 @@ rpc-gateway:
   enabled: false
   ingress:
     main:
-      enabled: false
-      ingressClassName: alb
+      enabled: true
+      ingressClassName: "nginx"
       hosts:
         - host: l2-rpc-gateway.scrollsdk
           paths:
@@ -164,8 +137,8 @@ scroll-monitor:
   grafana:
     enabled: true
     ingress:
-      enabled: false
-      ingressClassName: alb
+      enabled: true
+      ingressClassName: nginx
       hosts:
         - grafana.scrollsdk
   loki:
@@ -187,8 +160,7 @@ admin-system-dashboard:
   enabled: false
   ingress:
     main:
-      ingressClassName: alb
-      enabled: false
+      enabled: true
       hosts:
         - host: admin-system-dashboard.scrollsdk
           paths:

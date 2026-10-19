@@ -232,8 +232,8 @@ grafana:
     reth: grafana-reth-dashboards
     blockscout: grafana-blockscout-dashboards
   ingress:
-    enabled: false
-    ingressClassName: alb
+    enabled: true
+    ingressClassName: nginx
     hosts:
       - "grafana.scrollsdk"
   extraConfigmapMounts:

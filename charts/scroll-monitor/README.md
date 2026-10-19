@@ -729,9 +729,8 @@ Alloy limits pod-log discovery to the release namespace by default. Set
 ## Required cluster services
 
 The chart does not install an ingress controller or a dynamic volume
-provisioner. Grafana Ingress is disabled by default. Enabling it requires the
-AWS Load Balancer Controller and reviewed ALB/ACM settings. Persistent components
-require a usable StorageClass.
+provisioner. The configured Grafana ingress requires nginx, and persistent
+components require a usable StorageClass.
 
 ## Public health rules and collection coverage
 

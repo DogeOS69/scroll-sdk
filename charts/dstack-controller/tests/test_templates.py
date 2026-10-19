@@ -141,11 +141,11 @@ class ControllerTemplates(unittest.TestCase):
 
     def test_ingress_tls_and_named_target_port(self):
         docs = resources({"service": {"port": 8080}, "ingress": {
-            "enabled": True, "className": "alb", "hosts": ["dstack.example.com"],
+            "enabled": True, "className": "nginx", "hosts": ["dstack.example.com"],
             "tls": [{"secretName": "tls", "hosts": ["dstack.example.com"]}],
         }})
         ingress = resource(docs, "Ingress")["spec"]
-        self.assertEqual(ingress["ingressClassName"], "alb")
+        self.assertEqual(ingress["ingressClassName"], "nginx")
         self.assertEqual(ingress["tls"][0]["secretName"], "tls")
         self.assertEqual(ingress["rules"][0]["http"]["paths"][0]["backend"]["service"]["port"], {"name": "http"})
         self.assertEqual(resource(docs, "Service")["spec"]["ports"][0]["targetPort"], "http")

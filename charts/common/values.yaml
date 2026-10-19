@@ -409,13 +409,14 @@ ingress:
     # -- Provide additional annotations which may be required.
     annotations:
       {}
+      # kubernetes.io/ingress.class: nginx
       # kubernetes.io/tls-acme: "true"
 
     # -- Provide additional labels which may be required.
     labels: {}
 
     # -- Set the ingressClass that is used for this ingress.
-    ingressClassName:  # Set explicitly before enabling.
+    ingressClassName:  # "nginx"
 
     ## Configure the hosts for the ingress
     hosts:
@@ -803,12 +804,13 @@ addons:
 
       annotations:
         {}
+        # kubernetes.io/ingress.class: nginx
         # kubernetes.io/tls-acme: "true"
 
       labels: {}
 
       # -- Set the ingressClass that is used for this ingress.
-      ingressClassName:  # Set explicitly before enabling.
+      ingressClassName:  # "nginx"
 
       hosts:
         - host: code.chart-example.local

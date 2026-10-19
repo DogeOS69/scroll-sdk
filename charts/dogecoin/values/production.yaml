@@ -70,21 +70,21 @@ storage:
 # Enable ingress
 ingress:
   enabled: true
-  className: alb
+  className: "nginx"
   annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/success-codes: "200-499"
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
   hosts:
     - host: dogecoin.testnet.dogeos.com
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls:
+    - secretName: dogecoin-tls
+      hosts:
+        - dogecoin.testnet.dogeos.com
 
-# RPC credentials are supplied through External Secrets.
+ # RPC Password Configuration for Production
+# Option 1: Use External Secrets (Recommended for enterprise environments)
 externalSecrets:
   dogecoin-secret-env:
     provider: aws

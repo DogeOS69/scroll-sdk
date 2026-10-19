@@ -16,14 +16,20 @@ env:
 # Public edge: only /health and /signer/* (transport-signed poll, submit and
 # reject). Everything else stays in-cluster.
 #
-# AWS Load Balancer Controller: TLS from ACM, ALB health
+# Ingress controller is a values choice:
+# - alb (mainnet): AWS Load Balancer Controller. TLS from ACM, ALB health
 #   check on /health, optional WAF web ACL (see README). The TSO has its own
 #   ALB (no group.name), separate from the proof coordinator's, so each keeps
 #   independent config, security-group source rules and idle timeout. With
 #   target-type ip, add the ALB subnets to networkPolicy.allowFrom.edge.
+# - nginx: replace ingressClassName and annotations with
+#     ingressClassName: nginx
+#     annotations:
+#       cert-manager.io/cluster-issuer: letsencrypt-prod
+#       nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+#   and set tls[0].secretName (e.g. tso-tls).
 ingress:
   main:
-    enabled: true
     ingressClassName: alb
     annotations:
       alb.ingress.kubernetes.io/scheme: internet-facing

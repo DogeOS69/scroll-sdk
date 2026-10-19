@@ -78,11 +78,11 @@ persistence:
 
 ingress:
   main:
-    enabled: false
+    enabled: true
     primary: true
     annotations: {}
     labels: {}
-    ingressClassName: alb
+    ingressClassName: "nginx"
     hosts:
       - host: rollup-explorer-backend.scrollsdk
         paths:

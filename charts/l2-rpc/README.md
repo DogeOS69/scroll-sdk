@@ -1,6 +1,6 @@
 # l2-rpc
 
-![Version: 0.1.17](https://img.shields.io/badge/Version-0.1.17-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
+![Version: 0.1.16](https://img.shields.io/badge/Version-0.1.16-informational?style=flat-square) ![AppVersion: v0.1.0](https://img.shields.io/badge/AppVersion-v0.1.0-informational?style=flat-square)
 
 l2-rpc helm chart
 
@@ -64,19 +64,19 @@ Kubernetes: `>=1.22.0-0`
 | image.repository | string | `"scrolltech/l2geth"` |  |
 | image.tag | string | `"scroll-v5.10.2"` |  |
 | ingress.main.annotations | object | `{}` |  |
-| ingress.main.enabled | bool | `false` |  |
+| ingress.main.enabled | bool | `true` |  |
 | ingress.main.hosts[0].host | string | `"l2-rpc.scrollsdk"` |  |
 | ingress.main.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.main.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.main.ingressClassName | string | `"alb"` |  |
+| ingress.main.ingressClassName | string | `"nginx"` |  |
 | ingress.main.labels | object | `{}` |  |
 | ingress.main.primary | bool | `true` |  |
-| ingress.websocket.enabled | bool | `false` |  |
+| ingress.websocket.enabled | bool | `true` |  |
 | ingress.websocket.hosts[0].host | string | `"l2-rpc-ws.scrollsdk"` |  |
 | ingress.websocket.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.websocket.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
 | ingress.websocket.hosts[0].paths[0].service.port | int | `8546` |  |
-| ingress.websocket.ingressClassName | string | `"alb"` |  |
+| ingress.websocket.ingressClassName | string | `"nginx"` |  |
 | initContainers.1-wait-for-l1.command[0] | string | `"/bin/sh"` |  |
 | initContainers.1-wait-for-l1.command[1] | string | `"-c"` |  |
 | initContainers.1-wait-for-l1.command[2] | string | `"/wait-for-l1.sh $L2GETH_L1_ENDPOINT"` |  |
