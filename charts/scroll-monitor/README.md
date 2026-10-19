@@ -354,8 +354,7 @@ branches only when the stable UID, managed label, datasource UID and exact old
 expression match. The seeder also corrects the old description if it is still
 unchanged. Pause state, notification settings, group interval, custom
 annotations and other operator settings survive. Migration metadata is omitted
-from native Prometheus rules. See [the missing-metrics investigation](MISSING_METRICS_REVIEW.md)
-for the read-only testnet evidence and deployment prerequisites.
+from native Prometheus rules.
 
 `DogecoinIndexerLag` now alerts when `indexer_dogecoin_last_synced_block`
 remains unchanged for two minutes, separately for each namespace, job and instance.
