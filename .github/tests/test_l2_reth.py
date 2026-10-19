@@ -70,6 +70,55 @@ class L2RethP2PTests(unittest.TestCase):
         annotations = service["metadata"].get("annotations") or {}
         self.assertFalse([key for key in annotations if key.startswith(AWS_ANNOTATION)])
 
+    def test_builtin_chain_skips_genesis_mount_for_every_role(self):
+        for role in ["rpc", "bootnode", "sequencer"]:
+            with self.subTest(role=role):
+                docs = self.render(values={"role": role, "reth": {
+                    "chain": "dogeos-mainnet", "networkId": "",
+                    "signer": {"type": "localFile"} if role == "sequencer" else {},
+                }})
+                pod = self.statefulset(docs)["spec"]["template"]["spec"]
+                container = pod["containers"][0]
+                args = container["args"]
+                self.assertEqual(args[args.index("--chain") + 1], "dogeos-mainnet")
+                self.assertNotIn("--network-id", args)
+                self.assertNotIn("genesis", [v["name"] for v in pod.get("volumes", [])])
+                for item in pod["containers"] + pod.get("initContainers", []):
+                    self.assertNotIn("genesis", [v["name"] for v in item.get("volumeMounts", [])])
+
+    def test_custom_genesis_mount_and_network_override_are_preserved(self):
+        for genesis in [{}, {"configMapName": "custom-genesis", "chainPath": "/custom/chain.json",
+                             "mountPath": "/custom/chain.json", "subPath": "chain.json"}]:
+            with self.subTest(genesis=genesis):
+                docs = self.render(values={"reth": {"genesis": genesis}})
+                pod = self.statefulset(docs)["spec"]["template"]["spec"]
+                container = pod["containers"][0]
+                args = container["args"]
+                self.assertEqual(args[args.index("--chain") + 1],
+                                 genesis.get("chainPath", "/app/genesis/genesis.json"))
+                self.assertEqual(args[args.index("--network-id") + 1], "4444444")
+                volume = next(v for v in pod["volumes"] if v["name"] == "genesis")
+                self.assertEqual(volume["configMap"]["name"], genesis.get("configMapName", "genesis-config"))
+                mount = next(v for v in container["volumeMounts"] if v["name"] == "genesis")
+                self.assertEqual(mount["mountPath"], genesis.get("mountPath", "/app/genesis/genesis.json"))
+                self.assertEqual(mount["subPath"], genesis.get("subPath", "genesis.json"))
+
+    def test_builtin_chain_with_deleted_genesis_settings_and_network_override(self):
+        for network_id in [None, "1122005", 0]:
+            with self.subTest(network_id=network_id):
+                docs = self.render(values={"reth": {"chain": "dogeos-mainnet",
+                                   "genesis": None, "networkId": network_id}})
+                args = self.statefulset(docs)["spec"]["template"]["spec"]["containers"][0]["args"]
+                if network_id is None:
+                    self.assertNotIn("--network-id", args)
+                else:
+                    self.assertEqual(args[args.index("--network-id") + 1], str(network_id))
+
+    def test_builtin_chain_rejects_file_paths_and_non_string_names(self):
+        for chain in ["/app/genesis/genesis.json", "dogeos-mainnet --other", 123]:
+            with self.subTest(chain=chain):
+                self.assert_fails("reth.chain must be a built-in chain name", values={"reth": {"chain": chain}})
+
     def test_existing_nlb_owns_only_internal_service_and_binding(self):
         docs = self.render(CHART / "ci/existing-nlb-values.yaml")
         services = self.services(docs)
@@ -97,16 +146,12 @@ class L2RethP2PTests(unittest.TestCase):
         cases = [
             ({"mode": "typo"}, "mode must be"),
             ({"mode": "service"}, "requires mode existing"),
-            ({"sourceRanges": []}, "nonempty sourceRanges"),
             ({"allowOpenPeering": True}, "allowOpenPeering false"),
-            ({"sourceRanges": ["0.0.0.0/0"]}, "IPv4 CIDRs"),
-            ({"sourceRanges": ["::/0"]}, "IPv4 CIDRs"),
-            ({"sourceRanges": ["999.0.0.1/32"]}, "valid IPv4"),
-            ({"sourceRanges": ["010.0.0.1/32"]}, "valid IPv4"),
-            ({"sourceRanges": ["203.0.113.10"]}, "IPv4 CIDRs"),
+            ({"sourceRanges": ["203.0.113.10/32"]}, "allowlists belong to AWS"),
+            ({"sourceRanges": ["0.0.0.0/0"]}, "allowlists belong to AWS"),
             ({"existingNlb": {"loadBalancerARN": "REPLACE_WITH_ARN"}}, "valid loadBalancerARN"),
-            ({"existingNlb": {"listenerARN": "arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/net/other/0000000000000001/0000000000000002"}}, "must belong"),
-            ({"existingNlb": {"targetGroupARN": "arn:aws:elasticloadbalancing:us-west-2:000000000000:targetgroup/bootnode-a/0000000000000003"}}, "same AWS account and region"),
+            ({"existingNlb": {"loadBalancerARN": "arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/net/bootnode-a/0000000000000001", "listenerARN": "arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/net/other/0000000000000001/0000000000000002"}}, "must belong"),
+            ({"existingNlb": {"loadBalancerARN": "arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/net/bootnode-a/0000000000000001", "targetGroupARN": "arn:aws:elasticloadbalancing:us-west-2:000000000000:targetgroup/bootnode-a/0000000000000003"}}, "same AWS account and region"),
             ({"existingNlb": {"securityGroupIds": []}}, "requires securityGroupIds"),
             ({"existingNlb": {"securityGroupIds": ["sg-wrong"]}}, "valid securityGroupIds"),
             ({"annotations": {AWS_ANNOTATION + "name": "new-lb"}}, "does not accept Service annotations"),
@@ -158,10 +203,13 @@ class L2RethP2PTests(unittest.TestCase):
         self.assertEqual(list(services), ["review-l2-reth"])
         self.assert_internal(services["review-l2-reth"])
 
-    def test_ci_fixture_matches_example(self):
-        fixture = yaml.safe_load(EXTERNAL_P2P.read_text())["reth"]["p2pExternal"]
+    def test_bootnode_example_binds_independent_resources_without_partner_list(self):
         example = yaml.safe_load(BOOTNODE_EXAMPLE.read_text())["reth"]["p2pExternal"]
-        self.assertEqual(fixture, dict(example, enabled=True))
+        self.assertNotIn("sourceRanges", example)
+        docs = self.render(BOOTNODE_EXAMPLE, CHART / "ci/existing-nlb-values.yaml")
+        for service in self.services(docs).values():
+            self.assert_internal(service)
+        self.assertEqual(len([d for d in docs if d["kind"] == "TargetGroupBinding"]), 1)
 
     def test_enabled_renders_one_p2p_only_nlb_for_one_pod(self):
         docs = self.render(EXTERNAL_P2P)

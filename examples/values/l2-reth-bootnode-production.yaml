@@ -120,25 +120,16 @@ reth:
       enabled: true
     extra: {}
 
-  # External P2P is opt-in and off until its activation checklist is complete
-  # (charts/l2-reth/README.md, "External P2P (opt-in)"). When enabled, the chart
-  # renders one P2P-only internet-facing NLB Service (TCP 30303 only) for pod
-  # <fullname>-<ordinal>, on the deployment-owned Elastic IP and reachable only
-  # from sourceRanges. To expose this bootnode, set enabled and fill the TODOs.
+  # Independent P2P NLB, prepared by AWS infrastructure. See existing-nlb.md.
+  # One NLB / target group / persistent identity per externally reachable node.
+  # Partner allowlists live only in the NLB frontend SG, not these values.
   p2pExternal:
     enabled: false
+    mode: existing
     ordinal: 0
-    # Approved partner CIDRs, enforced by the NLB security group.
-    sourceRanges:
-      - "<TODO partner CIDR>"
-    allowOpenPeering: false
-    # One EIP allocation per subnet, in the same order. The subnet must be in the
-    # AZ of this node's EBS volume (or enable cross-zone load balancing).
-    subnets:
-      - "<TODO subnet-id>"
-    eipAllocations:
-      - "<TODO eipalloc-id>"
-    annotations: {}
+    existingNlb:
+      targetGroupARN: "<TODO TCP/IP target group ARN>"
+      securityGroupIds: ["<TODO NLB frontend SG ID>"]
 
 serviceMonitor:
   main:

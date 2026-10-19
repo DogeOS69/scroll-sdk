@@ -1,9 +1,10 @@
 # Shared public ALB
 
-Public RPC, Portal (`frontends`) and Blockscout can share one AWS Load Balancer
+This guide describes a reference deployment pattern. Public RPC, Portal
+(`frontends`) and Blockscout can share one AWS Load Balancer
 Controller IngressGroup. Helm owns the hosts and paths; the controller creates
-and reconciles the ALB listener rules and target groups. TSO and Proof Coordinator
-remain on separate dedicated ALBs; do not add them to this group. See
+and reconciles the ALB listener rules and target groups. In this pattern, TSO and
+Proof Coordinator use separate dedicated ALBs; do not add them to this group. See
 [external ALB bindings](existing-alb.md) for those services.
 
 Use Blockscout chart **0.1.12-dogeos** or later and the matching CLI sharedAlb
@@ -20,7 +21,7 @@ alone does not publish it.
   share listener rules and can otherwise affect each other's traffic.
 - Cloudflare operator: create the ACM validation records, then point
   `*.example.com` to the shared ALB's DNS name after initial reconciliation.
-  The tested configuration uses DNS-only CNAME records. A wildcard covers one
+  This example uses DNS-only CNAME records. A wildcard covers one
   subdomain level, not the apex or deeper names. Explicit DNS records take
   precedence over the wildcard.
 - Release operator: choose one group name and certificate ARN for all selected

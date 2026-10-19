@@ -22,6 +22,14 @@ private; the output deployment directory starts empty.
 
 For supported public applications on AWS, follow [existing ALB setup](existing-alb.md) to select
 pre-provisioned ALBs and retain them when uninstalling application charts.
+For controller-managed shared ALBs, certificate and DNS prerequisites, and
+Helm-managed host/path routing, see [shared public ALB setup](shared-alb.md).
+
+These guides describe reference deployment patterns, not the topology or current
+state of a running DogeOS cluster. Keep completed production values, real resource
+inventories, partner allowlists, command outputs and deployment acceptance records
+in a private deployment workspace. Public examples use placeholders; credentials
+must remain in an external secret store rather than Git.
 
 Production service overlays are intentionally operator-readable and repeat all
 runtime-affecting chart values. See the
