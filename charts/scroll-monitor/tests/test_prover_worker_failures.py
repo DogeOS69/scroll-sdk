@@ -93,6 +93,19 @@ class ProverWorkerFailureTests(unittest.TestCase):
             ('initial nonzero and multiple resets', '_x10 2 3 1 0 1+0x25', [(15, True), (30, False)]),
             ('new counter with a short scrape gap', '_x10 3 _ _ 4+0x25', [(15, False)]),
             ('new counter gap then reset', '_x10 4 _ _ 1 2+0x25', [(15, True)]),
+            # A restarted coordinator may omit the counter until the next failure,
+            # even though its metrics endpoint is healthy. Retain the initial burst
+            # through a stale marker or a gap longer than the instant lookback.
+            ('initial burst disappears after restart', '_x10 5 5 stale _x30',
+             [(10, True), (13, True), (18, True), (24, True), (25, False), (30, False)]),
+            ('initial burst survives extended scrape gap', '_x10 5 5 _x30',
+             [(13, True), (18, True), (24, True), (25, False), (30, False)]),
+            ('counter returns after restart', '_x10 5 5 stale _x5 1+0x20',
+             [(13, True), (17, True), (20, True), (24, True), (25, False), (30, False)]),
+            ('below threshold disappears', '_x10 4 4 stale _x30',
+             [(13, False), (18, False), (24, False), (30, False)]),
+            ('old quiet series disappears and returns', '9x10 stale _x3 9+0x30',
+             [(15, False), (20, False), (30, False)]),
             ('established counter reset', '10x15 0 1 2 3 4 5+0x19', [(20, False), (21, True)]),
         ]
         tests = [

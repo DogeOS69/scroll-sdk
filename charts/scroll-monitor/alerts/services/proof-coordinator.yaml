@@ -166,7 +166,8 @@ groups:
     # One series per authenticated worker name; names exist only when the operator mints them.
     # Core creates the counter on the first failure, so its first sample need not be zero.
     # For a newly observed series, pad only its pre-observation interval with zero.
-    # @ end() keeps that zero's labels fixed at the current evaluation time;
+    # @ end() derives zero labels from all series observed in the current window,
+    # including counters temporarily absent after restart or a failed scrape;
     # last_over_time carries observed counts through scrape gaps without false resets.
     # Multiplication strips the metric name so real and padded samples form one series.
     # The 1s subquery preserves resets between consecutive scrapes (scrape interval >= 1s).
@@ -179,19 +180,32 @@ groups:
       sum by (namespace, job, instance, worker_id) (
         increase((
           (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
-          or (0 * proof_coordinator_worker_failed_results_total @ end())
+          or (0 * last_over_time(proof_coordinator_worker_failed_results_total[15m] @ end()))
         )[15m:1s])
         unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
       ) >= 5
-    previousExpr: |
-      sum by (namespace, job, instance, worker_id) (
-        increase(proof_coordinator_worker_failed_results_total[15m])
-      ) >= 5
-      or
-      sum by (namespace, job, instance, worker_id) (
-        proof_coordinator_worker_failed_results_total
-        unless max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
-      ) >= 5
+    previousExpr:
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          increase((
+            (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
+            or (0 * proof_coordinator_worker_failed_results_total @ end())
+          )[15m:1s])
+          unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          proof_coordinator_worker_failed_results_total
+          unless max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
     labels:
       severity: warning
       service: proof-coordinator
