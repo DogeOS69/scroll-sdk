@@ -809,3 +809,27 @@ value alone does not delete or pause previously provisioned rules.
 Duplicate service checks and upstream rule families have one retained owner.
 See [the ownership table](../../docs/alert-rule-ownership.md) for removed names,
 cluster-wide replacements, and distinct conditions that remain monitored.
+
+
+### Recovery CLTV runway
+
+The shared service-alert pipeline includes recovery runway warning, critical and
+stale-monitor rules for WP. They read the paired dogeos-core `recovery_runway`
+metrics: the minimum blocks left before the recovery CLTV opens on any bridge
+script WP tracks as funded. A quiet monitor means no tracked funded script is
+near its recovery timelock; it does not cover dust or unmarked receipts.
+
+`recoveryRunwayAlerts` sets `warningBlocks` and `criticalBlocks`. Defaults align
+with the portal's 90/60 nominal days at 1,440 blocks/day; they are operator
+policy, not protocol constants. Warning and critical fire only while the last
+successful observation is under 15 minutes old, so a failing monitor keeps
+the last known hazard up until the stale alert takes over. `RecoveryRunwayObservationStale`
+fires after 10 minutes of failed or missing observations. If the observer stops
+refreshing while its valid flag remains set, timestamp age starts the pending
+period at 5 minutes and the alert fires at age 15 minutes, when the last-good
+hazard expires. This avoids an unmonitored gap.
+A target missing from Prometheus entirely is covered by the existing target alerts.
+
+Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and
+response. These rules inherit existing service-alert enable/pause and routing;
+this change configures no receiver or destination.

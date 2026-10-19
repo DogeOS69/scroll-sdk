@@ -162,3 +162,70 @@ groups:
     annotations:
       summary: Proof coordinator found conflicting bytes for an eager locator.
       description: The receipt remains authoritative. Investigate producer consistency and competing locator writes.
+  - alert: ProverWorkerRepeatedFailures
+    # One series per authenticated worker name; names exist only when the operator mints them.
+    # Core creates the counter on the first failure, so its first sample need not be zero.
+    # For a newly observed series, pad only its pre-observation interval with zero.
+    # @ end() derives zero labels from all series observed in the current window,
+    # including counters temporarily absent after restart or a failed scrape;
+    # last_over_time carries observed counts through scrape gaps without false resets.
+    # Multiplication strips the metric name so real and padded samples form one series.
+    # The 1s subquery preserves resets between consecutive scrapes (scrape interval >= 1s).
+    # Gate raw increase on preceding history: extrapolation over sparse new samples
+    # can exceed their lifetime total. The two branches must be mutually exclusive.
+    expr: |
+      sum by (namespace, job, instance, worker_id) (
+        increase(proof_coordinator_worker_failed_results_total[15m])
+        and ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+      ) >= 5
+      or
+      sum by (namespace, job, instance, worker_id) (
+        increase((
+          (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
+          or (0 * last_over_time(proof_coordinator_worker_failed_results_total[15m] @ end()))
+        )[15m:1s])
+        unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+      ) >= 5
+    previousExpr:
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          increase((
+            (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
+            or (0 * last_over_time(proof_coordinator_worker_failed_results_total[15m] @ end()))
+          )[15m:1s])
+          unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          increase((
+            (last_over_time(proof_coordinator_worker_failed_results_total[15m]) * 1)
+            or (0 * proof_coordinator_worker_failed_results_total @ end())
+          )[15m:1s])
+          unless ignoring(__name__) max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
+      - |
+        sum by (namespace, job, instance, worker_id) (
+          increase(proof_coordinator_worker_failed_results_total[15m])
+        ) >= 5
+        or
+        sum by (namespace, job, instance, worker_id) (
+          proof_coordinator_worker_failed_results_total
+          unless max_over_time(proof_coordinator_worker_failed_results_total[15m] offset 15m)
+        ) >= 5
+    labels:
+      severity: warning
+      service: proof-coordinator
+    annotations:
+      summary: Prover worker {{ $labels.worker_id }} failed 5 or more proof results in 15 minutes.
+      description: A work item fails only after three distinct workers fail it, so nothing stops this worker automatically.
+        If many workers fail together it is a shared outage, not this worker. Otherwise stop the worker, and rotate
+        the coordinator master and re-mint the fleet if its credential may have leaked.
+      runbook_url: https://github.com/DogeOS69/dogeos-core/blob/1515af039cab116d1c4d89246c03b13c545e2a30/docs/engineering/aws-gpu-dstack.md#L618-L653
