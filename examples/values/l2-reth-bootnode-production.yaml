@@ -29,7 +29,6 @@ resources:
 service:
   main:
     type: ClusterIP
-    annotations: {}
 
 reth:
   networkId: "<TODO>"

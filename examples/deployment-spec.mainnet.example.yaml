@@ -48,11 +48,7 @@ infrastructure:
       mode: existing
       endpoints:
         tso:
-          loadBalancerArn: REPLACE_WITH_TSO_ALB_ARN
-          listenerArn: REPLACE_WITH_TSO_HTTPS_LISTENER_ARN
         proof:
-          loadBalancerArn: REPLACE_WITH_PROOF_ALB_ARN
-          listenerArn: REPLACE_WITH_PROOF_HTTPS_LISTENER_ARN
       bindings:
         tso-service:
           endpoint: tso
