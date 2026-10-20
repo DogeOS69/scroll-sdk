@@ -23,9 +23,9 @@ Production routes `/api/history/v1` on the Portal's host through the Portal's AL
 
 ## Portal migration
 
-The production Portal example still pins an image that reads `REACT_APP_BRIDGE_API_URI`. Keep that legacy endpoint configured alongside `REACT_APP_HISTORY_API_URI` until the Activity-enabled Portal image is deployed. The new image reads the history key; the old image continues using the legacy key.
+Replace the Portal production example's `TODO_ACTIVITY_TAG_TO_REPLACE` with a published Activity-enabled image (scroll-sdk-frontends #16). It reads `REACT_APP_HISTORY_API_URI`; older images read `REACT_APP_BRIDGE_API_URI` and cannot use this configuration. There is no legacy history API endpoint to configure as a fallback.
 
-The status-page generator also infers legacy `/txs` checks from `REACT_APP_BRIDGE_API_URI`. Before retiring that endpoint, migrate or disable those checks using the applicable monitoring mode. Remove the legacy key only after both consumers have migrated.
+The status-page generator still infers legacy `/txs` checks from `REACT_APP_BRIDGE_API_URI`, so it cannot infer history API checks from this configuration. Configure explicit checks for `/api/history/v1/health`, or disable bridge API checks using the applicable monitoring mode until that integration is available. In Alloy mode, `bridgeChecks: disabled` explicitly selects page-only monitoring.
 
 ## Rebuilding a replica
 

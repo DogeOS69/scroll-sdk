@@ -8,8 +8,6 @@ scrollConfig: |
 
   REACT_APP_EXTERNAL_RPC_URI_L1 = "https://l1-devnet.scrollsdk"
   REACT_APP_EXTERNAL_RPC_URI_L2 = "https://rpc.scrollsdk"
-  # Keep the legacy endpoint until the Portal image and status-page checks migrate.
-  REACT_APP_BRIDGE_API_URI = "https://bridge-history-api.scrollsdk/api"
   REACT_APP_HISTORY_API_URI = "/api/history/v1"
   REACT_APP_HISTORY_EXPECT_INCLUDED = "Waiting for the next batch. Batches close every few hours, depending on chain activity"
   REACT_APP_HISTORY_EXPECT_POSTED = "Payout usually within about an hour after the batch is posted"
