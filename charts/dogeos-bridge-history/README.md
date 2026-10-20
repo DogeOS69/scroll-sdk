@@ -21,6 +21,12 @@ The DogeOS bridge history service: the read API at `/api/history/v1` behind the 
 
 Production routes `/api/history/v1` on the Portal's host through the Portal's ALB IngressGroup (`examples/shared-alb.md`). Its `group.order` of 10 puts the rule ahead of the Portal's `/` catch-all. The Portal's own Ingress must be in the same group, or the two Ingresses would get separate ALBs for one host.
 
+## Portal migration
+
+The production Portal example still pins an image that reads `REACT_APP_BRIDGE_API_URI`. Keep that legacy endpoint configured alongside `REACT_APP_HISTORY_API_URI` until the Activity-enabled Portal image is deployed. The new image reads the history key; the old image continues using the legacy key.
+
+The status-page generator also infers legacy `/txs` checks from `REACT_APP_BRIDGE_API_URI`. Before retiring that endpoint, migrate or disable those checks using the applicable monitoring mode. Remove the legacy key only after both consumers have migrated.
+
 ## Rebuilding a replica
 
 The index is rebuildable from public chain data. To rebuild replica `<n>` from an empty volume:
