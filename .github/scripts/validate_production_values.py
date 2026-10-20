@@ -13,6 +13,7 @@ SERVICES = (
     "eth-da-submitter",
     "proof-coordinator",
     "cubesigner-signer",
+    "dogeos-bridge-history",
 )
 
 REQUIRED_TOP_LEVEL = {
@@ -43,6 +44,11 @@ REQUIRED_TOP_LEVEL = {
         "probes", "env", "externalSecrets", "persistence",
         "volumeClaimTemplates", "resources", "serviceMonitor",
     },
+    "dogeos-bridge-history": {
+        "global", "image", "command", "enableServiceLinks", "termination", "service", "probes",
+        "config", "env", "envFrom", "externalSecrets", "persistence",
+        "volumeClaimTemplates", "resources", "ingress", "serviceMonitor",
+    },
 }
 
 SHARED_CONFIG_FILES = {
@@ -61,6 +67,10 @@ SHARED_CONFIG_FILES = {
         "protocol-context": ("protocol-context-config", "protocol_context.json"),
     },
     "cubesigner-signer": {
+        "protocol-context": ("protocol-context-config", "protocol_context.json"),
+    },
+    "dogeos-bridge-history": {
+        "genesis": ("genesis-config", "genesis.json"),
         "protocol-context": ("protocol-context-config", "protocol_context.json"),
     },
 }

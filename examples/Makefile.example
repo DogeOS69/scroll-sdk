@@ -60,8 +60,8 @@ endif
 	install-l2-reth-bootnode \
 	install-fee-oracle \
 	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
-	install-blockscout install-frontends install-testnet-activity-helper \
-	delete-all delete-preinstalls delete-frontends \
+	install-blockscout install-frontends install-dogeos-bridge-history install-testnet-activity-helper \
+	delete-all delete-preinstalls delete-frontends delete-dogeos-bridge-history \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
 	delete-eth-da-submitter delete-fee-oracle delete-cubesigner-signer \
 	delete-testnet-activity-helper \
@@ -233,6 +233,12 @@ install-frontends:
 		--values values/frontends-production.yaml \
 		--values values/frontends-config.yaml
 
+# The Portal's history API, routed same-origin under /api/history/v1 on the Portal's host.
+install-dogeos-bridge-history:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogeos-bridge-history oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-bridge-history -n "$(NAMESPACE)" \
+		--version=0.0.1 \
+		--values values/dogeos-bridge-history-production.yaml
+
 
 install-testnet-activity-helper:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i testnet-activity-helper oci://ghcr.io/dogeos69/scroll-sdk/helm/testnet-activity-helper -n "$(NAMESPACE)" \
@@ -287,6 +293,9 @@ delete-l1-devnet:
 
 delete-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" frontends
+
+delete-dogeos-bridge-history:
+	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" dogeos-bridge-history
 
 delete-blockscout:
 	helm --kube-context "$(KUBE_CONTEXT)" delete -n "$(NAMESPACE)" blockscout || true

@@ -1,0 +1,8 @@
+{{- /* Named by persistence.config.name, the volume that mounts it, so the two can't diverge. */ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ required "persistence.config.name is required" .Values.persistence.config.name }}
+data:
+  config.toml: |
+{{- include "dogeos-bridge-history.configToml" . | indent 4 }}

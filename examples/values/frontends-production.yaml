@@ -1,7 +1,9 @@
 image:
   repository: dogeos69/scroll-sdk-frontends
   pullPolicy: IfNotPresent
-  tag: 0.3.0-test.20261011.4
+  # Replace with a published Activity-enabled image (scroll-sdk-frontends #16).
+  # Older images read REACT_APP_BRIDGE_API_URI and cannot use the history config.
+  tag: "TODO_ACTIVITY_TAG_TO_REPLACE"
 
 # Container-only proxy upstream; never an Ethereum RPC or public browser URL.
 env:
@@ -31,6 +33,10 @@ ingress:
       - path: /
         pathType: Prefix
     annotations:
+      # Shared with dogeos-bridge-history's /api/history/v1 Ingress (group.order 10),
+      # so both rules land on one ALB and the history API is same-origin.
+      alb.ingress.kubernetes.io/group.name: <TODO>
+      alb.ingress.kubernetes.io/group.order: "100"
       alb.ingress.kubernetes.io/scheme: internet-facing
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
