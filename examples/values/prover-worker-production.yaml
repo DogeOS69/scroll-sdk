@@ -18,7 +18,10 @@ serviceAccount:
   annotations: {}
 
 termination:
-  gracePeriodSeconds: 420
+  # Allow Core's default 720s drain plus 60s of process-exit margin.
+  # Configure this manually if the worker drain timeout changes; the CLI
+  # preserves the operator's choice when regenerating the deployment.
+  gracePeriodSeconds: 780
 
 command: []
 args: []

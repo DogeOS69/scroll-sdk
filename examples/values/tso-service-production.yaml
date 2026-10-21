@@ -48,17 +48,11 @@ env:
     value: "3000"
   - name: DOGE_NETWORK
     value: "testnet"
+  # Intentional service address: connect TSO to the in-cluster withdrawal processor.
   - name: WITHDRAWAL_PROCESSOR_URL
     value: "http://withdrawal-processor:3000"
   - name: TIMEOUT_CHECK_INTERVAL_SECONDS
     value: "60"
-  # Keep both TSO PSBT admission paths aligned with the tested large-PSBT
-  # deployment capacity. The Ingress limit below includes additional room for
-  # the complete JSON callback body.
-  - name: TSO_CORRECTNESS_MAX_PSBT_BASE64_LEN
-    value: "4194304"
-  - name: TSO_CUBESIGNER_MAX_PSBT_BASE64_LEN
-    value: "4194304"
   # dogeos-core requires the transaction journal path explicitly. This path
   # must survive Pod restarts; do not place it on the container filesystem.
   - name: TSO_JOURNAL_DB_PATH

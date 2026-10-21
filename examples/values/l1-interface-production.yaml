@@ -94,7 +94,8 @@ configMaps:
       DOGEOS_L1_INTERFACE_L1_GAS_LIMIT: "30000000"
       DOGEOS_L1_INTERFACE_L1_BASE_FEE_PER_GAS: "1000000000"
       DOGEOS_L1_INTERFACE_GENESIS_JSON_PATH: /app/genesis/genesis.json
-      # Fresh instances hold at genesis until the operator runs start-l1-sync.
+      # Intentionally enabled: fresh instances hold at genesis until the operator
+      # runs start-l1-sync. Preserve this choice over Core's false default.
       DOGEOS_L1_INTERFACE_SEQUENCER_GENESIS_MODE: "true"
       DOGEOS_L1_INTERFACE_DOGECOIN_RPC__URL: http://dogecoin:44555
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__START_HEIGHT: "<TODO>"
@@ -105,15 +106,19 @@ configMaps:
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__BRIDGE_ADDRESS: "<TODO>"
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__FEE_WALLET_ADDRESS: "<TODO>"
       DOGEOS_L1_INTERFACE_DOGECOIN_INDEXER__SEQUENCER_ADDRESS: "<TODO>"
+      # Intentionally enabled; current Core public RPC startup requires replay.
       DOGEOS_L1_INTERFACE_REPLAY_READ__ENABLED: "true"
+      # Intentional deployment path on the service's persistent /data mount.
       DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: /data/replay.sqlite
       # Host replay compatibility policy. 0 means every P2PKH withdrawal uses
       # the versioned recipient envelope; P2SH is always versioned.
       DOGEOS_L1_INTERFACE_REPLAY_READ__P2PKH_VERSIONED_ENVELOPE_START_WITHDRAW_INDEX: "0"
       DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true"
+      # Intentionally require full validation despite Core's false default.
       DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "true"
       # Only a declared new bridge may initialize an absent replay database.
       DOGEOS_L1_INTERFACE_REPLAY_READ__FRESH_GENESIS_INIT: "false"
+      # Intentional path to the mounted protocol context; keep it explicitly set.
       DOGEOS_L1_INTERFACE_REPLAY_READ__PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
       # Cutover/snapshot deployments only; prep-charts fills this from the
       # deployment's first real L2 height when one is configured.
@@ -125,6 +130,7 @@ configMaps:
       # DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "<TODO>"
 
       # DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL is supplied by the service Secret below.
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_REQUEST_TIMEOUT_MS: "30000"
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000"
       # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL is supplied by the service Secret below.
       # Optional provider-local timeout; otherwise the parent timeout is used.

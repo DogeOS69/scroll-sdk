@@ -71,21 +71,24 @@ env:
     value: "http://tso-service:3000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PROTOCOL_CONTEXT_JSON"
     value: "/app/protocol_context.json"
+  # Also the retry backoff base: delay * 2^min(attempts, 4). Zero disables
+  # this backoff; background attempts still follow the polling cadence.
   - name: "DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_DELAY"
-    value: "0"
+    value: "1"
   - name: "DOGEOS_CUBESIGNER_SIGNER_POLL_INTERVAL"
     value: "5000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SESSION_KEEP_ALIVE_INTERVAL"
     value: "3600000"
-  # Match the tested large-PSBT capacity used by TSO. The separate compact
-  # CubeSigner SDK request and response limits remain 384 KiB.
-  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_PSBT_BASE64_LEN"
+  # Incoming /sign request limit, including source-transaction data (Core default).
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_SIGN_REQUEST_JSON_BYTES"
     value: "4194304"
+  # Explicit limits for the compact CubeSigner SDK request and response.
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_REQUEST_JSON_BYTES"
-    value: "393216"
+    value: "1577008"
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_RESPONSE_JSON_BYTES"
     value: "393216"
-  # Generated from explicit cubesigner.mode in doge-config.toml. For a testnet
+  # Intentional deployment mode: production_verifier_key_policy, not Core's
+  # transport_only default. Generated from cubesigner.mode in doge-config.toml. For a testnet
   # observe deployment, select transport_only in that source and run prep-charts.
   # Production/enforce deployments require this policy mode and matching receipts.
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_MODE"
@@ -127,8 +130,11 @@ env:
     value: "/etc/cubesigner/session.json"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SIGNATURE_MODE"
     value: "ecdsa"
+  # Applies to the non-proof-policy JSON parser. production_verifier_key_policy
+  # uses a raw parser capped at min(MAX_SIGN_REQUEST_JSON_BYTES, 2097152),
+  # so changing BODY_LIMIT does not raise that mode's /sign intake limit.
   - name: "DOGEOS_CUBESIGNER_SIGNER_BODY_LIMIT"
-    value: "5mb"
+    value: "4mb"
   - name: "CS_SESSIONS_DIR"
     value: "/app/.sessions"
 

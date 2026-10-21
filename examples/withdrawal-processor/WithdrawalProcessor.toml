@@ -30,12 +30,28 @@
 # AdvanceL1/rotation fulfillment; AdvanceL2 is bounded by transaction size.
 # Mainnet uses 60 Dogecoin confirmations; strict L1 validation requires >=50.
 # Testnet/shadowfork operators may explicitly choose a smaller depth.
+# max_withdrawal_outputs_per_tx uses Core's 85-output baseline. AdvanceL1
+# reserves 34 bytes per withdrawal output, reducing space available for deposit
+# inputs as this value grows; it also limits withdrawal allocation per tick.
 
 # beta.5c reads Ethereum finality from the RPC safe/finalized block tags.
 # Do not add ethereum_da.min_finality or inbox_worker.safe_depth/finalized_depth,
 # including equivalent environment overrides: these removed keys fail startup.
 # ingest_depth controls scanning; it is not a substitute for Ethereum finality.
 # See ../core-beta5c-configuration.md for the in-place upgrade checklist.
+
+# Intentional deployment choices below; preserve them when syncing Core defaults.
+# Keep this explanation outside the managed block so prep-charts preserves it.
+# - advance_l1_builder_v2, advance_l2_builder_v2, rotate_sequencer_signer_v2,
+#   and ethereum_da.inbox_worker.enabled are intentionally true (Core: false).
+# - advance_l1_frontier_stale_after_eligible_blocks is intentionally 360 eligible
+#   blocks (Core: 30); this is a block-distance threshold, not a wall-clock timer.
+# - replay_sqlite_path explicitly uses /app/data/replay.sqlite on persistent
+#   storage; protocol_context_json explicitly uses /app/protocol_context.json
+#   for the mounted protocol context. Both paths are intentional deployment inputs.
+# ethereum_da.inbox_worker.writer_id must be non-empty while the worker is
+# enabled. The database persists this identity; keep it stable across restarts,
+# since a different writer_id cannot claim an already-owned indexer database.
 
 # BEGIN scrollsdk managed deployment configuration
 # Required for ordinary deposit admission and L1 frontier advancement.
@@ -44,23 +60,43 @@ advance_l1_deposit_stale_after_eligible_blocks = 5
 advance_l1_frontier_stale_after_eligible_blocks = 360
 advance_l2_builder_v2 = true
 api_port = 3000
+awaiting_replay_resend_grace_secs = 300
+broadcast_alert_after_n = 3
 broadcast_backoff_base_ms = 5000
 broadcast_backoff_cap_ms = 300000
+cleanup_timeout_secs = 3600
 database_url = "sqlite:///app/data/withdrawal_processor.sqlite"
 debug_skip_broadcast = false
 debug_skip_tso_polling = false
+deployment_role = "withdrawal"
+diagnostics_routes = false
 dogecoin_rpc_url = "http://dogecoin:22555"
 fee_rate_sat_per_kvb = 1000000
+# Unset by default: rebuilds inherit fee_rate_sat_per_kvb.
+# Optional integer in koinu/kB, at least fee_rate_sat_per_kvb. Example only:
+# rebuild_fee_rate_sat_per_kvb = 2000000
+# Unset by default; prep-charts supplies the validated bridge-init transaction.
+# Full raw transaction hex from bridge-init, not a txid; do not invent a value.
+# genesis_sequencer_tx_hex = "<TODO>"
 initial_bridge_redeem_script_hex = "<TODO>"
+# Unset by default; declare only for snapshot/upgrade continuation.
+# Integer next L2 starting block height from the matching snapshot/upgrade
+# metadata; leave absent for fresh genesis. This is not a Dogecoin height.
+# l2_bootstrap_next_starting_block_height = <TODO>
 leaf_verification_required = false
-max_withdrawal_outputs_per_tx = 256
+max_fee_input_source_tx_bytes = 5000
+max_withdrawal_outputs_per_tx = 85
 network_str = "<TODO>"
 protocol_context_json = "/app/protocol_context.json"
 replay_sqlite_path = "/app/data/replay.sqlite"
+require_change_tracking = false
 # Explicit opt-in; bridge-init / prep-charts projects the deployment lifecycle.
 fresh_genesis_init = false
 rotate_key_v2 = false
 rotate_sequencer_signer_v2 = true
+run_ahead_group_floor = 2
+strict_l1_validation = false
+strict_l2_validation = false
 tso_url = "http://tso-service:3000"
 
 [dogecoin_indexer]
@@ -86,6 +122,7 @@ artifact_store_root = "/app/data/eth-da-blob-artifacts"
 indexer_sqlite_path = "/app/data/eth-da-indexer.sqlite"
 # Nonfunctional fallback; the service Secret must supply the real endpoint.
 l1_rpc_url = "http://ethereum-rpc.invalid"
+l1_rpc_request_timeout_ms = 30000
 
 [ethereum_da.inbox_worker]
 cursor_id = "eth_da_inbox"
@@ -129,9 +166,9 @@ url = "http://ethereum-beacon.invalid"
 correctness_policy_transport = "plain"
 mode = "disabled"
 enforcement = "observe"
-# One-shot operator recovery tools. Keep both declarations absent during
-# normal operation. Use Unix milliseconds and remove the selected declaration
-# after startup confirms the recovery action.
+# One-shot operator recovery tools. Keep these declarations absent during
+# normal operation and remove the selected declaration after startup confirms
+# the recovery action. reset/regenerate use Unix milliseconds.
 #
 # [proof_execution.reset]
 # statement_hash = "<0x-prefixed-32-byte-hex>"
@@ -139,3 +176,23 @@ enforcement = "observe"
 #
 # [proof_execution.regenerate]
 # created_before_ms = 1577836800000
+#
+# Optional one-shot queue reprioritization; leave the entire table commented
+# during normal operation. Core defaults to no override, not priority = 10.
+# At WP startup this sets (does not add to) the priority of existing pending
+# materialize jobs in the inclusive batch-height range. Running/completed jobs
+# and jobs created later are unaffected. Batch heights are DA batch indices,
+# not L1/L2 block heights; choose the range of pending batches to expedite.
+# priority is a signed 32-bit integer (-2147483648..2147483647); larger values
+# are claimed first among eligible jobs. Ordinary Scroll batch materialize jobs
+# start at 0: 10 puts matching jobs ahead of those jobs, 0 restores the normal
+# priority, and negative values put them behind ordinary jobs. This does not
+# bypass readiness checks or interrupt running work.
+# Example only: prioritize batches 1000 through 1010, including both endpoints.
+# Replace these heights with the intended range (start <= end). After startup,
+# check the "[proof_execution.prioritize] applied priority" log and row count,
+# then comment out/remove this table; removing it does not undo stored priorities.
+# [proof_execution.prioritize]
+# start_batch_height = 1000
+# end_batch_height = 1010
+# priority = 10
