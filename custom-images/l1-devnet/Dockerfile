@@ -1,6 +1,10 @@
 # Use the latest Alpine base image
 FROM debian:12-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates=20250419~deb12u2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 RUN apt update
 RUN apt install --yes curl bash coreutils git
