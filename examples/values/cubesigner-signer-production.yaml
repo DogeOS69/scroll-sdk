@@ -77,10 +77,10 @@ env:
     value: "5000"
   - name: "DOGEOS_CUBESIGNER_SIGNER_SESSION_KEEP_ALIVE_INTERVAL"
     value: "3600000"
-  # Match the tested large-PSBT capacity used by TSO. The separate compact
-  # CubeSigner SDK request and response limits remain 384 KiB.
-  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_PSBT_BASE64_LEN"
+  # Incoming /sign request limit, including source-transaction data (Core default).
+  - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_SIGN_REQUEST_JSON_BYTES"
     value: "4194304"
+  # Explicit limits for the compact CubeSigner SDK request and response.
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_REQUEST_JSON_BYTES"
     value: "393216"
   - name: "DOGEOS_CUBESIGNER_SIGNER_MAX_CUBESIGNER_RESPONSE_JSON_BYTES"

@@ -125,6 +125,7 @@ configMaps:
       # DOGEOS_L1_INTERFACE_EVENT_PLANE_GENESIS_BOUNDARY: "<TODO>"
 
       # DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_URL is supplied by the service Secret below.
+      DOGEOS_L1_INTERFACE_ETHEREUM_DA__L1_RPC_REQUEST_TIMEOUT_MS: "30000"
       DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__TIMEOUT_MS: "10000"
       # DOGEOS_L1_INTERFACE_ETHEREUM_DA__BLOB_SOURCE__BEACON_NODE__URL is supplied by the service Secret below.
       # Optional provider-local timeout; otherwise the parent timeout is used.

@@ -92,6 +92,7 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMATION_DEPTH: "1"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__FINALIZATION_DEPTH: "1"
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__CONFIRMER_POLL_INTERVAL_MS: "12000"
+      DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_REQUEST_TIMEOUT_MS: "30000"
 
       DOGEOS_ETH_DA_SUBMITTER_L2__RPC_URL: "http://l2-rpc:8545"
       DOGEOS_ETH_DA_SUBMITTER_L2__CONFIRMATIONS: "1"
@@ -158,13 +159,15 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_S3__MAX_RETRIES: "12"
       DOGEOS_ETH_DA_SUBMITTER_S3__UPLOADING_TIMEOUT_MS: "600000"
 
-      # Optional proof chunk-segmentation sidecar publisher, disabled by
-      # default. Its target is the proof artifact store (doge-config
+      # Proof chunk-segmentation sidecar publisher. The default auto policy
+      # requires a target for Tsuki schedules even when ENABLED is false.
+      # Its target is the proof artifact store (doge-config
       # proofArtifacts.s3), never the DA archive: for an active topology
       # prep-charts projects SEGMENTATION_SIDECAR__S3__{BUCKET,REGION,
       # KEY_PREFIX,FORCE_PATH_STYLE[,ENDPOINT_URL]} from the compiled topology.
       # Select exactly one target: LOCAL_ROOT or the S3__* fields.
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__ENABLED: "false"
+      DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__PUBLISH: "auto"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__LOCAL_ROOT: ""
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__POLL_INTERVAL_MS: "30000"
       DOGEOS_ETH_DA_SUBMITTER_SEGMENTATION_SIDECAR__MAX_PER_TICK: "64"

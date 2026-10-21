@@ -74,6 +74,7 @@ configMaps:
       # template-owned and are deliberately not rewritten by prep-charts.
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__CONTRACT_WRITE_MODE: live
       # DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_URL is supplied by the service Secret below.
+      DOGEOS_FEE_ORACLE_ETHEREUM_DA__ETH_RPC_REQUEST_TIMEOUT_SECONDS: "30"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__SAMPLE_INTERVAL_SECONDS: "30"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__SAMPLE_STALE_AFTER_SECONDS: "90"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__TARGET_BLOBS_PER_TX: "6"
@@ -82,14 +83,17 @@ configMaps:
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__EXECUTION_GAS_FLOOR: "21000"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__PRIORITY_FEE_SOURCE: configured_min
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__MIN_PRIORITY_FEE_PER_GAS_WEI: "100000000"
-      # estimate_modes uses the application default:
-      # [conservative, expected_configured_target].
+      DOGEOS_FEE_ORACLE_ETHEREUM_DA__ESTIMATE_MODES: '["conservative", "expected_configured_target"]'
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__CONFIRMATION_LAG_BLOCKS: "0"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__PRICES__MIN_SOURCE_QUORUM: "2"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__PRICES__MAX_QUOTE_AGE_SECONDS: "60"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__ADVANCE_L2_ACCOUNTING__ENABLED: "false"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__ORACLE_VALUE_WINDOW_SECONDS: "300"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__ORACLE_VALUE_STAT: median
+      # Unset by default; required only for conservative_percentile (1..=100).
+      # Must remain absent with the median policy above. Example only: 90 selects
+      # the 90th percentile after ORACLE_VALUE_STAT is set to conservative_percentile.
+      # DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__CONSERVATIVE_PERCENTILE_P100: "90"
       # Live mode must hold the first single-sample window.
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__FIRST_VALID_ORACLE_VALUES: hold
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__FORCE_UPDATE_AFTER_SECONDS: "3600"
@@ -98,6 +102,14 @@ configMaps:
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__BLOB_FEE_SPIKE_CAP_DOGEWEI_DEC: "500000000000000000"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__RELATIVE_DELTA_THRESHOLD_PPM__BASE_FEE_PER_GAS: "0"
       DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__RELATIVE_DELTA_THRESHOLD_PPM__BLOB_BASE_FEE_PER_BLOB_GAS: "0"
+      # Optional absolute delta floors; both are unset by default.
+      # Decimal integer strings in dogewei per gas / per blob gas respectively
+      # (1 DOGE = 10^18 dogewei). Choose an absolute fee-change threshold from
+      # the deployment's update policy; e.g. "1000000000" means 10^-9 DOGE per
+      # gas / blob gas. That is a unit example, not a recommended/default floor.
+      # Leave absent unless an explicit threshold has been chosen.
+      # DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__ABSOLUTE_DELTA_FLOOR__BASE_FEE_PER_GAS_DOGEWEI_DEC: "<TODO>"
+      # DOGEOS_FEE_ORACLE_ETHEREUM_DA__UPDATE_POLICY__ABSOLUTE_DELTA_FLOOR__BLOB_BASE_FEE_PER_BLOB_GAS_DOGEWEI_DEC: "<TODO>"
 
       # Cached quotes must remain strictly younger than MAX_QUOTE_AGE_SECONDS.
       DOGEOS_FEE_ORACLE_PRICE_ORACLE__CACHE_DURATION: "30"
