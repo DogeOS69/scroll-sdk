@@ -80,6 +80,11 @@ spec:
             - --dstack-worker-env
             - {{ printf "DOGEOS_PROVER_WORKER_READY_FILE=%s" .Values.manager.workerReadinessFile | quote }}
             {{- end }}
+            {{- range $key, $value := .Values.manager.workerEnv }}
+            - --dstack-worker-env
+            {{/* Kubelet expands $(VAR) in args; escape dollars to preserve the value. */}}
+            - {{ printf "%s=%s" $key $value | replace "$" "$$" | quote }}
+            {{- end }}
             - --dstack-provisioning-timeout-seconds
             - {{ .Values.manager.provisioningTimeoutSeconds | quote }}
             - --dstack-failure-cooldown-seconds
