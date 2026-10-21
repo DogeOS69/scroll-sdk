@@ -14,6 +14,11 @@
 proof_work_base_url = "http://withdrawal-processor:9300"
 protocol_context_json = "/app/protocol_context.json"
 coordinator_id = "proof-coordinator"
-poll_interval_ms = 500
+# The runner drains available work continuously, then waits this long when idle
+# (or uses failure backoff). This is not a per-job processing delay.
+poll_interval_ms = 1000
 lease_ttl_ms = 60000
+# Required for the non-loopback http:// proof_work_base_url above. Core rejects
+# this URL with false; non-loopback access also requires configured bearer auth.
+# Revisit this setting together with the URL if the service link moves to HTTPS.
 allow_insecure_http = true

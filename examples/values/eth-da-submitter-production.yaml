@@ -67,11 +67,13 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__LISTEN_PORT: "3004"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__STATUS_POLL_INTERVAL_MS: "5000"
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__SHUTDOWN_GRACE_PERIOD_SEC: "30"
+      # Intentional deployment interval: run the service cycle every 10 seconds.
       DOGEOS_ETH_DA_SUBMITTER_SERVICE__CYCLE_INTERVAL_MS: "10000"
       DOGEOS_ETH_DA_SUBMITTER_PROTOCOL_CONTEXT_JSON: /app/protocol_context.json
 
       # DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__RPC_URL is supplied by the service Secret below.
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__BLOB_SIDECAR_WRAPPER: "eip7594"
+      # Intentional deployment choice: use AWS KMS instead of Core's local default.
       DOGEOS_ETH_DA_SUBMITTER_ETHEREUM__SIGNER_BACKEND: "aws_kms" # local or aws_kms
       # Local signer mode only. Never commit a real private key; this field must
       # remain absent when SIGNER_BACKEND=aws_kms.
@@ -96,6 +98,7 @@ configMaps:
 
       DOGEOS_ETH_DA_SUBMITTER_L2__RPC_URL: "http://l2-rpc:8545"
       DOGEOS_ETH_DA_SUBMITTER_L2__CONFIRMATIONS: "1"
+      # Intentional deployment settings: fetch up to 1024 blocks with concurrency 32.
       DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_LIMIT: "1024"
       DOGEOS_ETH_DA_SUBMITTER_L2__FETCH_CONCURRENCY: "32"
       # Cutover mode only; requires the matching BATCH__CUTOVER__* fields below.
@@ -105,6 +108,7 @@ configMaps:
       DOGEOS_ETH_DA_SUBMITTER_BATCH__COMPRESSION: "auto"
       # 2026-09-29 fee targets: strictly greater than the 30M block gas limit.
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_L2_GAS_PER_CHUNK: "30000001"
+      # Intentional deployment limit: allow up to 512 blocks per chunk.
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_BLOCKS_PER_CHUNK: "512"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_CHUNK_BYTES_SIZE: "123011"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_UNCOMPRESSED_BATCH_PAYLOAD_BYTES_SIZE: "4194304"
@@ -112,8 +116,9 @@ configMaps:
       # Optional encoded/effective batch sealing target. When omitted, the
       # application derives 95% of MAX_UNCOMPRESSED_BATCH_BYTES_SIZE.
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__TARGET_UNCOMPRESSED_BATCH_BYTES_SIZE: "<TODO>"
+      # Intentional deployment value: keep the 2h L2 time window, not Core's 60s default.
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_OPEN_L2_TIME: "2h"
-      # Optional live chunk timeout. When omitted, it inherits MAX_OPEN_L2_TIME.
+      # Intentionally omit the live chunk timeout to inherit MAX_OPEN_L2_TIME (2h).
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CHUNK_MAX_OPEN_L2_TIME: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_CHUNKS_PER_BATCH: "64"
       # Cutover mode only; START_BLOCK_NUMBER above must also be set.
@@ -125,8 +130,11 @@ configMaps:
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CUTOVER__NEXT_RELAYED_DEPOSIT_INDEX: "<TODO>"
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CUTOVER__RELAYED_DEPOSIT_QUEUE_HASH: "<TODO>"
 
+      # Intentional deployment target: 6 blobs per transaction (Core defaults to 2).
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__TARGET_BLOBS_PER_TX: "6"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BLOBS_PER_TX: "6"
+      # Both 1h limits are intentional deployment values. Core defaults are
+      # 60s for MAX_BATCH_WAIT and 10m for MAX_LIVENESS_DELAY.
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_BATCH_WAIT: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__MAX_LIVENESS_DELAY: "1h"
       DOGEOS_ETH_DA_SUBMITTER_PUBLISH__HIGH_BACKLOG_THRESHOLD: "12"

@@ -48,6 +48,7 @@ env:
     value: "3000"
   - name: DOGE_NETWORK
     value: "testnet"
+  # Intentional service address: connect TSO to the in-cluster withdrawal processor.
   - name: WITHDRAWAL_PROCESSOR_URL
     value: "http://withdrawal-processor:3000"
   - name: TIMEOUT_CHECK_INTERVAL_SECONDS

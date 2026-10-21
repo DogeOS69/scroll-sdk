@@ -30,12 +30,28 @@
 # AdvanceL1/rotation fulfillment; AdvanceL2 is bounded by transaction size.
 # Mainnet uses 60 Dogecoin confirmations; strict L1 validation requires >=50.
 # Testnet/shadowfork operators may explicitly choose a smaller depth.
+# max_withdrawal_outputs_per_tx uses Core's 85-output baseline. AdvanceL1
+# reserves 34 bytes per withdrawal output, reducing space available for deposit
+# inputs as this value grows; it also limits withdrawal allocation per tick.
 
 # beta.5c reads Ethereum finality from the RPC safe/finalized block tags.
 # Do not add ethereum_da.min_finality or inbox_worker.safe_depth/finalized_depth,
 # including equivalent environment overrides: these removed keys fail startup.
 # ingest_depth controls scanning; it is not a substitute for Ethereum finality.
 # See ../core-beta5c-configuration.md for the in-place upgrade checklist.
+
+# Intentional deployment choices below; preserve them when syncing Core defaults.
+# Keep this explanation outside the managed block so prep-charts preserves it.
+# - advance_l1_builder_v2, advance_l2_builder_v2, rotate_sequencer_signer_v2,
+#   and ethereum_da.inbox_worker.enabled are intentionally true (Core: false).
+# - advance_l1_frontier_stale_after_eligible_blocks is intentionally 360 eligible
+#   blocks (Core: 30); this is a block-distance threshold, not a wall-clock timer.
+# - replay_sqlite_path explicitly uses /app/data/replay.sqlite on persistent
+#   storage; protocol_context_json explicitly uses /app/protocol_context.json
+#   for the mounted protocol context. Both paths are intentional deployment inputs.
+# ethereum_da.inbox_worker.writer_id must be non-empty while the worker is
+# enabled. The database persists this identity; keep it stable across restarts,
+# since a different writer_id cannot claim an already-owned indexer database.
 
 # BEGIN scrollsdk managed deployment configuration
 # Required for ordinary deposit admission and L1 frontier advancement.
@@ -69,7 +85,7 @@ initial_bridge_redeem_script_hex = "<TODO>"
 # l2_bootstrap_next_starting_block_height = <TODO>
 leaf_verification_required = false
 max_fee_input_source_tx_bytes = 5000
-max_withdrawal_outputs_per_tx = 256
+max_withdrawal_outputs_per_tx = 85
 network_str = "<TODO>"
 protocol_context_json = "/app/protocol_context.json"
 replay_sqlite_path = "/app/data/replay.sqlite"
