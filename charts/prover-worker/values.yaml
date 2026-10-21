@@ -24,9 +24,7 @@ serviceAccount:
   annotations: {}
 
 termination:
-  # Operator-owned: allow the default 720s worker drain plus 60s of exit margin.
-  # Adjust manually when changing the worker drain timeout.
-  gracePeriodSeconds: 780
+  gracePeriodSeconds: 420
 
 podAnnotations: {}
 podSecurityContext:

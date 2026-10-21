@@ -179,7 +179,7 @@ class MakefileContextTests(unittest.TestCase):
             self.assertTrue(calls[1].startswith('helm --kube-context selected'))
             for call in calls:
                 self.assertIn('values/cubesigner-signer-production.yaml', call)
-                self.assertIn('0.1.10', call)
+                self.assertIn('0.1.9', call)
 
     def test_monitor_applies_generated_dstack_overlay_after_base_values(self):
         overlay = 'values/scroll-monitor-dstack.yaml'

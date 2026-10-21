@@ -27,7 +27,7 @@ ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.6
 PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
-PROVER_WORKER_CHART_VERSION ?= 0.1.1
+PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.27
 PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer
@@ -173,9 +173,9 @@ install-fee-oracle:
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signer:
-	scrollsdk setup cubesigner-policy verify-activation --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.10 --namespace "$(NAMESPACE)"
+	scrollsdk setup cubesigner-policy verify-activation --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.9 --namespace "$(NAMESPACE)"
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n "$(NAMESPACE)" \
-		--version=0.1.10 \
+		--version=0.1.9 \
 		--values values/cubesigner-signer-production.yaml
 
 install-tso:
