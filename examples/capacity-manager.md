@@ -56,6 +56,24 @@ multi-region AWS preparation and cost caveats.
 Provider selection is explicit; there is no automatic AWS-to-Vast failover.
 The manager Pod receives no AWS credentials or Kubernetes API token.
 
+## Worker command and artifact environment
+
+Capacity-manager chart **0.1.4 or newer** supports `manager.workerEnv`. The CLI
+now generates a public artifact URL/SHA-256 map alongside `manager.workerCommand`;
+the command uses quoted environment references for downloads and verification.
+The map is passed to the remote GPU worker, not the manager Pod's environment.
+Worker credentials continue to be minted and injected separately by Core.
+
+Use a committed `templates.sdkRevision` containing this interface and the updated
+`CAPACITY_MANAGER_CHART_VERSION` pin. The CLI reads templates from that Git commit,
+so changing the SDK checkout alone does not update a frozen deployment. For an
+existing deployment, check the generated Makefile's chart version before preparing
+new values. Custom Helm install flows must also select chart 0.1.4 or newer; an old
+chart silently ignores `workerEnv` and the remote worker then fails on missing
+variables. The new chart still accepts old self-contained worker commands with
+an empty or omitted map. Review and drain an existing capacity plan before
+replacing its generated command/environment.
+
 ## Prepare and start
 
 1. Retire any existing SDK worker session using `setup proof-workers status` and

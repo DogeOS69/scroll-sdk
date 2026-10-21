@@ -17,6 +17,14 @@ master (dogeos-core #1591). The manager reads it as
 startup evidence. Verify that evidence against the current dstack run ID; a
 Ready manager Pod does not establish GPU worker readiness.
 
+`manager.workerEnv` (chart 0.1.4+) is a string-to-string map passed to remote
+workers through repeated `--dstack-worker-env KEY=VALUE` arguments. The CLI
+places public artifact URLs and SHA-256 digests here; `manager.workerCommand`
+references them with quoted shell variables. These values are visible in the
+Deployment arguments, so never use this map for credentials. Token, readiness,
+NVIDIA capabilities, and Core ownership/identity variables are reserved.
+Omitting the map remains compatible with existing self-contained commands.
+
 See [operator instructions](../../examples/capacity-manager.md) and the
 [spec fragment](../../examples/capacity-manager-spec.example.yaml).
 The [DevNet RTX3090 profile](../../examples/capacity-manager-devnet.md) records

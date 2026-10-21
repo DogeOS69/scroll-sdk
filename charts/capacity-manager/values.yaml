@@ -14,6 +14,9 @@ manager:
   workerIdPrefix: ""
   workerImage: ""
   workerCommand: ""
+  # Public artifact URLs/digests and other non-secret remote worker inputs.
+  # Chart/Core-owned identity, credential, readiness and NVIDIA variables are reserved.
+  workerEnv: {}
   # Deprecated: dstack project secret holding the retired shared worker token,
   # only for capacity-manager images older than dogeos-core #1598 running
   # against coordinators older than #1591. Setting it requires

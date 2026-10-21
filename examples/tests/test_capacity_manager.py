@@ -66,6 +66,38 @@ class CapacityManagerTests(unittest.TestCase):
         self.assertNotIn('--worker-credential-master-file', args)
         self.assertFalse(any(v['name'] == 'worker-credential-master' for v in pod['volumes']))
 
+    def test_public_worker_env_is_forwarded_without_changing_reserved_bindings(self):
+        values = config()
+        env = {'DOGEOS_CHUNK_VMEXE_URL': 'https://artifacts.example.invalid/chunk/app.vmexe',
+               'DOGEOS_CHUNK_VMEXE_SHA256': 'b' * 64,
+               'EXTRA_VALUE': 'spaces "quotes" = equals $HOME $(RUST_LOG) $${literal}',
+               'EMPTY_VALUE': ''}
+        values['manager']['workerEnv'] = env
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        pod = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Deployment')['spec']['template']['spec']
+        args = pod['containers'][0]['args']
+        bindings = [args[i + 1] for i, arg in enumerate(args) if arg == '--dstack-worker-env']
+        for key, value in env.items():
+            self.assertIn(f'{key}={value}'.replace('$', '$$'), bindings)
+        self.assertEqual(bindings.count('NVIDIA_DRIVER_CAPABILITIES=compute,utility'), 1)
+        self.assertIn('--worker-credential-master-file', args)
+        self.assertFalse(any(binding.startswith('DOGEOS_PROVER_WORKER_TOKEN=') for binding in bindings))
+
+    def test_worker_env_rejects_invalid_names_types_and_owned_variables(self):
+        for env in [[], 'string', {'1BAD': 'x'}, {'BAD-NAME': 'x'}, {'GOOD': 12}, {'GOOD': True},
+                    {'GOOD': None}, *[{key: 'override'} for key in (
+                        'DOGEOS_PROVER_WORKER_TOKEN', 'DOGEOS_PROVER_WORKER_READY_FILE',
+                        'NVIDIA_DRIVER_CAPABILITIES', 'DOGEOS_CAPACITY_MANAGER',
+                        'DOGEOS_CAPACITY_SPEC_SHA256', 'DOGEOS_WORKER_ID', 'DOGEOS_WORKER_SLOT',
+                        'DOGEOS_CAPACITY_PROFILE')]]:
+            with self.subTest(env=env):
+                values = config()
+                values['manager']['workerEnv'] = env
+                result = render('capacity-manager', values)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('workerEnv', result.stderr)
+
     def test_refuses_unprepared_mutable_or_multiple_writer_deployment(self):
         for change in [{'prepared': False}, {'replicaCount': 2}, {'image': {'digest': 'latest'}}]:
             values = config()

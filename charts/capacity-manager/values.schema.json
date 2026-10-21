@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "manager": {
+      "type": "object",
+      "properties": {
+        "workerEnv": {
+          "description": "Public remote worker environment; credentials and chart/Core-owned variables are reserved.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+            "not": {
+              "enum": [
+                "DOGEOS_PROVER_WORKER_TOKEN",
+                "DOGEOS_PROVER_WORKER_READY_FILE",
+                "NVIDIA_DRIVER_CAPABILITIES",
+                "DOGEOS_CAPACITY_MANAGER",
+                "DOGEOS_CAPACITY_SPEC_SHA256",
+                "DOGEOS_WORKER_ID",
+                "DOGEOS_WORKER_SLOT",
+                "DOGEOS_CAPACITY_PROFILE"
+              ]
+            }
+          },
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    }
+  }
+}
