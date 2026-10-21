@@ -18,3 +18,5 @@ persistence:
 manager:
   workerEnv: {}
   scaleDownOnShutdown: false
+  dstack:
+    fallbackFleet: ""

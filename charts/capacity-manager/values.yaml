@@ -36,6 +36,8 @@ manager:
     serverUrl: http://dstack-controller.dstack-system.svc:3000
     project: ""
     fleets: []
+    # Requires Core #1612; an existing, priced fleet in the same project.
+    fallbackFleet: ""
     # Empty: no run-level region filter; fleet/backend eligibility still applies.
     # Vast policies require an explicit region in Core.
     regions: []

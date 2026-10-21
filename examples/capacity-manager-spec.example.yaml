@@ -56,3 +56,19 @@ preparation:
 # Disable dstackController.defaultCredentialsEnabled and remove the AWS role
 # annotation if no AWS backend is used. Do not retain preparation.dstack.aws.
 # Set capacityManager.provider/gpu/regions/prices to the Vast alternative above.
+
+# Optional automatic AWS -> Vast fallback (Core #1612, chart 0.1.5+).
+# First replace capacityManager.image with a published digest containing Core #1612;
+# the beta.8 example above does not support fallback. Both GPU architectures must
+# be present in the checked worker image. Merge under capacityManager:
+#   fallback:
+#     provider: vastai
+#     fleet: dogeos-vast-fallback
+#     gpu: RTX4090
+#     regions: [us-texas]
+#     maxPricePerHourUsd: 0.80  # Must not exceed primary maxPricePerHourUsd.
+#     minReliability: 0.95
+# Also set preparation.dstack.providers: [aws, vastai] and
+# preparation.dstack.vastaiApiKeyEnv: VASTAI_API_KEY (value in private deployment.env).
+# Keep the AWS backend/IRSA fields. Fleet CPU/RAM/disk/node bounds and create/reuse
+# action are inherited from the primary configuration; no initial instances rented.

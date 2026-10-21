@@ -33,3 +33,22 @@ the tested full-mode deployment and its explicit raw-manifest-to-Helm handoff.
 Installing starts continuous reconciliation and can allocate paid resources.
 Pausing/uninstalling does not by itself stop remote workers. Preserve the state
 PVC and follow the drain procedure before deleting or changing the deployment.
+
+## Optional primary-to-fallback fleet switching
+
+Chart 0.1.5 adds `manager.dstack.fallbackFleet`, default empty. A nonempty name
+passes `--dstack-fallback-fleet` to Core. Select an immutable manager image that
+contains dogeos-core #1612; beta.8 does not support this argument. The CLI's
+fallback preflight checks the selected binary before installation.
+
+Keep primary AWS selectors unchanged and prepare a separate Vast fleet in the
+same dstack project, with a configured Vast backend. The fallback fleet must have
+an explicit `max_price` within `pool.hourly_cost_usd_per_worker`, enough VRAM and
+node capacity, and a GPU supported by the same worker image and startup command.
+Core strips primary backend/region/GPU/price selectors from fallback runs and
+uses the fallback fleet's settings. This is primary/backup switching, not weighted
+multi-provider balancing. No fleet or backend is created by this chart.
+
+Primary no-capacity failures or provisioning timeouts switch new workers to the
+fallback fleet for 30 minutes. The window is in memory; restart tries the primary
+again and adopts existing workers. Other failures do not trigger fallback.

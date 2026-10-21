@@ -53,7 +53,9 @@ regions, quotas or VPC/subnet coverage. Set an explicit list for restricted
 placement; Vast policies require a region in Core. See the L40S guide for
 multi-region AWS preparation and cost caveats.
 
-Provider selection is explicit; there is no automatic AWS-to-Vast failover.
+Provider selection is explicit. Optional AWS-to-Vast fallback requires Core #1612,
+chart 0.1.5+, a separately priced Vast fleet and a backend in the same project;
+see `capacity-manager-spec.example.yaml`. Older pinned images do not support it.
 The manager Pod receives no AWS credentials or Kubernetes API token.
 
 ## Worker command and artifact environment

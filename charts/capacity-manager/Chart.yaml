@@ -2,7 +2,7 @@ apiVersion: v2
 name: capacity-manager
 description: Core queue-driven proof worker capacity through dstack
 type: application
-version: 0.1.4
+version: 0.1.5
 appVersion: "0.3.0-beta.8"
 home: https://github.com/DogeOS69/dogeos-core
 sources:
