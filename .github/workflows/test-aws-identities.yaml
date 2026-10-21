@@ -1,0 +1,23 @@
+name: Test shared AWS identity installation
+on:
+  pull_request:
+    paths:
+      - examples/Makefile.example
+      - examples/tests/test_aws_identities.py
+      - .github/workflows/test-aws-identities.yaml
+  push:
+    paths:
+      - examples/Makefile.example
+      - examples/tests/test_aws_identities.py
+      - .github/workflows/test-aws-identities.yaml
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s examples/tests -p test_aws_identities.py -v
