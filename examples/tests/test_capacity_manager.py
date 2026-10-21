@@ -27,6 +27,22 @@ def render(chart, values):
 
 
 class CapacityManagerTests(unittest.TestCase):
+    def test_optional_fallback_fleet_argument(self):
+        for fleet in ['', 'vast-fallback']:
+            values = config()
+            values['manager']['dstack']['fallbackFleet'] = fleet
+            result = render('capacity-manager', values)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            deploy = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Deployment')
+            args = deploy['spec']['template']['spec']['containers'][0]['args']
+            self.assertEqual('--dstack-fallback-fleet' in args, bool(fleet))
+            if fleet:
+                self.assertEqual(args[args.index('--dstack-fallback-fleet') + 1], fleet)
+            self.assertEqual(args[args.index('--dstack-fleet') + 1], 'test-fleet')
+        for fleet in [' ', 'bad/name', ['vast-fallback']]:
+            values['manager']['dstack']['fallbackFleet'] = fleet
+            self.assertNotEqual(render('capacity-manager', values).returncode, 0)
+
     def test_manager_is_single_writer_with_secret_references_and_no_public_listener(self):
         result = render('capacity-manager', config())
         self.assertEqual(result.returncode, 0, result.stderr)

@@ -93,6 +93,10 @@ spec:
             - --dstack-fleet
             - {{ . | quote }}
             {{- end }}
+            {{- if .Values.manager.dstack.fallbackFleet }}
+            - --dstack-fallback-fleet
+            - {{ .Values.manager.dstack.fallbackFleet | quote }}
+            {{- end }}
             {{- range .Values.manager.dstack.regions }}
             - --dstack-region
             - {{ . | quote }}
