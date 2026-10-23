@@ -1,0 +1,112 @@
+{{- if .Values.initialization.enabled }}
+{{- $init := .Values.initialization }}
+{{- if not .Values.workerCredentialMaster }}
+{{- fail "Fleet initialization requires workerCredentialMaster" }}
+{{- end }}
+{{- if or (not $init.fleets) (not (has $init.fleetAction (list "create" "reuse"))) }}
+{{- fail "Fleet initialization requires reviewed fleets and create/reuse intent" }}
+{{- end }}
+{{- $selected := concat .Values.manager.dstack.fleets (ternary (list .Values.manager.dstack.fallbackFleet) (list) (ne .Values.manager.dstack.fallbackFleet "")) }}
+{{- $seen := dict }}
+{{- range $init.fleets }}
+{{- if or (not (has .name $selected)) (hasKey $seen .name) (ne (int .nodes.min) 0) (ne (int .nodes.target) 0) (lt (int .nodes.max) 1) }}
+{{- fail "Fleet initialization must match selected fleets and request zero initial/minimum nodes" }}
+{{- end }}
+{{- $_ := set $seen .name true }}
+{{- end }}
+{{- if ne (len $seen) (len $selected) }}
+{{- fail "Fleet initialization is missing a selected fleet" }}
+{{- end }}
+{{- if or (not (regexMatch "^sha256:[a-f0-9]{64}$" $init.image.digest)) (not $init.image.repository) }}
+{{- fail "Fleet initialization requires a digest-pinned dstack image" }}
+{{- end }}
+{{- $name := printf "%s-initialize" .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    {{- include "capacity-manager.labels" . | nindent 4 }}
+data:
+  preflight.py: |
+{{ .Files.Get "files/preflight.py" | indent 4 }}
+  initialize-fleets.py: |
+{{ .Files.Get "files/initialize-fleets.py" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    {{- include "capacity-manager.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        {{- include "capacity-manager.labels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.manager.dstack.fallbackFleet }}
+      initContainers:
+        - name: manager-fallback-capability
+          image: {{ printf "%s@%s" .Values.image.repository .Values.image.digest | quote }}
+          command: [/usr/local/bin/capacity-manager]
+          args: [--dstack-fallback-fleet, {{ .Values.manager.dstack.fallbackFleet | quote }}, --help]
+      {{- end }}
+      containers:
+        - name: initialize
+          image: {{ printf "%s@%s" $init.image.repository $init.image.digest | quote }}
+          imagePullPolicy: {{ $init.image.pullPolicy }}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              python=/root/.local/share/uv/tools/dstack/bin/python
+              "$python" /scripts/preflight.py
+              exec "$python" /scripts/initialize-fleets.py
+          env:
+            {{- range $name, $ref := dict "DSTACK_TOKEN" .Values.dstackAuth "WP_TOKEN" .Values.wpAuth "WORKER_MASTER" .Values.workerCredentialMaster }}
+            - name: {{ $name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "Initialization Secret name is required" $ref.existingSecret | quote }}
+                  key: {{ required "Initialization Secret key is required" $ref.key | quote }}
+            {{- end }}
+            - name: DSTACK_SERVER_URL
+              value: {{ .Values.manager.dstack.serverUrl | quote }}
+            - name: PROBE_INPUT
+              value: {{ dict "privateDns" $init.privateDns "project" .Values.manager.dstack.project "provider" $init.provider "fallbackProvider" $init.fallbackProvider "url" .Values.manager.dstack.serverUrl "wpUrl" .Values.manager.proofWorkBaseUrl | toJson | quote }}
+            - name: FLEET_INPUT
+              value: {{ dict "project" .Values.manager.dstack.project "fleetAction" $init.fleetAction "fleets" $init.fleets | toJson | quote }}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - {name: scripts, mountPath: /scripts, readOnly: true}
+      volumes:
+        - name: scripts
+          configMap: {name: {{ $name }}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -337,3 +337,13 @@ metrics and creates a ServiceMonitor. Provide the dedicated monitoring Secret
 (the CLI generates it), and install Prometheus Operator CRDs first. Set it to
 false to disable metrics and the ServiceMonitor. See [the monitoring guide](../../examples/dstack-monitoring/README.md)
 for CLI generation, namespace discovery, GPU coverage, and optional host Alloy.
+
+## Private endpoint binding (0.1.6+)
+
+Set `targetGroupBinding.targetGroupARN` to an existing IP target group and
+`targetGroupBinding.networking` to its reviewed backend traffic rules. The
+chart creates a TargetGroupBinding for its own Service. The AWS Load Balancer
+Controller and its CRD must already be installed. External infrastructure owns
+the ALB, listener, target group and private DNS; Helm owns the binding.
+This option is mutually exclusive with `ingress.enabled`. The default is null
+and adds no resource.

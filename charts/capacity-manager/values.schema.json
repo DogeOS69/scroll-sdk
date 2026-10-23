@@ -37,6 +37,74 @@
           }
         }
       }
+    },
+    "initialization": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "fleetAction": {
+          "enum": [
+            "create",
+            "reuse"
+          ]
+        },
+        "fleets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "nodes"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "nodes": {
+                "type": "object",
+                "required": [
+                  "min",
+                  "target",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "const": 0
+                  },
+                  "target": {
+                    "type": "integer",
+                    "const": 0
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "provider": {
+          "enum": [
+            "",
+            "aws",
+            "vastai"
+          ]
+        },
+        "fallbackProvider": {
+          "enum": [
+            "",
+            "vastai"
+          ]
+        },
+        "privateDns": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

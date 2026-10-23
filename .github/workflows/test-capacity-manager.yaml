@@ -31,10 +31,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install PyYAML==6.0.2
+      - run: pip install PyYAML==6.0.2 'dstack==0.21.5'
       - run: helm dependency build charts/withdrawal-processor
       - run: helm lint --strict charts/capacity-manager -f charts/capacity-manager/ci/render-values.yaml
       - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-rtx3090.yaml
       - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-aws-a10g.yaml
       - run: helm lint --strict charts/capacity-manager -f examples/values/capacity-manager-devnet-aws-l40s.yaml --set prepared=true
       - run: python3 -m unittest discover -s examples/tests -p 'test_capacity_manager*.py'
+      - run: python3 -m unittest discover -s charts/capacity-manager/tests -p 'test_*.py'
