@@ -1,7 +1,5 @@
-# Configuration generation and validation belong to `scrollsdk setup ...`.
-# prep-charts emits self-contained proof values; this Makefile only runs
-# Helm installs/removals and the capacity-manager credential preflight.
-# Run prep-charts and proof-config-check first.
+# Install reviewed Helm values with an explicit cluster context and namespace.
+# Service initialization runs in the selected charts.
 
 NAMESPACE ?= default
 # Kubernetes context name from `kubectl config get-contexts`.
@@ -12,7 +10,7 @@ NAMESPACE ?= default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.5
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.6
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
 SCROLL_MONITOR_CHART_VERSION ?= 0.1.56-dogeos
@@ -26,8 +24,6 @@ ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitte
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.6
-PROVER_WORKER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/prover-worker
-PROVER_WORKER_CHART_VERSION ?= 0.1.0
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.27
 PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer
@@ -35,7 +31,14 @@ PREINSTALLS_CHART_VERSION ?= 0.1.2-dogeos
 PREINSTALLS_TIMEOUT ?= 20m
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
-L2_RETH_CHART_VERSION ?= 0.1.13
+L2_RETH_CHART_VERSION ?= 0.1.14
+# Optional runtime allowlist. Install/update its independent release explicitly.
+RETH_PEER_ALLOWLIST_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/reth-peer-allowlist
+RETH_PEER_ALLOWLIST_CHART_VERSION ?= 0.1.0
+RETH_PEER_ALLOWLIST_VALUES ?= values/reth-peer-allowlist.yaml
+# Keep this operator-owned overlay separate from CLI-generated bootnode values.
+L2_RETH_BOOTNODE_ALLOWLIST_VALUES ?=
+L2_RETH_BOOTNODE_ALLOWLIST_ARGS = $(if $(strip $(L2_RETH_BOOTNODE_ALLOWLIST_VALUES)),--values "$(L2_RETH_BOOTNODE_ALLOWLIST_VALUES)")
 # Existing-chain upgrade hook only. Fresh native Reth genesis needs neither
 # file, and this repository does not ship a deployment-specific normalizer.
 # To perform a reviewed migration, supply BOTH paths explicitly.
@@ -57,9 +60,9 @@ endif
 	install-dstack-controller install-scroll-monitor \
 	install-preinstalls install-contracts install-chain-contracts start-l1-sync install-eth-da-submitter \
 	install-l2-reth-sequencer install-l2-reth-rpc \
-	install-l2-reth-bootnode \
+	install-l2-reth-bootnode upgrade-reth-peer-allowlist \
 	install-fee-oracle \
-	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator install-prover-worker reconcile-proof-services \
+	install-cubesigner-signer install-tso install-withdrawal-processor install-proof-coordinator reconcile-proof-services \
 	install-blockscout install-frontends install-dogeos-bridge-history install-testnet-activity-helper \
 	delete-all delete-preinstalls delete-frontends delete-dogeos-bridge-history \
 	delete-blockscout delete-withdrawal-processor delete-proof-coordinator delete-prover-worker delete-tso \
@@ -136,14 +139,19 @@ install-l2-reth-rpc:
 		--version $(L2_RETH_CHART_VERSION) \
 		--values values/l2-reth-rpc-public-production.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
 
+upgrade-reth-peer-allowlist:
+	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i reth-peer-allowlist $(RETH_PEER_ALLOWLIST_CHART) -n "$(NAMESPACE)" \
+		--version=$(RETH_PEER_ALLOWLIST_CHART_VERSION) \
+		--values "$(RETH_PEER_ALLOWLIST_VALUES)"
+
 install-l2-reth-bootnode:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-bootnode-0 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-bootnode-production-0.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-bootnode-production-0.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS) $(L2_RETH_BOOTNODE_ALLOWLIST_ARGS)
 
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i l2-reth-bootnode-1 $(L2_RETH_CHART) -n "$(NAMESPACE)" \
 		--version $(L2_RETH_CHART_VERSION) \
-		--values values/l2-reth-bootnode-production-1.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS)
+		--values values/l2-reth-bootnode-production-1.yaml $(L2_RETH_GENESIS_NORMALIZER_ARGS) $(L2_RETH_BOOTNODE_ALLOWLIST_ARGS)
 
 # Helm waits for the post-install/post-upgrade deploy hook to succeed.
 # Install after L2 readiness and before the DogeOS contracts release.
@@ -194,11 +202,6 @@ install-proof-coordinator:
 		--version $(PROOF_COORDINATOR_CHART_VERSION) \
 		--values values/proof-coordinator-production.yaml
 
-install-prover-worker:
-	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i prover-worker $(PROVER_WORKER_CHART) -n "$(NAMESPACE)" \
-		--version $(PROVER_WORKER_CHART_VERSION) \
-		--values values/prover-worker-production.yaml
-
 .PHONY: install-eager-materializer
 # Invoke after prep-charts has emitted an enabled producer contract.
 install-eager-materializer:
@@ -209,14 +212,13 @@ install-eager-materializer:
 		--values values/eager-materializer-production.yaml
 
 # Proof Coordinator remains deployed while the generated contract selects its
-# idle or active config. The contract decides whether the local prover-worker
-# runs; production/external keeps it absent and emits a verified GPU-host bundle.
+# idle or active config. Capacity Manager owns all remote GPU workers;
+# no standalone local worker release is installed.
 reconcile-proof-services:
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-eth-da-submitter
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-tso
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-withdrawal-processor
 	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-proof-coordinator
-	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) install-prover-worker
 
 # Optional: prepare the database and values, then invoke this target explicitly.
 install-blockscout:
@@ -347,10 +349,9 @@ delete-l2-reth-bootnode:
 
 # Explicit opt-in: starts the Core loop and may rent paid GPU instances.
 CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
-CAPACITY_MANAGER_CHART_VERSION ?= 0.1.5
+CAPACITY_MANAGER_CHART_VERSION ?= 0.1.6
 .PHONY: install-capacity-manager pause-capacity-manager
 install-capacity-manager:
-	scrollsdk setup capacity-manager credentials --dir . --kube-context "$(KUBE_CONTEXT)" --namespace "$(NAMESPACE)"
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m
 
 # Pause only: does not stop remote workers or their billing. See capacity-manager.md.

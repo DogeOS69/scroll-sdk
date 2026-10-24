@@ -74,6 +74,22 @@ reth:
   l1LivenessCheckInterval: "3600"
   blobS3Url: ""
   trustedPeers: ""
+  # Runtime admission list, owned by a separate reth-peer-allowlist release.
+  # Startup trustedPeers (e.g. sequencers) remain allowed and retain their
+  # outbound connections.
+  peerAllowlist:
+    enabled: false
+    configMapName: reth-peer-allowlist
+    image: python:3.12-alpine
+    intervalSeconds: 5
+    rpcTimeoutSeconds: 5
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
   builderGasLimit: ""
   engineSyncAtStartup: "false"
   engineLegacyStateRoot: true

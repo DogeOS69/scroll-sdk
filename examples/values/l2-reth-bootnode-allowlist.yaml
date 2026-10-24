@@ -1,0 +1,11 @@
+# Apply AFTER CLI-generated bootnode values, to every participating release.
+# Preserves the generated trustedPeers (sequencers) and outbound peer limit.
+# The shared ConfigMap manages additional public-key-only peers at runtime.
+reth:
+  peerAllowlist:
+    enabled: true
+    configMapName: reth-peer-allowlist
+  http:
+    api: eth,net,web3,rpc
+  ws:
+    api: eth,net,web3,rpc

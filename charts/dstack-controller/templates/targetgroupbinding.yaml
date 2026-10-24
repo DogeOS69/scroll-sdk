@@ -1,0 +1,19 @@
+{{- with .Values.targetGroupBinding }}
+{{- if $.Values.ingress.enabled }}
+{{- fail "Select targetGroupBinding or Ingress, not both" }}
+{{- end }}
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ include "dstack-controller.fullname" $ }}
+  labels:
+    {{- include "dstack-controller.labels" $ | nindent 4 }}
+spec:
+  targetGroupARN: {{ required "Prepared dstack targetGroupARN is required" .targetGroupARN | quote }}
+  targetType: ip
+  serviceRef:
+    name: {{ include "dstack-controller.fullname" $ }}
+    port: {{ $.Values.service.port }}
+  networking:
+    {{- toYaml .networking | nindent 4 }}
+{{- end }}

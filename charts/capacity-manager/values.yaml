@@ -68,3 +68,17 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Enable this with reviewed empty fleet definitions before Helm installation.
+# Explicitly configured deployments with operator-owned fleets can leave it disabled.
+initialization:
+  enabled: false
+  image:
+    repository: dstackai/dstack
+    digest: sha256:a502b38014dc9730ad712f60c067b84a00a4cf091982b81f9982fdc60ac6852b
+    pullPolicy: IfNotPresent
+  fleetAction: create
+  fleets: []
+  provider: ""
+  fallbackProvider: ""
+  privateDns: false
