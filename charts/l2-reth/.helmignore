@@ -1,0 +1,2 @@
+# Python tests import the packaged controller module locally.
+files/__pycache__/

@@ -5,6 +5,9 @@
 
 {{- $generated := include "l2-reth.generatedValues" . | fromYaml }}
 {{- $_ := mergeOverwrite .Values $generated }}
+{{- if .Values.reth.peerAllowlist.enabled }}
+{{- $_ := mergeOverwrite .Values (include "l2-reth.peerAllowlist.generatedValues" . | fromYaml) }}
+{{- end }}
 {{- /* With external P2P, render exactly the generated Services; a recursive merge would keep raw service.* keys. */ -}}
 {{- if .Values.reth.p2pExternal.enabled }}
 {{- $_ := set .Values "service" $generated.service }}

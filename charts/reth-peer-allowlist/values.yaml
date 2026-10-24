@@ -1,0 +1,6 @@
+# All consuming bootnodes must be in this release's namespace.
+configMapName: reth-peer-allowlist
+# Public keys only: 128 hex digits, optionally prefixed with 0x or enode://.
+# An empty list authorizes no additional peers; configured sequencer peers remain.
+# Add members after deployment as needed.
+peers: []

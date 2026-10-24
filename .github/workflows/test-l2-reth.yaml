@@ -3,14 +3,22 @@ on:
   pull_request:
     paths:
       - charts/l2-reth/**
+      - charts/reth-peer-allowlist/**
       - examples/values/l2-reth-bootnode-production.yaml
+      - examples/values/l2-reth-bootnode-allowlist.yaml
+      - examples/values/reth-peer-allowlist.yaml
       - .github/tests/test_l2_reth.py
+      - .github/tests/test_reth_peer_allowlist.py
       - .github/workflows/test-l2-reth.yaml
   push:
     paths:
       - charts/l2-reth/**
+      - charts/reth-peer-allowlist/**
       - examples/values/l2-reth-bootnode-production.yaml
+      - examples/values/l2-reth-bootnode-allowlist.yaml
+      - examples/values/reth-peer-allowlist.yaml
       - .github/tests/test_l2_reth.py
+      - .github/tests/test_reth_peer_allowlist.py
       - .github/workflows/test-l2-reth.yaml
 permissions:
   contents: read
@@ -29,4 +37,6 @@ jobs:
       - name: Download declared chart dependencies
         run: helm dependency build charts/l2-reth
       - run: helm lint --strict charts/l2-reth
+      - run: helm lint --strict charts/reth-peer-allowlist
       - run: python3 -m unittest discover -s .github/tests -p 'test_l2_reth.py' -v
+      - run: python3 -m unittest discover -s .github/tests -p 'test_reth_peer_allowlist.py' -v

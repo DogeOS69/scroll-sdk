@@ -74,6 +74,13 @@ The standalone `dogeos-rpc-package` also enables the flag in
 `scripts/l2reth_entrypoint.sh`; its `l2reth-node` Compose service uses
 `restart: on-failure` to restart after exit code `70`.
 
+### Runtime bootnode peer allowlist
+
+See [the runtime peer allowlist guide](reth-peer-allowlist.md) for a shared
+ConfigMap maintained independently of CLI-generated deployment configuration.
+Each bootnode sidecar applies public-key additions and removals without a Pod
+restart. Configured sequencer peers retain their outbound connections.
+
 ### Sequencer deployment settings
 
 Review [the Reth sequencer example](values/l2-reth-sequencer-production.yaml)

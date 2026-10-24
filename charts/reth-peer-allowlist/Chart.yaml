@@ -1,0 +1,8 @@
+apiVersion: v2
+name: reth-peer-allowlist
+description: Shared runtime P2P public-key allowlist for Reth bootnodes
+type: application
+version: 0.1.0
+kubeVersion: ">=1.22.0-0"
+maintainers:
+  - name: dogeos69

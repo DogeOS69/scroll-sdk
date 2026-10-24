@@ -358,14 +358,36 @@ Node identity must survive rescheduling, because the partner pins the enode
 - `none` lets reth pick a key and is not suitable for an exposed node.
 
 Peering is configured on both sides. The partner adds our enodes to its static
-or trusted peers. The chart passes `--trusted-only` only for `role: rpc` with
-`reth.rpc.trustedOnly: true`; if an exposed node runs that way, add the
-partner's enodes to `reth.trustedPeers`, otherwise its connections are refused.
+or trusted peers. For `role: rpc` with `reth.rpc.trustedOnly: true`, the chart
+passes `--trusted-only`; add the partner's enodes to `reth.trustedPeers`,
+otherwise its connections are refused. Bootnodes can instead use the runtime
+public-key allowlist described below.
 Inbound connections also count against `reth.rpc.maxInboundPeers` when set.
 
 L2 blocks reach peers over this one connection: the `scroll-wire` protocol and
 eth-wire `NewBlock` gossip are RLPx sub-protocols on TCP 30303, and
 rollup-node opens no other peer-facing listener.
+
+### Runtime public-key allowlist (opt-in)
+
+Set `reth.peerAllowlist.enabled: true` on bootnodes to reconcile an independently
+managed ConfigMap through a Python sidecar and local IPC. The policy may start
+empty and change at runtime without upgrading or restarting bootnode releases.
+Multiple releases in the same namespace share `peerAllowlist.configMapName`.
+The controller script is packaged in the chart and runs in the configurable
+`peerAllowlist.image` Python runtime; no custom image build is required.
+
+Discovery and peer persistence are disabled, with `--trusted-only`
+active from startup. Keep the configured sequencer enodes in `reth.trustedPeers`:
+their outbound connections and the configured outbound limit are preserved.
+The sidecar protects those IDs from runtime-policy removals. The shared policy
+authorizes additional peers. Remove `admin` from HTTP/WS API lists; the sidecar
+uses IPC.
+
+See [the setup, update and recovery guide](../../examples/reth-peer-allowlist.md)
+and [the bootnode overlay](../../examples/values/l2-reth-bootnode-allowlist.yaml).
+Disabling discovery does not guarantee that Reth will never dial another
+already-known trusted peer; the guide describes that distinction.
 
 ### Activation checklist
 
