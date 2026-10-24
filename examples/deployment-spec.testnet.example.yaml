@@ -8,9 +8,9 @@
 version: "1.0"
 
 metadata:
-  name: dogeos-testnet
+  name: example-testnet
   environment: testnet
-  description: "beta.8 / rc.9 preparation with production Bridge initialization"
+  description: "beta.8 / rc.10 preparation with production Bridge initialization"
 
 # Pin the shared-ALB templates and minimal existing-NLB chart interface.
 # Fetch this commit into --sdk-dir before planning; see deployment-spec.md.

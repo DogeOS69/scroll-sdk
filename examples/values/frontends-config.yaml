@@ -64,4 +64,6 @@ scrollConfig: |
   REACT_APP_L1_BATCH_BRIDGE_GATEWAY_PROXY_ADDR = ""
   REACT_APP_EXTERNAL_DOCS_URI = "https://docs.dogeos.com/en/home"
   REACT_APP_FAUCET_URI = "https://faucet.scrollsdk"
+  # Required Dogecoin L1 network: exactly mainnet, testnet or regtest. No default.
+  # This selects the L1 network independently of the L2 chain ID.
   REACT_APP_DOGE_NETWORK = "testnet"
