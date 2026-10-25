@@ -46,8 +46,6 @@ reth:
   logFormat: log-fmt
   verbosity: 3
   extraArgs:
-    - "--network.legacy-geth-header-transform"
-    - "true"
     # Explicit local sequencer policy: cap L1 messages included per L2 block.
     # If omitted, uses chain config numL1MessagesPerBlock (10 in bundled
     # DogeOS/Chikyu configs). This is not a network-wide block validity rule.

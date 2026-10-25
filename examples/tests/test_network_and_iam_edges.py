@@ -66,6 +66,41 @@ class ProductionNetworkTests(unittest.TestCase):
         self.assertNotIn(rules[1]['from'][0], rules[0]['from'])
         self.assertFalse(any(doc['kind'] == 'Ingress' for doc in docs))
 
+    def test_cross_namespace_monitoring_keeps_selectors_in_one_peer(self):
+        peer = {
+            'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': 'monitoring'}},
+            'podSelector': {'matchLabels': {'app.kubernetes.io/name': 'prometheus'}},
+        }
+        for service, config in [('tso-service', self.tso()),
+                                ('withdrawal-processor', values('withdrawal-processor'))]:
+            with self.subTest(service=service):
+                config['networkPolicy']['allowFrom']['monitoring'] = [peer]
+                policy = next(doc for doc in render(service, config) if doc['kind'] == 'NetworkPolicy')
+                self.assertIn(peer, policy['spec']['ingress'][0]['from'])
+                self.assertNotIn({'namespaceSelector': peer['namespaceSelector']}, policy['spec']['ingress'][0]['from'])
+
+    def test_capacity_manager_gets_only_proof_work_access(self):
+        config = values('withdrawal-processor')
+        peer = {'podSelector': {'matchLabels': {'app.kubernetes.io/name': 'capacity-manager'}}}
+        config['networkPolicy']['allowFrom']['capacityManager'] = [peer]
+        policy = next(doc for doc in render('withdrawal-processor', config) if doc['kind'] == 'NetworkPolicy')
+        rules = policy['spec']['ingress']
+        self.assertNotIn(peer, rules[0]['from'])
+        self.assertIn(peer, rules[1]['from'])
+        self.assertEqual(rules[1]['ports'], [{'port': 9300, 'protocol': 'TCP'}])
+
+    def test_production_reth_defaults_preserve_rotation_without_legacy_transform(self):
+        for role in ['sequencer', 'rpc', 'rpc-public', 'bootnode']:
+            with self.subTest(role=role):
+                config = values(f'l2-reth-{role}')
+                args = config['reth']['extraArgs']
+                self.assertFalse(any(arg.startswith('--network.legacy-geth-header-transform') for arg in args))
+                self.assertFalse(any(arg.startswith('--consensus.authorized-signer') for arg in args))
+                self.assertEqual(args.count('--consensus.exit-on-signer-rotation'), 0 if role == 'sequencer' else 1)
+                self.assertTrue(config['reth']['l1Url'])
+                self.assertEqual(config.get('controller', {}).get('type', 'statefulset'), 'statefulset')
+                self.assertEqual(config.get('controller', {}).get('restartPolicy') or 'Always', 'Always')
+
     def test_helm_rejects_unresolved_edge_or_unrestricted_peers(self):
         configs = [values('tso-service')]
         for peer in [{}, {'podSelector': {}}, {'namespaceSelector': {}}, {'ipBlock': {'cidr': '0.0.0.0/0'}}, {'ipBlock': {'cidr': '::/0'}}]:
