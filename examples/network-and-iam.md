@@ -58,7 +58,7 @@ unrestricted inputs when NetworkPolicy is enabled.
 | --- | --- | --- |
 | TSO API | WP, CubeSigner signer, ALB subnets, selected monitoring/operator pods | 3000 |
 | WP API | TSO, selected monitoring/operator pods | 3000 |
-| WP proof-work | Proof Coordinator | 9300 |
+| WP proof-work | Proof Coordinator, Capacity Manager when selected | 9300 |
 
 Replace `tso-service.networkPolicy.allowFrom.edge` with the CIDRs of the
 subnets actually selected for its ALB. Prefer explicit
@@ -94,7 +94,8 @@ Before launch, enable NetworkPolicy enforcement in the cluster CNI and verify:
 
 1. An ordinary pod with no allowed labels cannot reach TSO:3000 or WP:3000/9300.
 2. WP reaches TSO, TSO reaches WP, CubeSigner reaches TSO, and Coordinator
-   reaches WP:9300. Monitoring targets remain up.
+   and the selected Capacity Manager reach WP:9300. Prometheus continues scraping
+   both services; verify its namespace and labels against the monitoring peers.
 3. Public signed signer polling works; `/propose`, `/register-signer`, `/metrics`
    and WP management endpoints are not exposed on public ALBs.
 4. Review every other NetworkPolicy selecting these pods. Kubernetes combines
@@ -102,6 +103,24 @@ Before launch, enable NetworkPolicy enforcement in the cluster CNI and verify:
 
 Helm rendering does not prove CNI enforcement. Kubernetes node/kubelet traffic
 and `kubectl port-forward` are not substitutes for the pod-to-pod denial test.
+Inspect the rendered and installed health probes rather than assuming they are
+disabled. Check Pod readiness and service health after enforcement is enabled.
+Then observe a new withdrawal completing and proof work being claimed. No new
+work during the observation window means those checks remain unverified.
+
+Read the DA submitter status with explicit context, namespace and Pod selection:
+
+```bash
+set -o pipefail
+kubectl --context "$KUBE_CONTEXT" get --raw \
+  "/api/v1/namespaces/$NAMESPACE/pods/$ETH_DA_SUBMITTER_POD:3004/proxy/status" \
+  | jq -e -s 'if length == 1 and (.[0].batches | type) == "object" and .[0].batches.failed == 0 then .[0].batches else error("batches.failed must be 0") end'
+```
+
+Retain the output and observation time in the private deployment handoff.
+A missing field, an inaccessible endpoint or a failed command is not a pass.
+This read-only query does not initiate a withdrawal or prove proof-work progress.
+
 An authorized operator can use port-forward or a narrowly selected toolbox pod
 for rotation administration; no broad public WP ingress is needed.
 

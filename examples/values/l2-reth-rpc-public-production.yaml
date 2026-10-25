@@ -52,8 +52,6 @@ reth:
     - "--consensus.exit-on-signer-rotation"
     - "--gpo.maxprice"
     - "420000000000000"
-    - "--network.legacy-geth-header-transform"
-    - "true"
     - "--rpc.max-trace-filter-blocks"
     - "100"
     - "--rpc.gascap"

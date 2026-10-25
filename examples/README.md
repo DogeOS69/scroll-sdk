@@ -74,6 +74,20 @@ The standalone `dogeos-rpc-package` also enables the flag in
 `scripts/l2reth_entrypoint.sh`; its `l2reth-node` Compose service uses
 `restart: on-failure` to restart after exit code `70`.
 
+### Legacy Geth header compatibility
+
+The generic production examples omit `--network.legacy-geth-header-transform`.
+Do not enable it on mainnet sequencers, RPC nodes, or bootnodes. It is an
+explicit compatibility choice for a testnet that requires historical Geth
+header transformation, not a production default. For such a testnet, add
+`--network.legacy-geth-header-transform` and `"true"` to each affected node's
+`reth.extraArgs` override. Helm replaces the entire list: retain the follower
+rotation flag and any other required arguments when supplying an override.
+
+The CLI reads committed SDK templates at `templates.sdkRevision`. Select a
+revision containing these defaults when generating a new deployment; changing
+a local example does not update an already pinned revision or installed release.
+
 ### Runtime bootnode peer allowlist
 
 See [the runtime peer allowlist guide](reth-peer-allowlist.md) for a shared
