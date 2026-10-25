@@ -1,4 +1,5 @@
 """Render isolated capacity-manager and the WP peer without cluster access."""
+import json
 import pathlib
 import subprocess
 import tempfile
@@ -27,6 +28,62 @@ def render(chart, values):
 
 
 class CapacityManagerTests(unittest.TestCase):
+    def test_initialization_precedes_deployment_and_uses_only_secret_references(self):
+        values = config()
+        values['initialization'] = {'enabled': True, 'provider': 'aws', 'fleets': [
+            {'name': 'test-fleet', 'type': 'fleet', 'nodes': {'min': 0, 'target': 0, 'max': 2}}]}
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = [d for d in yaml.safe_load_all(result.stdout) if d]
+        job = next(d for d in docs if d['kind'] == 'Job')
+        self.assertEqual(job['metadata']['annotations']['helm.sh/hook'], 'pre-install,pre-upgrade')
+        pod = job['spec']['template']['spec']
+        self.assertFalse(pod['automountServiceAccountToken'])
+        self.assertFalse(any(d['kind'] in ('Role', 'RoleBinding', 'ClusterRole', 'Secret') for d in docs))
+        container = pod['containers'][0]
+        self.assertIn('@sha256:', container['image'])
+        env = {e['name']: e for e in container['env']}
+        for key in ('DSTACK_TOKEN', 'WORKER_MASTER', 'WP_TOKEN'):
+            self.assertIn('secretKeyRef', env[key]['valueFrom'])
+            self.assertNotIn('value', env[key])
+        self.assertEqual(json.loads(env['FLEET_INPUT']['value'])['fleets'][0]['nodes'], {'min': 0, 'target': 0, 'max': 2})
+        self.assertLess(container['args'][0].index('preflight.py'), container['args'][0].index('initialize-fleets.py'))
+        scripts = next(d for d in docs if d['kind'] == 'ConfigMap' and 'initialize-fleets.py' in d['data'])
+        self.assertEqual(scripts['metadata']['annotations']['helm.sh/hook-weight'], '-10')
+        self.assertIn('force=False', scripts['data']['initialize-fleets.py'])
+        self.assertEqual(job['spec']['backoffLimit'], 0)
+        # Chart-only legacy/manual use keeps explicit operator-owned fleets.
+        docs = list(yaml.safe_load_all(render('capacity-manager', config()).stdout))
+        self.assertFalse(any(d and d['kind'] == 'Job' for d in docs))
+
+    def test_initialization_rejects_unsafe_or_incomplete_fleets(self):
+        for failure in ('minimum', 'target', 'max', 'name', 'missing', 'duplicate', 'image', 'master'):
+            values = config()
+            fleet = {'name': 'test-fleet', 'type': 'fleet', 'nodes': {'min': 0, 'target': 0, 'max': 2}}
+            init = {'enabled': True, 'provider': 'aws', 'fleets': [fleet]}
+            values['initialization'] = init
+            if failure == 'minimum': fleet['nodes']['min'] = 1
+            if failure == 'target': fleet['nodes']['target'] = 1
+            if failure == 'max': fleet['nodes']['max'] = 0
+            if failure == 'name': fleet['name'] = 'unexpected'
+            if failure == 'missing': init['fleets'] = []
+            if failure == 'duplicate': init['fleets'].append(fleet.copy())
+            if failure == 'image': init['image'] = {'digest': 'latest'}
+            if failure == 'master': values['workerCredentialMaster'] = None
+            self.assertNotEqual(render('capacity-manager', values).returncode, 0, failure)
+
+    def test_initialization_checks_fallback_binary_before_fleet_creation(self):
+        values = config()
+        values['manager']['dstack']['fallbackFleet'] = 'vast-fallback'
+        values['initialization'] = {'enabled': True, 'provider': 'aws', 'fallbackProvider': 'vastai',
+            'fleets': [{'name': name, 'nodes': {'min': 0, 'target': 0, 'max': 2}}
+                       for name in ['test-fleet', 'vast-fallback']]}
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        job = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Job')
+        init = job['spec']['template']['spec']['initContainers'][0]
+        self.assertEqual(init['args'], ['--dstack-fallback-fleet', 'vast-fallback', '--help'])
+
     def test_optional_fallback_fleet_argument(self):
         for fleet in ['', 'vast-fallback']:
             values = config()

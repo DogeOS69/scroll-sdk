@@ -31,6 +31,7 @@ Resolve the primary Service name, including service.main.fullname when set.
 Validate l2-reth role constraints before generating common chart values.
 */}}
 {{- define "l2-reth.validate" -}}
+  {{- include "l2-reth.peerAllowlist.validate" . -}}
   {{- if .Values.reth.chain -}}
     {{- if not (kindIs "string" .Values.reth.chain) -}}
       {{- fail "reth.chain must be a built-in chain name string" -}}
@@ -358,8 +359,11 @@ Generate rollup-node argv without shell interpolation.
 - --trusted-peers
 - {{ . | quote }}
 {{- end }}
-{{- if and (eq .Values.role "rpc") .Values.reth.rpc.trustedOnly }}
+{{- if or .Values.reth.peerAllowlist.enabled (and (eq .Values.role "rpc") .Values.reth.rpc.trustedOnly) }}
 - --trusted-only
+{{- end }}
+{{- if .Values.reth.peerAllowlist.enabled }}
+- --no-persist-peers
 {{- end }}
 {{- if .Values.reth.rpc.maxOutboundPeers }}
 - --max-outbound-peers
@@ -421,7 +425,11 @@ Generate rollup-node argv without shell interpolation.
 - --txpool.disable-transactions-backup
 {{- end }}
 - --ipcpath
+{{- if .Values.reth.peerAllowlist.enabled }}
+- /run/reth-allowlist/reth.ipc
+{{- else }}
 - {{ .Values.reth.ipcPath | quote }}
+{{- end }}
 - --ipc.permissions
 - {{ .Values.reth.ipcPermissions | quote }}
 {{- if .Values.reth.http.enabled }}

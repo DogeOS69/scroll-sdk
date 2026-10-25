@@ -1,10 +1,9 @@
 # Frontend deployment and live Bridge address
 
-The example uses `dogeos69/scroll-sdk-frontends:0.3.0-test.20261011.4`.
+Select a `dogeos69/scroll-sdk-frontends` image supporting dynamic deposit
+destinations, runtime configuration and strict Dogecoin network validation.
 The frontends chart hashes `scrollConfig` into the Pod template, so a Helm upgrade
 that changes runtime configuration recreates Pods and regenerates `runtime-env.js`.
-Use an image containing the dynamic deposit destination implementation; the older
-`0.3.0-rc3` and `3.0.2-beta.1` images do not support this configuration.
 
 The portal discovers the current deposit address through L1 Interface replay.
 It no longer consumes `REACT_APP_DOGE_BRIDGE_ADDRESS`. Withdrawals still use
@@ -19,9 +18,18 @@ The normal preparation flow generates these values:
 | Location | Field | Source |
 | --- | --- | --- |
 | `values/frontends-config.yaml`, `scrollConfig` | `REACT_APP_DEPOSIT_API_PATH` | `/api/deposit`, the image's same-origin proxy path |
+| Same | `REACT_APP_DOGE_NETWORK` | `dogecoin.network`: exactly `mainnet`, `testnet` or `regtest` |
 | Same | `REACT_APP_DOGEOS_PROTOCOL_ID` | Derived from local `.data/protocol_context.json`; checked against its protocol ID sidecar when present |
 | Same | `REACT_APP_DOGEOS_GENESIS_STATE_HASH` | Prepared Bridge proof-materials receipt, cross-checked with the checksum-validated native Bridge manifest |
 | `values/frontends-production.yaml`, `env` | `L1_INTERFACE_UPSTREAM` | `l1-interface:9090`, the internal health/replay HTTP listener |
+
+Configure `REACT_APP_DOGE_NETWORK` explicitly. Missing, empty, `livenet`, uppercase
+or whitespace-padded values fail container startup and browser initialization.
+The value selects the **Dogecoin L1 network**, including withdrawal address
+validation; `REACT_APP_CHAIN_ID_L2` separately identifies DogeOS L2. For a regtest
+deployment, set `REACT_APP_DOGE_NETWORK = "regtest"` in `scrollConfig`. The production command
+loads this ConfigMap into the container environment before invoking the image
+entrypoint. Do not rely on a build-time network or an implicit testnet fallback.
 
 The genesis state hash is the **DogeOS protocol genesis state hash**, not the EVM
 genesis block hash or state root. The CLI verifies local artifact checksums and

@@ -106,3 +106,7 @@ monitoring:
   scrapeTimeout: 10s
   # Limits protect Prometheus against unexpectedly large fleet/job label sets.
   sampleLimit: 50000
+
+# Bind a separately managed private HTTPS endpoint to the controller Service.
+# The chart binds its Service; it does not own the ALB lifecycle.
+targetGroupBinding: null

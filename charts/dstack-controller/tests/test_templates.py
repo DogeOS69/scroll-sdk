@@ -34,6 +34,18 @@ def resource(docs, kind):
 
 
 class ControllerTemplates(unittest.TestCase):
+    def test_prepared_private_endpoint_binding_uses_chart_service_and_rejects_dual_owner(self):
+        binding = {'targetGroupARN': 'arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/example/0000',
+                   'networking': {'ingress': [{'from': [{'securityGroup': {'groupID': 'sg-00000000'}}],
+                                             'ports': [{'port': 3000, 'protocol': 'TCP'}]}]}}
+        docs = resources({'fullnameOverride': 'controller', 'targetGroupBinding': binding})
+        target = resource(docs, 'TargetGroupBinding')
+        self.assertEqual(target['spec']['serviceRef'], {'name': 'controller', 'port': 3000})
+        self.assertEqual(target['spec']['networking'], binding['networking'])
+        self.assertEqual(target['spec']['targetGroupARN'], binding['targetGroupARN'])
+        self.assertEqual(target['spec']['targetType'], 'ip')
+        self.assertNotEqual(render({'targetGroupBinding': binding, 'ingress': {'enabled': True}}).returncode, 0)
+
     def test_default_has_no_provisioning_hooks_gpu_or_cluster_privileges(self):
         docs = resources()
         self.assertEqual({d["kind"] for d in docs}, {

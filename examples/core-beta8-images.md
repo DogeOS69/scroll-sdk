@@ -50,6 +50,6 @@ separate deployment inputs; use the matching reviewed compiler identity.
 This image update does not publish or attach a policy or upgrade a live bridge.
 
 Contracts use the matching `gen-configs-`, `deploy-` and `verify-` variants of
-`dogeos-v0.3.0-rc.9`. Reth, preinstalls and frontends have their own release
+`dogeos-v0.3.0-rc.10`. Reth, preinstalls and frontends have their own release
 versions. Historical release notes and deployment profiles are retained.
 Chart defaults and chart versions are unchanged.

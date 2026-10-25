@@ -125,31 +125,12 @@ class MakefileContextTests(unittest.TestCase):
             '--version', '0.1.2', '--values', 'custom values/dstack.yaml',
         ]])
 
-    def test_capacity_preflight_runs_before_helm_and_failure_stops_installation(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = pathlib.Path(directory)
-            log = root / 'calls'
-            for name in ['scrollsdk', 'helm']:
-                tool = root / name
-                tool.write_text('#!/bin/sh\nprintf "%s\\n" "' + name + ' $*" >> "$CALL_LOG"\n'
-                                + ('exit "$PREFLIGHT_EXIT"\n' if name == 'scrollsdk' else 'exit 0\n'))
-                tool.chmod(0o755)
-            env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'],
-                       CALL_LOG=str(log), PREFLIGHT_EXIT='1')
-            command = ['make', '--no-print-directory', '-f', str(MAKEFILE),
-                       'install-capacity-manager', 'KUBE_CONTEXT=selected', 'NAMESPACE=chain']
-            failed = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
-            self.assertNotEqual(failed.returncode, 0)
-            self.assertEqual(len(log.read_text().splitlines()), 1)
-            self.assertIn('--dir . --kube-context selected --namespace chain', log.read_text())
-            log.unlink()
-            env['PREFLIGHT_EXIT'] = '0'
-            succeeded = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
-            self.assertEqual(succeeded.returncode, 0, succeeded.stderr)
-            calls = log.read_text().splitlines()
-            self.assertEqual(len(calls), 2)
-            self.assertTrue(calls[0].startswith('scrollsdk setup capacity-manager credentials'))
-            self.assertTrue(calls[1].startswith('helm --kube-context selected'))
+    def test_capacity_install_uses_helm_initialization_without_cli_callback(self):
+        commands = self.expanded_commands('selected', 'chain', targets=['install-capacity-manager'])
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][:5], ['helm', '--kube-context', 'selected', 'upgrade', '-i'])
+        self.assertIn('--version=0.1.6', commands[0])
+        self.assertNotIn('scrollsdk', commands[0])
 
     def test_signer_activation_guard_stops_before_helm_and_uses_the_same_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
