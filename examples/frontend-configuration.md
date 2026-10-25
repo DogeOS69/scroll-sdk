@@ -1,9 +1,9 @@
 # Frontend deployment and live Bridge address
 
-The example uses `dogeos69/scroll-sdk-frontends:0.3.0-test.20261011.4`.
+Select a `dogeos69/scroll-sdk-frontends` image supporting dynamic deposit
+destinations, runtime configuration and strict Dogecoin network validation.
 The frontends chart hashes `scrollConfig` into the Pod template, so a Helm upgrade
 that changes runtime configuration recreates Pods and regenerates `runtime-env.js`.
-Use an image supporting dynamic deposit destinations and runtime configuration.
 
 The portal discovers the current deposit address through L1 Interface replay.
 It no longer consumes `REACT_APP_DOGE_BRIDGE_ADDRESS`. Withdrawals still use

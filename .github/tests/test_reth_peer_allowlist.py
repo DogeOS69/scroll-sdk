@@ -322,6 +322,19 @@ class ChartTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires role bootnode", result.stderr)
 
+    def test_shared_chart_preserves_string_metadata_for_yaml_scalar_names(self):
+        for name in ["true", "1234"]:
+            with self.subTest(name=name):
+                result = subprocess.run(
+                    ["helm", "template", name, str(ROOT / "charts/reth-peer-allowlist"),
+                     "--namespace", name, "--set-string", f"configMapName={name}"],
+                    capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                metadata = yaml.safe_load(result.stdout)["metadata"]
+                self.assertEqual(metadata["name"], name)
+                self.assertEqual(metadata["namespace"], name)
+                self.assertEqual(metadata["labels"]["app.kubernetes.io/instance"], name)
+
     def test_shared_chart_changes_only_configmap_for_empty_add_remove(self):
         for peers in [[], [A], [A, B], [B], []]:
             with tempfile.TemporaryDirectory() as directory:
