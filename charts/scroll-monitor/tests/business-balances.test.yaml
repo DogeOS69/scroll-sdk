@@ -471,6 +471,39 @@ tests:
       exp_annotations:
         description: Job app observed 1 attached terminal range(s) in the latest pipeline pass. Inspect current work rather than historical terminal rows.
         summary: The active L2 proof pipeline has terminal ranges.
+- name: wf-lane-unconfirmed-at-limit
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
+    values: 900+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts: []
+- name: wf-lane-unconfirmed-held-then-confirmed
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
+    values: 600+60x15 0+0x10
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts: []
+  - eval_time: 11m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        instance: wp-0
+        service: withdrawal-processor
+        severity: critical
+      exp_annotations:
+        description: The oldest broadcast WF lane transaction in job app has been waiting 21m 0s for a Dogecoin block. Check the transaction in the Dogecoin mempool and Dogecoin block production.
+        summary: A WF lane transaction has been unconfirmed for over 15 minutes.
+  - eval_time: 17m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts: []
 - name: replay-stopped-0
   interval: 1m
   input_series:
