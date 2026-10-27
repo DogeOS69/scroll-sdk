@@ -70,6 +70,17 @@ groups:
     annotations:
       summary: A WF job is waiting too long for signing or replay.
       description: The oldest {{ $labels.action_kind }} job in {{ $labels.status }} has waited {{ $value | humanizeDuration }} in job {{ $labels.job }}. Check TSO callbacks, Dogecoin broadcast, and replay.
+  - alert: WFLaneTransactionUnconfirmed
+    timing: {"maxAgeSeconds": 900}
+    timingAnnotations: {"summary": "A WF lane transaction has been unconfirmed for over __TIME_maxAgeSeconds__ seconds."}
+    expr: max by (namespace, job, instance) (withdrawal_processor_wf_unconfirmed_oldest_age_seconds) > __TIME_maxAgeSeconds__
+    for: 5m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: A WF lane transaction has been unconfirmed for over 15 minutes.
+      description: The oldest broadcast WF lane transaction in job {{ $labels.job }} has been waiting {{ $value | humanizeDuration }} for a Dogecoin block. Check the transaction in the Dogecoin mempool and Dogecoin block production.
   - alert: TSOSignerCommunicationFailures
     timing: {"window": "5m"}
     expr: sum by (namespace, job, event_type) (increase(tso_core_signer_transaction_events_total{event_type=~"response_timeout|dispatch_failed|rejected"}[__TIME_window__])) > 0
