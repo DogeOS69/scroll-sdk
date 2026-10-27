@@ -157,6 +157,7 @@ rules consistent with the associated business rules.
 | `ProofWorkRetryBudgetExhausted` | `5m` | `snapshotMaxAgeSeconds: 120` |
 | `L2ProofRangeTerminal` | `5m` | — |
 | `WFJobStalled` | `5m` | `snapshotMaxAgeSeconds: 120` |
+| `WFLaneTransactionUnconfirmed` | `5m` | `maxAgeSeconds: 900` |
 | `TSOSignerCommunicationFailures` | `5m` | `window: 5m` |
 | `TSOSigningProgressStalled` | `15m` | `window: 15m`, `snapshotMaxAgeSeconds: 120` |
 | `ProtocolReplayStopped` | `2m` | — |
