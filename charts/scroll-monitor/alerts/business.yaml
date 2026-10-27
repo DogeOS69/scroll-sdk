@@ -79,7 +79,7 @@ groups:
       severity: critical
       service: withdrawal-processor
     annotations:
-      summary: A WF lane transaction has been unconfirmed for over 900 seconds.
+      summary: A WF lane transaction has been unconfirmed for over 15 minutes.
       description: The oldest broadcast WF lane transaction in job {{ $labels.job }} has been waiting {{ $value | humanizeDuration }} for a Dogecoin block. Check the transaction in the Dogecoin mempool and Dogecoin block production.
   - alert: TSOSignerCommunicationFailures
     timing: {"window": "5m"}
