@@ -238,7 +238,7 @@ install-frontends:
 # The Portal's history API, routed same-origin under /api/history/v1 on the Portal's host.
 install-dogeos-bridge-history:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i dogeos-bridge-history oci://ghcr.io/dogeos69/scroll-sdk/helm/dogeos-bridge-history -n "$(NAMESPACE)" \
-		--version=0.0.1 \
+		--version=0.0.2 \
 		--values values/dogeos-bridge-history-production.yaml
 
 

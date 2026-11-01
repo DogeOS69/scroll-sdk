@@ -2,10 +2,9 @@
 The service's TOML config, from .Values.config. Helm's toToml writes YAML
 numbers as floats (1.0), which the service's integer fields reject, so this
 renders values itself: strings, booleans, numbers, and lists of those. Tables
-are one level deep, and rendered only when non-empty: l2 and ethereum are
-optional in the service, and an empty table fails its strict parsing. Secrets
-and RPC URLs come from the environment (DOGEOS_BRIDGE_HISTORY_*), not from this
-file.
+are one level deep, and rendered only when non-empty: an empty table fails the
+service's strict parsing. Secrets and private RPC URLs come from the
+environment (DOGEOS_BRIDGE_HISTORY_*), not from this file.
 */}}
 {{- define "dogeos-bridge-history.tomlScalar" -}}
 {{- $key := index . 0 -}}

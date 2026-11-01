@@ -77,8 +77,13 @@ config:
     start_height: 0                                        # <TODO> the DogeOS genesis boundary on Dogecoin
     confirmations: 1                                       # predefined
     poll_interval_ms: 10000                                # predefined
-  l2: {}                                                   # later PRs: rpc_url from the secret env
-  ethereum: {}                                             # later PRs: rpc_url from the secret env
+  l2:
+    rpc_url: "http://l2-rpc:8545"                          # predefined, in-cluster L2 RPC
+    start_block: 0                                         # predefined, as the withdrawal processor's indexer
+    message_queue_address: "0x5300000000000000000000000000000000000000"  # predefined, L2MessageQueue predeploy
+  ethereum:                                                # rpc_url from the secret env
+    start_block: 0                                         # <TODO> the withdrawal processor's inbox worker start block
+    expected_batchers: []                                  # <TODO> ["<eth-da-submitter sender address>"]
 
 env:
   - name: "RUST_LOG"
@@ -104,15 +109,10 @@ externalSecrets:
           key: "dogeos/dogeos-bridge-history-secret-env"
           property: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__PASS"
         secretKey: "DOGEOS_BRIDGE_HISTORY_DOGECOIN_RPC__PASS"
-      # Enable once the service reads them (L2 indexer, Ethereum DA inbox):
-      # - remoteRef:
-      #     key: "dogeos/dogeos-bridge-history-secret-env"
-      #     property: "DOGEOS_BRIDGE_HISTORY_L2__RPC_URL"
-      #   secretKey: "DOGEOS_BRIDGE_HISTORY_L2__RPC_URL"
-      # - remoteRef:
-      #     key: "dogeos/dogeos-bridge-history-secret-env"
-      #     property: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
-      #   secretKey: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
+      - remoteRef:
+          key: "dogeos/dogeos-bridge-history-secret-env"
+          property: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
+        secretKey: "DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL"
     refreshInterval: "2m"
     serviceAccount: "external-secrets"
 
