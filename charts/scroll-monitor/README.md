@@ -840,6 +840,25 @@ Core's `docs/runbooks/recovery-runway-monitor.md` documents metrics, limits and
 response. These rules inherit existing service-alert enable/pause and routing;
 this change configures no receiver or destination.
 
+### Deprecating-key drain
+
+After a key rotation, WF transactions must spend the old key's coins before its
+deprecation point. Two WP rules from dogeos-core's rotation runbook ("Deprecating-key
+drain monitor") watch that drain:
+
+- `DeprecatingKeyDrainBehind` (warning, 5m): coins remain on the deprecating key
+  and fewer than `drainMargin` WF transactions are left per coin.
+- `RetiredKeyCoinsStranded` (critical, 2m): more than `retiredBaseline` coins sit on
+  scripts no WF transaction can spend. It keeps firing after the deprecation point
+  until those coins are spent.
+
+`deprecatingKeyDrainAlerts` sets `drainMargin` (default 2), `retiredBaseline`
+(default 0; raise it only to the triaged count of reconciled refund rows, as the
+runbook describes) and `runbookUrl`. Both rules fire only while the WP's
+`deprecating_key` observation is under 15 minutes old; a failed or stale read is
+reported by `WPProtocolObservationUnavailable`. They inherit the service-alert
+enable/pause and routing.
+
 ## Optional alert timing
 
 Production values can override each alert's pending period, query window and

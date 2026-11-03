@@ -1,0 +1,27 @@
+# Rules from dogeos-core's rotation runbook, "Deprecating-key drain monitor"
+# (core #1710, AuditHub 10199). Both gate on a deprecating_key observation under
+# 15 minutes old; WPProtocolObservationUnavailable covers a failed or stale read.
+groups:
+- name: dogeos.services.deprecating-key-drain
+  interval: 1m
+  rules:
+  - alert: DeprecatingKeyDrainBehind
+    expr: (withdrawal_processor_protocol_deprecating_key_unspent_utxos > 0 and withdrawal_processor_protocol_deprecating_key_remaining_wf_txs > 0 and withdrawal_processor_protocol_deprecating_key_remaining_wf_txs < __DRAIN_MARGIN__ * withdrawal_processor_protocol_deprecating_key_unspent_utxos) and on(namespace,job,instance) (time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{source="deprecating_key"} < 900)
+    for: 5m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Deprecating-key coins may not drain before the deprecation point.
+      description: '{{ $value | printf "%.0f" }} coins remain on the deprecating key, with fewer than __DRAIN_MARGIN__ WF transactions left per coin before its deprecation point. Check that the count falls with each WF transaction and that the old attestors are up and registered.'
+      runbook_url: __ROTATION_RUNBOOK__
+  - alert: RetiredKeyCoinsStranded
+    expr: (withdrawal_processor_protocol_retired_key_unspent_utxos > __RETIRED_BASELINE__) and on(namespace,job,instance) (time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{source="deprecating_key"} < 900)
+    for: 2m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Bridge coins are left on a key no WF transaction can spend.
+      description: '{{ $value | printf "%.0f" }} coins remain on retired bridge scripts. They fall to the recovery quorum after the old timelock. List the counted rows and triage them per the runbook.'
+      runbook_url: __ROTATION_RUNBOOK__

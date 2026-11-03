@@ -101,8 +101,8 @@ persistence:
 
 # Rendered to /app/conf/config.toml. Every key can also be set through a
 # DOGEOS_BRIDGE_HISTORY_<KEY> environment variable, nested keys joined with "__".
-# The Dogecoin RPC URL and credentials, and the L2 and Ethereum RPC URLs, come
-# from the secret env (see envFrom and externalSecrets), not from here.
+# The Dogecoin RPC URL and credentials, and the Ethereum RPC URL, come from the
+# secret env (see envFrom and externalSecrets), not from here.
 config:
   network: "testnet"
   database_path: "/data/index.sqlite"
@@ -116,9 +116,21 @@ config:
     start_height: 0
     confirmations: 1
     poll_interval_ms: 10000
-  # Read by later parts of the service. Rendered only when set.
-  l2: {}
-  ethereum: {}
+  # The L2 withdrawal indexer. Without it the history stops at the first WF tx
+  # that pays a withdrawal, and /health never turns ready.
+  l2:
+    rpc_url: "http://l2-rpc:8545"
+    # The L2 block the indexer starts from, as the withdrawal processor's.
+    start_block: 0
+    # The L2MessageQueue predeploy.
+    message_queue_address: "0x5300000000000000000000000000000000000000"
+  # The Ethereum DA inbox. rpc_url comes from the secret env.
+  ethereum:
+    # The withdrawal processor's inbox worker start block.
+    start_block: 0
+    # The eth-da-submitter's sender address. Required: the service refuses an
+    # empty list.
+    expected_batchers: []
 
 env:
   - name: "RUST_LOG"

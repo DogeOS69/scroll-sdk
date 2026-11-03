@@ -13,8 +13,10 @@ The DogeOS bridge history service: the read API at `/api/history/v1` behind the 
 
 ## Configuration
 
-- `config` is rendered to `/app/conf/config.toml`. The `l2` and `ethereum` tables are rendered only when they're set.
-- Every key can be overridden with a `DOGEOS_BRIDGE_HISTORY_<KEY>` environment variable, with nested keys joined by `__`. The Dogecoin RPC URL and credentials come from the `dogeos-bridge-history-secret-env` secret (see `externalSecrets` in `values/production.yaml`), as do the later L2 and Ethereum RPC URLs.
+- `config` is rendered to `/app/conf/config.toml`. A table is rendered only when it's set.
+- Every key can be overridden with a `DOGEOS_BRIDGE_HISTORY_<KEY>` environment variable, with nested keys joined by `__`. The Dogecoin RPC URL and credentials, and the Ethereum RPC URL (`DOGEOS_BRIDGE_HISTORY_ETHEREUM__RPC_URL`), come from the `dogeos-bridge-history-secret-env` secret (see `externalSecrets` in `values/production.yaml`).
+- `ethereum` is required. Set `start_block` to the withdrawal processor's inbox worker start block and `expected_batchers` to the eth-da-submitter's sender address; the service refuses an empty list.
+- `l2` points at the in-cluster L2 RPC. Without it the history stops at the first WF tx that pays a withdrawal and `/health` never turns ready.
 - The L2 `genesis.json` and the network's `protocol_context.json` come from the shared `genesis-config` and `protocol-context-config` ConfigMaps that `scroll-common` owns. They're mounted as single files with `subPath`, declared in production values as for the other services (see `docs/production-values.md`). A change to either needs a rollout restart.
 
 ## Ingress

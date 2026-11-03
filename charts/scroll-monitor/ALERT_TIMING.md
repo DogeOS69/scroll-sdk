@@ -270,6 +270,15 @@ rules consistent with the associated business rules.
 | `CubeSignerPolicyEvaluationMissing` | `10m` | `window: 10m` |
 | `CubeSignerSigningSlow` | `5m` | `window: 10m`, `latencySeconds: 30` |
 
+### `dogeos.services.deprecating-key-drain` (default evaluation interval `1m`)
+
+Thresholds come from `deprecatingKeyDrainAlerts` (`drainMargin`, `retiredBaseline`), not timing parameters.
+
+| Alert | Default `for` | Optional query parameters and defaults |
+| --- | --- | --- |
+| `DeprecatingKeyDrainBehind` | `5m` | — |
+| `RetiredKeyCoinsStranded` | `2m` | — |
+
 ### `dogeos.services.eth-da-submitter` (default evaluation interval `1m`)
 
 | Alert | Default `for` | Optional query parameters and defaults |
