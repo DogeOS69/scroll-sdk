@@ -402,6 +402,15 @@ recoveryRunwayAlerts:
   criticalBlocks: 86400
   runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/e6fd059636ffe515c81dda32d02d344861033f28/docs/runbooks/recovery-runway-monitor.md
 
+# Deprecating-key drain rules (dogeos-core rotation runbook). drainMargin: warn when
+# fewer than this many WF transactions remain per old-key coin. retiredBaseline:
+# retired-key coins tolerated before the critical fires; raise it only to the
+# triaged count of reconciled refund rows, as the runbook describes.
+deprecatingKeyDrainAlerts:
+  drainMargin: 2
+  retiredBaseline: 0
+  runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/f63456684e2ee9e51e1cd41a8d331d77cab40cc4/docs/runbooks/rotation-and-recovery-operations.md#deprecating-key-drain-monitor
+
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
   # Generator: match the actual Prometheus job names; no confirmation input needed.
