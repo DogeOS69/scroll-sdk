@@ -96,7 +96,11 @@
 {{- if or (le (int $runway.criticalBlocks) 0) (le (int $runway.warningBlocks) (int $runway.criticalBlocks)) (ge (int $runway.warningBlocks) 500000000) -}}
 {{- fail "recoveryRunwayAlerts requires 0 < criticalBlocks < warningBlocks < 500000000" -}}
 {{- end -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | fromYaml).groups -}}
+{{- $drain := $.Values.deprecatingKeyDrainAlerts -}}
+{{- if or (le (int $drain.drainMargin) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
+{{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
+{{- end -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}
