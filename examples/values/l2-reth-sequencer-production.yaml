@@ -51,6 +51,11 @@ reth:
     # DogeOS/Chikyu configs). This is not a network-wide block validity rule.
     - "--sequencer.max-l1-messages"
     - "10"
+    # RPC requests must not build a pending block from the pool: that runs on
+    # the blocking pool without a permit (DogeOS69/reth #17). "pending" nonces
+    # still come from the pool; "pending" state reads fall back to latest.
+    - "--rpc.pending-block"
+    - "none"
     # Optional code-witness overrides; omission enables the defaults below.
     # The chart does not inject these flags; uncomment to override node defaults.
     # All three values must be nonzero. Use a rollup-node image supporting them.

@@ -46,6 +46,11 @@ reth:
   verbosity: 3
   extraArgs:
     - "--consensus.exit-on-signer-rotation"
+    # RPC requests must not build a pending block from the pool: that runs on
+    # the blocking pool without a permit (DogeOS69/reth #17). "pending" nonces
+    # still come from the pool; "pending" state reads fall back to latest.
+    - "--rpc.pending-block"
+    - "none"
 
   ports:
     http: 8545
