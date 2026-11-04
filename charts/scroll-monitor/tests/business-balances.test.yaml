@@ -476,6 +476,12 @@ tests:
   input_series:
   - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
     values: 900+0x20
+  - series: up{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1+0x20
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 1+0x20
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 0+60x20
   alert_rule_test:
   - eval_time: 15m
     alertname: WFLaneTransactionUnconfirmed
@@ -485,6 +491,12 @@ tests:
   input_series:
   - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
     values: 600+60x15 0+0x10
+  - series: up{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1+0x26
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 1+0x26
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 0+60x26
   alert_rule_test:
   - eval_time: 10m
     alertname: WFLaneTransactionUnconfirmed
@@ -502,6 +514,61 @@ tests:
         description: The oldest broadcast WF lane transaction in job app has been waiting 21m 0s for a Dogecoin block. Check the transaction in the Dogecoin mempool and Dogecoin block production.
         summary: A WF lane transaction has been unconfirmed for over 15 minutes.
   - eval_time: 17m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts: []
+- name: wf-lane-unconfirmed-invalid-snapshot
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1500+0x30
+  - series: up{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1+0x30
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 1+0x10 0+0x20
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 0+60x10 600+0x20
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        instance: wp-0
+        service: withdrawal-processor
+        severity: critical
+      exp_annotations:
+        description: The oldest broadcast WF lane transaction in job app has been waiting 25m 0s for a Dogecoin block. Check the transaction in the Dogecoin mempool and Dogecoin block production.
+        summary: A WF lane transaction has been unconfirmed for over 15 minutes.
+  - eval_time: 12m
+    alertname: WFLaneTransactionUnconfirmed
+    exp_alerts: []
+  - eval_time: 17m
+    alertname: WPProtocolObservationUnavailable
+    exp_alerts:
+    - exp_labels:
+        namespace: monitoring
+        job: app
+        instance: wp-0
+        source: wf_unconfirmed
+        service: withdrawal-processor
+        severity: warning
+      exp_annotations:
+        description: Snapshot source wf_unconfirmed on wp-0 is invalid, stale, or cannot be scraped. Check the withdrawal-processor metrics target and database access. Retained values do not establish current health or recovery.
+        summary: Withdrawal processor protocol observation is unavailable.
+- name: wf-lane-unconfirmed-frozen-snapshot
+  interval: 1m
+  input_series:
+  - series: withdrawal_processor_wf_unconfirmed_oldest_age_seconds{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1500+0x20
+  - series: up{namespace="monitoring",job="app",instance="wp-0"}
+    values: 1+0x20
+  - series: withdrawal_processor_protocol_snapshot_valid{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 1+0x20
+  - series: withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace="monitoring",job="app",instance="wp-0",source="wf_unconfirmed"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 10m
     alertname: WFLaneTransactionUnconfirmed
     exp_alerts: []
 - name: replay-stopped-0

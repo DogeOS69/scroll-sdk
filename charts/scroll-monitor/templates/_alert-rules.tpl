@@ -122,7 +122,7 @@
 {{- $guards := dict -}}
 {{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
 {{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
-{{- range $source := list "jobs" "job_head" "proof_work" -}}
+{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" -}}
 {{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
 {{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}

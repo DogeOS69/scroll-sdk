@@ -346,9 +346,13 @@ operator overrides, including pause state and notification settings.
 `withdrawal_processor_wf_unconfirmed_oldest_age_seconds`: the age of the oldest
 broadcast WF lane transaction that is not yet in a Dogecoin block, or 0 when
 there is none. It fires when that age stays above 900 seconds (about 15 blocks)
-for another 5 minutes. The gauge has no snapshot guard; it keeps its last value
-if the withdrawal processor cannot read it. A withdrawal processor build that
-does not export it leaves the rule silent.
+for another 5 minutes. Like the other withdrawal-processor age rules, it requires
+a valid snapshot source `wf_unconfirmed` no older than 120 seconds from a scraped
+target. When the withdrawal processor cannot read its ledger or the Dogecoin
+mempool, the gauge keeps its last value and the source becomes invalid: this rule
+stays silent and `WPProtocolObservationUnavailable` reports the unavailable
+observation instead. A withdrawal processor build that does not export the
+`wf_unconfirmed` source leaves the rule silent.
 
 `TSONoRegisteredSigners` and `FeeOracleStale` require an observed signer count
 or computation timestamp. Missing metrics instead trigger the warning rules

@@ -73,7 +73,7 @@ groups:
   - alert: WFLaneTransactionUnconfirmed
     timing: {"maxAgeSeconds": 900}
     timingAnnotations: {"summary": "A WF lane transaction has been unconfirmed for over __TIME_maxAgeSeconds__ seconds."}
-    expr: max by (namespace, job, instance) (withdrawal_processor_wf_unconfirmed_oldest_age_seconds) > __TIME_maxAgeSeconds__
+    expr: max by (namespace, job, instance) (withdrawal_processor_wf_unconfirmed_oldest_age_seconds and on (namespace, job, instance) __WP_WF_UNCONFIRMED_VALID__) > __TIME_maxAgeSeconds__
     for: 5m
     labels:
       severity: critical
