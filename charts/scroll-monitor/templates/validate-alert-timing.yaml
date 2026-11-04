@@ -13,7 +13,7 @@
 {{- $_ := set $groups $group.name true -}}
 {{- range $rule := $group.rules -}}
 {{- $parameters := $rule.timing | default dict -}}
-{{- if regexMatch "__(TSO_(REGISTRY|STATUS)|WP_(JOBS|JOB_HEAD|PROOF_WORK))_VALID__" $rule.expr -}}
+{{- if regexMatch "__(TSO_(REGISTRY|STATUS)|WP_(JOBS|JOB_HEAD|PROOF_WORK|WF_UNCONFIRMED))_VALID__" $rule.expr -}}
 {{- $_ := set $parameters "snapshotMaxAgeSeconds" 120 -}}
 {{- end -}}
 {{- $_ := set $parameters "for" "0s" -}}

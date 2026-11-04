@@ -342,6 +342,18 @@ alert disappearing because its observation became unavailable does not establish
 recovery. Exact shipped Grafana expressions are migrated while preserving
 operator overrides, including pause state and notification settings.
 
+`WFLaneTransactionUnconfirmed` uses
+`withdrawal_processor_wf_unconfirmed_oldest_age_seconds`: the age of the oldest
+broadcast WF lane transaction that is not yet in a Dogecoin block, or 0 when
+there is none. It fires when that age stays above 900 seconds (about 15 blocks)
+for another 5 minutes. Like the other withdrawal-processor age rules, it requires
+a valid snapshot source `wf_unconfirmed` no older than 120 seconds from a scraped
+target. When the withdrawal processor cannot read its ledger or the Dogecoin
+mempool, the gauge keeps its last value and the source becomes invalid: this rule
+stays silent and `WPProtocolObservationUnavailable` reports the unavailable
+observation instead. A withdrawal processor build that does not export the
+`wf_unconfirmed` source leaves the rule silent.
+
 `TSONoRegisteredSigners` and `FeeOracleStale` require an observed signer count
 or computation timestamp. Missing metrics instead trigger the warning rules
 `TSOSignerMetricMissing` and `FeeOracleMetricMissing` after five minutes. This
