@@ -528,12 +528,15 @@ kube-prometheus-stack:
         cpu: 200m
         memory: 256Mi
   prometheus-node-exporter:
+    # Collectors run in short bursts on every scrape; a 200m limit left the
+    # exporter throttled in more than a quarter of its scheduling periods and kept
+    # ContainerCPUThrottlingHigh firing. Upstream ships no CPU limit at all.
     resources:
       requests:
         cpu: 50m
         memory: 64Mi
       limits:
-        cpu: 200m
+        cpu: 500m
         memory: 128Mi
   kube-state-metrics:
     resources:

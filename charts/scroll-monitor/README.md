@@ -58,6 +58,23 @@ short concurrent query bursts even when average usage is low. Sizing changes do
 not require regenerating status-page bindings. Resource changes
 recreate the single delivery Pod; its existing PVC retains the delivery journal.
 
+The delivery journal (`delivery.sqlite3` on the `<release>-status-delivery` PVC)
+is the only record of the incidents this chart has opened on Instatus. The
+evaluator sends `resolved` only for an incident recorded as active in its own
+journal; it has no Instatus management API access and cannot discover incidents
+opened by another instance. Deleting the PVC, or changing `statusPage.environment`,
+`chainId` or the page binding (the evaluator refuses to reuse a journal bound to a
+different identity, so the PVC has to be recreated), therefore orphans every
+incident that is still open: the new instance reports every component
+`operational` while the public page keeps showing the old disruption. Before a
+cutover or a planned PVC rebuild, place the components in a maintenance window so
+the retiring instance opens nothing; after the rebuild, resolve the previous
+instance's open incidents by hand in the Instatus dashboard (Incidents > Add an
+update > Resolved, components back to Operational). Automatic reconciliation is
+deliberately not attempted: a blind `resolved` would also close incidents a human
+opened on purpose, and after an identity change the alert fingerprint no longer
+matches the old incidents anyway.
+
 ## Dashboard and alert assets
 
 Dashboard ConfigMaps are controlled by `dashboards.bundled.enabled` and are
