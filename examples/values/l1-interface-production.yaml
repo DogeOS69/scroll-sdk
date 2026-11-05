@@ -112,7 +112,6 @@ configMaps:
       DOGEOS_L1_INTERFACE_REPLAY_READ__SQLITE_PATH: /data/replay.sqlite
       # Host replay compatibility policy. 0 means every P2PKH withdrawal uses
       # the versioned recipient envelope; P2SH is always versioned.
-      DOGEOS_L1_INTERFACE_REPLAY_READ__P2PKH_VERSIONED_ENVELOPE_START_WITHDRAW_INDEX: "0"
       DOGEOS_L1_INTERFACE_REPLAY_READ__MAINTAINER_ENABLED: "true"
       # Intentionally require full validation despite Core's false default.
       DOGEOS_L1_INTERFACE_REPLAY_READ__REQUIRE_FULL_VALIDATION: "true"
