@@ -1,9 +1,9 @@
 image:
   repository: dogeos69/scroll-sdk-frontends
   pullPolicy: IfNotPresent
-  # Replace with a published Activity-enabled image (scroll-sdk-frontends #16).
+  # Activity-enabled image (scroll-sdk-frontends #16, tag v0.3.0-rc5).
   # Older images read REACT_APP_BRIDGE_API_URI and cannot use the history config.
-  tag: "TODO_ACTIVITY_TAG_TO_REPLACE"
+  tag: "0.3.0-rc5"
 
 # Container-only proxy upstream; never an Ethereum RPC or public browser URL.
 env:
