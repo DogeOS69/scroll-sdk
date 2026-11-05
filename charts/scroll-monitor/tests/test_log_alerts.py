@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+from test_alert_timing import render_values
 from test_monitoring_templates import grafana_rules, render
 
 
@@ -136,7 +137,8 @@ analytics:
                     "values": [[str(timestamp), line]]}
                    for case, service, line, _ in CASES]
         self.api("/loki/api/v1/push", {"streams": streams})
-        rules = grafana_rules(render())
+        # One line per case: exercises line classification, not the rate threshold.
+        rules = grafana_rules(render("--set", "alertTiming.rules.ServiceErrorLogs.minLines=1"))
         severe_cases = {"fatal", "panic_level", "rust_panic", "rust_panic_old", "go_panic", "plain_fatal", "mixed_severity", "logfmt_mixed_level", "logfmt_mixed_severity"}
         seen = set()
         for name, severity in (("ServiceErrorLogs", "warning"), ("ServicePanicOrFatalLogs", "critical")):
@@ -157,6 +159,36 @@ analytics:
                                time=str(timestamp + 360_000_000_000))
             self.assertEqual(expired["data"]["result"], [])
 
+    def counts(self, rule, pods):
+        result = self.api("/loki/api/v1/query", query=rule["expr"])
+        found = {entry["metric"]["pod"]: int(float(entry["value"][1])) for entry in result["data"]["result"]}
+        return {pod: found.get(pod, 0) for pod in pods}
+
+    def push(self, service, pod, lines):
+        timestamp = time.time_ns() - 10_000_000_000
+        self.api("/loki/api/v1/push", {"streams": [{
+            "stream": {"namespace": "monitoring", "service": service, "pod": pod, "container": service},
+            "values": [[str(timestamp + index), line] for index, line in enumerate(lines)]}]})
+
+    def test_default_rate_threshold_ignores_a_few_lines(self):
+        self.push("rate-service", "rate-below", ["ERROR failed"] * 4)
+        self.push("rate-service", "rate-at", ["ERROR failed"] * 5)
+        rule = grafana_rules(render())["ServiceErrorLogs"]
+        self.assertEqual(rule["for"], "5m")
+        self.assertEqual(self.counts(rule, ["rate-below", "rate-at"]), {"rate-below": 0, "rate-at": 5})
+
+    def test_exclusions_apply_only_to_the_named_service(self):
+        benign = 'ERROR known benign message code=-5'
+        other = 'ERROR something else failed'
+        self.push("exclude-a", "exclude-a-benign", [benign] * 2)
+        self.push("exclude-a", "exclude-a-other", [other] * 2)
+        self.push("exclude-b", "exclude-b-benign", [benign] * 2)
+        rules = grafana_rules(render_values({"alertTiming": {"rules": {"ServiceErrorLogs": {"minLines": 1}}},
+                                             "logAlerts": {"excludePatterns": {"exclude-a": ['known benign message code=-5', "never-matches"]}}}))
+        pods = ["exclude-a-benign", "exclude-a-other", "exclude-b-benign"]
+        self.assertEqual(self.counts(rules["ServiceErrorLogs"], pods),
+                         {"exclude-a-benign": 0, "exclude-a-other": 2, "exclude-b-benign": 2})
+        self.assertNotIn("alert_excluded", rules["ServicePanicOrFatalLogs"]["expr"])
 
 
 if __name__ == "__main__":

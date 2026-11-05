@@ -549,7 +549,12 @@ stalled progress; existing readiness/up alerts cover service availability.
 **every service** whose logs reach Loki in the Alloy namespace allowlist
 (`alloy.logs.namespaces`, defaulting to the release namespace), except the retired
 `rollup-explorer-backend`. Every minute they count matching lines over the last
-5 minutes. One matching line fires with no pending period. JSON `level`/`severity`
+5 minutes. `ServicePanicOrFatalLogs` fires on one line with no pending period.
+`ServiceErrorLogs` needs at least `minLines` (default 5) in the window, held for
+`for` (default `5m`), so isolated errors do not page; set
+`alertTiming.rules.ServiceErrorLogs` to `{for: 0s, minLines: 1}` for the old behavior.
+`logAlerts.excludePatterns` mutes known-benign lines per service for the error rule
+only. Patterns are Go RE2 expressions without backticks. JSON `level`/`severity`
 and logfmt level fields distinguish ordinary errors from fatal/panic events;
 plain error/fatal prefixes and Go/Rust panic headers are also recognized.
 A fatal/panic line is excluded from the ordinary ERROR rule, including conflicting

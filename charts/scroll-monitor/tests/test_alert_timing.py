@@ -48,7 +48,7 @@ class AlertTimingTests(unittest.TestCase):
         for name, rule in catalog().items():
             params = copy.deepcopy(rule.get("timing", {}))
             for key, value in params.items():
-                params[key] = value * 2 if key.endswith("Seconds") else str(int(value[:-1]) * 2) + value[-1]
+                params[key] = value * 2 if key.endswith("Seconds") or key == "minLines" else str(int(value[:-1]) * 2) + value[-1]
             if re.search(r"__(TSO_(REGISTRY|STATUS)|WP_(JOBS|JOB_HEAD|PROOF_WORK))_VALID__", rule["expr"]):
                 params["snapshotMaxAgeSeconds"] = 240
             overrides[name] = {**params, "for": "7m"}

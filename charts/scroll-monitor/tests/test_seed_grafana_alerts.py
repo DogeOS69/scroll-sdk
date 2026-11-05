@@ -212,6 +212,27 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(rule["data"][0]["model"]["queryType"], "instant")
         self.assertEqual(rule["for"], "0s")
 
+    def test_previously_shipped_error_log_rule_moves_to_the_sustained_rate(self):
+        sources = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"]
+        self.config["lokiDatasourceUID"] = "loki"
+        self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
+        shipped = SEED.alert_rule({**sources[0], "expr": sources[0]["previousExpr"][-1], "for": "0s"}, self.config, "dogeos.logs")
+        self.client.group = {"interval": 60, "rules": [shipped]}
+        SEED.seed(self.client, self.config)
+        migrated = self.client.group["rules"][0]
+        self.assertEqual(migrated["for"], "5m")
+        self.assertEqual(migrated["data"][0]["model"]["expr"], sources[0]["expr"])
+
+    def test_operator_edited_error_log_rule_keeps_its_query(self):
+        sources = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"]
+        self.config["lokiDatasourceUID"] = "loki"
+        self.config["groups"] = [{"name": "dogeos.logs", "rules": sources}]
+        edited = SEED.alert_rule({**sources[0], "expr": "sum(count_over_time({namespace=\"edited\"}[5m])) > 0", "for": "0s"}, self.config, "dogeos.logs")
+        edited["annotations"].pop(SEED.BASELINE, None)
+        self.client.group = {"interval": 60, "rules": [edited]}
+        SEED.seed(self.client, self.config)
+        self.assertEqual(self.client.group["rules"][0]["data"][0]["model"]["expr"], edited["data"][0]["model"]["expr"])
+
     def test_split_log_upgrade_reuses_legacy_uid_and_is_idempotent(self):
         sources = render_source_groups(SCRIPT.parents[1] / "alerts/logs.yaml")["groups"][0]["rules"]
         self.config["lokiDatasourceUID"] = "loki"

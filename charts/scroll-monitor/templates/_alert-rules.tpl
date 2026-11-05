@@ -1,3 +1,20 @@
+{{/* A regexp stage labels a matching line, so one pipeline can drop it for one service only. */}}
+{{- define "scroll-monitor.logErrorExcludes" -}}
+{{- $index := 0 -}}
+{{- range $service := keys .Values.logAlerts.excludePatterns | sortAlpha -}}
+{{- if not (regexMatch "^[A-Za-z0-9][A-Za-z0-9._-]*$" $service) -}}
+{{- fail (printf "logAlerts.excludePatterns service name %q is invalid" $service) -}}
+{{- end -}}
+{{- range $pattern := index $.Values.logAlerts.excludePatterns $service -}}
+{{- if or (not (kindIs "string" $pattern)) (not $pattern) (contains "`" $pattern) -}}
+{{- fail (printf "logAlerts.excludePatterns.%s must list nonempty strings without backticks" $service) -}}
+{{- end -}}
+{{- printf "\n          | regexp `(?P<alert_excluded_%d>%s)`\n          | service!=%q or alert_excluded_%d=\"\"" $index $pattern $service $index -}}
+{{- $index = add1 $index -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Explicit overrides are authoritative, including for existing Grafana rules. */}}
 {{- define "scroll-monitor.pauseRules" -}}
 {{- $pauses := dict -}}
