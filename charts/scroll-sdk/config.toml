@@ -86,11 +86,11 @@ RELAY_MESSAGE_DEADLINE_SEC = 21_600
 
 [frontend]
 
-EXTERNAL_RPC_URI_L1 = "https://sochain.com/DOGETEST"
+EXTERNAL_RPC_URI_L1 = "https://sochain.com/dogetest"
 EXTERNAL_RPC_URI_L2 = "http://rpc.scrollsdk"
 BRIDGE_API_URI = "http://bridge-history-api.scrollsdk/api"
 ROLLUPSCAN_API_URI = "http://rollup-explorer-backend.scrollsdk/api"
-EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
+EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/dogetest"
 EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
 ADMIN_SYSTEM_DASHBOARD_URI = "http://admin-system-dashboard.scrollsdk"
 GRAFANA_URI = "http://grafana.scrollsdk"

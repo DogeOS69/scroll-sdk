@@ -37,9 +37,9 @@ BLOCKSCOUT_DB_CONNECTION_STRING = ""
 
 [frontend]
 
-EXTERNAL_RPC_URI_L1 = "https://sochain.com/DOGETEST"
+EXTERNAL_RPC_URI_L1 = "https://sochain.com/dogetest"
 EXTERNAL_RPC_URI_L2 = "http://rpc.scrollsdk"
-EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/DOGETEST"
+EXTERNAL_EXPLORER_URI_L1 = "https://sochain.com/dogetest"
 EXTERNAL_EXPLORER_URI_L2 = "http://blockscout.scrollsdk"
 GRAFANA_URI = "http://grafana.scrollsdk"
 
