@@ -241,6 +241,7 @@ rules consistent with the associated business rules.
 | Alert | Default `for` | Optional query parameters and defaults |
 | --- | --- | --- |
 | `MetricsTargetDown` | `5m` | — |
+| `ExternalScrapeTargetDown` | `5m` | — |
 
 ### `dogeos.resources` (default evaluation interval `1m`)
 

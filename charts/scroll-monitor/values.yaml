@@ -430,6 +430,11 @@ alertTiming:
   #   ServiceErrorLogs: {for: 0s, window: 10m, minLines: 1}
   # L2BatchHeightStalled's shared window remains businessAlerts.l2BatchStallSeconds.
 
+# Jobs scraped from outside the cluster, such as attestation signers. Their scrape
+# failures use the warning ExternalScrapeTargetDown instead of MetricsTargetDown.
+externalTargetAlerts:
+  jobRegex: attestation-signer
+
 # Lines ServiceErrorLogs ignores, by service, as Go RE2 expressions without backticks.
 # Keep each one narrow, because a matching line can no longer raise this alert.
 # ServicePanicOrFatalLogs ignores this list.

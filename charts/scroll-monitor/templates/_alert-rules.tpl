@@ -62,7 +62,11 @@
 {{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
 {{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
 {{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
-{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | fromYaml).groups -}}
+{{- $externalJobs := .Values.externalTargetAlerts.jobRegex -}}
+{{- if or (not (kindIs "string" $externalJobs)) (not $externalJobs) -}}
+{{- fail "externalTargetAlerts.jobRegex must be a nonempty Prometheus regular expression" -}}
+{{- end -}}
+{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | replace "__EXTERNAL_TARGET_JOBS__" $externalJobs | fromYaml).groups -}}
 {{- if and .Values.statusPage.enabled (ge (int ((.Values.statusPage.generated | default dict).version | default 0)) 3) ((.Values.statusPage.publication | default dict).delivery | default dict).enabled -}}
 {{- $statusService := printf "%s-status-delivery" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}

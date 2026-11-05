@@ -672,6 +672,12 @@ cluster), outside this chart:
         - <signer-3-host>:<metrics-port>
 ```
 
+A target must be an address where the host really serves metrics, because a stale
+scrape configuration reports `up == 0` forever. This chart does not own that
+configuration, so remove or correct a stale object in the cluster yourself. Failures in jobs matching
+`externalTargetAlerts.jobRegex` raise the warning `ExternalScrapeTargetDown` instead of
+the critical `MetricsTargetDown`.
+
 Replace the placeholders only in the cluster-managed configuration. Do not add
 those host addresses to this chart. After Prometheus reloads successfully, the
 Attestation Signer dashboard discovers the job and all three `instance` values
