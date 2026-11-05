@@ -184,6 +184,19 @@ pending and raises an internal delivery alert; an operator reconciles that incid
 An uncertain event is never blindly replaced by an opposite event. Back up the PVC;
 losing it requires reconciling existing incidents before enabling automatic delivery.
 
+The journal is also the only record of the incidents the evaluator has opened. It
+resolves an incident only when its own journal holds that incident as active, and it
+has no Instatus management API access to discover incidents opened by another
+instance. A fresh journal, whether the PVC was deleted or the environment, chain ID or
+page binding changed (a journal bound to a different identity is rejected and must be
+recreated), never closes the previous instance's open incidents: the public page keeps
+the old disruption while the new instance reports every component operational. Put
+the components into a maintenance window before a planned cutover or PVC rebuild, and
+resolve the previous instance's open incidents by hand in Instatus afterwards. A blind
+`resolved` on a fresh journal is deliberately not sent: it would also close incidents a
+human opened on purpose, and after an identity change the fingerprint no longer
+matches the old incidents.
+
 Deploying manual/observe stops public delivery; observe continues evaluation.
 Local YAML edits or CLI metadata-only apply do not change running Pods. Bindings,
 journals and incidents are retained. Use manual before operator takeover. A

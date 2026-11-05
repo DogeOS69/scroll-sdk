@@ -68,6 +68,13 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+# Static host entries for the manager pod and the initialization Job (Helm does not post-render hook
+# resources, so an internal dstack endpoint that is only reachable by a cluster-private name must be
+# declared here rather than injected by a post-renderer).
+# hostAliases:
+#   - ip: 10.100.0.10
+#     hostnames: [dstack.internal.example]
+hostAliases: []
 
 # Enable this with reviewed empty fleet definitions before Helm installation.
 # Explicitly configured deployments with operator-owned fleets can leave it disabled.

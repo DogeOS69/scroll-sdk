@@ -33,8 +33,10 @@ env:
   - name: SMART_CONTRACT_VERIFIER__SOLIDITY__FETCHER__LIST__LIST_URL
     value: "https://binaries.soliditylang.org/linux-amd64/list.json"
     # value: "https://binaries.soliditylang.org/macosx-arm64/list.json"
+  # smart-contract-verifier v1.10.3 cannot parse the upstream vyper release list (0.5.0b1 pre-release
+  # entries) and crashes at startup when the vyper fetcher is enabled; DogeOS verifies Solidity only.
   - name: SMART_CONTRACT_VERIFIER__VYPER__ENABLED
-    value: true
+    value: false
   - name: SMART_CONTRACT_VERIFIER__VYPER__COMPILERS_DIR
     value: "/tmp/vyper-compilers"
   - name: SMART_CONTRACT_VERIFIER__VYPER__REFRESH_VERSIONS_SCHEDULE
