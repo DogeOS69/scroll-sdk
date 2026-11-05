@@ -398,6 +398,9 @@ serviceAlerts:
 # Portal working defaults: 90/60 nominal days at 1,440 blocks/day. Operator policy,
 # not protocol constants. Notifications inherit existing service alert routing.
 recoveryRunwayAlerts:
+  # false pauses RecoveryRunwayObservationStale. For a shadowfork only, whose
+  # getblockchaininfo reports chain "shadowfork", which the runway monitor rejects.
+  observationStaleEnabled: true
   warningBlocks: 129600
   criticalBlocks: 86400
   runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/e6fd059636ffe515c81dda32d02d344861033f28/docs/runbooks/recovery-runway-monitor.md
@@ -448,6 +451,14 @@ businessAlerts:
   enabled: true
   # Shared by L2BatchHeightStalled and Withdrawals health; integer seconds >= 60.
   l2BatchStallSeconds: 7500
+  # true fires L2BatchHeightStalled only if a published batch waited for the whole
+  # window, as the Withdrawals health rule already does. Use where the chain can
+  # idle longer than the window. A stopped DA publisher then needs its own alerts.
+  l2BatchRequirePendingWork: false
+  # true holds ProofMaterializationQueueStalled and ProofWorkerQueueStalled while the
+  # family completed work within maxAgeSeconds, so a draining backlog stays quiet.
+  # A queue that drains slower than it grows then needs capacity alerts to show.
+  proofQueueRequireNoProgress: false
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m
   recoveryFor: 15m
@@ -463,6 +474,8 @@ balanceMonitoring:
   feeWallet:
     enabled: true
     # Total canonical unredeemed UTXOs, not reservation-adjusted spendable funds.
+    # Coinbase outputs are not counted. Lower this on a devnet seeded with less;
+    # the CLI sets it from monitoring.alerts.feeWalletMinimumDoge.
     minimumDoge: 100
     jobRegex: ".*withdrawal-processor.*"
   ethereum:

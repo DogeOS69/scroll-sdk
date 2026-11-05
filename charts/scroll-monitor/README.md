@@ -543,6 +543,27 @@ there is no additional pending window. This also alerts during a traffic-free
 window, as it does not depend on a backlog. Missing metrics are not classified as
 stalled progress; existing readiness/up alerts cover service availability.
 
+Where the chain can idle for longer than the window, such as a devnet, set
+`businessAlerts.l2BatchRequirePendingWork: true`. The alert then fires only if a
+published batch waited for the whole window, which is how the Withdrawals health
+rule already behaves, so an idle chain does not change the public page. It stays
+off by default because a DA publisher that has stopped publishing also looks idle
+to this rule. Without the withdrawal-processor metrics it fires as before.
+
+`ProofMaterializationQueueStalled` and `ProofWorkerQueueStalled` key on the age of
+the oldest item, so they also fire while a large backlog drains normally. With
+`businessAlerts.proofQueueRequireNoProgress: true` they hold while that proof family
+completed work within `maxAgeSeconds`. The trade-off is that a queue growing faster
+than it drains stays quiet here.
+
+### Status page deadlines
+
+`statusPage.publication.health.depositDeadlineSeconds`, `withdrawalDeadlineSeconds`
+and `batchPublicationDeadlineSeconds` default to 0, which leaves that builtin rule
+unconfigured: the component stays `operational` however long a queue gets. There is
+no default that suits every deployment, so set them to the confirmed normal
+processing time. The CLI projects them from `monitoring.statusPage.health`.
+
 ### Error and panic log alerts
 
 `ServiceErrorLogs` (warning) and `ServicePanicOrFatalLogs` (critical) check

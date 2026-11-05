@@ -18,6 +18,9 @@
 {{/* Explicit overrides are authoritative, including for existing Grafana rules. */}}
 {{- define "scroll-monitor.pauseRules" -}}
 {{- $pauses := dict -}}
+{{- if eq (toString .Values.recoveryRunwayAlerts.observationStaleEnabled) "false" -}}
+{{- $_ := set $pauses "RecoveryRunwayObservationStale" true -}}
+{{- end -}}
 {{- if not .Values.balanceMonitoring.ethereum.feeOracle.enabled -}}
 {{- $_ := set $pauses "FeeOracleAccountBalanceLow" true -}}
 {{- $_ := set $pauses "FeeOracleBalanceMonitorMissing" true -}}
@@ -61,7 +64,13 @@
 {{- $metric := printf "indexer_dogecoin_last_synced_block{job=~%s}" (.Values.dogecoinIndexerAlerts.jobRegex | quote) -}}
 {{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
 {{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
-{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
+{{/* Idle means some minute in the window had no published batch waiting. Missing
+     evidence is not idle, so the alert still fires without these metrics. */}}
+{{- $l2Gate := "" -}}
+{{- if .Values.businessAlerts.l2BatchRequirePendingWork -}}
+{{- $l2Gate = printf " unless on (namespace) (min_over_time((max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height) > bool max by (namespace) (withdrawal_processor_protocol_state_l2_batch_height))[%ds:1m]) == 0)" (int $l2.windowSeconds) -}}
+{{- end -}}
+{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_PENDING_GATE__" $l2Gate | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
 {{- $externalJobs := .Values.externalTargetAlerts.jobRegex -}}
 {{- if or (not (kindIs "string" $externalJobs)) (not $externalJobs) -}}
 {{- fail "externalTargetAlerts.jobRegex must be a nonempty Prometheus regular expression" -}}
@@ -121,7 +130,15 @@
 {{- if or (le (int $drain.drainMargin) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
 {{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
+{{/* A completion inside the age window means the queue is draining. Missing
+     completion metrics do not suppress the alert. */}}
+{{- $materializeGate := "" -}}
+{{- $proveGate := "" -}}
+{{- if $.Values.businessAlerts.proofQueueRequireNoProgress -}}
+{{- $materializeGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_work_items_total{phase=\"materialize\",outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
+{{- $proveGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
+{{- end -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}

@@ -216,9 +216,10 @@ groups:
       # no extra pending delay is added to the configured window.
       # The shared expression also recognizes a net height increase across a
       # scrape gap or Pod replacement, when adjacent-minute comparison is absent.
+      # businessAlerts.l2BatchRequirePendingWork adds the status page's idle check.
       - alert: L2BatchHeightStalled
         expr: >-
-          (__L2_BATCH_PROGRESS__) == 0
+          (__L2_BATCH_PROGRESS__) == 0__L2_BATCH_PENDING_GATE__
         labels:
           severity: critical
         annotations:

@@ -111,7 +111,7 @@ groups:
       description: "WP reports {{ $labels.family }} materialization waiting more than 30 minutes. Check coordinator dispatch, eager locators, and materializer capacity."
     timing: {"maxAgeSeconds": 1800}
     timingAnnotations: {"description": "WP reports {{ $labels.proof_family }} materialization waiting more than __TIME_maxAgeSeconds__ seconds. Check coordinator dispatch, eager locators, and materializer capacity."}
-    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds__"
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"materialize\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds____PROOF_MATERIALIZE_PROGRESS_GATE__"
     for: 10m
     labels:
       severity: critical
@@ -141,7 +141,7 @@ groups:
       description: "Check worker capacity, advertised proof kinds, claim gates, and retry failures for {{ $labels.family }}. Running long proofs are excluded."
     timing: {"maxAgeSeconds": 3600}
     timingAnnotations: {"summary": "Proof work waits more than __TIME_maxAgeSeconds__ seconds for progress."}
-    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds__"
+    expr: "(withdrawal_processor_proof_work_oldest_age_seconds{phase=\"prove\",status=~\"pending|blocked|failed_retryable\"} and on (namespace, job, instance) __WP_PROOF_WORK_VALID__) > __TIME_maxAgeSeconds____PROOF_PROVE_PROGRESS_GATE__"
     for: 10m
     labels:
       severity: critical

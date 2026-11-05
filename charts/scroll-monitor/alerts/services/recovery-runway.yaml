@@ -40,5 +40,5 @@ groups:
       service: withdrawal-processor
     annotations:
       summary: Recovery runway monitor is failing or stale.
-      description: Runway observations are failing, missing, or the last success is at least 15 minutes old. Check the WP log, the Dogecoin RPC and the WP database. Do not read a stale monitor as adequate runway.
+      description: Runway observations are failing, missing, or the last success is at least 15 minutes old. Check the WP log, the Dogecoin RPC and the WP database. A getblockchaininfo chain name other than the configured network is a common cause, such as "shadowfork" on a shadowfork. Do not read a stale monitor as adequate runway.
       runbook_url: __RUNWAY_RUNBOOK__
