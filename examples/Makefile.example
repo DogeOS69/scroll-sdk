@@ -227,7 +227,7 @@ install-blockscout:
 		--values values/blockscout-production.yaml
 
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i blockscout-sc-verifier oci://ghcr.io/dogeos69/scroll-sdk/helm/blockscout-sc-verifier -n "$(NAMESPACE)" \
-		--version=0.1.6-dogeos
+		--version=0.1.7-dogeos
 
 install-frontends:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i frontends oci://ghcr.io/dogeos69/scroll-sdk/helm/frontends -n "$(NAMESPACE)" \
@@ -349,7 +349,7 @@ delete-l2-reth-bootnode:
 
 # Explicit opt-in: starts the Core loop and may rent paid GPU instances.
 CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
-CAPACITY_MANAGER_CHART_VERSION ?= 0.1.6
+CAPACITY_MANAGER_CHART_VERSION ?= 0.1.7
 .PHONY: install-capacity-manager pause-capacity-manager
 install-capacity-manager:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m
