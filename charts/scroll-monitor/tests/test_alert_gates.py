@@ -107,6 +107,13 @@ class RenderTests(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             render_values({**fractional, 'businessAlerts': {'proofQueueRequireNoProgress': True}})
 
+    def test_rejects_a_quoted_switch_that_templates_would_treat_as_true(self):
+        for values in [{'businessAlerts': {'l2BatchRequirePendingWork': 'false'}},
+                       {'businessAlerts': {'proofQueueRequireNoProgress': 'false'}},
+                       {'recoveryRunwayAlerts': {'observationStaleEnabled': 'false'}}]:
+            with self.subTest(values=values), self.assertRaises(subprocess.CalledProcessError):
+                render_values(values)
+
     def test_grafana_migrates_the_previous_target_rule(self):
         self.assertEqual(grafana_rules(render())['MetricsTargetDown']['previousExpr'], 'up == 0')
 

@@ -31,6 +31,12 @@
 {{- if not (kindIs "bool" .Values.attestationSignerMonitoring.enabled) }}
 {{- fail "attestationSignerMonitoring.enabled must be a boolean" }}
 {{- end }}
+{{- /* A quoted "false" is truthy in templates and would turn these gates on. */ -}}
+{{- range $setting := list (list "businessAlerts" "l2BatchRequirePendingWork") (list "businessAlerts" "proofQueueRequireNoProgress") (list "recoveryRunwayAlerts" "observationStaleEnabled") }}
+{{- if not (kindIs "bool" (index $.Values (first $setting) (last $setting))) }}
+{{- fail (printf "%s.%s must be a boolean" (first $setting) (last $setting)) }}
+{{- end }}
+{{- end }}
 {{- $stack := index .Values "kube-prometheus-stack" }}
 {{- range $section := list "diskAlerts" "resourceAlerts" "businessPodAlerts" }}
 {{- $settings := index $.Values $section }}
