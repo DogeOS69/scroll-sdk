@@ -398,6 +398,11 @@ serviceAlerts:
 # Portal working defaults: 90/60 nominal days at 1,440 blocks/day. Operator policy,
 # not protocol constants. Notifications inherit existing service alert routing.
 recoveryRunwayAlerts:
+  # false pauses RecoveryRunwayObservationStale. For a shadowfork only, whose
+  # getblockchaininfo reports chain "shadowfork", which the runway monitor rejects.
+  # To resume an existing Grafana rule afterwards, also set
+  # grafanaAlerting.pauseRules.RecoveryRunwayObservationStale: false.
+  observationStaleEnabled: true
   warningBlocks: 129600
   criticalBlocks: 86400
   runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/e6fd059636ffe515c81dda32d02d344861033f28/docs/runbooks/recovery-runway-monitor.md
@@ -427,13 +432,47 @@ alertTiming:
   #   ProtocolStateWFTxNumberStalled: {window: 90m, step: 1m}
   #   ProofWorkerQueueStalled: {for: 15m, maxAgeSeconds: 7200}
   #   TSOSignerResponseSlow: {for: 10m, window: 15m, latencySeconds: 90}
-  #   ServiceErrorLogs: {for: 0s, window: 10m}
+  #   ServiceErrorLogs: {for: 0s, window: 10m, minLines: 1}
   # L2BatchHeightStalled's shared window remains businessAlerts.l2BatchStallSeconds.
+
+# Jobs scraped from outside the cluster, such as attestation signers. Their scrape
+# failures use the warning ExternalScrapeTargetDown instead of MetricsTargetDown.
+externalTargetAlerts:
+  jobRegex: attestation-signer
+
+# Attestation signers usually run on partner hosts that expose no metrics to this
+# cluster. true pairs with a scrape job named attestation-signer, which the CLI
+# generates from monitoring.attestationSigner in the deployment spec, and turns on
+# the AttestationSigner* alerts and that job's ExternalScrapeTargetDown. TSO alerts
+# on signer communication and quorum work either way.
+attestationSignerMonitoring:
+  enabled: false
+
+# Lines ServiceErrorLogs ignores, by service, as Go RE2 expressions without backticks.
+# Keep each one narrow, because a matching line can no longer raise this alert.
+# ServicePanicOrFatalLogs ignores this list.
+logAlerts:
+  excludePatterns: {}
+  # excludePatterns:
+  #   example-service:
+  #     - 'known benign message'
 
 businessAlerts:
   enabled: true
   # Shared by L2BatchHeightStalled and Withdrawals health; integer seconds >= 60.
   l2BatchStallSeconds: 7500
+  # true fires L2BatchHeightStalled only if a published batch waited for the whole
+  # window, as the Withdrawals health rule already does. Use where the chain can
+  # idle longer than the window. It also fires for a job with a height while the DA
+  # inventory is empty. A stopped DA publisher, or a withdrawal-processor that stopped
+  # recording published batches, then needs its own alerts.
+  l2BatchRequirePendingWork: false
+  # true holds ProofMaterializationQueueStalled and ProofWorkerQueueStalled while the
+  # family completed work within maxAgeSeconds, so a draining backlog stays quiet.
+  # A queue that drains slower than it grows then needs capacity alerts to show, and
+  # one stuck item stays quiet while others in its family finish. maxAgeSeconds for
+  # these two rules must then be a whole number, because it becomes a PromQL range.
+  proofQueueRequireNoProgress: false
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m
   recoveryFor: 15m
@@ -449,6 +488,8 @@ balanceMonitoring:
   feeWallet:
     enabled: true
     # Total canonical unredeemed UTXOs, not reservation-adjusted spendable funds.
+    # Coinbase outputs are not counted. Lower this on a devnet seeded with less;
+    # the CLI sets it from monitoring.alerts.feeWalletMinimumDoge.
     minimumDoge: 100
     jobRegex: ".*withdrawal-processor.*"
   ethereum:

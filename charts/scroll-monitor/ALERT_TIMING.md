@@ -31,6 +31,7 @@ alertTiming:
     ServiceErrorLogs:
       for: 0s
       window: 10m
+      minLines: 1
 businessAlerts:
   l2BatchStallSeconds: 9000
 ```
@@ -232,7 +233,7 @@ rules consistent with the associated business rules.
 
 | Alert | Default `for` | Optional query parameters and defaults |
 | --- | --- | --- |
-| `ServiceErrorLogs` | `0s` | `window: 5m` |
+| `ServiceErrorLogs` | `5m` | `window: 5m`, `minLines: 5` |
 | `ServicePanicOrFatalLogs` | `0s` | `window: 5m` |
 
 ### `scroll.monitoring` (default evaluation interval `1m`)
@@ -240,6 +241,7 @@ rules consistent with the associated business rules.
 | Alert | Default `for` | Optional query parameters and defaults |
 | --- | --- | --- |
 | `MetricsTargetDown` | `5m` | — |
+| `ExternalScrapeTargetDown` | `5m` | — |
 
 ### `dogeos.resources` (default evaluation interval `1m`)
 

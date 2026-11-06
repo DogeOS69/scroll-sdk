@@ -4,7 +4,8 @@ groups:
     rules:
       - alert: MetricsTargetDown
         timingAnnotations: {"description": "Target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for __TIME_for__. Inspect the metrics listener, discovery and network path. Other healthy replicas do not mask this target."}
-        expr: up == 0
+        previousExpr: up == 0
+        expr: up{job!~__EXTERNAL_TARGET_JOBS__} == 0
         for: 5m
         labels:
           severity: critical
@@ -12,3 +13,16 @@ groups:
         annotations:
           summary: Metrics target cannot be scraped.
           description: Target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for five minutes. Inspect the metrics listener, discovery and network path. Other healthy replicas do not mask this target.
+      # Hosts outside the cluster are scraped through configuration this chart does not own.
+      # A wrong address there is not a service outage, so it does not page as critical.
+      # Attestation signers count only with attestationSignerMonitoring.enabled.
+      - alert: ExternalScrapeTargetDown
+        timingAnnotations: {"description": "External target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for __TIME_for__. Check that the operator-managed scrape configuration matches an address where the host really serves metrics."}
+        expr: up{job=~__EXTERNAL_TARGET_JOBS____ATTESTATION_SIGNER_EXCLUDE__} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: External metrics target cannot be scraped.
+          description: External target {{ $labels.instance }} in job {{ $labels.job }} has failed scrapes for five minutes. Check that the operator-managed scrape configuration matches an address where the host really serves metrics.

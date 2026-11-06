@@ -1,6 +1,35 @@
+{{/* A regexp stage labels a matching line, so one pipeline can drop it for one service only. */}}
+{{- define "scroll-monitor.logErrorExcludes" -}}
+{{- $index := 0 -}}
+{{- range $service := keys .Values.logAlerts.excludePatterns | sortAlpha -}}
+{{- if not (regexMatch "^[A-Za-z0-9][A-Za-z0-9._-]*$" $service) -}}
+{{- fail (printf "logAlerts.excludePatterns service name %q is invalid" $service) -}}
+{{- end -}}
+{{- range $pattern := index $.Values.logAlerts.excludePatterns $service -}}
+{{- if or (not (kindIs "string" $pattern)) (not $pattern) (contains "`" $pattern) -}}
+{{- fail (printf "logAlerts.excludePatterns.%s must list nonempty strings without backticks" $service) -}}
+{{- end -}}
+{{- if regexMatch "[\r\n]" $pattern -}}
+{{- fail (printf "logAlerts.excludePatterns.%s must list single-line expressions" $service) -}}
+{{- end -}}
+{{/* Loki rejects the whole query on a bad expression, so fail the render instead. */}}
+{{- $_ := mustRegexMatch $pattern "" -}}
+{{- printf "\n          | regexp `(?P<alert_excluded_%d>%s)`\n          | service!=%q or alert_excluded_%d=\"\"" $index $pattern $service $index -}}
+{{- $index = add1 $index -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Explicit overrides are authoritative, including for existing Grafana rules. */}}
 {{- define "scroll-monitor.pauseRules" -}}
 {{- $pauses := dict -}}
+{{- if eq (toString .Values.recoveryRunwayAlerts.observationStaleEnabled) "false" -}}
+{{- $_ := set $pauses "RecoveryRunwayObservationStale" true -}}
+{{- end -}}
+{{/* Set both ways, so turning the switch back on resumes existing Grafana rules. */}}
+{{- range $alert := list "AttestationSignerNotReady" "AttestationSignerTerminalFailure" "AttestationSignerSigningFailures" "AttestationSignerCallbackFailures" -}}
+{{- $_ := set $pauses $alert (not $.Values.attestationSignerMonitoring.enabled) -}}
+{{- end -}}
 {{- if not .Values.balanceMonitoring.ethereum.feeOracle.enabled -}}
 {{- $_ := set $pauses "FeeOracleAccountBalanceLow" true -}}
 {{- $_ := set $pauses "FeeOracleBalanceMonitorMissing" true -}}
@@ -44,8 +73,30 @@
 {{- $metric := printf "indexer_dogecoin_last_synced_block{job=~%s}" (.Values.dogecoinIndexerAlerts.jobRegex | quote) -}}
 {{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
 {{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
-{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
-{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | fromYaml).groups -}}
+{{/* Idle means some minute in the window had no published batch ahead of this job.
+     Only a valid, fresh DA height counts: an invalid snapshot proves nothing and missing
+     evidence is not idle, so the alert still fires in those cases. It also fires for a
+     job with a height while the DA inventory is empty; both at zero is a chain that has
+     not published yet. A height that matches because the withdrawal-processor stopped
+     recording new batches does look idle; the README warns about this. */}}
+{{- $l2Gate := "" -}}
+{{- if .Values.businessAlerts.l2BatchRequirePendingWork -}}
+{{- $latestDa := "max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height and on (namespace, job, instance) __WP_L2_VALID__)" -}}
+{{- $jobHeight := printf "max by (namespace, job) (%s)" $l2.selector -}}
+{{- $l2Gate = printf " unless on (namespace, job) (min_over_time(((%s > bool on (namespace) group_right %s) unless on (namespace, job) (%s > 0 and on (namespace) (%s == 0)))[%ds:1m]) == 0)" $latestDa $jobHeight $jobHeight $latestDa (int $l2.windowSeconds) -}}
+{{- end -}}
+{{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_PENDING_GATE__" $l2Gate | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
+{{- $externalJobs := .Values.externalTargetAlerts.jobRegex -}}
+{{- if or (not (kindIs "string" $externalJobs)) (not $externalJobs) -}}
+{{- fail "externalTargetAlerts.jobRegex must be a nonempty Prometheus regular expression" -}}
+{{- end -}}
+{{/* The value lands in a plain YAML scalar, where whitespace or # would cut the rule short. */}}
+{{- if regexMatch "[\\s#]" $externalJobs -}}
+{{- fail "externalTargetAlerts.jobRegex must not contain whitespace or #" -}}
+{{- end -}}
+{{- $_ := mustRegexMatch $externalJobs "" -}}
+{{- $signerExclude := ternary "" ",job!=\"attestation-signer\"" .Values.attestationSignerMonitoring.enabled -}}
+{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | replace "__EXTERNAL_TARGET_JOBS__" ($externalJobs | quote) | replace "__ATTESTATION_SIGNER_EXCLUDE__" $signerExclude | fromYaml).groups -}}
 {{- if and .Values.statusPage.enabled (ge (int ((.Values.statusPage.generated | default dict).version | default 0)) 3) ((.Values.statusPage.publication | default dict).delivery | default dict).enabled -}}
 {{- $statusService := printf "%s-status-delivery" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}
@@ -100,7 +151,15 @@
 {{- if or (le (int $drain.drainMargin) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
 {{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
+{{/* A completion inside the age window means the queue is draining. Missing
+     completion metrics do not suppress the alert. */}}
+{{- $materializeGate := "" -}}
+{{- $proveGate := "" -}}
+{{- if $.Values.businessAlerts.proofQueueRequireNoProgress -}}
+{{- $materializeGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_work_items_total{phase=\"materialize\",outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
+{{- $proveGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
+{{- end -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}
@@ -122,7 +181,7 @@
 {{- $guards := dict -}}
 {{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
 {{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
-{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" -}}
+{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" "l2" -}}
 {{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
 {{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}

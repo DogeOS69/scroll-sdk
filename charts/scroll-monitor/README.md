@@ -543,13 +543,47 @@ there is no additional pending window. This also alerts during a traffic-free
 window, as it does not depend on a backlog. Missing metrics are not classified as
 stalled progress; existing readiness/up alerts cover service availability.
 
+Where the chain can idle for longer than the window, such as a devnet, set
+`businessAlerts.l2BatchRequirePendingWork: true`. The alert then fires only if a
+published batch stayed ahead of that job for the whole window, which is how the
+Withdrawals health rule already behaves, so an idle chain does not change the public
+page. Each job is compared with the DA height separately, so one job catching up does
+not hide another that is stuck. It stays off by default because a stall can also look
+idle to this rule: a DA publisher that has stopped publishing, or a withdrawal-processor
+that has stopped recording published batches. That height comes from its local database,
+so its snapshot stays valid and fresh. Without a valid, fresh DA height it fires as
+before, and it also fires for a job with a height while the DA inventory is empty. A
+chain that has not published a batch yet counts as idle.
+
+`ProofMaterializationQueueStalled` and `ProofWorkerQueueStalled` key on the age of
+the oldest item, so they also fire while a large backlog drains normally. With
+`businessAlerts.proofQueueRequireNoProgress: true` they hold while that proof family
+completed work within `maxAgeSeconds`. The trade-off is that a queue growing faster
+than it drains stays quiet here, and so does one stuck item while others in its family
+keep finishing.
+
+### Status page deadlines
+
+`statusPage.publication.health.depositDeadlineSeconds`, `withdrawalDeadlineSeconds`
+and `batchPublicationDeadlineSeconds` default to 0, which leaves that builtin rule
+unconfigured: the component stays `operational` however long a queue gets. There is
+no default that suits every deployment, so set them to the confirmed normal
+processing time. The CLI projects them from `monitoring.statusPage.health`.
+
 ### Error and panic log alerts
 
 `ServiceErrorLogs` (warning) and `ServicePanicOrFatalLogs` (critical) check
 **every service** whose logs reach Loki in the Alloy namespace allowlist
 (`alloy.logs.namespaces`, defaulting to the release namespace), except the retired
 `rollup-explorer-backend`. Every minute they count matching lines over the last
-5 minutes. One matching line fires with no pending period. JSON `level`/`severity`
+5 minutes. `ServicePanicOrFatalLogs` fires on one line with no pending period.
+`ServiceErrorLogs` needs at least `minLines` (default 5) in the window, held for
+`for` (default `5m`), so isolated errors do not page; set
+`alertTiming.rules.ServiceErrorLogs` to `{for: 0s, minLines: 1}` for the old behavior.
+The count is per pod, and a burst that ends within the `for` period does not fire
+however large it was.
+`logAlerts.excludePatterns` mutes known-benign lines per service for the error rule
+only. Patterns are Go RE2 expressions without backticks. JSON `level`/`severity`
 and logfmt level fields distinguish ordinary errors from fatal/panic events;
 plain error/fatal prefixes and Go/Rust panic headers are also recognized.
 A fatal/panic line is excluded from the ordinary ERROR rule, including conflicting
@@ -646,31 +680,43 @@ the coordinator dashboard does not manufacture a second queue authority.
 The signer dashboards and the coordinator's optional application panels select
 application metrics through Prometheus `job` and
 `instance` labels instead of Kubernetes-only labels. This lets the same panels
-work for in-cluster ServiceMonitors and for Attestation Signers on external EC2
-hosts. External scrape targets are deliberately not configured by this chart:
-add them to the Prometheus instance through an operator-managed scrape config,
-using a stable job name such as `attestation-signer`. Prometheus supplies the
-`instance` label from each target automatically, so no host address needs to be
-committed to Helm values or dashboard JSON.
+work for in-cluster ServiceMonitors and for Attestation Signers on external
+hosts. External scrape targets are deliberately not configured by this chart.
+Prometheus supplies the `instance` label from each target automatically, so no host
+address needs to be committed to Helm values or dashboard JSON.
 
-For example, keep the three external targets in Prometheus' operator-managed
-`additionalScrapeConfigs` (or the equivalent configuration managed by your
-cluster), outside this chart:
+Attestation signers usually run on partner hosts: the partner kit binds its metrics
+port to `127.0.0.1` and the signer only connects out to TSO, so this cluster normally
+cannot read them. Their monitoring is therefore off by default. With
+`attestationSignerMonitoring.enabled: false`, the `AttestationSigner*` alerts are paused
+in Grafana and omitted from the Prometheus fallback, and `ExternalScrapeTargetDown`
+ignores the `attestation-signer` job. TSO alerts such as `TSOSignerCommunicationFailures`
+and `TSO<role>QuorumUnavailable` still report signers from TSO's side; the quorum alert
+needs `businessAlerts.requiredSignersByRole`.
+
+Where the hosts do serve metrics to this cluster, set `monitoring.attestationSigner` in
+the deployment spec. The CLI then enables this switch and generates the scrape job in
+`additionalScrapeConfigs`, keeping the addresses in the private deployment files:
 
 ```yaml
-- job_name: attestation-signer
-  metrics_path: /metrics
-  static_configs:
-    - targets:
-        - <signer-1-host>:<metrics-port>
-        - <signer-2-host>:<metrics-port>
-        - <signer-3-host>:<metrics-port>
+monitoring:
+  attestationSigner:
+    enabled: true
+    targets:
+      - <signer-1-host>:<metrics-port>
+      - <signer-2-host>:<metrics-port>
+      - <signer-3-host>:<metrics-port>
 ```
 
-Replace the placeholders only in the cluster-managed configuration. Do not add
-those host addresses to this chart. After Prometheus reloads successfully, the
-Attestation Signer dashboard discovers the job and all three `instance` values
-and shows their individual `up` status.
+A target must be an address where the host really serves metrics, because a stale
+scrape configuration reports `up == 0` forever. This chart does not own that
+configuration, so remove a stale object created by hand in the cluster yourself.
+Failures in jobs matching `externalTargetAlerts.jobRegex` raise the warning
+`ExternalScrapeTargetDown` instead of the critical `MetricsTargetDown`.
+
+Do not add host addresses to this chart. After Prometheus reloads successfully, the
+Attestation Signer dashboard discovers the job and each `instance` value and shows
+their individual `up` status.
 
 The current dogeos-core metrics initializer exports Rust time histograms ending
 in `_seconds` or `_latency_ms` as Prometheus buckets. Latency panels use

@@ -10,6 +10,12 @@ This chart supports three roles through `role`:
 
 The chart generates `rollup-node node` as Kubernetes `command`/`args` instead of using shell string concatenation. This avoids argument quoting issues for flags such as `--signer.aws-kms-key-id`.
 
+## Logs
+
+Logs go to stdout, where the cluster's log pipeline collects them. `rollup-node node` also writes debug-level files by default, so the chart passes `--log.file.max-files=0` to turn them off: without a mounted directory they land in the container's writable layer, which uses the node's disk.
+
+To keep log files for debugging, set `reth.logFile.maxFiles` above `0`. Each file holds up to 200 MB. Point `--log.file.directory` in `reth.extraArgs` at a mounted volume with a size limit, such as an `emptyDir` with `sizeLimit`. Changing either value restarts the pods.
+
 For DogeOS mainnet, select the image's built-in chain instead of supplying a
 genesis ConfigMap:
 
