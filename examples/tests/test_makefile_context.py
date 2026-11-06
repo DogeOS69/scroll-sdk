@@ -132,39 +132,49 @@ class MakefileContextTests(unittest.TestCase):
         self.assertIn('--version=0.1.6', commands[0])
         self.assertNotIn('scrollsdk', commands[0])
 
-    def test_signer_activation_guard_stops_before_helm_and_uses_the_same_inputs(self):
+    def run_signer_install(self, activation_exit=0, delivered=False):
+        """Run the target with stubbed tools and return its result and calls."""
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             log = root / 'calls'
-            for name in ['scrollsdk', 'helm']:
+            exits = {'scrollsdk': 'case "$*" in *verify-activation*) exit "$ACTIVATION_EXIT";; esac\n',
+                     'kubectl': 'exit "$SECRETS_EXIT"\n', 'helm': ''}
+            for name, body in exits.items():
                 tool = root / name
-                tool.write_text('#!/bin/sh\nprintf "%s\\n" "' + name + ' $*" >> "$CALL_LOG"\n'
-                                + ('case "$*" in *verify-activation*) exit "$ACTIVATION_EXIT";; esac\n' if name == 'scrollsdk' else '')
-                                + 'exit 0\n')
+                tool.write_text('#!/bin/sh\nprintf "%s\\n" "' + name + ' $*" >> "$CALL_LOG"\n' + body + 'exit 0\n')
                 tool.chmod(0o755)
-            env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'],
-                       CALL_LOG=str(log), ACTIVATION_EXIT='2')
-            command = ['make', '--no-print-directory', '-f', str(MAKEFILE),
-                       'install-cubesigner-signer', 'KUBE_CONTEXT=selected', 'NAMESPACE=chain']
-            result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
-            self.assertNotEqual(result.returncode, 0)
-            delivered, verified = log.read_text().splitlines()
-            self.assertIn('prepare-runtime-secrets --dir . --kube-context selected', delivered)
-            self.assertIn('verify-activation --dir . --kube-context selected', verified)
-            self.assertIn('--namespace chain', delivered)
-            self.assertIn('--namespace chain', verified)
-            log.unlink()
-            env['ACTIVATION_EXIT'] = '0'
-            result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            calls = log.read_text().splitlines()
-            self.assertEqual(len(calls), 3)
-            self.assertTrue(calls[0].startswith('scrollsdk setup cubesigner-policy prepare-runtime-secrets'))
-            self.assertTrue(calls[1].startswith('scrollsdk setup cubesigner-policy verify-activation'))
-            self.assertTrue(calls[2].startswith('helm --kube-context selected'))
-            for call in calls:
-                self.assertIn('values/cubesigner-signer-production.yaml', call)
-                self.assertIn('0.1.9', call)
+            env = dict(os.environ, PATH=str(root) + ':' + os.environ['PATH'], CALL_LOG=str(log),
+                       ACTIVATION_EXIT=str(activation_exit), SECRETS_EXIT='0' if delivered else '1')
+            result = subprocess.run(['make', '--no-print-directory', '-f', str(MAKEFILE),
+                                     'install-cubesigner-signer', 'KUBE_CONTEXT=selected', 'NAMESPACE=chain'],
+                                    cwd=root, env=env, capture_output=True, text=True)
+            return result, log.read_text().splitlines()
+
+    def test_signer_activation_guard_stops_before_helm_and_uses_the_same_inputs(self):
+        result, (checked, delivered, verified) = self.run_signer_install(activation_exit=2)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('--context selected -n chain get secret cubesigner-signer-env cubesigner-signer-session', checked)
+        self.assertIn('prepare-runtime-secrets --dir . --kube-context selected', delivered)
+        self.assertIn('verify-activation --dir . --kube-context selected', verified)
+        self.assertIn('--namespace chain', delivered)
+        self.assertIn('--namespace chain', verified)
+
+        result, calls = self.run_signer_install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(calls), 4)
+        self.assertTrue(calls[0].startswith('kubectl '))
+        self.assertTrue(calls[1].startswith('scrollsdk setup cubesigner-policy prepare-runtime-secrets'))
+        self.assertTrue(calls[2].startswith('scrollsdk setup cubesigner-policy verify-activation'))
+        self.assertTrue(calls[3].startswith('helm --kube-context selected'))
+        for call in calls[1:]:
+            self.assertIn('values/cubesigner-signer-production.yaml', call)
+            self.assertIn('0.1.9', call)
+
+    def test_signer_install_leaves_delivered_secrets_alone(self):
+        result, calls = self.run_signer_install(delivered=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([call.split()[0] for call in calls], ['kubectl', 'scrollsdk', 'helm'])
+        self.assertIn('verify-activation', calls[1])
 
     def test_monitor_applies_generated_dstack_overlay_after_base_values(self):
         overlay = 'values/scroll-monitor-dstack.yaml'
