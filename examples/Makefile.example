@@ -31,7 +31,7 @@ PREINSTALLS_CHART_VERSION ?= 0.1.2-dogeos
 PREINSTALLS_TIMEOUT ?= 20m
 CURL_IMAGE ?= curlimages/curl:8.20.0
 L2_RETH_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/l2-reth
-L2_RETH_CHART_VERSION ?= 0.1.14
+L2_RETH_CHART_VERSION ?= 0.1.15
 # Optional runtime allowlist. Install/update its independent release explicitly.
 RETH_PEER_ALLOWLIST_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/reth-peer-allowlist
 RETH_PEER_ALLOWLIST_CHART_VERSION ?= 0.1.0

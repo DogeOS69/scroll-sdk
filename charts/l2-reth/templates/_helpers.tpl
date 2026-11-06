@@ -477,6 +477,11 @@ Generate rollup-node argv without shell interpolation.
 {{- end }}
 - --log.stdout.format
 - {{ .Values.reth.logFormat | quote }}
+{{- $logFileMaxFiles := .Values.reth.logFile.maxFiles }}
+{{- if or (kindIs "string" $logFileMaxFiles) (not (regexMatch "^(0|[1-9][0-9]*)$" (toString $logFileMaxFiles))) }}
+{{- fail "reth.logFile.maxFiles must be a nonnegative integer" }}
+{{- end }}
+- --log.file.max-files={{ int $logFileMaxFiles }}
 {{ include "l2-reth.extraArgs" . }}
 {{- if gt (int .Values.reth.verbosity) 0 }}
 - {{ printf "-%s" (repeat (int .Values.reth.verbosity) "v") | quote }}

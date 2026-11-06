@@ -97,6 +97,12 @@ reth:
   ipcPermissions: "0600"
   logFormat: log-fmt
   verbosity: 3
+  logFile:
+    # Rotated debug-level log files to keep. 0 disables them, leaving stdout as
+    # the only log output. Without a mounted --log.file.directory, the files land
+    # in the container's writable layer on the node's disk, up to 200 MB each.
+    # Set this here rather than in extraArgs, which would pass the flag twice.
+    maxFiles: 0
   # Additional rollup-node arguments. A string is split on whitespace:
   # "--foo bar --flag" renders as ["--foo", "bar", "--flag"].
   # Use a list when an argument value itself contains spaces.
