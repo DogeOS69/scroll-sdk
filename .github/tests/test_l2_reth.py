@@ -89,6 +89,15 @@ class L2RethP2PTests(unittest.TestCase):
                 self.assert_fails("reth.logFile.maxFiles must be a nonnegative integer",
                                   values={"reth": {"logFile": {"maxFiles": value}}})
 
+    def test_file_log_count_in_extra_args_fails_at_render(self):
+        for extra_args in ["--foo --log.file.max-files=3", "--log.file.max-files 3",
+                           ["--log.file.max-files=3"], ["--log.file.max-files", "3"]]:
+            with self.subTest(extra_args=extra_args):
+                self.assert_fails("Set reth.logFile.maxFiles",
+                                  values={"reth": {"extraArgs": extra_args}})
+        docs = self.render(values={"reth": {"extraArgs": ["--log.file.directory=/logs"]}})
+        self.assertIn("--log.file.directory=/logs", self.statefulset(docs)["spec"]["template"]["spec"]["containers"][0]["args"])
+
     def test_builtin_chain_skips_genesis_mount_for_every_role(self):
         for role in ["rpc", "bootnode", "sequencer"]:
             with self.subTest(role=role):
