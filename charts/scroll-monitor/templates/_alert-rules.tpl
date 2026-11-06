@@ -9,6 +9,11 @@
 {{- if or (not (kindIs "string" $pattern)) (not $pattern) (contains "`" $pattern) -}}
 {{- fail (printf "logAlerts.excludePatterns.%s must list nonempty strings without backticks" $service) -}}
 {{- end -}}
+{{- if regexMatch "[\r\n]" $pattern -}}
+{{- fail (printf "logAlerts.excludePatterns.%s must list single-line expressions" $service) -}}
+{{- end -}}
+{{/* Loki rejects the whole query on a bad expression, so fail the render instead. */}}
+{{- $_ := mustRegexMatch $pattern "" -}}
 {{- printf "\n          | regexp `(?P<alert_excluded_%d>%s)`\n          | service!=%q or alert_excluded_%d=\"\"" $index $pattern $service $index -}}
 {{- $index = add1 $index -}}
 {{- end -}}
@@ -20,6 +25,10 @@
 {{- $pauses := dict -}}
 {{- if eq (toString .Values.recoveryRunwayAlerts.observationStaleEnabled) "false" -}}
 {{- $_ := set $pauses "RecoveryRunwayObservationStale" true -}}
+{{- end -}}
+{{/* Set both ways, so turning the switch back on resumes existing Grafana rules. */}}
+{{- range $alert := list "AttestationSignerNotReady" "AttestationSignerTerminalFailure" "AttestationSignerSigningFailures" "AttestationSignerCallbackFailures" -}}
+{{- $_ := set $pauses $alert (not $.Values.attestationSignerMonitoring.enabled) -}}
 {{- end -}}
 {{- if not .Values.balanceMonitoring.ethereum.feeOracle.enabled -}}
 {{- $_ := set $pauses "FeeOracleAccountBalanceLow" true -}}
@@ -64,18 +73,25 @@
 {{- $metric := printf "indexer_dogecoin_last_synced_block{job=~%s}" (.Values.dogecoinIndexerAlerts.jobRegex | quote) -}}
 {{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
 {{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
-{{/* Idle means some minute in the window had no published batch waiting. Missing
-     evidence is not idle, so the alert still fires without these metrics. */}}
+{{/* Idle means some minute in the window had no published batch ahead of this job.
+     Only a valid, fresh DA height counts, because a frozen gauge proves nothing and
+     missing evidence is not idle, so the alert still fires without these metrics. */}}
 {{- $l2Gate := "" -}}
 {{- if .Values.businessAlerts.l2BatchRequirePendingWork -}}
-{{- $l2Gate = printf " unless on (namespace) (min_over_time((max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height) > bool max by (namespace) (withdrawal_processor_protocol_state_l2_batch_height))[%ds:1m]) == 0)" (int $l2.windowSeconds) -}}
+{{- $l2Gate = printf " unless on (namespace, job) (min_over_time((max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height and on (namespace, job, instance) __WP_L2_VALID__) > bool on (namespace) group_right max by (namespace, job) (%s))[%ds:1m]) == 0)" $l2.selector (int $l2.windowSeconds) -}}
 {{- end -}}
 {{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_PENDING_GATE__" $l2Gate | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
 {{- $externalJobs := .Values.externalTargetAlerts.jobRegex -}}
 {{- if or (not (kindIs "string" $externalJobs)) (not $externalJobs) -}}
 {{- fail "externalTargetAlerts.jobRegex must be a nonempty Prometheus regular expression" -}}
 {{- end -}}
-{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | replace "__EXTERNAL_TARGET_JOBS__" $externalJobs | fromYaml).groups -}}
+{{/* The value lands in a plain YAML scalar, where whitespace or # would cut the rule short. */}}
+{{- if regexMatch "[\\s#]" $externalJobs -}}
+{{- fail "externalTargetAlerts.jobRegex must not contain whitespace or #" -}}
+{{- end -}}
+{{- $_ := mustRegexMatch $externalJobs "" -}}
+{{- $signerExclude := ternary "" ",job!=\"attestation-signer\"" .Values.attestationSignerMonitoring.enabled -}}
+{{- $groups = concat $groups (.Files.Get "alerts/monitoring.yaml" | replace "__EXTERNAL_TARGET_JOBS__" ($externalJobs | quote) | replace "__ATTESTATION_SIGNER_EXCLUDE__" $signerExclude | fromYaml).groups -}}
 {{- if and .Values.statusPage.enabled (ge (int ((.Values.statusPage.generated | default dict).version | default 0)) 3) ((.Values.statusPage.publication | default dict).delivery | default dict).enabled -}}
 {{- $statusService := printf "%s-status-delivery" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- $statusAlerts := .Files.Get "alerts/status-page.yaml" | replace "__STATUS_NAMESPACE__" .Release.Namespace | replace "__STATUS_SERVICE__" $statusService | fromYaml -}}
@@ -160,7 +176,7 @@
 {{- $guards := dict -}}
 {{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
 {{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
-{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" -}}
+{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" "l2" -}}
 {{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
 {{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}

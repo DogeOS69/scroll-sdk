@@ -52,11 +52,60 @@ class RenderTests(unittest.TestCase):
         self.assertIn('shadowfork', rules_of(native())['RecoveryRunwayObservationStale']['annotations']['description'])
 
     def test_external_targets_split_by_job(self):
-        rules = rules_of(native({'externalTargetAlerts': {'jobRegex': 'attestation-signer|other'}}))
+        rules = rules_of(native({'attestationSignerMonitoring': {'enabled': True}, 'externalTargetAlerts': {'jobRegex': 'attestation-signer|other'}}))
         self.assertEqual(rules['MetricsTargetDown']['expr'], 'up{job!~"attestation-signer|other"} == 0')
         self.assertEqual(rules['MetricsTargetDown']['labels']['severity'], 'critical')
         self.assertEqual(rules['ExternalScrapeTargetDown']['expr'], 'up{job=~"attestation-signer|other"} == 0')
         self.assertEqual(rules['ExternalScrapeTargetDown']['labels']['severity'], 'warning')
+
+    SIGNER_ALERTS = ('AttestationSignerNotReady', 'AttestationSignerTerminalFailure', 'AttestationSignerSigningFailures', 'AttestationSignerCallbackFailures')
+
+    def test_attestation_signer_alerts_are_off_by_default(self):
+        rules = rules_of(native())
+        grafana = grafana_rules(render_values({}))
+        for name in self.SIGNER_ALERTS:
+            self.assertNotIn(name, rules)
+            self.assertTrue(grafana[name]['isPaused'])
+        self.assertEqual(rules['ExternalScrapeTargetDown']['expr'], 'up{job=~"attestation-signer",job!="attestation-signer"} == 0')
+        self.assertEqual(rules['MetricsTargetDown']['expr'], 'up{job!~"attestation-signer"} == 0')
+
+    def test_attestation_signer_switch_resumes_existing_rules(self):
+        enabled = {'attestationSignerMonitoring': {'enabled': True}}
+        rules = rules_of(native(enabled))
+        grafana = grafana_rules(render_values(enabled))
+        for name in self.SIGNER_ALERTS:
+            self.assertIn(name, rules)
+            self.assertIs(grafana[name]['isPaused'], False)
+        explicit = {**enabled, 'grafanaAlerting': {'pauseRules': {'AttestationSignerNotReady': True}}}
+        self.assertTrue(grafana_rules(render_values(explicit))['AttestationSignerNotReady']['isPaused'])
+
+    def test_rejects_a_switch_that_is_not_a_boolean(self):
+        with self.assertRaises(subprocess.CalledProcessError):
+            render_values({'attestationSignerMonitoring': {'enabled': 'false'}})
+
+    def test_external_job_regex_is_escaped_for_promql(self):
+        rules = rules_of(native({'externalTargetAlerts': {'jobRegex': r'ext\.foo'}}))
+        self.assertEqual(rules['MetricsTargetDown']['expr'], r'up{job!~"ext\\.foo"} == 0')
+        with_quote = rules_of(native({'externalTargetAlerts': {'jobRegex': 'a"b'}}))
+        self.assertEqual(with_quote['MetricsTargetDown']['expr'], r'up{job!~"a\"b"} == 0')
+
+    def test_rejects_an_external_job_regex_that_breaks_the_rule(self):
+        for value in ('a #b', 'a b', '(unclosed'):
+            with self.subTest(value=value), self.assertRaises(subprocess.CalledProcessError):
+                render_values({'externalTargetAlerts': {'jobRegex': value}})
+
+    def test_l2_gate_compares_each_job_with_validated_da_height(self):
+        expr = rules_of(native({'businessAlerts': {'l2BatchRequirePendingWork': True}}))['L2BatchHeightStalled']['expr']
+        self.assertIn('unless on (namespace, job)', expr)
+        self.assertIn('withdrawal_processor_protocol_snapshot_valid{source="l2"}', expr)
+        self.assertNotIn('__WP_L2_VALID__', expr)
+        self.assertNotIn('__TIME_', expr)
+
+    def test_rejects_a_fractional_age_only_when_it_becomes_a_range(self):
+        fractional = {'alertTiming': {'rules': {'ProofWorkerQueueStalled': {'maxAgeSeconds': 3600.5}}}}
+        rules_of(native(fractional))
+        with self.assertRaises(subprocess.CalledProcessError):
+            render_values({**fractional, 'businessAlerts': {'proofQueueRequireNoProgress': True}})
 
     def test_grafana_migrates_the_previous_target_rule(self):
         self.assertEqual(grafana_rules(render())['MetricsTargetDown']['previousExpr'], 'up == 0')
@@ -69,7 +118,7 @@ class RenderTests(unittest.TestCase):
         self.assertTrue(any('alert_logfmt_severity' in previous and previous.endswith('> 0') for previous in rule['previousExpr']))
 
     def test_rejects_unsafe_log_exclusions(self):
-        for patterns in ({'bad service!': ['x']}, {'svc': ['has`backtick']}, {'svc': ['']}):
+        for patterns in ({'bad service!': ['x']}, {'svc': ['has`backtick']}, {'svc': ['']}, {'svc': ['(unclosed']}, {'svc': ['two\nlines']}):
             with self.subTest(patterns=patterns), self.assertRaises(subprocess.CalledProcessError):
                 render_values({'logAlerts': {'excludePatterns': patterns}})
 
@@ -101,9 +150,28 @@ class PromtoolTests(unittest.TestCase):
 
     L2 = {'namespace': 'monitoring', 'job': 'withdrawal-processor', 'instance': 'wp'}
 
-    def l2_series(self, latest):
-        heads = [series('withdrawal_processor_protocol_state_l2_batch_height', self.L2, f'5{FLAT_30M}')]
+    def l2_series(self, latest, valid='1x30', height=f'5{FLAT_30M}'):
+        heads = [series('withdrawal_processor_protocol_state_l2_batch_height', self.L2, height),
+                 series('withdrawal_processor_protocol_snapshot_valid', {**self.L2, 'source': 'l2'}, valid),
+                 series('withdrawal_processor_protocol_snapshot_timestamp_seconds', {**self.L2, 'source': 'l2'}, '0+60x30'),
+                 series('up', self.L2, '1x30')]
         return heads + ([series('withdrawal_processor_protocol_latest_da_batch_height', self.L2, latest)] if latest else [])
+
+    def test_l2_gate_does_not_treat_frozen_or_other_job_evidence_as_idle(self):
+        gated = rules_of(native({'businessAlerts': {'l2BatchRequirePendingWork': True, 'l2BatchStallSeconds': 600}}))
+        self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(f'5{FLAT_30M}', valid='0x30')), 'frozen snapshot')
+        advancing = '5+1x30'
+        wedged = [series('l1_interface_protocol_state_l2_batch_height', {'namespace': 'monitoring', 'job': 'l1-interface', 'instance': 'l1'}, f'5{FLAT_30M}')]
+        self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(advancing, height=advancing) + wedged), 'stuck job behind a healthy one')
+        self.assertFalse(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(advancing, height=advancing)), 'healthy job')
+
+    def test_external_target_for_signer_needs_the_switch(self):
+        signer = [series('up', {'job': 'attestation-signer', 'instance': 'signer'}, '0x30')]
+        other = [series('up', {'job': 'other', 'instance': 'host'}, '0x30')]
+        off = rules_of(native({'externalTargetAlerts': {'jobRegex': 'attestation-signer|other'}}))
+        self.assertFalse(self.firing(off, 'ExternalScrapeTargetDown', signer), 'partner signer not collected')
+        self.assertFalse(self.firing(off, 'MetricsTargetDown', signer))
+        self.assertTrue(self.firing(off, 'ExternalScrapeTargetDown', other), 'other external jobs keep alerting')
 
     def test_l2_stall_distinguishes_idle_from_stalled(self):
         gated = rules_of(native({'businessAlerts': {'l2BatchRequirePendingWork': True, 'l2BatchStallSeconds': 600}}))
@@ -138,7 +206,7 @@ class PromtoolTests(unittest.TestCase):
                 self.assertTrue(self.firing(gated, name, self.proof_series(phase, [series(metric, other, '0+1x60')]), minutes=50), 'another family draining')
 
     def test_external_target_failure_does_not_page_critical(self):
-        rules = rules_of(native())
+        rules = rules_of(native({'attestationSignerMonitoring': {'enabled': True}}))
         signer = [series('up', {'job': 'attestation-signer', 'instance': 'signer'}, '0x30')]
         service = [series('up', {'job': 'withdrawal-processor', 'instance': 'wp'}, '0x30')]
         self.assertFalse(self.firing(rules, 'MetricsTargetDown', signer))

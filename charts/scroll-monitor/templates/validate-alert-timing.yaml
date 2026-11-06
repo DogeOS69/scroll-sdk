@@ -45,6 +45,9 @@
 {{- if or (kindIs "string" $value) (not (regexMatch "^[0-9]+([.][0-9]+)?$" (toString $value))) (le (float64 $value) 0.0) -}}
 {{- fail (printf "alertTiming.rules.%s.%s must be a positive number of seconds" $name $key) -}}
 {{- end -}}
+{{- if and $.Values.businessAlerts.proofQueueRequireNoProgress (eq $key "maxAgeSeconds") (has $name (list "ProofMaterializationQueueStalled" "ProofWorkerQueueStalled")) (not (regexMatch "^[0-9]+$" (toString $value))) -}}
+{{- fail (printf "alertTiming.rules.%s.maxAgeSeconds must be a whole number with businessAlerts.proofQueueRequireNoProgress" $name) -}}
+{{- end -}}
 {{- else if eq $key "minLines" -}}
 {{- if or (kindIs "string" $value) (not (regexMatch "^[1-9][0-9]*$" (toString $value))) -}}
 {{- fail (printf "alertTiming.rules.%s.minLines must be a positive integer" $name) -}}

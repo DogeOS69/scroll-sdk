@@ -28,6 +28,9 @@
 {{- fail (printf "grafanaAlerting.pauseRules.%s must be a boolean" $name) }}
 {{- end }}
 {{- end }}
+{{- if not (kindIs "bool" .Values.attestationSignerMonitoring.enabled) }}
+{{- fail "attestationSignerMonitoring.enabled must be a boolean" }}
+{{- end }}
 {{- $stack := index .Values "kube-prometheus-stack" }}
 {{- range $section := list "diskAlerts" "resourceAlerts" "businessPodAlerts" }}
 {{- $settings := index $.Values $section }}

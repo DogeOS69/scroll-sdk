@@ -400,6 +400,8 @@ serviceAlerts:
 recoveryRunwayAlerts:
   # false pauses RecoveryRunwayObservationStale. For a shadowfork only, whose
   # getblockchaininfo reports chain "shadowfork", which the runway monitor rejects.
+  # To resume an existing Grafana rule afterwards, also set
+  # grafanaAlerting.pauseRules.RecoveryRunwayObservationStale: false.
   observationStaleEnabled: true
   warningBlocks: 129600
   criticalBlocks: 86400
@@ -438,6 +440,14 @@ alertTiming:
 externalTargetAlerts:
   jobRegex: attestation-signer
 
+# Attestation signers usually run on partner hosts that expose no metrics to this
+# cluster. true pairs with a scrape job named attestation-signer, which the CLI
+# generates from monitoring.attestationSigner in the deployment spec, and turns on
+# the AttestationSigner* alerts and that job's ExternalScrapeTargetDown. TSO alerts
+# on signer communication and quorum work either way.
+attestationSignerMonitoring:
+  enabled: false
+
 # Lines ServiceErrorLogs ignores, by service, as Go RE2 expressions without backticks.
 # Keep each one narrow, because a matching line can no longer raise this alert.
 # ServicePanicOrFatalLogs ignores this list.
@@ -457,7 +467,9 @@ businessAlerts:
   l2BatchRequirePendingWork: false
   # true holds ProofMaterializationQueueStalled and ProofWorkerQueueStalled while the
   # family completed work within maxAgeSeconds, so a draining backlog stays quiet.
-  # A queue that drains slower than it grows then needs capacity alerts to show.
+  # A queue that drains slower than it grows then needs capacity alerts to show, and
+  # one stuck item stays quiet while others in its family finish. maxAgeSeconds for
+  # these two rules must then be a whole number, because it becomes a PromQL range.
   proofQueueRequireNoProgress: false
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m
