@@ -74,11 +74,16 @@
 {{- $l2 := include "scroll-monitor.l2BatchProgress" . | fromJson -}}
 {{- $l2Progress := $l2.expr | replace "__SELECTOR__" $l2.selector | replace "__LABELS__" "namespace, job" | replace "__WINDOW__" (printf "%ds" (int $l2.windowSeconds)) -}}
 {{/* Idle means some minute in the window had no published batch ahead of this job.
-     Only a valid, fresh DA height counts, because a frozen gauge proves nothing and
-     missing evidence is not idle, so the alert still fires without these metrics. */}}
+     Only a valid, fresh DA height counts: an invalid snapshot proves nothing and missing
+     evidence is not idle, so the alert still fires in those cases. It also fires for a
+     job with a height while the DA inventory is empty; both at zero is a chain that has
+     not published yet. A height that matches because the withdrawal-processor stopped
+     recording new batches does look idle; the README warns about this. */}}
 {{- $l2Gate := "" -}}
 {{- if .Values.businessAlerts.l2BatchRequirePendingWork -}}
-{{- $l2Gate = printf " unless on (namespace, job) (min_over_time((max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height and on (namespace, job, instance) __WP_L2_VALID__) > bool on (namespace) group_right max by (namespace, job) (%s))[%ds:1m]) == 0)" $l2.selector (int $l2.windowSeconds) -}}
+{{- $latestDa := "max by (namespace) (withdrawal_processor_protocol_latest_da_batch_height and on (namespace, job, instance) __WP_L2_VALID__)" -}}
+{{- $jobHeight := printf "max by (namespace, job) (%s)" $l2.selector -}}
+{{- $l2Gate = printf " unless on (namespace, job) (min_over_time(((%s > bool on (namespace) group_right %s) unless on (namespace, job) (%s > 0 and on (namespace) (%s == 0)))[%ds:1m]) == 0)" $latestDa $jobHeight $jobHeight $latestDa (int $l2.windowSeconds) -}}
 {{- end -}}
 {{- $groups := (.Files.Get "alerts/dogeos.yaml" | replace "__L2_BATCH_PROGRESS__" $l2Progress | replace "__L2_BATCH_PENDING_GATE__" $l2Gate | replace "__L2_BATCH_STALL_SECONDS__" (toString (int $l2.windowSeconds)) | replace "__INDEXER_METRIC__" $metric | replace "__LEGACY_INDEXER_LAG_EXPR__" (join " or " $indexerQueries) | replace "__INDEXER_MAX_EXCESS_LAG__" (toString $legacyThreshold) | fromYaml).groups -}}
 {{- $externalJobs := .Values.externalTargetAlerts.jobRegex -}}

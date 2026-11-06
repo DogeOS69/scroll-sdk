@@ -548,9 +548,12 @@ Where the chain can idle for longer than the window, such as a devnet, set
 published batch stayed ahead of that job for the whole window, which is how the
 Withdrawals health rule already behaves, so an idle chain does not change the public
 page. Each job is compared with the DA height separately, so one job catching up does
-not hide another that is stuck. It stays off by default because a DA publisher that
-has stopped publishing also looks idle to this rule. Without a valid, fresh
-withdrawal-processor DA height it fires as before.
+not hide another that is stuck. It stays off by default because a stall can also look
+idle to this rule: a DA publisher that has stopped publishing, or a withdrawal-processor
+that has stopped recording published batches. That height comes from its local database,
+so its snapshot stays valid and fresh. Without a valid, fresh DA height it fires as
+before, and it also fires for a job with a height while the DA inventory is empty. A
+chain that has not published a batch yet counts as idle.
 
 `ProofMaterializationQueueStalled` and `ProofWorkerQueueStalled` key on the age of
 the oldest item, so they also fire while a large backlog drains normally. With

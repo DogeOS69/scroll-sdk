@@ -463,7 +463,9 @@ businessAlerts:
   l2BatchStallSeconds: 7500
   # true fires L2BatchHeightStalled only if a published batch waited for the whole
   # window, as the Withdrawals health rule already does. Use where the chain can
-  # idle longer than the window. A stopped DA publisher then needs its own alerts.
+  # idle longer than the window. It also fires for a job with a height while the DA
+  # inventory is empty. A stopped DA publisher, or a withdrawal-processor that stopped
+  # recording published batches, then needs its own alerts.
   l2BatchRequirePendingWork: false
   # true holds ProofMaterializationQueueStalled and ProofWorkerQueueStalled while the
   # family completed work within maxAgeSeconds, so a draining backlog stays quiet.

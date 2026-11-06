@@ -164,9 +164,11 @@ class PromtoolTests(unittest.TestCase):
                  series('up', self.L2, '1x30')]
         return heads + ([series('withdrawal_processor_protocol_latest_da_batch_height', self.L2, latest)] if latest else [])
 
-    def test_l2_gate_does_not_treat_frozen_or_other_job_evidence_as_idle(self):
+    def test_l2_gate_does_not_treat_invalid_empty_or_other_job_evidence_as_idle(self):
         gated = rules_of(native({'businessAlerts': {'l2BatchRequirePendingWork': True, 'l2BatchStallSeconds': 600}}))
-        self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(f'5{FLAT_30M}', valid='0x30')), 'frozen snapshot')
+        self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(f'5{FLAT_30M}', valid='0x30')), 'invalid snapshot')
+        self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(f'0{FLAT_30M}')), 'job has a height, DA inventory is empty')
+        self.assertFalse(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(f'0{FLAT_30M}', height=f'0{FLAT_30M}')), 'no batch published yet')
         advancing = '5+1x30'
         wedged = [series('l1_interface_protocol_state_l2_batch_height', {'namespace': 'monitoring', 'job': 'l1-interface', 'instance': 'l1'}, f'5{FLAT_30M}')]
         self.assertTrue(self.firing(gated, 'L2BatchHeightStalled', self.l2_series(advancing, height=advancing) + wedged), 'stuck job behind a healthy one')
