@@ -118,11 +118,11 @@ def start(image, *args):
 
 
 try:
-    start('prom/prometheus:v2.52.0', '--config.file=/fixtures/prometheus.yaml',
+    start('prom/prometheus:v3.16.0', '--config.file=/fixtures/prometheus.yaml',
           '--storage.tsdb.path=/tmp/prometheus', '--web.enable-remote-write-receiver',
           f'--web.listen-address=127.0.0.1:{prom_port}')
     eventually(lambda: get(prom_url + '/-/ready'))
-    start('grafana/alloy:v1.8.2', 'run', '--disable-reporting', '--storage.path=/tmp/alloy',
+    start('grafana/alloy:v1.21.3', 'run', '--disable-reporting', '--storage.path=/tmp/alloy',
           f'--server.http.listen-addr=127.0.0.1:{alloy_port}', '/fixtures/runtime.alloy')
     eventually(lambda: get(alloy_url + '/-/ready'))
     query = urllib.parse.urlencode({'query': 'probe_success{job="status-page-alloy"}'})

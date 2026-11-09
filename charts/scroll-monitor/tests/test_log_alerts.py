@@ -105,7 +105,7 @@ analytics:
         subprocess.run([
             "docker", "run", "--rm", "-d", "--name", name,
             "-p", "127.0.0.1::3100", "-v", f"{config}:/etc/loki/test.yaml:ro",
-            "grafana/loki:3.1.1", "-config.file=/etc/loki/test.yaml",
+            "grafana/loki:3.6.20", "-config.file=/etc/loki/test.yaml",
         ], check=True, stdout=subprocess.DEVNULL)
         port = subprocess.check_output(["docker", "port", name, "3100"], text=True).strip()
         cls.url = "http://" + port

@@ -182,7 +182,7 @@ class StatusPageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             Path(root, 'tests.json').write_text(json.dumps(fixture))
             result = subprocess.run(['docker', 'run', '--rm', '--user', str(os.getuid()), '--entrypoint', 'promtool',
-                '-v', root+':/fixtures:ro', 'prom/prometheus:v2.52.0', 'test', 'rules', '/fixtures/tests.json'],
+                '-v', root+':/fixtures:ro', 'prom/prometheus:v3.16.0', 'test', 'rules', '/fixtures/tests.json'],
                 text=True, capture_output=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
 

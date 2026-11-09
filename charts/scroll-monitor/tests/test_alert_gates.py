@@ -149,7 +149,7 @@ class PromtoolTests(unittest.TestCase):
             (root / 'rules.yaml').write_text(yaml.safe_dump({'groups': groups}, sort_keys=False))
             case = {'rule_files': ['rules.yaml'], 'evaluation_interval': '1m', 'tests': [{'interval': '1m', 'input_series': input_series, 'alert_rule_test': [{'eval_time': f'{minutes}m', 'alertname': name, 'exp_alerts': []}]}]}
             (root / 'case.test.yaml').write_text(yaml.safe_dump(case, sort_keys=False))
-            result = subprocess.run(['docker', 'run', '--rm', '--entrypoint', 'promtool', '-v', f'{root}:/work:ro', '-w', '/work', 'prom/prometheus:v2.52.0', 'test', 'rules', 'case.test.yaml'], capture_output=True, text=True, check=False)
+            result = subprocess.run(['docker', 'run', '--rm', '--entrypoint', 'promtool', '-v', f'{root}:/work:ro', '-w', '/work', 'prom/prometheus:v3.16.0', 'test', 'rules', 'case.test.yaml'], capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 return False
             self.assertIn('got:[', result.stdout + result.stderr, result.stdout + result.stderr)

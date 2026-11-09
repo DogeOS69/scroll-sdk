@@ -194,7 +194,9 @@ class MakefileContextTests(unittest.TestCase):
             commands = self.expanded_commands('selected', 'chain', {
                 'SCROLL_MONITOR_DSTACK_VALUES': overlay,
             }, targets=['install-scroll-monitor'], files=['values/scroll-monitor-dstack.yaml'])
-            monitor = commands[0]
+            crds, monitor = commands
+            self.assertEqual(crds[:6], ['helm', '--kube-context', 'selected', '-n', 'chain', 'show'])
+            self.assertIn('--server-side', crds)
             values = [monitor[i + 1] for i, arg in enumerate(monitor) if arg == '--values']
             self.assertEqual(values, ['values/scroll-monitor-production.yaml']
                              + ([overlay] if overlay else []))

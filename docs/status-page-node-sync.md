@@ -14,7 +14,7 @@ statusPage:
     nodeSync:
       mode: official
       namespace: "" # Node namespace; empty uses the monitoring Helm namespace.
-      image: python:3.12.11-alpine3.22
+      image: python:3.12.16-alpine3.24
       reference:
         values: l2-reth-sequencer-production.yaml
         release: l2-reth-sequencer

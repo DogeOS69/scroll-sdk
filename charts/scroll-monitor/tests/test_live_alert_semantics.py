@@ -52,5 +52,5 @@ class LiveAlertSemanticsTests(unittest.TestCase):
                 (root / 'tests.yaml').write_text(yaml.safe_dump({
                     'rule_files': ['rules.yaml'], 'evaluation_interval': '1m', 'tests': tests}))
                 subprocess.run(['docker', 'run', '--rm', '--entrypoint', 'promtool',
-                                '-v', f'{root}:/work:ro', 'prom/prometheus:v2.52.0',
+                                '-v', f'{root}:/work:ro', 'prom/prometheus:v3.16.0',
                                 'test', 'rules', '/work/tests.yaml'], check=True)

@@ -83,7 +83,7 @@ scroll-monitor 的 PodMonitor 发现与 ServiceMonitor 一致按 release namespa
 启用应用自带 ServiceMonitor，不重复创建。没有应用指标端点的 proof coordinator
 不能靠添加 ServiceMonitor 修复，保留相关诊断规则暂停。
 
-回归包含真实 Prometheus 表达式求值、CLI 到 Helm 渲染、Grafana 11.1.5 通知格式、
+回归包含真实 Prometheus 表达式求值、CLI 到 Helm 渲染、Grafana 13.3.0 通知格式、
 浏览器渲染/接口故障、投递重启与未知期间禁止恢复、业务数据库完整性与重组。
 完整部署验收步骤见 [rollout](status-page-rollout.md)。
 

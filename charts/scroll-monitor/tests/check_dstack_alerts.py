@@ -1,7 +1,7 @@
 """Render actual rules and run Prometheus semantic tests; no cluster/provider access.
 
 Usage: python3 charts/scroll-monitor/tests/check_dstack_alerts.py
-Requires Docker with prom/prometheus:v2.52.0 cached and PyYAML.
+Requires Docker with prom/prometheus:v3.16.0 cached and PyYAML.
 """
 import json
 from pathlib import Path
@@ -32,5 +32,5 @@ with tempfile.TemporaryDirectory(prefix='dstack-promtool-') as directory:
     (root / 'rules.yaml').write_text(yaml.safe_dump({'groups': groups}))
     (root / 'tests.yaml').write_text(yaml.safe_dump(suite))
     subprocess.run(['docker', 'run', '--rm', '--network', 'none', '-v', f'{directory}:/tests:ro',
-                    '-w', '/tests', '--entrypoint', 'promtool', 'prom/prometheus:v2.52.0',
+                    '-w', '/tests', '--entrypoint', 'promtool', 'prom/prometheus:v3.16.0',
                     'test', 'rules', '/tests/tests.yaml'], check=True)

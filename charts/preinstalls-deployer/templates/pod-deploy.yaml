@@ -12,7 +12,7 @@ spec:
   restartPolicy: OnFailure
   initContainers:
     - name: 1-wait-for-l2-sequencer
-      image: curlimages/curl:8.20.0
+      image: curlimages/curl:8.23.0
       command: ["/bin/sh", "-ec"]
       args:
         - |

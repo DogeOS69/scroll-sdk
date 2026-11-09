@@ -124,5 +124,5 @@ class RecoveryRunwayTests(unittest.TestCase):
             (root/'rules.yaml').chmod(0o644)
             (root/'tests.yaml').chmod(0o644)
             subprocess.run(['docker', 'run', '--rm', '--network=none', '--entrypoint', 'promtool',
-                            '-v', f'{root}:/work:ro', 'prom/prometheus:v2.52.0',
+                            '-v', f'{root}:/work:ro', 'prom/prometheus:v3.16.0',
                             'test', 'rules', '/work/tests.yaml'], check=True)
