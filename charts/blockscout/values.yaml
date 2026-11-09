@@ -5,10 +5,11 @@ blockscout-stack:
   imagePullSecrets: []
 
   blockscout:
+    # Upstream 8.0.2 rebuilt on maintained Alpine packages; see custom-images/blockscout-scroll.
     image:
-      repository: ghcr.io/blockscout/blockscout-scroll
+      repository: ghcr.io/dogeos69/blockscout-scroll
       pullPolicy: Always
-      tag: 8.0.2
+      tag: 8.0.2-alpine3.24.1
 
     env:
       ETHEREUM_JSONRPC_HTTP_URL: http://l2-rpc:8545
@@ -57,9 +58,11 @@ blockscout-stack:
         readOnly: true
 
   frontend:
+    # Upstream v1.38.2 rebuilt on maintained Alpine packages; see custom-images/blockscout-frontend.
     image:
+      repository: ghcr.io/dogeos69/blockscout-frontend
       pullPolicy: Always
-      tag: v1.38.2
+      tag: v1.38.2-alpine3.24.1
 
     env:
       NEXT_PUBLIC_NETWORK_LOGO: "https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll.svg"
