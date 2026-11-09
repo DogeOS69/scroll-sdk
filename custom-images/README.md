@@ -2,14 +2,13 @@
 
 | Directory | Image | Release tag |
 | --- | --- | --- |
-| `scroll-alpine` | `scroll-alpine` | `scroll-alpine-<version>` |
 | `l1-devnet` | `l1-devnet` | `l1-devnet-<version>` |
 | `blockscout-scroll` | `ghcr.io/dogeos69/blockscout-scroll` | `blockscout-scroll-<version>` |
 | `blockscout-frontend` | `ghcr.io/dogeos69/blockscout-frontend` | `blockscout-frontend-<version>` |
 
 Pushing a release tag builds the image with `<version>` as the image tag.
-`scroll-alpine` and `l1-devnet` are published to Docker Hub under the
-`DOCKERHUB_USERNAME` account and also update `latest`. The Blockscout images
+`l1-devnet` is published to Docker Hub under the `DOCKERHUB_USERNAME`
+account and also updates `latest`. The Blockscout images
 are published to GitHub Container Registry with the workflow's `GITHUB_TOKEN`.
 A new GHCR package is private: after its first release, an organization
 administrator must set it to public and link it to this repository.
