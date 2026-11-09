@@ -110,3 +110,35 @@ monitoring:
 # Bind a separately managed private HTTPS endpoint to the controller Service.
 # The chart binds its Service; it does not own the ALB lifecycle.
 targetGroupBinding: null
+
+# HTTPS for in-cluster API clients such as capacity-manager (dogeos-core #1786).
+# dstack serves plain HTTP only, so an nginx sidecar terminates TLS on tls.port
+# and forwards to dstack on 127.0.0.1. dstack then stops listening on the Pod
+# network: the Service exposes only tls.port, probes run inside the Pod, metrics
+# are scraped over HTTPS, and ingress or targetGroupBinding cannot be enabled.
+# Requires cert-manager. The chart issues a private CA and a server certificate
+# for the Service names; clients trust ca.crt from the <fullname>-tls Secret.
+tls:
+  enabled: false
+  port: 8443
+  clusterDomain: cluster.local
+  ca:
+    # The CA key is kept on renewal, so clients keep trusting the renewed CA.
+    duration: 87600h
+  certificate:
+    duration: 2160h
+    renewBefore: 720h
+  proxy:
+    image:
+      repository: nginx
+      tag: "1.30-alpine"
+      digest: sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311
+      pullPolicy: IfNotPresent
+    # How often the proxy checks the mounted certificate and reloads after renewal.
+    reloadCheckSeconds: 60
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        memory: 128Mi

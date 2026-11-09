@@ -4,6 +4,9 @@
 {{- if and .Values.ingress.enabled (empty .Values.ingress.hosts) -}}
 {{- fail "ingress.hosts must be set when ingress is enabled" -}}
 {{- end -}}
+{{- if and .Values.tls.enabled (or .Values.ingress.enabled .Values.targetGroupBinding) -}}
+{{- fail "tls.enabled keeps dstack off the Pod network; disable ingress and targetGroupBinding" -}}
+{{- end -}}
 {{- $reserved := list "HOME" "DSTACK_SERVER_DIR" "DSTACK_SERVER_ADMIN_TOKEN" "DSTACK_DATABASE_URL" "DSTACK_SERVER_PORT" "DSTACK_SERVER_HOST" "DSTACK_SERVER_CONFIG_DISABLED" "DSTACK_DEFAULT_CREDS_DISABLED" "DSTACK_ENABLE_PROMETHEUS_METRICS" "DSTACK_PROMETHEUS_AUTH_TOKEN" "DSTACK_OTEL_METRICS_ENABLED" "DSTACK_OTEL_METRICS_EXPORTERS" -}}
 {{- $seen := dict -}}
 {{- range .Values.extraEnv -}}

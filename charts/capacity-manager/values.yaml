@@ -34,6 +34,12 @@ manager:
   scaleDownOnShutdown: false
   dstack:
     serverUrl: http://dstack-controller.dstack-system.svc:3000
+    # PEM CA certificates that replace the public roots for serverUrl (needs a
+    # Core image with dogeos-core #1786). For a dstack-controller release with
+    # tls.enabled, use ca.crt from its <fullname>-tls Secret and serverUrl
+    # https://<fullname>.<namespace>.svc:8443. Public certificates only.
+    # A change restarts the manager. Empty keeps the public roots.
+    caBundle: ""
     project: ""
     fleets: []
     # Requires Core #1612; an existing, priced fleet in the same project.

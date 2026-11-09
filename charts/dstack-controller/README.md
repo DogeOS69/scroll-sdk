@@ -347,3 +347,45 @@ Controller and its CRD must already be installed. External infrastructure owns
 the ALB, listener, target group and private DNS; Helm owns the binding.
 This option is mutually exclusive with `ingress.enabled`. The default is null
 and adds no resource.
+
+## In-cluster HTTPS with a private CA (0.1.7+)
+
+`tls.enabled: true` serves the API over HTTPS inside the cluster, so clients such
+as capacity-manager can use the Service name instead of a public hostname.
+dstack itself serves plain HTTP only. The chart therefore:
+
+- issues a private CA and a server certificate for the Service names
+  (`<fullname>`, `<fullname>.<namespace>`, `<fullname>.<namespace>.svc` and the
+  `tls.clusterDomain` form) with cert-manager, which must already be installed;
+- adds an nginx sidecar that terminates TLS on `tls.port` (default 8443) and
+  forwards to dstack on `127.0.0.1:3000`. It checks the mounted certificate every
+  `tls.proxy.reloadCheckSeconds` and reloads after cert-manager renews it;
+- starts dstack with `--host 127.0.0.1`, so nothing on the Pod network reaches
+  plain HTTP. The Service exposes only `tls.port`, the controller probes run
+  `curl` inside the container, and the ServiceMonitor scrapes over HTTPS with the
+  private CA. `ingress` and `targetGroupBinding` cannot be combined with it.
+
+Clients trust `ca.crt` from the `<fullname>-tls` Secret and connect to
+`https://<fullname>.<namespace>.svc:<tls.port>`. The CA is valid for
+`tls.ca.duration` (10 years by default) and keeps its key when cert-manager renews
+it, so server certificate and CA renewals need no client change. The CA lives in the
+`<fullname>-ca` Secret, which cert-manager keeps after uninstall by default. Deleting it
+creates a new CA, which every client must then be given.
+
+Enabling or disabling TLS restarts the controller and changes the Service port, so
+existing clients of port 3000 stop working. Plan it together with the clients: a
+capacity-manager stores its worker state per server URL, so drain it before
+switching its URL. See the capacity-manager chart.
+
+Optional local runtime check (requires Docker, Helm, OpenSSL and PyYAML):
+
+```bash
+docker pull dstackai/dstack@sha256:a502b38014dc9730ad712f60c067b84a00a4cf091982b81f9982fdc60ac6852b
+docker pull nginx@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311
+python3 charts/dstack-controller/tests/smoke_tls_proxy.py
+```
+
+It runs the rendered controller command and sidecar in one network namespace with
+a disposable CA in place of cert-manager. It checks HTTPS through the private CA,
+that plain HTTP is unreachable from a peer, the controller probe, a certificate
+reload without restart, and a clean stop on SIGQUIT and SIGTERM.

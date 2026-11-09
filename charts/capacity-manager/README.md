@@ -73,3 +73,24 @@ TTL. The public script ConfigMap is retained until the next hook creation.
 The chart default is `initialization.enabled: false` for deployments with
 operator-owned fleets. Enable it in the values passed to Helm to run these
 checks and initialize empty fleets during installation or upgrade.
+
+## Private CA for an in-cluster dstack controller (0.1.8+)
+
+`manager.dstack.caBundle`, default empty, holds PEM CA certificates that replace
+the public roots for `manager.dstack.serverUrl`. Use it with a dstack-controller
+release that sets `tls.enabled`: copy `ca.crt` from that release's
+`<fullname>-tls` Secret and set `serverUrl` to
+`https://<fullname>.<namespace>.svc:8443`. The bundle is public data rendered into
+a ConfigMap; the chart rejects a private key, a non-PEM value and an `http` URL.
+
+The manager receives `--dstack-ca-file`, which needs a Core image with
+dogeos-core #1786. With initialization enabled, the Job first checks that the
+selected binary accepts the flag, and its dstack client trusts the same bundle
+through `REQUESTS_CA_BUNDLE`. Core reads the file once at startup; the chart
+restarts the manager when the bundle changes. To replace the CA, deploy a bundle
+with the old and new CAs, switch the controller, then remove the old CA.
+
+The manager keys its worker state by server URL. Moving an existing fleet from a
+public hostname to the Service URL, or back, is a migration: drain the workers and
+finish cleanup through the old URL first, then change `serverUrl` and `caBundle`
+together.

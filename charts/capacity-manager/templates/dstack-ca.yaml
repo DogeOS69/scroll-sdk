@@ -1,0 +1,20 @@
+{{- with .Values.manager.dstack.caBundle }}
+{{- if not (hasPrefix "https://" $.Values.manager.dstack.serverUrl) }}
+{{- fail "manager.dstack.caBundle requires an https manager.dstack.serverUrl" }}
+{{- end }}
+{{- if not (contains "-----BEGIN CERTIFICATE-----" .) }}
+{{- fail "manager.dstack.caBundle must contain PEM CERTIFICATE blocks" }}
+{{- end }}
+{{- if contains "PRIVATE KEY" . }}
+{{- fail "manager.dstack.caBundle must hold public CA certificates only, never a private key" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Values.fullnameOverride }}-dstack-ca
+  labels:
+    {{- include "capacity-manager.labels" $ | nindent 4 }}
+data:
+  ca.crt: |
+{{ . | indent 4 }}
+{{- end }}

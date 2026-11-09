@@ -185,6 +185,68 @@ class ControllerTemplates(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(message, result.stderr)
 
+    def test_tls_keeps_dstack_on_loopback_behind_a_private_ca(self):
+        docs = resources({"fullnameOverride": "controller", "tls": {"enabled": True}})
+        issuers = {d["metadata"]["name"]: d["spec"] for d in docs if d["kind"] == "Issuer"}
+        self.assertEqual(issuers, {"controller-selfsigned": {"selfSigned": {}},
+                                   "controller-ca": {"ca": {"secretName": "controller-ca"}}})
+        certificates = {d["metadata"]["name"]: d["spec"] for d in docs if d["kind"] == "Certificate"}
+        ca, server = certificates["controller-ca"], certificates["controller-tls"]
+        self.assertTrue(ca["isCA"])
+        self.assertEqual(ca["privateKey"]["rotationPolicy"], "Never")
+        self.assertEqual(ca["issuerRef"]["name"], "controller-selfsigned")
+        self.assertEqual(server["issuerRef"]["name"], "controller-ca")
+        self.assertEqual(server["secretName"], "controller-tls")
+        self.assertEqual(server["dnsNames"], [
+            "controller", "controller.dstack-system", "controller.dstack-system.svc",
+            "controller.dstack-system.svc.cluster.local"])
+        self.assertNotIn("isCA", server)
+
+        pod = resource(docs, "Deployment")["spec"]["template"]
+        self.assertIn("checksum/tls-proxy", pod["metadata"]["annotations"])
+        containers = {c["name"]: c for c in pod["spec"]["containers"]}
+        controller, proxy = containers["controller"], containers["tls-proxy"]
+        self.assertEqual(controller["command"][-2:], ["--host", "127.0.0.1"])
+        self.assertNotIn("ports", controller)
+        for probe in ("startupProbe", "readinessProbe", "livenessProbe"):
+            self.assertNotIn("httpGet", controller[probe])
+            self.assertEqual(controller[probe]["exec"]["command"][-1], "http://127.0.0.1:3000/")
+        self.assertRegex(proxy["image"], r"@sha256:[a-f0-9]{64}$")
+        self.assertTrue(proxy["securityContext"]["runAsNonRoot"])
+        self.assertTrue(proxy["securityContext"]["readOnlyRootFilesystem"])
+        self.assertEqual(proxy["ports"], [{"name": "https", "containerPort": 8443}])
+        volumes = {v["name"]: v for v in pod["spec"]["volumes"]}
+        self.assertEqual(volumes["tls"]["secret"]["secretName"], "controller-tls")
+
+        self.assertEqual(resource(docs, "Service")["spec"]["ports"],
+                         [{"name": "https", "port": 8443, "targetPort": "https"}])
+        endpoint = resource(docs, "ServiceMonitor")["spec"]["endpoints"][0]
+        self.assertEqual((endpoint["port"], endpoint["scheme"]), ("https", "https"))
+        self.assertEqual(endpoint["tlsConfig"], {"serverName": "controller.dstack-system.svc",
+                                                 "ca": {"secret": {"name": "controller-tls", "key": "ca.crt"}}})
+        files = resource(docs, "ConfigMap")["data"]
+        self.assertIn("listen 8443 ssl;", files["nginx.conf"])
+        self.assertIn("proxy_pass http://127.0.0.1:3000;", files["nginx.conf"])
+        self.assertIn("TERM INT QUIT", files["run.sh"])
+
+    def test_tls_rejects_public_entrypoints_and_the_plaintext_port(self):
+        binding = {'targetGroupARN': 'arn:aws:elasticloadbalancing:us-east-1:000000000000:targetgroup/example/0000',
+                   'networking': {'ingress': [{'ports': [{'port': 3000, 'protocol': 'TCP'}]}]}}
+        cases = [
+            ({"ingress": {"enabled": True, "hosts": ["dstack.example.com"]}}, "disable ingress"),
+            ({"targetGroupBinding": binding}, "disable ingress"),
+            ({"port": 3000}, "tls.port"),
+            ({"proxy": {"image": {"digest": ""}}}, "digest"),
+        ]
+        for extra, message in cases:
+            with self.subTest(extra=extra):
+                values = {"tls": {"enabled": True}}
+                for key, value in extra.items():
+                    (values["tls"] if key in ("port", "proxy") else values)[key] = value
+                result = render(values)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+
     def test_production_profile_and_explicit_storage_class(self):
         values = yaml.safe_load((CHART / "values/production.yaml").read_text())
         values["persistence"]["storageClass"] = ""
