@@ -9,9 +9,9 @@
 Pushing a release tag builds the image with `<version>` as the image tag.
 `l1-devnet` is published to Docker Hub under the `DOCKERHUB_USERNAME`
 account and also updates `latest`. The Blockscout images
-are published to GitHub Container Registry with the workflow's `GITHUB_TOKEN`.
-A new GHCR package is private: after its first release, an organization
-administrator must set it to public and link it to this repository.
+are published to GitHub Container Registry with the workflow's `GITHUB_TOKEN`
+and are linked to this public repository through the image source label, so
+they can be pulled without credentials.
 
 ## Blockscout rebuilds
 
