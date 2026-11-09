@@ -53,6 +53,13 @@ Grafana consumes metrics for visualization and internal alerts. Runtime policy l
 in `scripts/status_page_health.py`, not in CLI-generated PromQL. Runtime credentials
 are scoped component/heartbeat webhooks; no Instatus management API key is needed.
 
+Each tick evaluates every rule at one instant `queryLagSeconds` (default 15) in the
+past. A query at wall-clock "now" can read a scrape that Prometheus has not finished
+committing, and the evaluator then reports a fully observed component as `unknown`
+for that tick (seen as a `StatusEvidenceIncomplete` flap every few minutes on
+`public-rpc`). Detection and recovery are therefore 15 seconds later than the
+configured `failureFor` and `recoveryFor`.
+
 Production profiles keep status-page automation disabled until configured. When
 enabled, components default to automatic, requiring reviewed inputs and bindings.
 CLI emits deployment parameters and exact cleanup of previous managed Grafana
