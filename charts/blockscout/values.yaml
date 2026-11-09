@@ -58,11 +58,11 @@ blockscout-stack:
         readOnly: true
 
   frontend:
-    # Upstream v1.38.2 rebuilt on maintained Alpine packages; see custom-images/blockscout-frontend.
+    # Upstream v1.38.2 built from source with custom-images/blockscout-frontend/v1.38.2.patch.
     image:
       repository: ghcr.io/dogeos69/blockscout-frontend
       pullPolicy: Always
-      tag: v1.38.2-alpine3.24.1
+      tag: v1.38.2-dogeos.1
 
     env:
       NEXT_PUBLIC_NETWORK_LOGO: "https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/network-logos/scroll.svg"

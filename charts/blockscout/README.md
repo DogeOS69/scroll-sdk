@@ -68,7 +68,7 @@ Kubernetes: `>=1.22.0-0`
 | blockscout-stack.frontend.env.NEXT_PUBLIC_OG_IMAGE_URL | string | `"https://raw.githubusercontent.com/blockscout/frontend-configs/main/configs/og-images/scroll-sepolia.png"` |  |
 | blockscout-stack.frontend.image.pullPolicy | string | `"Always"` |  |
 | blockscout-stack.frontend.image.repository | string | `"ghcr.io/dogeos69/blockscout-frontend"` |  |
-| blockscout-stack.frontend.image.tag | string | `"v1.38.2-alpine3.24.1"` |  |
+| blockscout-stack.frontend.image.tag | string | `"v1.38.2-dogeos.1"` |  |
 | blockscout-stack.frontend.ingress.annotations | object | `{}` |  |
 | blockscout-stack.frontend.ingress.className | string | `"nginx"` |  |
 | blockscout-stack.frontend.ingress.enabled | bool | `true` |  |
