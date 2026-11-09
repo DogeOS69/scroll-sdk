@@ -467,11 +467,13 @@ businessAlerts:
   # inventory is empty. A stopped DA publisher, or a withdrawal-processor that stopped
   # recording published batches, then needs its own alerts.
   l2BatchRequirePendingWork: false
-  # true holds ProofMaterializationQueueStalled and ProofWorkerQueueStalled while the
-  # family completed work within maxAgeSeconds, so a draining backlog stays quiet.
-  # A queue that drains slower than it grows then needs capacity alerts to show, and
-  # one stuck item stays quiet while others in its family finish. maxAgeSeconds for
-  # these two rules must then be a whole number, because it becomes a PromQL range.
+  # true holds ProofWorkerQueueStalled while the family completed a proof within
+  # maxAgeSeconds, and ProofMaterializationQueueStalled while any proof or work item
+  # in the namespace completed (a batch waits on the proofs of its chunks), so a
+  # draining backlog stays quiet. A queue that drains slower than it grows then needs
+  # capacity alerts to show, and one stuck item stays quiet while other work
+  # finishes. maxAgeSeconds for these two rules must then be a whole number, because
+  # it becomes a PromQL range. Both need the proof-coordinator metrics scraped.
   proofQueueRequireNoProgress: false
   jobMaxAgeSeconds: 900
   proofStuckFor: 5m

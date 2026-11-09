@@ -168,7 +168,7 @@ class TemplateTests(unittest.TestCase):
         grafana.pop("ServicePanicOrFatalLogs")
         grafana = {name: {key: value for key, value in rule.items() if key != "isPaused"} for name, rule in grafana.items() if not rule.get("isPaused")}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 182)  # Includes the enabled service catalog.
+        self.assertEqual(len(native), 183)  # Includes the enabled service catalog.
 
     def test_configurable_thresholds_and_quorum_are_rendered(self):
         docs = render("--set", "balanceMonitoring.feeWallet.minimumDoge=250",
@@ -281,7 +281,7 @@ class TemplateTests(unittest.TestCase):
         rules = grafana_rules(render(*SIGNERS_ON))
         self.assertFalse(any(rule.get("isPaused") for rule in rules.values()))
         paused = {name: rule for name, rule in grafana_rules(render(*SIGNERS_ON, "--set", "serviceAlerts.paused=true")).items() if rule.get("isPaused")}
-        self.assertEqual(len(paused), 97)
+        self.assertEqual(len(paused), 98)
         self.assertEqual({r["labels"]["service"] for r in paused.values()}, {
             "withdrawal-processor", "tso-service", "proof-coordinator", "l2-reth",
             "l1-interface", "eth-da-submitter", "cubesigner-signer", "fee-oracle",
@@ -300,7 +300,7 @@ class TemplateTests(unittest.TestCase):
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
         native = {rule["alert"]: rule for group in native for rule in group["rules"]}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 182)
+        self.assertEqual(len(native), 183)
 
     def test_disabling_grafana_does_not_activate_paused_rules(self):
         for setting in ("grafanaAlerting.enabled=false", "grafana.enabled=false"):
