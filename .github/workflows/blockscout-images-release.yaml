@@ -31,7 +31,7 @@ jobs:
               ;;
             blockscout-frontend-*)
               image=blockscout-frontend
-              # The upstream frontend image is published for amd64 only.
+              # Built from upstream source plus the patch named in upstream.env.
               platforms=linux/amd64
               ;;
             *)
@@ -45,12 +45,41 @@ jobs:
             exit 1
           fi
           owner="${GITHUB_REPOSITORY_OWNER,,}"
+          context="custom-images/$image"
+          if [ -f "$context/upstream.env" ]; then
+            # shellcheck disable=SC1091
+            . "$context/upstream.env"
+            {
+              echo "UPSTREAM_REPOSITORY=$UPSTREAM_REPOSITORY"
+              echo "UPSTREAM_REF=$UPSTREAM_REF"
+              echo "UPSTREAM_COMMIT=$UPSTREAM_COMMIT"
+              echo "UPSTREAM_PATCH=$context/$UPSTREAM_PATCH"
+            } >> "$GITHUB_ENV"
+            context=upstream
+          fi
           {
             echo "IMAGE=$image"
+            echo "BUILD_CONTEXT=$context"
             echo "REGISTRY_IMAGE=ghcr.io/$owner/$image"
             echo "VERSION=$version"
             echo "PLATFORMS=$platforms"
           } >> "$GITHUB_ENV"
+
+      - name: Check out upstream source
+        if: env.UPSTREAM_COMMIT != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPOSITORY }}
+          ref: ${{ env.UPSTREAM_COMMIT }}
+          path: upstream
+          persist-credentials: false
+
+      - name: Apply patch to upstream source
+        if: env.UPSTREAM_COMMIT != ''
+        run: |
+          test "$(git -C upstream rev-parse HEAD)" = "$UPSTREAM_COMMIT"
+          git -C upstream apply --verbose "$GITHUB_WORKSPACE/$UPSTREAM_PATCH"
+          echo "UPSTREAM_SHORT=$(git -C upstream rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -68,8 +97,15 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: custom-images/${{ env.IMAGE }}
-          file: custom-images/${{ env.IMAGE }}/Dockerfile
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.BUILD_CONTEXT }}/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: ${{ env.REGISTRY_IMAGE }}:${{ env.VERSION }}
+          build-args: |
+            GIT_COMMIT_SHA=${{ env.UPSTREAM_SHORT }}
+            GIT_TAG=${{ env.UPSTREAM_REF }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=GPL-3.0
+            org.opencontainers.image.version=${{ env.VERSION }}
