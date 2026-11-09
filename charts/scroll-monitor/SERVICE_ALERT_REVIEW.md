@@ -304,7 +304,7 @@ period; evaluation and notification intervals still apply.
 | `L2RethTransactionQueueLarge` | The Reth queued transaction pool exceeds 1000 transactions. | 15m | warning |
 | `L2RethL1ReorgObserved` | The L2 derivation watcher observed an L1 reorg. | Immediate | warning |
 
-### [proof-coordinator](alerts/services/proof-coordinator.yaml) — 18 rules
+### [proof-coordinator](alerts/services/proof-coordinator.yaml) — 19 rules
 
 | Rule | Condition / symptom | Pending | Severity |
 | --- | --- | --- | --- |
@@ -320,6 +320,7 @@ period; evaluation and notification intervals still apply.
 | `ProofMaterializationQueueStalled` | Proof materialization work is not being drained. | 10m | critical |
 | `ProofVerificationQueueStalled` | Proof verification or result import is delayed. | 10m | critical |
 | `ProofWorkerQueueStalled` | Proof work waits more than one hour for progress. | 10m | critical |
+| `ProofWorkQueuedWithoutLiveWorkers` | Claimable prove work waits while no prover worker has claimed or heartbeated (`proof_coordinator_queued_prove_work_without_live_workers`, reported after 5 minutes without a worker). | 15m | warning |
 | `ProofCoordinatorObserveDegraded` | A terminal real-proof failure was degraded to mock retry. | Immediate | warning |
 | `ProofCoordinatorEagerLocatorInvalid` | An eager artifact locator failed validation. | Immediate | warning |
 | `ProofCoordinatorEagerLocatorConflict` | Eager locator publication found conflicting bytes. | Immediate | warning |

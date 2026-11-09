@@ -573,10 +573,21 @@ chain that has not published a batch yet counts as idle.
 
 `ProofMaterializationQueueStalled` and `ProofWorkerQueueStalled` key on the age of
 the oldest item, so they also fire while a large backlog drains normally. With
-`businessAlerts.proofQueueRequireNoProgress: true` they hold while that proof family
-completed work within `maxAgeSeconds`. The trade-off is that a queue growing faster
-than it drains stays quiet here, and so does one stuck item while others in its family
-keep finishing.
+`businessAlerts.proofQueueRequireNoProgress: true`, `ProofWorkerQueueStalled` holds
+while that proof family completed a proof within `maxAgeSeconds`.
+`ProofMaterializationQueueStalled` holds while any proof or work item in the same
+namespace completed in that window: a materialize item can wait on proofs of another
+family, such as a batch on the proofs of its chunks, and with few workers those
+proofs run one after another. The trade-off is that a queue growing faster than it
+drains stays quiet here, and so does one stuck item while other work keeps finishing.
+The gate reads the proof-coordinator metrics; when they are not scraped it never
+holds, so enable the proof-coordinator ServiceMonitor.
+
+`ProofWorkQueuedWithoutLiveWorkers` (warning) covers missing capacity directly: it
+fires when claimable prove work has waited 20 minutes with no prover worker claiming
+or heartbeating (the coordinator reports the queue after 5 minutes without a worker,
+plus a 15 minute `for`). A scale-to-zero fleet that starts a worker within that time
+stays quiet.
 
 ### Status page deadlines
 

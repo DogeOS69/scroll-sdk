@@ -1535,6 +1535,29 @@ tests:
   - expr: sum(ALERTS{alertname="ProofWorkerQueueStalled",alertstate="firing"})
     eval_time: 45m
     exp_samples: []
+- name: ProofWorkQueuedWithoutLiveWorkers fires
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_queued_prove_work_without_live_workers
+    values: 3x60
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofWorkQueuedWithoutLiveWorkers",alertstate="firing"})
+    eval_time: 45m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: ProofWorkQueuedWithoutLiveWorkers stays quiet through a worker cold start
+  interval: 1m
+  input_series:
+  - series: proof_coordinator_queued_prove_work_without_live_workers
+    values: 0x20 3x10 0x30
+  promql_expr_test:
+  - expr: sum(ALERTS{alertname="ProofWorkQueuedWithoutLiveWorkers",alertstate="firing"})
+    eval_time: 30m
+    exp_samples: []
+  - expr: sum(ALERTS{alertname="ProofWorkQueuedWithoutLiveWorkers",alertstate="firing"})
+    eval_time: 45m
+    exp_samples: []
 - name: L2RethNoPeers fires
   interval: 1m
   input_series:

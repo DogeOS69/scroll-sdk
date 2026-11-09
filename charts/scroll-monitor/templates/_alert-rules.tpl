@@ -152,11 +152,13 @@
 {{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}
 {{/* A completion inside the age window means the queue is draining. Missing
-     completion metrics do not suppress the alert. */}}
+     completion metrics do not suppress the alert. A materialize item can wait
+     on proofs of another family (a batch on its chunks), so any completed
+     proof or work item in the namespace counts as progress for that rule. */}}
 {{- $materializeGate := "" -}}
 {{- $proveGate := "" -}}
 {{- if $.Values.businessAlerts.proofQueueRequireNoProgress -}}
-{{- $materializeGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_work_items_total{phase=\"materialize\",outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
+{{- $materializeGate = ` unless on (namespace) ((sum by (namespace) (increase(proof_coordinator_work_items_total{outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0) or (sum by (namespace) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0))` -}}
 {{- $proveGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
 {{- end -}}
 {{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
