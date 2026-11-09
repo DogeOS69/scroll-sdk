@@ -20,6 +20,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import status_page_health as health
 
+# Evidence is read this far behind wall-clock time. A scrape's samples carry its
+# start time but are committed only when it finishes, and one rule reads many
+# series, so a query at "now" can see a scrape half-committed and drop a
+# component to unknown for one tick. Keep this above the slowest scrape timeout.
+QUERY_LAG_SECONDS = 15
+
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -66,6 +72,10 @@ class Delivery:
                 or self.components.keys() - set(health.COMPONENTS)):
             raise ValueError("invalid health scope")
         self.config.setdefault("intervalSeconds", 30)
+        self.config.setdefault("queryLagSeconds", QUERY_LAG_SECONDS)
+        lag = self.config["queryLagSeconds"]
+        if type(lag) not in (int, float) or not math.isfinite(lag) or not 0 <= lag <= 60:
+            raise ValueError("queryLagSeconds must be between 0 and 60")
         self.decisions = {}
         for component in self.components.values():
             if "expr" in component and "rule" not in component:
@@ -232,11 +242,13 @@ class Delivery:
         # fetched once. No core DB access, no per-rule background workers.
         plan = {key: health.queries(self.config, key) for key in self.components}
         expressions = {expr for rules in plan.values() for expr in rules.values() if expr}
+        # One settled evaluation time for every rule of the tick (see QUERY_LAG_SECONDS).
+        lag = self.config["queryLagSeconds"]
+        evaluated_at = time.time() - lag
         def query(expr):
             try:
-                now = time.time()
-                url = self.config["prometheusUrl"].rstrip("/") + "/api/v1/query?" + urllib.parse.urlencode({"query": expr, "time": now, "timeout": "8s"})
-                return expr, observation(request_json(url), time.time(), self.config["intervalSeconds"] * 2, allow_partial=True)
+                url = self.config["prometheusUrl"].rstrip("/") + "/api/v1/query?" + urllib.parse.urlencode({"query": expr, "time": evaluated_at, "timeout": "8s"})
+                return expr, observation(request_json(url), time.time(), self.config["intervalSeconds"] * 2 + lag, allow_partial=True)
             except Exception:
                 return expr, None
         with ThreadPoolExecutor(max_workers=8) as workers:

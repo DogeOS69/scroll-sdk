@@ -1,3 +1,4 @@
+import copy
 import http.client
 import importlib.util
 import json
@@ -8,6 +9,7 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.parse
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/status-page-delivery.py'
@@ -205,6 +207,39 @@ class DeliveryTests(unittest.TestCase):
         partial = response('0')
         partial['warnings'] = ['partial response']
         self.assertIsNone(module.observation(partial, 110, 20))
+
+    def test_collection_reads_every_rule_at_one_settled_time(self):
+        # A query at wall-clock "now" races the scrape being committed; every rule of
+        # a tick must read the same instant, QUERY_LAG_SECONDS in the past.
+        config = copy.deepcopy(self.config)
+        config['intervalSeconds'] = 5  # 2 * interval alone would reject the lagged sample.
+        config['prometheusUrl'] = 'http://prometheus.test'
+        config['components']['public-rpc']['rule'] = {'expr': 'vector(0)'}
+        config['components']['sequencing'] = {
+            'name': 'Sequencing', 'pageId': 'page', 'componentId': 'seq', 'webhookEnv': 'TEST_ONLY_WEBHOOK',
+            'failureSeconds': 20, 'recoverySeconds': 30, 'rule': {'expr': 'vector(0) + 0'}}
+        delivery = module.Delivery(config, str(Path(self.temp.name) / 'lag.sqlite3'), lambda url, payload: None)
+        seen = []
+        def prometheus(url, payload=None):
+            params = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+            stamp = float(params['time'][0])
+            seen.append((params['query'][0], stamp))
+            return {'status': 'success', 'data': {'resultType': 'vector', 'result': [{'value': [stamp, '0']}]}}
+        try:
+            with patch.object(module, 'request_json', prometheus), patch('time.time', return_value=1000.0):
+                delivery.collect()
+            self.assertEqual(sorted(query for query, _ in seen), ['vector(0)', 'vector(0) + 0'])
+            self.assertEqual({stamp for _, stamp in seen}, {1000.0 - module.QUERY_LAG_SECONDS})
+            self.assertEqual({key: item['status'] for key, item in delivery.decisions.items()},
+                             {'public-rpc': 'operational', 'sequencing': 'operational'})
+        finally:
+            delivery.db.close()
+
+    def test_query_lag_must_be_a_bounded_number(self):
+        for lag in (-1, 61, float('nan'), '15', True):
+            config = dict(self.config, queryLagSeconds=lag)
+            with self.assertRaises(ValueError, msg=repr(lag)):
+                module.Delivery(config, str(Path(self.temp.name) / 'bad.sqlite3'), lambda url, payload: None)
 
     def test_observe_mode_never_publishes(self):
         self.delivery.components['public-rpc']['mode'] = 'observe'
