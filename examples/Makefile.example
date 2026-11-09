@@ -13,7 +13,7 @@ DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-control
 DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.6
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
-SCROLL_MONITOR_CHART_VERSION ?= 0.1.62-dogeos
+SCROLL_MONITOR_CHART_VERSION ?= 0.1.63-dogeos
 # prep-charts emits this overlay separately from the base monitor values.
 # Keep applying it on subsequent monitor upgrades.
 SCROLL_MONITOR_DSTACK_VALUES ?= $(wildcard values/scroll-monitor-dstack.yaml)
@@ -23,7 +23,7 @@ EAGER_MATERIALIZER_CHART_VERSION ?= 0.1.1
 ETH_DA_SUBMITTER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/eth-da-submitter
 ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
-PROOF_COORDINATOR_CHART_VERSION ?= 0.3.6
+PROOF_COORDINATOR_CHART_VERSION ?= 0.3.7
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
 WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.27
 PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer

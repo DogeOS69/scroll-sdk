@@ -364,6 +364,7 @@ Thresholds come from `deprecatingKeyDrainAlerts` (`drainMargin`, `retiredBaselin
 | `ProofMaterializationQueueStalled` | `10m` | `maxAgeSeconds: 1800`, `snapshotMaxAgeSeconds: 120` |
 | `ProofVerificationQueueStalled` | `10m` | `maxAgeSeconds: 1800`, `snapshotMaxAgeSeconds: 120` |
 | `ProofWorkerQueueStalled` | `10m` | `maxAgeSeconds: 3600`, `snapshotMaxAgeSeconds: 120` |
+| `ProofWorkQueuedWithoutLiveWorkers` | `15m` | — |
 | `ProofCoordinatorObserveDegraded` | `0s` | `window: 5m` |
 | `ProofCoordinatorEagerLocatorInvalid` | `0s` | `window: 5m` |
 | `ProofCoordinatorEagerLocatorConflict` | `0s` | `window: 5m` |

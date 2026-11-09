@@ -164,6 +164,14 @@ securityContext:
 serviceMonitor:
   main:
     enabled: false
+    # The coordinator serves /metrics on the prover port; the shared chart's
+    # default endpoint names the disabled http port and would scrape nothing.
+    endpoints:
+      - port: prover
+        scheme: http
+        path: /metrics
+        interval: 1m
+        scrapeTimeout: 10s
 
 ingress:
   main:

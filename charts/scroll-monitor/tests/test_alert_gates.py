@@ -38,7 +38,10 @@ class RenderTests(unittest.TestCase):
     def test_gates_use_the_completion_metric_of_each_phase(self):
         rules = rules_of(native({'businessAlerts': {'l2BatchRequirePendingWork': True, 'l2BatchStallSeconds': 600, 'proofQueueRequireNoProgress': True}}))
         self.assertIn('[600s:1m]', rules['L2BatchHeightStalled']['expr'])
-        self.assertIn('proof_coordinator_work_items_total{phase="materialize",outcome="success"}[1800s]', rules['ProofMaterializationQueueStalled']['expr'])
+        materialize = rules['ProofMaterializationQueueStalled']['expr']
+        self.assertIn('unless on (namespace) (', materialize)
+        self.assertIn('proof_coordinator_work_items_total{outcome="success"}[1800s]', materialize)
+        self.assertIn('proof_coordinator_prove_attempts_ended_total{cause="succeeded"}[1800s]', materialize)
         self.assertIn('proof_coordinator_prove_attempts_ended_total{cause="succeeded"}[3600s]', rules['ProofWorkerQueueStalled']['expr'])
 
     def test_stale_runway_rule_is_paused_or_omitted_only_on_request(self):
@@ -211,8 +214,25 @@ class PromtoolTests(unittest.TestCase):
                 self.assertFalse(self.firing(gated, name, self.proof_series(phase, [series(metric, labelled, '0+1x60')]), minutes=50), 'draining')
                 self.assertTrue(self.firing(gated, name, self.proof_series(phase, [series(metric, labelled, '7x60')]), minutes=50), 'no completions')
                 self.assertTrue(self.firing(gated, name, self.proof_series(phase, []), minutes=50), 'metric missing')
-                other = {**labelled, 'proof_family': 'bundle'}
-                self.assertTrue(self.firing(gated, name, self.proof_series(phase, [series(metric, other, '0+1x60')]), minutes=50), 'another family draining')
+                elsewhere = {**labelled, 'namespace': 'other'}
+                self.assertTrue(self.firing(gated, name, self.proof_series(phase, [series(metric, elsewhere, '0+1x60')]), minutes=50), 'another namespace draining')
+        other = {**coordinator, 'proof_family': 'bundle', 'cause': 'succeeded'}
+        self.assertTrue(self.firing(gated, 'ProofWorkerQueueStalled', self.proof_series('prove', [series('proof_coordinator_prove_attempts_ended_total', other, '0+1x60')]), minutes=50), 'prove: another family draining')
+
+    def test_materialize_gate_counts_progress_of_any_family(self):
+        # A batch waits in materialize while the proofs of its chunks finish one by one.
+        gated = rules_of(native({'businessAlerts': {'proofQueueRequireNoProgress': True}}))
+        name = 'ProofMaterializationQueueStalled'
+        coordinator = {'namespace': 'monitoring', 'job': 'proof-coordinator', 'instance': 'pc', 'proof_family': 'bundle'}
+        attempts = 'proof_coordinator_prove_attempts_ended_total'
+        chunk_proofs = series(attempts, {**coordinator, 'cause': 'succeeded'}, '0+1x60')
+        self.assertFalse(self.firing(gated, name, self.proof_series('materialize', [chunk_proofs]), minutes=50), 'other family proving')
+        verified = series('proof_coordinator_work_items_total', {**coordinator, 'phase': 'verify', 'outcome': 'success'}, '0+1x60')
+        self.assertFalse(self.firing(gated, name, self.proof_series('materialize', [verified]), minutes=50), 'other phase completing')
+        lost = series(attempts, {**coordinator, 'cause': 'worker_lost'}, '0+1x60')
+        self.assertTrue(self.firing(gated, name, self.proof_series('materialize', [lost]), minutes=50), 'only failed attempts')
+        quiet = series(attempts, {**coordinator, 'cause': 'succeeded'}, '5x60')
+        self.assertTrue(self.firing(gated, name, self.proof_series('materialize', [quiet]), minutes=50), 'no proof finished in the window')
 
     def test_external_target_failure_does_not_page_critical(self):
         rules = rules_of(native({'attestationSignerMonitoring': {'enabled': True}}))
