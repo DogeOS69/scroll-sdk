@@ -130,7 +130,7 @@ class SnapshotPromQLTests(unittest.TestCase):
             (root/'tests.yaml').write_text(yaml.safe_dump({
                 'rule_files': ['/work/rules.yaml'], 'evaluation_interval': '1m', 'tests': cases}))
             subprocess.run(['docker', 'run', '--rm', '--network', 'none', '--entrypoint', 'promtool',
-                '-v', f'{root}:/work:ro', 'prom/prometheus:v2.52.0', 'test', 'rules', '/work/tests.yaml'], check=True)
+                '-v', f'{root}:/work:ro', 'prom/prometheus:v3.16.0', 'test', 'rules', '/work/tests.yaml'], check=True)
 
     def test_cached_evidence_is_scoped_and_fresh(self):
         rules = grafana_rules(render('--set', 'businessAlerts.requiredSignersByRole.Correctness=2'))
@@ -202,4 +202,4 @@ class SnapshotPromQLTests(unittest.TestCase):
             root=Path(directory);root.chmod(0o755)
             (root/'tests.yaml').write_text(yaml.safe_dump({'rule_files':[], 'tests':cases}))
             subprocess.run(['docker','run','--rm','--network','none','--entrypoint','promtool',
-                '-v',f'{root}:/work:ro','prom/prometheus:v2.52.0','test','rules','/work/tests.yaml'],check=True)
+                '-v',f'{root}:/work:ro','prom/prometheus:v3.16.0','test','rules','/work/tests.yaml'],check=True)

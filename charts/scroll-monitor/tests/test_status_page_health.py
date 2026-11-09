@@ -141,7 +141,7 @@ class PolicyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, 'rules.json').write_text(json.dumps({'rule_files': [], 'evaluation_interval': '1m', 'tests': tests}))
             result = subprocess.run(['docker', 'run', '--rm', '--user', str(os.getuid()), '--entrypoint', 'promtool',
-                '-v', directory+':/fixtures:ro', 'prom/prometheus:v2.52.0', 'test', 'rules', '/fixtures/rules.json'],
+                '-v', directory+':/fixtures:ro', 'prom/prometheus:v3.16.0', 'test', 'rules', '/fixtures/rules.json'],
                 text=True, capture_output=True, timeout=180)
             detail = '\n'.join(line.rsplit('# ', 1)[-1] if line.lstrip().startswith('expr:') else line
                                for line in (result.stdout+result.stderr).splitlines())
@@ -281,7 +281,7 @@ class PolicyTests(unittest.TestCase):
             Path(directory,'alerts.yaml').write_text(yaml.safe_dump(render_source_groups(SCRIPTS.parent / 'alerts/status-page.yaml')))
             Path(directory,'rules.json').write_text(json.dumps({'rule_files':['/fixtures/alerts.yaml'],'evaluation_interval':'1m','tests':tests}))
             result=subprocess.run(['docker','run','--rm','--user',str(os.getuid()),'--entrypoint','promtool','-v',directory+':/fixtures:ro',
-                    'prom/prometheus:v2.52.0','test','rules','/fixtures/rules.json'],text=True,capture_output=True,timeout=120)
+                    'prom/prometheus:v3.16.0','test','rules','/fixtures/rules.json'],text=True,capture_output=True,timeout=120)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
 

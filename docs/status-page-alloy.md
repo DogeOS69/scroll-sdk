@@ -159,8 +159,8 @@ path from that network; it cannot independently report after the whole cluster
 loses connectivity. The external heartbeat covers monitoring loss, not regional
 user reachability. Optional external monitors may add that perspective later.
 
-Local acceptance runs the rendered configuration in Alloy v1.8.2, writes real
-probe metrics to Prometheus v2.52.0, verifies their labels, and tests failure/body
+Local acceptance runs the rendered configuration in Alloy v1.21.3, writes real
+probe metrics to Prometheus v3.16.0, verifies their labels, and tests failure/body
 assertions against temporary HTTP fixtures. Promtool exercises missing, duplicate,
 stale and revision-mismatched evidence. No live chain or Instatus page is mutated.
 

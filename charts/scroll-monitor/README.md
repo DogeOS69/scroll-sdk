@@ -16,10 +16,19 @@ The chart vendors the following dependencies:
 
 | Dependency | Version | Default |
 | --- | --- | --- |
-| Grafana | 8.5.0 | enabled |
-| Loki | 6.10.2 | enabled |
-| kube-prometheus-stack | 59.0.0 | enabled |
-| Grafana Alloy | 1.0.2 | enabled |
+| Grafana (grafana-community) | 14.4.0 | enabled |
+| Loki | 7.5.0 | enabled |
+| kube-prometheus-stack | 93.1.0 | enabled |
+| Grafana Alloy | 1.15.0 | enabled |
+
+Helm installs CRDs only when a release is first installed. Before upgrading an
+existing release to a chart with a newer kube-prometheus-stack, apply the
+chart's CRDs; `make install-scroll-monitor` in `examples/` does this on every
+run:
+
+```shell
+helm show crds ./charts/scroll-monitor | kubectl apply --server-side --force-conflicts -f -
+```
 
 Promtail is not supported. Log and OTLP collection is provided by Grafana Alloy
 directly through the official Alloy chart dependency.

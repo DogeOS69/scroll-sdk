@@ -1,67 +1,79 @@
-# 内部告警通知格式与文案规范
+# Internal alert notification format and wording guide
 
-适用于 scroll-monitor 发送到内部 Slack 的全部 Grafana 告警，不涉及公开状态页
-（见 [公开组件健康规则](status-page-health-rules.md)）。
+Applies to every Grafana alert that scroll-monitor sends to internal Slack. It does not cover the
+public status page (see [public component health rules](status-page-health-rules.md)).
 
-## Slack 消息模板
+## Slack message template
 
-chart 通过告警 seed Job 把通知模板 `scroll-monitor` 写入 Grafana，
-内容来自 `charts/scroll-monitor/notifications/slack.tmpl`。模板在 UI 中可编辑：
-未改动的模板随 chart 升级；UI 修改过或同名的非托管模板会保留，并在 Job 日志里报告 `DRIFT`。
+The chart's alert seed Job writes the notification template `scroll-monitor` into Grafana, with content
+from `charts/scroll-monitor/notifications/slack.tmpl`. The template can be edited in the UI: an
+unmodified template is upgraded with the chart; a template modified in the UI, or an unmanaged template
+with the same name, is kept and reported as `DRIFT` in the Job log.
 
-Slack contact point 需要引用它（只需配置一次）：
+The Slack contact point must reference it (configure once):
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
 | Title | `{{ template "scroll-monitor.slack.title" . }}` |
 | Text Body | `{{ template "scroll-monitor.slack.text" . }}` |
 
-在 Grafana UI 中直接填写上表的值。若通过 `grafana.alerting` values 文件化配置，
-必须使用 `values/production.yaml` 示例中的转义写法，否则 Grafana 子 chart 的 `tpl`
-会在安装时执行这段模板并报错。
+Enter the values above directly in the Grafana UI. When configuring them as code through
+`grafana.alerting` values, use the escaped form shown in the `values/production.yaml` example;
+otherwise the Grafana subchart's `tpl` executes this template during installation and fails.
 
-消息结构：
+Message structure:
 
 ```text
-[FIRING:2] CRITICAL · testnet · 2 alerts · l1-interface      ← 标题：状态、级别、网络、告警、服务
+[FIRING:2] CRITICAL · testnet · 2 alerts · l1-interface      ← title: status, severity, network, alerts, service
 *Firing (2)*
 *Protocol state has not recorded a new WF transaction for 60 minutes.*   ← summary
 Job l1-interface in namespace default has not observed ...               ← description
-`ProtocolStateWFTxNumberStalled job=l1-interface namespace=default`      ← 告警名与定位标签
-Since 2026-10-02 06:58 UTC · Rule · Silence                              ← 时间与链接
+`ProtocolStateWFTxNumberStalled job=l1-interface namespace=default`      ← alert name and locating labels
+Since 2026-10-02 06:58 UTC · Rule · Silence                              ← time and links
 ```
 
-- 网络名取 `grafanaAlerting.notificationTemplate.environment`，为空时使用 `statusPage.environment`。
-- 不显示 Grafana 内部的 `A=… B=… C=…` 表达式值；需要展示的数值写进 description。
-- 定位标签行以告警名开头，省略 `severity`、`managed_by`、`grafana_folder`。
-- 每组最多列出 10 条，其余在 Grafana 中查看。规则关联了 dashboard 时附带 Dashboard/Panel 链接。
+- The network name comes from `grafanaAlerting.notificationTemplate.environment`, falling back to
+  `statusPage.environment` when empty.
+- Grafana's internal `A=… B=… C=…` expression values are not shown; put any values worth showing in
+  the description.
+- The locating-label line starts with the alert name and omits `severity`, `managed_by` and
+  `grafana_folder`.
+- Each group lists at most 10 alerts; view the rest in Grafana. When a rule is linked to a dashboard,
+  Dashboard/Panel links are included.
 
-## 告警文案规范
+## Alert wording guide
 
-所有规则（`charts/scroll-monitor/alerts/**/*.yaml`）遵守以下约定，
-由 `tests/test_alert_notifications.py` 检查。英文书写。
+Every rule (`charts/scroll-monitor/alerts/**/*.yaml`) follows these conventions, checked by
+`tests/test_alert_notifications.py`. Write in English.
 
-**summary** 是 Slack 中的标题行：
+**summary** is the title line in Slack:
 
-- 一句话、以句号结尾、不超过 100 字符。
-- 以组件开头，写现象和阈值/时长：`Fee oracle value has not been updated for 15 minutes.`
-- 使用组件名（TSO、L1 Interface、Ethereum DA submitter 等），不写指标名或 `readiness is below 1` 这类表达式。
-- 每条规则的 summary 唯一，不能复用其他规则的标题。
+- One sentence, ending with a period, at most 100 characters.
+- Start with the component, then state the symptom and threshold/duration:
+  `Fee oracle value has not been updated for 15 minutes.`
+- Use component names (TSO, L1 Interface, Ethereum DA submitter, etc.), not metric names or
+  expressions such as `readiness is below 1`.
+- Each rule's summary is unique and cannot reuse another rule's title.
 
-**description** 依次写：
+**description**, in order:
 
-1. 证据：哪个对象（`{{ $labels.job }}` 等）出现了什么，必要时带数值。
-2. 影响：仅在确定时写，例如 “so no bridge transaction can be signed”。不确定就写条件句。
-3. 下一步：`Check …` / `Inspect …`，按最可能的原因排序。相关告警同时触发时说明先查哪个。
-4. 已有的边界说明（如 “Missing telemetry does not establish …”）放在最后。
+1. Evidence: which object (`{{ $labels.job }}` etc.) shows what, with values when needed.
+2. Impact: only when certain, for example "so no bridge transaction can be signed". Use a conditional
+   sentence when uncertain.
+3. Next step: `Check …` / `Inspect …`, ordered by most likely cause. When related alerts fire together,
+   say which to check first.
+4. Existing boundary notes (such as "Missing telemetry does not establish …") go last.
 
-**数值与标签**：
+**Values and labels**:
 
-- 只在表达式返回有意义的量时使用 `$value`，且必须格式化：计数 `{{ $value | printf "%.0f" }}`，
-  ETH `printf "%.4f"`，DOGE `printf "%.2f"`，秒数 `{{ $value | humanizeDuration }}`。
-  比较型或停滞型表达式（返回 0/1）不要显示 `$value`。
-- 只引用表达式保留下来的标签。`max(...)`、`sum(...)` 等未 `by` 的聚合会丢掉 job/instance。
-- 计数可能为 1 时用 `item(s)` 这类写法。
+- Use `$value` only when the expression returns a meaningful quantity, and always format it: counts
+  `{{ $value | printf "%.0f" }}`, ETH `printf "%.4f"`, DOGE `printf "%.2f"`, seconds
+  `{{ $value | humanizeDuration }}`. Do not show `$value` for comparison or stall expressions that
+  return 0/1.
+- Reference only labels that the expression keeps. Aggregations such as `max(...)` and `sum(...)`
+  without `by` drop job/instance.
+- Use forms such as `item(s)` when a count can be 1.
 
-修改已有规则的文案不需要迁移字段：seed Job 会更新已记录基线且未被 UI 修改过的 annotation。
-labels 属于运维方，已部署规则的 labels 不会被 chart 升级改写。
+Changing the wording of an existing rule needs no field migration: the seed Job updates annotations
+whose recorded baseline has not been modified in the UI. Labels belong to operators, and chart upgrades
+do not rewrite the labels of deployed rules.

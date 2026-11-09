@@ -30,7 +30,7 @@ statusPage:
     # - {id: planned-upgrade, start: '2026-12-01T01:00:00Z', end: '2026-12-01T02:00:00Z', components: [sequencing, node-sync]}
     delivery:
       enabled: true  # Single evaluator and publisher; automatic publication requires this.
-      image: python:3.12.11-alpine3.22  # [DEFAULT] Standard-library runtime; no custom image build.
+      image: python:3.12.16-alpine3.24  # [DEFAULT] Standard-library runtime; no custom image build.
       storageClassName: ""  # [OPERATOR] Empty uses cluster default; durable state must survive redeployment.
       storageSize: 1Gi  # [DEFAULT] One SQLite delivery journal, single replica.
       # CPU headroom for concurrent health queries and responsive probes.
@@ -65,7 +65,7 @@ statusPage:
     nodeSync:
       mode: external  # [OPERATOR] Set official and select deployed sources below to use in-cluster followers.
       namespace: ""  # [OPERATOR] Node namespace; empty uses scroll-monitor's Helm namespace.
-      image: python:3.12.11-alpine3.22  # [DEFAULT] Read-only RPC collector; no Instatus credentials.
+      image: python:3.12.16-alpine3.24  # [DEFAULT] Read-only RPC collector; no Instatus credentials.
       reference: {}  # [SOURCE] Exactly one ACTIVE sequencer release (one replica, allowEmptyBlocks: true).
       # reference: {values: l2-reth-sequencer-production.yaml, release: l2-reth-sequencer, role: sequencer}
       followers: []  # [SOURCE] Select effective values/release pairs, including numbered bootnode files when deployed.
@@ -77,7 +77,7 @@ statusPage:
       # Optional per-source service overrides templated/custom names. replicas: 0 excludes intentional standby.
       # All selected follower Pods must be observed. A missing/stale reference produces unknown.
     probes:
-      websocketImage: node:22.23.3-alpine3.23  # [DEFAULT] Auxiliary container in the existing Alloy Pod when WSS is configured.
+      websocketImage: node:22.23.4-alpine3.24  # [DEFAULT] Auxiliary container in the existing Alloy Pod when WSS is configured.
       mode: alloy  # [OPERATOR] Existing Alloy probes public entrypoints; external retains browser/chain-aware probes.
       # [SCOPE] Alloy checks HTTP/TLS, RPC chain ID/block-number patterns and API availability.
       # Browser rendering and indexing freshness require external checks.

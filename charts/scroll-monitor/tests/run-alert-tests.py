@@ -32,6 +32,6 @@ with tempfile.TemporaryDirectory(prefix="scroll-monitor-tests-") as directory:
         files.append("/work/" + source.name)
     subprocess.run([
         "docker", "run", "--rm", "--entrypoint", "promtool",
-        "-v", f"{root}:/work:ro", "prom/prometheus:v2.52.0",
+        "-v", f"{root}:/work:ro", "prom/prometheus:v3.16.0",
         "test", "rules", *files,
     ], check=True)

@@ -189,35 +189,17 @@ extrapolate a linear CPU-to-TPS scaling factor from these samples.
 
 ## Evidence and reproduction
 
-The operator's sibling deployment checkout contains the
-[sequencer acceptance summary](../../dogeos-aws-devnet/artifacts/acceptance/gas-capacity-20260916/README.md).
-That link requires the `dogeos-aws-devnet` checkout alongside `scroll-sdk`.
-The tables above make the measured results available within this repository.
-
-The original core run directory is
-`e2e/performance-results/k8s-stress-20260916T041939Z/` in the `dogeos-core`
-checkout. Relevant artifacts are `report.md`, `impact.json`, `prometheus.json`,
-`phases.json`, `pods-before.json`, `pods-after.json`, the sequencer result JSON,
-and `gas-calibration.json`. Tool fingerprints are in `tool-source-sha256.json`.
-Do not copy the entire run directory into documentation: it also contains
-private test-wallet material.
+The tables above contain the measured results. The raw run artifacts, such as
+per-phase reports and Prometheus exports, are kept outside this repository.
 
 Execution caveat: the measurement and report generation completed, and Vitest
 exited successfully. The outer Bash wrapper exited with code 2 after a script
 edit during execution caused an EOF parsing error. This is recorded in the
 original manifest; the wrapper exit must not be reported as a clean success.
 
-To reproduce the workload on an explicitly selected test deployment, use the
-stress runner documented in `dogeos-core/e2e/scripts/README-stress.md`:
-
-```bash
-KUBE_CONTEXT='<explicit-test-cluster-context>' \
-DOGEOS_PERF_DEPLOYMENT_DIR='<deployment-checkout>' \
-npm --prefix e2e run stress -- --suite sequencer \
-  --rates 10,100,200 --stage-seconds 60 --gas-ratios 0.5,1,1.5 \
-  --baseline-seconds 60 --recovery-seconds 60 --flow-timeout 1800
-```
-
-Run this from the compatible core checkout, with its documented test funding
-and configuration prepared. Record the exact image and hardware for each new
-run; the old measurements are not a substitute for validating a new release.
+The workload came from the DogeOS core end-to-end stress runner, which is not
+part of this repository. It used the sequencer suite with rates of 10, 100 and
+200, 60-second stages, gas ratios of 0.5, 1 and 1.5, 60-second baseline and
+recovery periods, and a 1800-second flow timeout. Run any new measurement on an
+explicitly selected test deployment and record the exact image and hardware;
+the old measurements are not a substitute for validating a new release.

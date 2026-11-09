@@ -155,7 +155,7 @@ class AlertTimingTests(unittest.TestCase):
             (root / "rules.yaml").write_text(yaml.safe_dump({"groups": [{"name": "custom", "rules": [rule]}]}))
             (root / "tests.yaml").write_text(yaml.safe_dump(tests))
             result = subprocess.run(["docker", "run", "--rm", "--entrypoint", "promtool", "-v", f"{root}:/work:ro", "-w", "/work",
-                                     "prom/prometheus:v2.52.0", "test", "rules", "tests.yaml"], text=True, capture_output=True)
+                                     "prom/prometheus:v3.16.0", "test", "rules", "tests.yaml"], text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
@@ -198,7 +198,7 @@ class GrafanaTimingTests(unittest.TestCase):
         password = secrets.token_hex(24)
         subprocess.run(["docker", "run", "--rm", "-d", "--name", name,
                         "-p", "127.0.0.1::3000", "-e", "GF_SECURITY_ADMIN_PASSWORD",
-                        "-e", "GF_ANALYTICS_REPORTING_ENABLED=false", "grafana/grafana:11.1.5"],
+                        "-e", "GF_ANALYTICS_REPORTING_ENABLED=false", "grafana/grafana:13.3.0"],
                        env={**os.environ, "GF_SECURITY_ADMIN_PASSWORD": password},
                        check=True, stdout=subprocess.DEVNULL)
         self.addCleanup(lambda: subprocess.run(["docker", "rm", "-f", name],
