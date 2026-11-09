@@ -163,7 +163,7 @@ resolution templates using the published Instatus integration/template contracts
 Each automatic component needs an explicitly reviewed `affectedStatus`; subscriber
 notifications default to false. Instatus severity comes from that fixed component template,
 not from dynamic management API writes by the evaluator. `--plan` exposes the incident policy. These provider contracts are covered
-by transport tests and a [Devnet acceptance run](status-page-devnet-acceptance-2026-09-28.md).
+by transport tests.
 Each new deployment still needs scope and delivery verification before public
 activation. Local validation does not create public incidents.
 
