@@ -15,7 +15,7 @@ For the CLI spec `plan`/`apply` workflow, choose the complete
 [step-by-step operator guide](deployment-spec.md). Copy the YAML and env file
 outside the checkout, fill the marked deployment inputs, and pass them to
 `setup plan --spec ... --env-file ...`. Both examples select production-Bridge preparation with active/real/enforce
-proof intent and bridge fees of 1 DOGE per deposit and 0.1 DOGE per withdrawal.
+proof intent and bridge fees of 1 DOGE per deposit and 1 DOGE per withdrawal.
 The guide records the outstanding partner-evidence handoff. Comments identify base
 variables, wallet keys and optional signer/database imports. Keep completed inputs
 private; the output deployment directory starts empty.

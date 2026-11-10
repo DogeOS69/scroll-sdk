@@ -36,7 +36,7 @@ compiler identity or mock proof hashes are accepted.
 | Pending blob transactions (CLI default) | `10` | `8` |
 | L2 chain ID | `221122`; review for your chain | `1122005` |
 | CubeSigner mode | `production_verifier_key_policy` | `production_verifier_key_policy` |
-| Deposit / withdrawal fee | 1 DOGE / 0.1 DOGE | 1 DOGE / 0.1 DOGE |
+| Deposit / withdrawal fee | 1 DOGE / 1 DOGE | 1 DOGE / 1 DOGE |
 
 The mainnet spec is a preparation template, not a claim of production readiness.
 The mainnet L2 chain ID is `1122005`. Set mainnet Dogecoin identities/RPC.
@@ -131,8 +131,9 @@ and `"8"`; the generic values template is not a network-aware validator.
 These depths use Ethereum tip height minus transaction inclusion height. They
 do not replace the DA readers' `safe`/`finalized` checks.
 
-Bridge fees match `config.toml.example`: 1 DOGE per deposit, 0.1 DOGE per
-withdrawal and a 1 DOGE minimum withdrawal amount. `depositFeeSats` uses Dogecoin's
+Bridge fees match `config.toml.example`: 1 DOGE per deposit, 1 DOGE per
+withdrawal and a 1 DOGE minimum withdrawal amount. The withdrawal fee is added
+on top of the amount, so the smallest withdrawal costs 2 DOGE (dogeos-core#1821). `depositFeeSats` uses Dogecoin's
 8 decimals, so 1 DOGE is `100000000` sats. The CLI converts it to
 `contracts.DEPOSIT_FEE = "1000000000000000000"` in L2 wei (18 decimals); withdrawal
 and minimum withdrawal values already use L2 wei.
