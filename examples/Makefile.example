@@ -182,7 +182,7 @@ install-eth-da-submitter:
 
 install-fee-oracle:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i fee-oracle oci://ghcr.io/dogeos69/scroll-sdk/helm/fee-oracle -n "$(NAMESPACE)" \
-		--version=0.0.10 \
+		--version=0.0.11 \
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signer:
