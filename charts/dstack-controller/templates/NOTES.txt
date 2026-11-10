@@ -1,4 +1,10 @@
-dstack controller: http://{{ include "dstack-controller.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+{{- $fullname := include "dstack-controller.fullname" . }}
+{{- if .Values.tls.enabled }}
+dstack controller: https://{{ $fullname }}.{{ .Release.Namespace }}.svc:{{ .Values.tls.port }}
+Clients trust ca.crt from the {{ $fullname }}-tls Secret. Port 3000 is closed.
+{{- else }}
+dstack controller: http://{{ $fullname }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+{{- end }}
 
 Required existing Secrets: {{ .Values.serverConfig.existingSecret }} ({{ .Values.serverConfig.key }}), {{ .Values.auth.existingSecret }} ({{ .Values.auth.key }}).
 Configuration/credential Secret changes require a controller rollout.

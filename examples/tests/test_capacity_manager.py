@@ -100,6 +100,76 @@ class CapacityManagerTests(unittest.TestCase):
             values['manager']['dstack']['fallbackFleet'] = fleet
             self.assertNotEqual(render('capacity-manager', values).returncode, 0)
 
+    def test_private_dstack_ca_is_trusted_by_the_manager_and_initialization(self):
+        ca = '-----BEGIN CERTIFICATE-----\nTUlJQmZha2U=\n-----END CERTIFICATE-----\n'
+        values = config()
+        values['manager']['dstack'].update(
+            serverUrl='https://dstack-controller.dstack-system.svc:8443', caBundle=ca)
+        values['initialization'] = {'enabled': True, 'provider': 'aws', 'fleets': [
+            {'name': 'test-fleet', 'nodes': {'min': 0, 'target': 0, 'max': 2}}]}
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = [d for d in yaml.safe_load_all(result.stdout) if d]
+        bundle = next(d for d in docs if d['kind'] == 'ConfigMap' and d['metadata']['name'] == 'capacity-manager-dstack-ca')
+        self.assertEqual(bundle['data'], {'ca.crt': ca})
+        self.assertNotIn('helm.sh/hook', bundle['metadata'].get('annotations', {}))
+        deploy = next(d for d in docs if d['kind'] == 'Deployment')
+        template = deploy['spec']['template']
+        self.assertIn('checksum/dstack-ca', template['metadata']['annotations'])
+        args = template['spec']['containers'][0]['args']
+        self.assertEqual(args[args.index('--dstack-ca-file') + 1], '/etc/dstack-ca/ca.crt')
+        mounts = {m['name']: m for m in template['spec']['containers'][0]['volumeMounts']}
+        self.assertEqual(mounts['dstack-ca'], {'name': 'dstack-ca', 'mountPath': '/etc/dstack-ca', 'readOnly': True})
+        volumes = {v['name']: v for v in template['spec']['volumes']}
+        self.assertEqual(volumes['dstack-ca']['configMap']['name'], 'capacity-manager-dstack-ca')
+
+        # The pre-install hook cannot mount the release ConfigMap, so its own hook ConfigMap carries the CA.
+        job = next(d for d in docs if d['kind'] == 'Job')['spec']['template']['spec']
+        scripts = next(d for d in docs if d['kind'] == 'ConfigMap' and 'preflight.py' in d['data'])
+        self.assertEqual(scripts['data']['dstack-ca.crt'], ca)
+        env = {e['name']: e.get('value') for e in job['containers'][0]['env']}
+        self.assertEqual(env['REQUESTS_CA_BUNDLE'], '/etc/dstack-ca/ca.crt')
+        volumes = {v['name']: v for v in job['volumes']}
+        self.assertEqual(volumes['dstack-ca']['configMap']['items'], [{'key': 'dstack-ca.crt', 'path': 'ca.crt'}])
+        self.assertEqual([c['args'] for c in job['initContainers']],
+                         [['--dstack-ca-file', '/etc/dstack-ca/ca.crt', '--help']])
+
+    def test_private_dstack_ca_allows_text_between_certificate_blocks(self):
+        ca = '-----BEGIN CERTIFICATE-----\nTUlJQmZha2U=\n-----END CERTIFICATE-----\n'
+        values = config()
+        values['manager']['dstack'].update(serverUrl='https://dstack.example.invalid', caBundle=f'# old\n{ca}# new\n{ca}')
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_private_dstack_ca_is_absent_by_default_and_rejects_unsafe_input(self):
+        result = render('capacity-manager', config())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = [d for d in yaml.safe_load_all(result.stdout) if d]
+        self.assertFalse(any(d['metadata']['name'].endswith('-dstack-ca') for d in docs))
+        deploy = next(d for d in docs if d['kind'] == 'Deployment')['spec']['template']
+        self.assertNotIn('checksum/dstack-ca', deploy['metadata']['annotations'])
+        self.assertNotIn('--dstack-ca-file', deploy['spec']['containers'][0]['args'])
+        ca = '-----BEGIN CERTIFICATE-----\nTUlJQmZha2U=\n-----END CERTIFICATE-----\n'
+        for url, bundle, message in [
+            ('http://127.0.0.1:3000', ca, 'requires an https'),
+            ('https://dstack.example.invalid', 'not a certificate', 'PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + '-----BEGIN PRIVATE KEY-----\n', 'never a private key'),
+            # Core skips other PEM blocks and would trust only part of the bundle.
+            ('https://dstack.example.invalid', ca + ca.replace('CERTIFICATE', 'TRUSTED CERTIFICATE'), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + ca.replace('-----END CERTIFICATE-----', ''), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca.replace('-----END CERTIFICATE-----', ca.strip()), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + '-----END X509 CRL-----\n', 'complete PEM CERTIFICATE'),
+            # Markers must stand on their own lines around a base64 body, as Core reads them.
+            ('https://dstack.example.invalid', ca + ca.replace('\n', '', 2), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + 'xx' + ca, 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + '-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n', 'complete PEM CERTIFICATE'),
+        ]:
+            values = config()
+            values['manager']['dstack'].update(serverUrl=url, caBundle=bundle)
+            result = render('capacity-manager', values)
+            self.assertNotEqual(result.returncode, 0, message)
+            self.assertIn(message, result.stderr)
+
     def test_manager_is_single_writer_with_secret_references_and_no_public_listener(self):
         result = render('capacity-manager', config())
         self.assertEqual(result.returncode, 0, result.stderr)

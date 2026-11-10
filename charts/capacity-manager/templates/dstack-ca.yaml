@@ -1,0 +1,26 @@
+{{- with .Values.manager.dstack.caBundle }}
+{{- if not (hasPrefix "https://" $.Values.manager.dstack.serverUrl) }}
+{{- fail "manager.dstack.caBundle requires an https manager.dstack.serverUrl" }}
+{{- end }}
+{{- if not (contains "-----BEGIN CERTIFICATE-----" .) }}
+{{- fail "manager.dstack.caBundle must contain PEM CERTIFICATE blocks" }}
+{{- end }}
+{{- if contains "PRIVATE KEY" . }}
+{{- fail "manager.dstack.caBundle must hold public CA certificates only, never a private key" }}
+{{- end }}
+{{- /* Core skips other PEM blocks, such as TRUSTED CERTIFICATE, so a bundle could load only in part.
+     Remove every complete certificate block, with each marker on its own line and a base64 body:
+     no PEM marker may remain. Text between blocks is allowed. */}}
+{{- if contains "-----" (regexReplaceAll "(?m)^-----BEGIN CERTIFICATE-----\\r?\\n(?:[A-Za-z0-9+/=]+\\r?\\n)+-----END CERTIFICATE-----\\r?$" . "") }}
+{{- fail "manager.dstack.caBundle must contain only complete PEM CERTIFICATE blocks" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Values.fullnameOverride }}-dstack-ca
+  labels:
+    {{- include "capacity-manager.labels" $ | nindent 4 }}
+data:
+  ca.crt: |
+{{ . | indent 4 }}
+{{- end }}

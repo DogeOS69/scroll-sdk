@@ -448,6 +448,115 @@
           }
         }
       }
+    },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "port",
+        "clusterDomain",
+        "ca",
+        "certificate",
+        "proxy"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535,
+          "not": {
+            "const": 3000
+          }
+        },
+        "clusterDomain": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$"
+        },
+        "ca": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration"
+          ],
+          "properties": {
+            "duration": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*h$"
+            }
+          }
+        },
+        "certificate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration",
+            "renewBefore"
+          ],
+          "properties": {
+            "duration": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*h$"
+            },
+            "renewBefore": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*h$"
+            }
+          }
+        },
+        "proxy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "image",
+            "reloadCheckSeconds",
+            "resources"
+          ],
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repository",
+                "tag",
+                "digest",
+                "pullPolicy"
+              ],
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                },
+                "pullPolicy": {
+                  "enum": [
+                    "Always",
+                    "IfNotPresent",
+                    "Never"
+                  ]
+                }
+              }
+            },
+            "reloadCheckSeconds": {
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 3600
+            },
+            "resources": {
+              "type": "object"
+            }
+          }
+        }
+      }
     }
   },
   "required": [

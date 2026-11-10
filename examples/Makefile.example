@@ -10,7 +10,7 @@ NAMESPACE ?= default
 KUBE_CONTEXT ?=
 # Dstack and capacity-manager share NAMESPACE with all other releases.
 DSTACK_CONTROLLER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/dstack-controller
-DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.6
+DSTACK_CONTROLLER_CHART_VERSION ?= 0.1.7
 DSTACK_CONTROLLER_VALUES ?= values/dstack-controller-production.yaml
 SCROLL_MONITOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/scroll-monitor
 SCROLL_MONITOR_CHART_VERSION ?= 0.1.63-dogeos
@@ -355,7 +355,7 @@ delete-l2-reth-bootnode:
 
 # Explicit opt-in: starts the Core loop and may rent paid GPU instances.
 CAPACITY_MANAGER_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/capacity-manager
-CAPACITY_MANAGER_CHART_VERSION ?= 0.1.7
+CAPACITY_MANAGER_CHART_VERSION ?= 0.1.8
 .PHONY: install-capacity-manager pause-capacity-manager
 install-capacity-manager:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i capacity-manager "$(CAPACITY_MANAGER_CHART)" -n "$(NAMESPACE)" --version=$(CAPACITY_MANAGER_CHART_VERSION) --values values/capacity-manager-production.yaml --wait --timeout 5m

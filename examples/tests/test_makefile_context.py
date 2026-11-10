@@ -129,7 +129,8 @@ class MakefileContextTests(unittest.TestCase):
         commands = self.expanded_commands('selected', 'chain', targets=['install-capacity-manager'])
         self.assertEqual(len(commands), 1)
         self.assertEqual(commands[0][:5], ['helm', '--kube-context', 'selected', 'upgrade', '-i'])
-        self.assertIn('--version=0.1.6', commands[0])
+        pin = re.search(r'^CAPACITY_MANAGER_CHART_VERSION \?= (\S+)$', MAKEFILE.read_text(), re.M).group(1)
+        self.assertIn(f'--version={pin}', commands[0])
         self.assertNotIn('scrollsdk', commands[0])
 
     def run_signer_install(self, activation_exit=0, delivered=False):

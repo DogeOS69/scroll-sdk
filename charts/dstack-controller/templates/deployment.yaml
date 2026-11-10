@@ -17,9 +17,14 @@ spec:
     metadata:
       labels:
         {{- include "dstack-controller.selectorLabels" . | nindent 8 }}
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations .Values.tls.enabled }}
       annotations:
+        {{- if .Values.tls.enabled }}
+        checksum/tls-proxy: {{ include "dstack-controller.tlsProxyFiles" . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "dstack-controller.serviceAccountName" . }}
@@ -37,9 +42,16 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.tls.enabled }}
+          # The image entrypoint binds 0.0.0.0. Keep dstack on loopback behind the TLS sidecar.
+          # The entrypoint's GCP JSON and Litestream handling is skipped; validate.yaml rejects them.
+          # tini is the image's own init; dstack is resolved through the image PATH.
+          command: [/usr/bin/tini, --, dstack, server, --host, 127.0.0.1]
+          {{- else }}
           ports:
             - name: http
               containerPort: 3000
+          {{- end }}
           env:
             - name: DSTACK_SERVER_DIR
               value: /root/.dstack/server
@@ -89,13 +101,52 @@ spec:
               readOnly: true
             {{- end }}
           startupProbe:
-            {{- toYaml .Values.startupProbe | nindent 12 }}
+            {{- include "dstack-controller.probe" (dict "root" . "probe" .Values.startupProbe) | nindent 12 }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- include "dstack-controller.probe" (dict "root" . "probe" .Values.readinessProbe) | nindent 12 }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- include "dstack-controller.probe" (dict "root" . "probe" .Values.livenessProbe) | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.tls.enabled }}
+        - name: tls-proxy
+          image: {{ printf "%s@%s" .Values.tls.proxy.image.repository .Values.tls.proxy.image.digest | quote }}
+          imagePullPolicy: {{ .Values.tls.proxy.image.pullPolicy }}
+          command: [/bin/sh, /etc/dstack-tls-proxy/run.sh]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: https
+              containerPort: {{ .Values.tls.port }}
+          volumeMounts:
+            - name: tls-proxy-config
+              mountPath: /etc/dstack-tls-proxy
+              readOnly: true
+            - name: tls
+              mountPath: /etc/dstack-tls
+              readOnly: true
+            - name: tls-proxy-tmp
+              mountPath: /tmp
+          # Ready only when dstack answers through the proxy. Liveness checks nginx alone.
+          # The controller's own probes check dstack; this checks that nginx serves the port.
+          readinessProbe:
+            tcpSocket: {port: https}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: https}
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.tls.proxy.resources | nindent 12 }}
+        {{- end }}
       volumes:
         - name: state
           persistentVolumeClaim:
@@ -112,6 +163,18 @@ spec:
           secret:
             secretName: {{ .secretName | quote }}
             defaultMode: 0400
+        {{- end }}
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ printf "%s-tls" (include "dstack-controller.fullname" .) | quote }}
+            # Only the non-root proxy container mounts this volume.
+            defaultMode: 0444
+        - name: tls-proxy-config
+          configMap:
+            name: {{ printf "%s-tls-proxy" (include "dstack-controller.fullname" .) | quote }}
+        - name: tls-proxy-tmp
+          emptyDir: {}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

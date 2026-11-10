@@ -21,6 +21,10 @@ spec:
         {{- include "capacity-manager.labels" . | nindent 8 }}
       annotations:
         checksum/policy: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.manager.dstack.caBundle }}
+        # Core reads the CA file once at startup.
+        checksum/dstack-ca: {{ . | sha256sum }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -55,6 +59,10 @@ spec:
             - {{ .Values.manager.pollIntervalMs | quote }}
             - --dstack-server-url
             - {{ .Values.manager.dstack.serverUrl | quote }}
+            {{- if .Values.manager.dstack.caBundle }}
+            - --dstack-ca-file
+            - /etc/dstack-ca/ca.crt
+            {{- end }}
             - --dstack-project
             - {{ required "Dedicated dstack project is required" .Values.manager.dstack.project | quote }}
             - --dstack-token-file
@@ -132,6 +140,9 @@ spec:
             - {name: worker-credential-master, mountPath: /run/secrets/worker-credential-master, readOnly: true}
             {{- end }}
             - {name: tmp, mountPath: /tmp}
+            {{- if .Values.manager.dstack.caBundle }}
+            - {name: dstack-ca, mountPath: /etc/dstack-ca, readOnly: true}
+            {{- end }}
       volumes:
         - name: policy
           configMap: {name: {{ .Values.fullnameOverride }}-policy}
@@ -154,6 +165,10 @@ spec:
         {{- end }}
         - name: tmp
           emptyDir: {}
+        {{- if .Values.manager.dstack.caBundle }}
+        - name: dstack-ca
+          configMap: {name: {{ .Values.fullnameOverride }}-dstack-ca}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 8 }}
       {{- end }}

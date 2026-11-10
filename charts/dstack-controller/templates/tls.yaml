@@ -1,0 +1,79 @@
+{{- if .Values.tls.enabled }}
+{{- $fullname := include "dstack-controller.fullname" . }}
+# A private CA for the in-cluster API. Public CAs do not issue certificates for
+# Service names. The self-signed Issuer only signs this CA.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ printf "%s-selfsigned" $fullname }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ printf "%s-ca" $fullname }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  isCA: true
+  # cert-manager limits commonName to 64 characters; names and namespaces can be 63 each.
+  commonName: {{ printf "%s dstack CA" (printf "%s.%s" $fullname .Release.Namespace | trunc 53 | trimSuffix "." | trimSuffix "-") | quote }}
+  secretName: {{ printf "%s-ca" $fullname }}
+  duration: {{ .Values.tls.ca.duration }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # Clients pin this CA. Renewal keeps its key, so they keep trusting it.
+    rotationPolicy: Never
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: {{ printf "%s-selfsigned" $fullname }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ printf "%s-ca" $fullname }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  ca:
+    secretName: {{ printf "%s-ca" $fullname }}
+---
+# The Secret also carries ca.crt, which clients such as capacity-manager trust.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ printf "%s-tls" $fullname }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+spec:
+  secretName: {{ printf "%s-tls" $fullname }}
+  duration: {{ .Values.tls.certificate.duration }}
+  renewBefore: {{ .Values.tls.certificate.renewBefore }}
+  dnsNames:
+    {{- include "dstack-controller.serviceDnsNames" . | nindent 4 }}
+  usages:
+    - server auth
+    - digital signature
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: {{ printf "%s-ca" $fullname }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-tls-proxy" $fullname }}
+  labels:
+    {{- include "dstack-controller.labels" . | nindent 4 }}
+data:
+  {{- include "dstack-controller.tlsProxyFiles" . | nindent 2 }}
+{{- end }}

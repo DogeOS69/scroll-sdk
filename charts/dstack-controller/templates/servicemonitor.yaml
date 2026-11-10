@@ -14,7 +14,18 @@ spec:
       {{- include "dstack-controller.selectorLabels" . | nindent 6 }}
   sampleLimit: {{ .Values.monitoring.sampleLimit }}
   endpoints:
+    {{- if .Values.tls.enabled }}
+    - port: https
+      scheme: https
+      tlsConfig:
+        serverName: {{ printf "%s.%s.svc" (include "dstack-controller.fullname" .) .Release.Namespace | quote }}
+        ca:
+          secret:
+            name: {{ printf "%s-tls" (include "dstack-controller.fullname" .) | quote }}
+            key: ca.crt
+    {{- else }}
     - port: http
+    {{- end }}
       path: /metrics
       interval: {{ .Values.monitoring.interval }}
       scrapeTimeout: {{ .Values.monitoring.scrapeTimeout }}

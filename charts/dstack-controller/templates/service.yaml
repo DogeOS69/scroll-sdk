@@ -11,8 +11,14 @@ metadata:
 spec:
   type: ClusterIP
   ports:
+    {{- if .Values.tls.enabled }}
+    - name: https
+      port: {{ .Values.tls.port }}
+      targetPort: https
+    {{- else }}
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
+    {{- end }}
   selector:
     {{- include "dstack-controller.selectorLabels" . | nindent 4 }}

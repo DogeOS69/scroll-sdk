@@ -36,6 +36,10 @@ data:
 {{ .Files.Get "files/preflight.py" | indent 4 }}
   initialize-fleets.py: |
 {{ .Files.Get "files/initialize-fleets.py" | indent 4 }}
+  {{- with .Values.manager.dstack.caBundle }}
+  dstack-ca.crt: |
+{{ . | indent 4 }}
+  {{- end }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -66,12 +70,20 @@ spec:
       hostAliases:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.manager.dstack.fallbackFleet }}
+      {{- if or .Values.manager.dstack.fallbackFleet .Values.manager.dstack.caBundle }}
       initContainers:
+        {{- if .Values.manager.dstack.fallbackFleet }}
         - name: manager-fallback-capability
           image: {{ printf "%s@%s" .Values.image.repository .Values.image.digest | quote }}
           command: [/usr/local/bin/capacity-manager]
           args: [--dstack-fallback-fleet, {{ .Values.manager.dstack.fallbackFleet | quote }}, --help]
+        {{- end }}
+        {{- if .Values.manager.dstack.caBundle }}
+        - name: manager-dstack-ca-capability
+          image: {{ printf "%s@%s" .Values.image.repository .Values.image.digest | quote }}
+          command: [/usr/local/bin/capacity-manager]
+          args: [--dstack-ca-file, /etc/dstack-ca/ca.crt, --help]
+        {{- end }}
       {{- end }}
       containers:
         - name: initialize
@@ -93,6 +105,11 @@ spec:
             {{- end }}
             - name: DSTACK_SERVER_URL
               value: {{ .Values.manager.dstack.serverUrl | quote }}
+            {{- if .Values.manager.dstack.caBundle }}
+            # The dstack client uses requests, which then trusts only this bundle.
+            - name: REQUESTS_CA_BUNDLE
+              value: /etc/dstack-ca/ca.crt
+            {{- end }}
             - name: PROBE_INPUT
               value: {{ dict "privateDns" $init.privateDns "project" .Values.manager.dstack.project "provider" $init.provider "fallbackProvider" $init.fallbackProvider "url" .Values.manager.dstack.serverUrl "wpUrl" .Values.manager.proofWorkBaseUrl | toJson | quote }}
             - name: FLEET_INPUT
@@ -102,9 +119,20 @@ spec:
             limits: {cpu: 500m, memory: 512Mi}
           volumeMounts:
             - {name: scripts, mountPath: /scripts, readOnly: true}
+            {{- if .Values.manager.dstack.caBundle }}
+            - {name: dstack-ca, mountPath: /etc/dstack-ca, readOnly: true}
+            {{- end }}
       volumes:
         - name: scripts
           configMap: {name: {{ $name }}}
+        {{- if .Values.manager.dstack.caBundle }}
+        # The release's CA ConfigMap does not exist yet when this pre-install hook runs.
+        - name: dstack-ca
+          configMap:
+            name: {{ $name }}
+            items:
+              - {key: dstack-ca.crt, path: ca.crt}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

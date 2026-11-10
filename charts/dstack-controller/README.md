@@ -347,3 +347,59 @@ Controller and its CRD must already be installed. External infrastructure owns
 the ALB, listener, target group and private DNS; Helm owns the binding.
 This option is mutually exclusive with `ingress.enabled`. The default is null
 and adds no resource.
+
+## In-cluster HTTPS with a private CA (0.1.7+)
+
+`tls.enabled: true` serves the API over HTTPS inside the cluster, so clients such
+as capacity-manager can use the Service name instead of a public hostname.
+dstack itself serves plain HTTP only. The chart therefore:
+
+- issues a private CA and a server certificate for the Service names
+  (`<fullname>`, `<fullname>.<namespace>`, `<fullname>.<namespace>.svc` and the
+  `tls.clusterDomain` form) with cert-manager, which must already be installed;
+- adds an nginx sidecar that terminates TLS on `tls.port` (default 8443) and
+  forwards to dstack on `127.0.0.1:3000`. It checks the mounted certificate every
+  `tls.proxy.reloadCheckSeconds` and reloads after cert-manager renews it;
+- starts dstack with `--host 127.0.0.1`, so nothing on the Pod network reaches
+  plain HTTP. The Service exposes only `tls.port`, the controller probes run
+  `curl` inside the container, and the ServiceMonitor scrapes over HTTPS with the
+  private CA. `ingress` and `targetGroupBinding` cannot be combined with it.
+  Probes must use `httpGet` (only its path is kept) or `exec`; an `exec` override
+  replaces the default `httpGet`.
+
+dstack then starts directly, not through the image's `entrypoint.sh`. The
+entrypoint's `GOOGLE_APPLICATION_CREDENTIALS_JSON` and `LITESTREAM_REPLICA_URL`
+handling is therefore unavailable, and the chart rejects both in `extraEnv`.
+Mount GCP credentials with `credentialSecrets` and set
+`GOOGLE_APPLICATION_CREDENTIALS`; use PostgreSQL or back up the state volume.
+
+Clients trust `ca.crt` from the `<fullname>-tls` Secret and connect to
+`https://<fullname>.<namespace>.svc:<tls.port>`. Server certificate renewals need
+no client change. The CA certificate is valid for `tls.ca.duration` (10 years by
+default) and keeps its key when cert-manager renews it, at about two thirds of that
+time. Give clients the renewed `ca.crt` before the original one expires:
+OpenSSL-based clients reject an expired CA certificate. The CA lives in the
+`<fullname>-ca` Secret, which cert-manager keeps after uninstall by default, so
+reinstalling the chart keeps the CA. Deleting that Secret makes cert-manager issue a
+new CA, but cert-manager does not reissue the server certificate when its CA
+changes: force that with `cmctl renew <fullname>-tls`, or delete the `<fullname>-tls`
+Secret. Clients fail TLS from the reissue until they get the new `ca.crt` (in that
+Secret afterwards), so plan a short maintenance window.
+
+Enabling or disabling TLS restarts the controller and changes the Service port, so
+existing clients of port 3000 stop working. Plan it together with the clients: a
+capacity-manager stores its worker state per server URL, so drain it before
+switching its URL. See the capacity-manager chart.
+
+Optional local runtime check (requires Docker, Helm, OpenSSL and PyYAML):
+
+```bash
+docker pull dstackai/dstack@sha256:a502b38014dc9730ad712f60c067b84a00a4cf091982b81f9982fdc60ac6852b
+docker pull nginx@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311
+python3 charts/dstack-controller/tests/smoke_tls_proxy.py
+```
+
+It runs the rendered controller command and sidecar in one network namespace with
+a disposable CA in place of cert-manager. It checks HTTPS through the private CA,
+that plain HTTP is unreachable from a peer, the controller probe, a certificate
+reload without restart, and a clean stop on SIGQUIT and SIGTERM.
