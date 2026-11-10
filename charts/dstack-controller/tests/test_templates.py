@@ -237,6 +237,11 @@ class ControllerTemplates(unittest.TestCase):
             ({"targetGroupBinding": binding}, "disable ingress"),
             ({"port": 3000}, "tls.port"),
             ({"proxy": {"image": {"digest": ""}}}, "digest"),
+            # The image entrypoint, which handles these, is bypassed to bind loopback.
+            ({"extraEnv": [{"name": "LITESTREAM_REPLICA_URL", "value": "s3://example.invalid/db"}]}, "image entrypoint"),
+            ({"extraEnv": [{"name": "GOOGLE_APPLICATION_CREDENTIALS_JSON", "value": "{}"}]}, "image entrypoint"),
+            ({"livenessProbe": {"tcpSocket": {"port": "http"}}}, "livenessProbe must use httpGet"),
+            ({"readinessProbe": {"httpGet": None, "grpc": {"port": 3000}}}, "readinessProbe must use httpGet"),
         ]
         for extra, message in cases:
             with self.subTest(extra=extra):
@@ -246,6 +251,11 @@ class ControllerTemplates(unittest.TestCase):
                 result = render(values)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(message, result.stderr)
+        # Without TLS the entrypoint runs, so these stay available; exec probes work in both modes.
+        for values in ({"extraEnv": [{"name": "LITESTREAM_REPLICA_URL", "value": "s3://example.invalid/db"}]},
+                       {"tls": {"enabled": True}, "livenessProbe": {"exec": {"command": ["true"]}}}):
+            with self.subTest(values=values):
+                self.assertEqual(render(values).returncode, 0)
 
     def test_production_profile_and_explicit_storage_class(self):
         values = yaml.safe_load((CHART / "values/production.yaml").read_text())

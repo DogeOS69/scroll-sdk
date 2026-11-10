@@ -8,6 +8,11 @@
 {{- if contains "PRIVATE KEY" . }}
 {{- fail "manager.dstack.caBundle must hold public CA certificates only, never a private key" }}
 {{- end }}
+{{- /* Core skips other PEM blocks, such as TRUSTED CERTIFICATE, so a bundle would load only in part. */}}
+{{- $certificates := len (regexFindAll "-----BEGIN CERTIFICATE-----" . -1) }}
+{{- if or (ne $certificates (len (regexFindAll "-----BEGIN " . -1))) (ne $certificates (len (regexFindAll "-----END CERTIFICATE-----" . -1))) }}
+{{- fail "manager.dstack.caBundle must contain only complete PEM CERTIFICATE blocks" }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

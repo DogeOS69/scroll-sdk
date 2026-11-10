@@ -81,7 +81,8 @@ the public roots for `manager.dstack.serverUrl`. Use it with a dstack-controller
 release that sets `tls.enabled`: copy `ca.crt` from that release's
 `<fullname>-tls` Secret and set `serverUrl` to
 `https://<fullname>.<namespace>.svc:8443`. The bundle is public data rendered into
-a ConfigMap; the chart rejects a private key, a non-PEM value and an `http` URL.
+a ConfigMap; the chart rejects a private key, other or incomplete PEM blocks, a
+non-PEM value and an `http` URL.
 
 The manager receives `--dstack-ca-file`, which needs a Core image with
 dogeos-core #1786. With initialization enabled, the Job first checks that the

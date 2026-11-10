@@ -364,11 +364,20 @@ dstack itself serves plain HTTP only. The chart therefore:
   plain HTTP. The Service exposes only `tls.port`, the controller probes run
   `curl` inside the container, and the ServiceMonitor scrapes over HTTPS with the
   private CA. `ingress` and `targetGroupBinding` cannot be combined with it.
+  Probes must use `httpGet` (only its path is kept) or `exec`.
+
+dstack then starts directly, not through the image's `entrypoint.sh`. The
+entrypoint's `GOOGLE_APPLICATION_CREDENTIALS_JSON` and `LITESTREAM_REPLICA_URL`
+handling is therefore unavailable, and the chart rejects both in `extraEnv`.
+Mount GCP credentials with `credentialSecrets` and set
+`GOOGLE_APPLICATION_CREDENTIALS`; use PostgreSQL or back up the state volume.
 
 Clients trust `ca.crt` from the `<fullname>-tls` Secret and connect to
-`https://<fullname>.<namespace>.svc:<tls.port>`. The CA is valid for
-`tls.ca.duration` (10 years by default) and keeps its key when cert-manager renews
-it, so server certificate and CA renewals need no client change. The CA lives in the
+`https://<fullname>.<namespace>.svc:<tls.port>`. Server certificate renewals need
+no client change. The CA certificate is valid for `tls.ca.duration` (10 years by
+default) and keeps its key when cert-manager renews it, at about two thirds of that
+time. Give clients the renewed `ca.crt` before the original one expires:
+OpenSSL-based clients reject an expired CA certificate. The CA lives in the
 `<fullname>-ca` Secret, which cert-manager keeps after uninstall by default. Deleting it
 creates a new CA, which every client must then be given.
 

@@ -147,6 +147,9 @@ class CapacityManagerTests(unittest.TestCase):
             ('http://127.0.0.1:3000', ca, 'requires an https'),
             ('https://dstack.example.invalid', 'not a certificate', 'PEM CERTIFICATE'),
             ('https://dstack.example.invalid', ca + '-----BEGIN PRIVATE KEY-----\n', 'never a private key'),
+            # Core skips other PEM blocks and would trust only part of the bundle.
+            ('https://dstack.example.invalid', ca + ca.replace('CERTIFICATE', 'TRUSTED CERTIFICATE'), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + ca.replace('-----END CERTIFICATE-----', ''), 'complete PEM CERTIFICATE'),
         ]:
             values = config()
             values['manager']['dstack'].update(serverUrl=url, caBundle=bundle)

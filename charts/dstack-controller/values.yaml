@@ -123,7 +123,7 @@ tls:
   port: 8443
   clusterDomain: cluster.local
   ca:
-    # The CA key is kept on renewal, so clients keep trusting the renewed CA.
+    # The CA key is kept on renewal. Give clients the renewed ca.crt before the old one expires.
     duration: 87600h
   certificate:
     duration: 2160h

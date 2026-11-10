@@ -44,6 +44,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           {{- if .Values.tls.enabled }}
           # The image entrypoint binds 0.0.0.0. Keep dstack on loopback behind the TLS sidecar.
+          # The entrypoint's GCP JSON and Litestream handling is skipped; validate.yaml rejects them.
           command: [/usr/bin/tini, --, /root/.local/bin/dstack, server, --host, 127.0.0.1]
           {{- else }}
           ports:

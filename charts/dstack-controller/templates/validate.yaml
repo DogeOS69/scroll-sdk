@@ -7,6 +7,21 @@
 {{- if and .Values.tls.enabled (or .Values.ingress.enabled .Values.targetGroupBinding) -}}
 {{- fail "tls.enabled keeps dstack off the Pod network; disable ingress and targetGroupBinding" -}}
 {{- end -}}
+{{- if .Values.tls.enabled -}}
+{{- /* dstack starts without the image entrypoint, which is what handles these variables. */ -}}
+{{- range .Values.extraEnv -}}
+{{- if has .name (list "GOOGLE_APPLICATION_CREDENTIALS_JSON" "LITESTREAM_REPLICA_URL") -}}
+{{- fail (printf "tls.enabled starts dstack without the image entrypoint, which handles %s; use credentialSecrets with GOOGLE_APPLICATION_CREDENTIALS, and PostgreSQL or state volume backups" .name) -}}
+{{- end -}}
+{{- end -}}
+{{- range $name := list "startupProbe" "readinessProbe" "livenessProbe" -}}
+{{- $probe := index $.Values $name -}}
+{{- /* Helm merges overrides into the default httpGet, so check for other handlers too. */ -}}
+{{- if and $probe (or $probe.tcpSocket $probe.grpc (not (or $probe.httpGet $probe.exec))) -}}
+{{- fail (printf "tls.enabled keeps dstack on loopback with no container port; %s must use httpGet (sent from inside the container) or exec" $name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- $reserved := list "HOME" "DSTACK_SERVER_DIR" "DSTACK_SERVER_ADMIN_TOKEN" "DSTACK_DATABASE_URL" "DSTACK_SERVER_PORT" "DSTACK_SERVER_HOST" "DSTACK_SERVER_CONFIG_DISABLED" "DSTACK_DEFAULT_CREDS_DISABLED" "DSTACK_ENABLE_PROMETHEUS_METRICS" "DSTACK_PROMETHEUS_AUTH_TOKEN" "DSTACK_OTEL_METRICS_ENABLED" "DSTACK_OTEL_METRICS_EXPORTERS" -}}
 {{- $seen := dict -}}
 {{- range .Values.extraEnv -}}
