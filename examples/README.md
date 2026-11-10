@@ -210,17 +210,28 @@ activate them. Check the generated genesis gas limit and the initialized
 `L2SystemConfig.baseFeeOverhead` before launch.
 
 **Node constants remain a separate release requirement:** D48 / E10 and a
-420,000 gwei cap require a compatible dogeos-reth/rollup-node binary. The source
-document marks D48 and the cap as proposed; E10 is decided. Both
-`MAX_L2_BASE_FEE` and `DOGEOS_MAXIMUM_BASE_FEE` must be `420000000000000`, with
-Feynman `BaseFeeParams::new(48, 10)`. Neither genesis input nor RPC
+420,000 gwei cap are compiled into dogeos-reth
+([dogeos-reth #19](https://github.com/DogeOS69/dogeos-reth/pull/19)) and need a
+rollup-node release that pins it (`v0.3.0-beta.2` or later). E10 is decided; D48
+and the cap are confirmed, awaiting devnet validation. `MAX_L2_BASE_FEE` is
+`420000000000000`, and `DOGEOS_MAXIMUM_BASE_FEE` re-exports it. D48 / E10 is a
+new Tsuki entry, `DOGEOS_BASE_FEE_PARAMS_TSUKI = BaseFeeParams::new(48, 10)`;
+the Feynman entry keeps `BaseFeeParams::new(8, 2)`. Neither genesis input nor RPC
 `--gpo.maxprice` changes these compiled constants. Do not change zk guest pins
 for this parameter update.
 
+The genesis `config.tsukiFeeParamsTime` field selects when D48 / E10 starts. A
+fresh mainnet omits it (or sets `null`), so the parameters activate with Tsuki.
+An existing network must set it to one coordinated future Unix timestamp on
+every validating node; omitting it reinterprets past post-Tsuki blocks with
+D48 / E10.
+
 For an existing network, apply the submitter's gas-per-chunk limit **before**
-raising the builder gas limit, upgrade every validating node **before** setting
-420 gwei overhead, and lower the overhead to at most 10 gwei **before** rolling
-back to an old node binary.
+raising the builder gas limit, and raise the builder gas limit only after the
+sequencer runs a release with the parent-relative gas-limit ramp (#19); an
+older builder jumps straight to the new limit and followers reject the block.
+Upgrade every validating node **before** setting 420 gwei overhead, and lower
+the overhead to at most 10 gwei **before** rolling back to an old node binary.
 
 `scrollsdk setup prep-charts` preserves template-owned batch/publish/fee policies,
 Reth timing/gas settings and `reth.extraArgs`; it fills deployment facts such as
