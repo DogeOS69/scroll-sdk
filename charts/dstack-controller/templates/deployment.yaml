@@ -136,8 +136,9 @@ spec:
             - name: tls-proxy-tmp
               mountPath: /tmp
           # Ready only when dstack answers through the proxy. Liveness checks nginx alone.
+          # The controller's own probes check dstack; this checks that nginx serves the port.
           readinessProbe:
-            httpGet: {path: /, port: https, scheme: HTTPS}
+            tcpSocket: {port: https}
             periodSeconds: 10
           livenessProbe:
             tcpSocket: {port: https}

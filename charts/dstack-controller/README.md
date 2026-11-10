@@ -381,8 +381,10 @@ time. Give clients the renewed `ca.crt` before the original one expires:
 OpenSSL-based clients reject an expired CA certificate. The CA lives in the
 `<fullname>-ca` Secret, which cert-manager keeps after uninstall by default, so
 reinstalling the chart keeps the CA. Deleting that Secret makes cert-manager issue a
-new CA and a new server certificate at once; clients fail TLS until they get the new
-`ca.crt`. Plan it as a short maintenance window.
+new CA, but cert-manager does not reissue the server certificate when its CA
+changes: force that with `cmctl renew <fullname>-tls`, or delete the `<fullname>-tls`
+Secret. Clients fail TLS from the reissue until they get the new `ca.crt` (in that
+Secret afterwards), so plan a short maintenance window.
 
 Enabling or disabling TLS restarts the controller and changes the Service port, so
 existing clients of port 3000 stop working. Plan it together with the clients: a

@@ -159,6 +159,10 @@ class CapacityManagerTests(unittest.TestCase):
             ('https://dstack.example.invalid', ca + ca.replace('-----END CERTIFICATE-----', ''), 'complete PEM CERTIFICATE'),
             ('https://dstack.example.invalid', ca.replace('-----END CERTIFICATE-----', ca.strip()), 'complete PEM CERTIFICATE'),
             ('https://dstack.example.invalid', ca + '-----END X509 CRL-----\n', 'complete PEM CERTIFICATE'),
+            # Markers must stand on their own lines around a base64 body, as Core reads them.
+            ('https://dstack.example.invalid', ca + ca.replace('\n', '', 2), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + 'xx' + ca, 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + '-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n', 'complete PEM CERTIFICATE'),
         ]:
             values = config()
             values['manager']['dstack'].update(serverUrl=url, caBundle=bundle)
