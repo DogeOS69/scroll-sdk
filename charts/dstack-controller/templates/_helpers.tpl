@@ -108,10 +108,15 @@ Send the same request from inside the container with the image's curl instead.
 */}}
 {{- define "dstack-controller.probe" -}}
 {{- $probe := .probe -}}
-{{- if and .root.Values.tls.enabled $probe.httpGet -}}
+{{- if .root.Values.tls.enabled -}}
+{{- if $probe.exec -}}
+{{- /* Helm merges an exec override into the default httpGet; the user's exec wins. */ -}}
+{{- $probe = omit $probe "httpGet" -}}
+{{- else if $probe.httpGet -}}
 {{- $url := printf "http://127.0.0.1:3000%s" (default "/" $probe.httpGet.path) -}}
 {{- $exec := dict "command" (list "curl" "--fail" "--silent" "--output" "/dev/null" "--max-time" "5" $url) -}}
 {{- $probe = merge (dict "exec" $exec) (omit $probe "httpGet") (dict "timeoutSeconds" 10) -}}
+{{- end -}}
 {{- end -}}
 {{- toYaml $probe -}}
 {{- end -}}

@@ -9,12 +9,12 @@ import yaml
 CHART = Path(__file__).resolve().parents[1]
 
 
-def render(values=None, overlays=()):
+def render(values=None, overlays=(), namespace="dstack-system"):
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "values.yaml"
         path.write_text(yaml.safe_dump(values or {}))
         command = [
-            "helm", "template", "gpu", str(CHART), "--namespace", "dstack-system",
+            "helm", "template", "gpu", str(CHART), "--namespace", namespace,
         ]
         for overlay in overlays:
             command.extend(["-f", str(overlay)])
@@ -206,7 +206,7 @@ class ControllerTemplates(unittest.TestCase):
         self.assertIn("checksum/tls-proxy", pod["metadata"]["annotations"])
         containers = {c["name"]: c for c in pod["spec"]["containers"]}
         controller, proxy = containers["controller"], containers["tls-proxy"]
-        self.assertEqual(controller["command"][-2:], ["--host", "127.0.0.1"])
+        self.assertEqual(controller["command"], ["/usr/bin/tini", "--", "dstack", "server", "--host", "127.0.0.1"])
         self.assertNotIn("ports", controller)
         for probe in ("startupProbe", "readinessProbe", "livenessProbe"):
             self.assertNotIn("httpGet", controller[probe])
@@ -251,11 +251,22 @@ class ControllerTemplates(unittest.TestCase):
                 result = render(values)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(message, result.stderr)
-        # Without TLS the entrypoint runs, so these stay available; exec probes work in both modes.
-        for values in ({"extraEnv": [{"name": "LITESTREAM_REPLICA_URL", "value": "s3://example.invalid/db"}]},
-                       {"tls": {"enabled": True}, "livenessProbe": {"exec": {"command": ["true"]}}}):
-            with self.subTest(values=values):
-                self.assertEqual(render(values).returncode, 0)
+        # Without TLS the entrypoint runs, so these stay available.
+        self.assertEqual(render({"extraEnv": [{"name": "LITESTREAM_REPLICA_URL", "value": "s3://example.invalid/db"}]}).returncode, 0)
+
+    def test_tls_keeps_an_exec_probe_override_and_a_valid_ca_name(self):
+        # Helm merges the override into the default httpGet; the user's command must still run.
+        docs = resources({"tls": {"enabled": True}, "livenessProbe": {"exec": {"command": ["true"]}}})
+        controller = resource(docs, "Deployment")["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(controller["livenessProbe"]["exec"], {"command": ["true"]})
+        self.assertNotIn("httpGet", controller["livenessProbe"])
+        self.assertIn("curl", controller["readinessProbe"]["exec"]["command"])
+        # cert-manager rejects a commonName over 64 characters; namespaces can have 63.
+        result = render({"fullnameOverride": "d" * 63, "tls": {"enabled": True}}, namespace="n" * 63)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        ca = next(d for d in yaml.safe_load_all(result.stdout) if d and d["kind"] == "Certificate" and d["spec"].get("isCA"))
+        self.assertLessEqual(len(ca["spec"]["commonName"]), 64)
+        self.assertTrue(ca["spec"]["commonName"].endswith(" dstack CA"))
 
     def test_production_profile_and_explicit_storage_class(self):
         values = yaml.safe_load((CHART / "values/production.yaml").read_text())

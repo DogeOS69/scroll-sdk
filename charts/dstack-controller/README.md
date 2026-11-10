@@ -364,7 +364,8 @@ dstack itself serves plain HTTP only. The chart therefore:
   plain HTTP. The Service exposes only `tls.port`, the controller probes run
   `curl` inside the container, and the ServiceMonitor scrapes over HTTPS with the
   private CA. `ingress` and `targetGroupBinding` cannot be combined with it.
-  Probes must use `httpGet` (only its path is kept) or `exec`.
+  Probes must use `httpGet` (only its path is kept) or `exec`; an `exec` override
+  replaces the default `httpGet`.
 
 dstack then starts directly, not through the image's `entrypoint.sh`. The
 entrypoint's `GOOGLE_APPLICATION_CREDENTIALS_JSON` and `LITESTREAM_REPLICA_URL`
@@ -378,8 +379,10 @@ no client change. The CA certificate is valid for `tls.ca.duration` (10 years by
 default) and keeps its key when cert-manager renews it, at about two thirds of that
 time. Give clients the renewed `ca.crt` before the original one expires:
 OpenSSL-based clients reject an expired CA certificate. The CA lives in the
-`<fullname>-ca` Secret, which cert-manager keeps after uninstall by default. Deleting it
-creates a new CA, which every client must then be given.
+`<fullname>-ca` Secret, which cert-manager keeps after uninstall by default, so
+reinstalling the chart keeps the CA. Deleting that Secret makes cert-manager issue a
+new CA and a new server certificate at once; clients fail TLS until they get the new
+`ca.crt`. Plan it as a short maintenance window.
 
 Enabling or disabling TLS restarts the controller and changes the Service port, so
 existing clients of port 3000 stop working. Plan it together with the clients: a

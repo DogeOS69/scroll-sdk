@@ -19,7 +19,8 @@ metadata:
     {{- include "dstack-controller.labels" . | nindent 4 }}
 spec:
   isCA: true
-  commonName: {{ printf "%s.%s dstack CA" $fullname .Release.Namespace | quote }}
+  # cert-manager limits commonName to 64 characters; names and namespaces can be 63 each.
+  commonName: {{ printf "%s dstack CA" (printf "%s.%s" $fullname .Release.Namespace | trunc 53 | trimSuffix "." | trimSuffix "-") | quote }}
   secretName: {{ printf "%s-ca" $fullname }}
   duration: {{ .Values.tls.ca.duration }}
   privateKey:

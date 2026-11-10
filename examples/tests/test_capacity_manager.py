@@ -134,6 +134,13 @@ class CapacityManagerTests(unittest.TestCase):
         self.assertEqual([c['args'] for c in job['initContainers']],
                          [['--dstack-ca-file', '/etc/dstack-ca/ca.crt', '--help']])
 
+    def test_private_dstack_ca_allows_text_between_certificate_blocks(self):
+        ca = '-----BEGIN CERTIFICATE-----\nTUlJQmZha2U=\n-----END CERTIFICATE-----\n'
+        values = config()
+        values['manager']['dstack'].update(serverUrl='https://dstack.example.invalid', caBundle=f'# old\n{ca}# new\n{ca}')
+        result = render('capacity-manager', values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_private_dstack_ca_is_absent_by_default_and_rejects_unsafe_input(self):
         result = render('capacity-manager', config())
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -150,6 +157,8 @@ class CapacityManagerTests(unittest.TestCase):
             # Core skips other PEM blocks and would trust only part of the bundle.
             ('https://dstack.example.invalid', ca + ca.replace('CERTIFICATE', 'TRUSTED CERTIFICATE'), 'complete PEM CERTIFICATE'),
             ('https://dstack.example.invalid', ca + ca.replace('-----END CERTIFICATE-----', ''), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca.replace('-----END CERTIFICATE-----', ca.strip()), 'complete PEM CERTIFICATE'),
+            ('https://dstack.example.invalid', ca + '-----END X509 CRL-----\n', 'complete PEM CERTIFICATE'),
         ]:
             values = config()
             values['manager']['dstack'].update(serverUrl=url, caBundle=bundle)

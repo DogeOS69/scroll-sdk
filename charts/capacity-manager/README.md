@@ -88,8 +88,10 @@ The manager receives `--dstack-ca-file`, which needs a Core image with
 dogeos-core #1786. With initialization enabled, the Job first checks that the
 selected binary accepts the flag, and its dstack client trusts the same bundle
 through `REQUESTS_CA_BUNDLE`. Core reads the file once at startup; the chart
-restarts the manager when the bundle changes. To replace the CA, deploy a bundle
-with the old and new CAs, switch the controller, then remove the old CA.
+restarts the manager when the bundle changes. A bundle may hold several CAs, but
+the dstack-controller chart cannot stage a new CA before it serves it: replacing
+the CA there issues the new CA and server certificate at once. Update `caBundle`
+right after that, in a short maintenance window.
 
 The manager keys its worker state by server URL. Moving an existing fleet from a
 public hostname to the Service URL, or back, is a migration: drain the workers and
