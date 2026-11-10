@@ -23,6 +23,11 @@ service:
         enabled: true
         port: 9090
 
+# /health and /ready call the Ethereum DA RPC and the price exchanges
+# inline, each bounded by a 5s internal timeout, so a handler can take
+# ~10s to answer while an upstream is slow. /health still returns 200
+# with status "degraded" in that case. timeoutSeconds must stay above
+# that bound, or upstream slowness turns into liveness restarts.
 defaultProbes: &default_probes
   enabled: true
   custom: true
@@ -30,6 +35,9 @@ defaultProbes: &default_probes
     httpGet:
       path: "/health"
       port: http
+    periodSeconds: 30
+    timeoutSeconds: 15
+    failureThreshold: 3
 
 probes:
   liveness:
@@ -41,6 +49,9 @@ probes:
       httpGet:
         path: "/ready"
         port: http
+      periodSeconds: 30
+      timeoutSeconds: 15
+      failureThreshold: 3
   startup:
     enabled: true
     custom: true
@@ -48,8 +59,9 @@ probes:
       httpGet:
         path: "/ready"
         port: http
-      failureThreshold: 30
-      periodSeconds: 10
+      periodSeconds: 15
+      timeoutSeconds: 15
+      failureThreshold: 20
 
 # Resource configuration
 resources:

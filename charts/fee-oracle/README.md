@@ -1,6 +1,6 @@
 # fee-oracle
 
-![Version: 0.0.10](https://img.shields.io/badge/Version-0.0.10-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.0.11](https://img.shields.io/badge/Version-0.0.11-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for the DogeOS fee oracle
 
@@ -29,8 +29,11 @@ Kubernetes: `>=1.22.0-0`
 | controller.type | string | `"statefulset"` |  |
 | defaultProbes.custom | bool | `true` |  |
 | defaultProbes.enabled | bool | `true` |  |
+| defaultProbes.spec.failureThreshold | int | `3` |  |
 | defaultProbes.spec.httpGet.path | string | `"/health"` |  |
 | defaultProbes.spec.httpGet.port | string | `"http"` |  |
+| defaultProbes.spec.periodSeconds | int | `30` |  |
+| defaultProbes.spec.timeoutSeconds | int | `15` |  |
 | global.fullnameOverride | string | `"fee-oracle"` |  |
 | global.nameOverride | string | `"fee-oracle"` |  |
 | image.pullPolicy | string | `"Always"` |  |
@@ -43,18 +46,25 @@ Kubernetes: `>=1.22.0-0`
 | persistence.data.type | string | `"pvc"` |  |
 | probes.liveness.<<.custom | bool | `true` |  |
 | probes.liveness.<<.enabled | bool | `true` |  |
+| probes.liveness.<<.spec.failureThreshold | int | `3` |  |
 | probes.liveness.<<.spec.httpGet.path | string | `"/health"` |  |
 | probes.liveness.<<.spec.httpGet.port | string | `"http"` |  |
+| probes.liveness.<<.spec.periodSeconds | int | `30` |  |
+| probes.liveness.<<.spec.timeoutSeconds | int | `15` |  |
 | probes.readiness.custom | bool | `true` |  |
 | probes.readiness.enabled | bool | `true` |  |
+| probes.readiness.spec.failureThreshold | int | `3` |  |
 | probes.readiness.spec.httpGet.path | string | `"/ready"` |  |
 | probes.readiness.spec.httpGet.port | string | `"http"` |  |
+| probes.readiness.spec.periodSeconds | int | `30` |  |
+| probes.readiness.spec.timeoutSeconds | int | `15` |  |
 | probes.startup.custom | bool | `true` |  |
 | probes.startup.enabled | bool | `true` |  |
-| probes.startup.spec.failureThreshold | int | `30` |  |
+| probes.startup.spec.failureThreshold | int | `20` |  |
 | probes.startup.spec.httpGet.path | string | `"/ready"` |  |
 | probes.startup.spec.httpGet.port | string | `"http"` |  |
-| probes.startup.spec.periodSeconds | int | `10` |  |
+| probes.startup.spec.periodSeconds | int | `15` |  |
+| probes.startup.spec.timeoutSeconds | int | `15` |  |
 | resources.limits.cpu | string | `"200m"` |  |
 | resources.limits.memory | string | `"512Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
