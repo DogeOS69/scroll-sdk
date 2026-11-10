@@ -110,6 +110,6 @@ dependencies:
     repository: "oci://ghcr.io/scroll-tech/scroll-sdk/helm"
     condition: scroll-common.enabled
   - name: scroll-monitor
-    version: 0.1.47-dogeos
+    version: 0.1.63-dogeos
     repository: "file://../scroll-monitor"
     condition: scroll-monitor.enabled
