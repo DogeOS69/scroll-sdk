@@ -42,8 +42,8 @@
 
 # Intentional deployment choices below; preserve them when syncing Core defaults.
 # Keep this explanation outside the managed block so prep-charts preserves it.
-# - advance_l1_builder_v2, advance_l2_builder_v2, rotate_sequencer_signer_v2,
-#   and ethereum_da.inbox_worker.enabled are intentionally true (Core: false).
+# - transitions.advance_l1, transitions.advance_l2, transitions.rotate_sequencer_signer,
+#   and ethereum_da.inbox_worker.enabled are intentionally true.
 # - advance_l1_frontier_stale_after_eligible_blocks is intentionally 360 eligible
 #   blocks (Core: 30); this is a block-distance threshold, not a wall-clock timer.
 # - replay_sqlite_path explicitly uses /app/data/replay.sqlite on persistent
@@ -54,11 +54,8 @@
 # since a different writer_id cannot claim an already-owned indexer database.
 
 # BEGIN scrollsdk managed deployment configuration
-# Required for ordinary deposit admission and L1 frontier advancement.
-advance_l1_builder_v2 = true
 advance_l1_deposit_stale_after_eligible_blocks = 5
 advance_l1_frontier_stale_after_eligible_blocks = 360
-advance_l2_builder_v2 = true
 api_port = 3000
 awaiting_replay_resend_grace_secs = 300
 broadcast_alert_after_n = 3
@@ -92,12 +89,18 @@ replay_sqlite_path = "/app/data/replay.sqlite"
 require_change_tracking = false
 # Explicit opt-in; bridge-init / prep-charts projects the deployment lifecycle.
 fresh_genesis_init = false
-rotate_key_v2 = false
-rotate_sequencer_signer_v2 = true
 run_ahead_group_floor = 2
 strict_l1_validation = false
 strict_l2_validation = false
 tso_url = "http://tso-service:3000"
+
+# Core #1828 requires all four transition switches.
+[transitions]
+# Ordinary deposit admission and L1 frontier advancement.
+advance_l1 = true
+advance_l2 = true
+rotate_key = false
+rotate_sequencer_signer = true
 
 [dogecoin_indexer]
 confirmations = 60

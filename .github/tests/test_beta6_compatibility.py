@@ -24,6 +24,19 @@ def render(service, overlay=None):
 
 
 class Beta6CompatibilityTests(unittest.TestCase):
+    def test_wp_template_uses_complete_transitions_section(self):
+        config = tomllib.loads((ROOT / "examples/withdrawal-processor/WithdrawalProcessor.toml").read_text())
+        self.assertEqual(config["transitions"], {
+            "advance_l1": True,
+            "advance_l2": True,
+            "rotate_key": False,
+            "rotate_sequencer_signer": True,
+        })
+        for key in ("advance_l1_builder_v2", "advance_l2_builder_v2",
+                    "rotate_key_v2", "rotate_sequencer_signer_v2"):
+            self.assertNotIn(key, config)
+
+
     def test_partner_compose_publishes_only_loopback_ports(self):
         compose = yaml.safe_load((ROOT / "partner-kit/attestation-signer/docker-compose/docker-compose.yml").read_text())
         signer = compose["services"]["attestation-signer"]
