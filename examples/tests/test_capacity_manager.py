@@ -57,7 +57,7 @@ class CapacityManagerTests(unittest.TestCase):
         self.assertFalse(any(d and d['kind'] == 'Job' for d in docs))
 
     def test_initialization_rejects_unsafe_or_incomplete_fleets(self):
-        for failure in ('minimum', 'target', 'max', 'name', 'missing', 'duplicate', 'image', 'master'):
+        for failure in ('minimum', 'target', 'max', 'name', 'missing', 'duplicate', 'image', 'master', 'action'):
             values = config()
             fleet = {'name': 'test-fleet', 'type': 'fleet', 'nodes': {'min': 0, 'target': 0, 'max': 2}}
             init = {'enabled': True, 'provider': 'aws', 'fleets': [fleet]}
@@ -70,19 +70,24 @@ class CapacityManagerTests(unittest.TestCase):
             if failure == 'duplicate': init['fleets'].append(fleet.copy())
             if failure == 'image': init['image'] = {'digest': 'latest'}
             if failure == 'master': values['workerCredentialMaster'] = None
+            if failure == 'action': init['fleetAction'] = 'recreate'
             self.assertNotEqual(render('capacity-manager', values).returncode, 0, failure)
 
     def test_initialization_checks_fallback_binary_before_fleet_creation(self):
         values = config()
-        values['manager']['dstack']['fallbackFleet'] = 'vast-fallback'
-        values['initialization'] = {'enabled': True, 'provider': 'aws', 'fallbackProvider': 'vastai',
+        values['manager']['dstack']['fallbackFleet'] = 'aws-fallback'
+        values['initialization'] = {'enabled': True, 'fleetAction': 'update', 'provider': 'vastai',
+            'fallbackProvider': 'aws',
             'fleets': [{'name': name, 'nodes': {'min': 0, 'target': 0, 'max': 2}}
-                       for name in ['test-fleet', 'vast-fallback']]}
+                       for name in ['test-fleet', 'aws-fallback']]}
         result = render('capacity-manager', values)
         self.assertEqual(result.returncode, 0, result.stderr)
         job = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Job')
         init = job['spec']['template']['spec']['initContainers'][0]
-        self.assertEqual(init['args'], ['--dstack-fallback-fleet', 'vast-fallback', '--help'])
+        self.assertEqual(init['args'], ['--dstack-fallback-fleet', 'aws-fallback', '--help'])
+        env = {e['name']: e.get('value') for e in job['spec']['template']['spec']['containers'][0]['env']}
+        self.assertEqual(json.loads(env['FLEET_INPUT'])['fleetAction'], 'update')
+        self.assertEqual(json.loads(env['PROBE_INPUT'])['fallbackProvider'], 'aws')
 
     def test_optional_fallback_fleet_argument(self):
         for fleet in ['', 'vast-fallback']:

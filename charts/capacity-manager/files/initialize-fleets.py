@@ -72,10 +72,12 @@ def prepare(client, payload):
         if fleet and canonical(fleet.spec) != canonical(spec):
             if payload['fleetAction'] != 'update':
                 raise PreparationError('Existing fleet differs from the reviewed configuration; no fleet was changed')
-            fixed = sorted(changed_fields(fleet.spec, spec) - UPDATABLE)
+            fixed = changed_fields(fleet.spec, spec) - UPDATABLE
+            if fleet.spec.profile != spec.profile:
+                fixed.add('profile')
             if fixed:
                 raise PreparationError(f'Existing fleet {spec.configuration.name} differs in fields dstack cannot update in place '
-                                       f'({", ".join(fixed)}); declare a fleet with a new name. No fleet was changed')
+                                       f'({", ".join(sorted(fixed))}); declare a fleet with a new name. No fleet was changed')
         if not fleet and payload['fleetAction'] == 'reuse':
             raise PreparationError('Required existing fleet is missing; choose create or prepare the declared fleet')
     created = updated = 0

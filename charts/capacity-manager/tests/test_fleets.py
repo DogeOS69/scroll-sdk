@@ -189,6 +189,12 @@ class CapacityFleets(unittest.TestCase):
         self.payload['fleets'][1].update(idle_duration='900s', max_price=0.9)
         with self.assertRaisesRegex(adapter.PreparationError, r'cannot update in place \(idle_duration\)'):
             adapter.prepare(self.client, self.payload)
+        self.payload['fleets'][1]['idle_duration'] = '600s'
+        stored = self.client.existing[0].spec.model_dump(mode='json')
+        stored['profile']['name'] = 'operator-profile'
+        self.client.existing[0].spec = FleetSpec.model_validate(stored)
+        with self.assertRaisesRegex(adapter.PreparationError, r'cannot update in place \(profile\)'):
+            adapter.prepare(self.client, self.payload)
         self.assertEqual(len(self.client.applied), 1)
 
     def test_update_refuses_a_recreate_plan_or_a_concurrent_change(self):

@@ -25,6 +25,8 @@ DETAIL = {}
 
 def main():
     global CHECK, DETAIL
+    CHECK = 'controller-version'
+    DETAIL = {}
     from dstack.api.server import APIClient
     if importlib.metadata.version('dstack') != '0.21.5':
         raise RuntimeError('Expected dstack 0.21.5 probe image')
