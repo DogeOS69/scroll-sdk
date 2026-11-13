@@ -6,6 +6,7 @@ on:
       - charts/withdrawal-processor/**
       - charts/proof-coordinator/**
       - examples/values/**
+      - examples/withdrawal-processor/**
       - partner-kit/attestation-signer/**
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py
@@ -16,6 +17,7 @@ on:
       - charts/withdrawal-processor/**
       - charts/proof-coordinator/**
       - examples/values/**
+      - examples/withdrawal-processor/**
       - partner-kit/attestation-signer/**
       - .github/tests/test_signer_keygen.mjs
       - .github/tests/test_beta6_compatibility.py

@@ -6,7 +6,7 @@
 # `scrollsdk setup prep-charts`, and is passed to Helm through the generated
 # deployment contract. This values file carries only Kubernetes shape, secrets
 # wiring, and the proof activation switch.
-# The native base must enable advance_l1_builder_v2 for ordinary deposit
+# The native base must enable transitions.advance_l1 for ordinary deposit
 # admission. examples/withdrawal-processor/WithdrawalProcessor.toml sets true;
 # retain it when prep-charts embeds that file below. Do not mask a stale base
 # with a second environment override.
