@@ -3,8 +3,8 @@
 {{- if not .Values.workerCredentialMaster }}
 {{- fail "Fleet initialization requires workerCredentialMaster" }}
 {{- end }}
-{{- if or (not $init.fleets) (not (has $init.fleetAction (list "create" "reuse"))) }}
-{{- fail "Fleet initialization requires reviewed fleets and create/reuse intent" }}
+{{- if or (not $init.fleets) (not (has $init.fleetAction (list "create" "reuse" "update"))) }}
+{{- fail "Fleet initialization requires reviewed fleets and create/reuse/update intent" }}
 {{- end }}
 {{- $selected := concat .Values.manager.dstack.fleets (ternary (list .Values.manager.dstack.fallbackFleet) (list) (ne .Values.manager.dstack.fallbackFleet "")) }}
 {{- $seen := dict }}

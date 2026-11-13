@@ -19,10 +19,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 CHECK = 'controller-version'
+# Public diagnostics only (backend type names), printed with a failed check.
+DETAIL = {}
 
 
 def main():
-    global CHECK
+    global CHECK, DETAIL
     from dstack.api.server import APIClient
     if importlib.metadata.version('dstack') != '0.21.5':
         raise RuntimeError('Expected dstack 0.21.5 probe image')
@@ -45,7 +47,12 @@ def main():
     required = {p['provider']}
     if p.get('fallbackProvider'):
         required.add(p['fallbackProvider'])
-    if not required.issubset({b.config.type for b in project.backends}):
+    missing = sorted(required - {b.config.type for b in project.backends})
+    if missing:
+        # dstack creates backends only at startup and only logs a failure (for example invalid credentials).
+        DETAIL = {'missingBackends': missing,
+                  'hint': 'check the dstack-controller log for "Failed to create backend"; after fixing the '
+                          'credentials, restart the controller (scrollsdk capacity deploy --restart-controller)'}
         raise RuntimeError('Required dstack backend is absent')
     CHECK = 'wp-capacity-api'
     opener = urllib.request.build_opener(NoRedirect())
@@ -63,5 +70,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception:
-        print(json.dumps({'status': 'failed', 'check': CHECK}))
+        print(json.dumps({'status': 'failed', 'check': CHECK, **DETAIL}))
         sys.exit(1)

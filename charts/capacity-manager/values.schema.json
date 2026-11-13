@@ -50,7 +50,8 @@
         "fleetAction": {
           "enum": [
             "create",
-            "reuse"
+            "reuse",
+            "update"
           ]
         },
         "fleets": {
@@ -101,6 +102,7 @@
         "fallbackProvider": {
           "enum": [
             "",
+            "aws",
             "vastai"
           ]
         },
