@@ -4,8 +4,11 @@ Workers get per-run credentials minted by the capacity manager. This adapter
 prepares fleet configuration without storing worker secrets in the project.
 
 Runs as a Helm initialization Job before the manager is installed. API/provider exceptions may contain credentials and
-are deliberately omitted. Never starts runs, changes existing fleets, or forces
-an apply. Project/backend configuration comes from the controller server config.
+are deliberately omitted. Never starts runs or forces an apply. Existing fleets
+change only with fleetAction update, only in the fields dstack updates in place,
+and only against the fleet that was read (optimistic concurrency). dstack then
+recycles idle or provisioning instances that no longer match; busy instances are
+never terminated. Project/backend configuration comes from the controller server config.
 """
 import importlib.metadata
 import json
@@ -15,6 +18,10 @@ import sys
 from dstack._internal.core.models.fleets import ApplyFleetPlanInput, FleetSpec
 from dstack._internal.core.models.profiles import ProfileParams
 from dstack.api.server import APIClient
+
+
+# dstack 0.21.5 updates these cloud fleet fields in place; any other change needs a new fleet.
+UPDATABLE = frozenset({'nodes', 'resources', 'backends', 'regions', 'instance_types', 'spot_policy', 'max_price'})
 
 
 class PreparationError(Exception):
@@ -32,9 +39,16 @@ def canonical(spec):
     return {'configuration': config, 'profile': profile}
 
 
+def changed_fields(current, desired):
+    """Field names whose effective meaning differs, in configuration or merged profile."""
+    a, b = canonical(current), canonical(desired)
+    return {key for section in ('configuration', 'profile')
+            for key in set(a[section]) | set(b[section]) if a[section].get(key) != b[section].get(key)}
+
+
 def prepare(client, payload):
     project = payload['project']
-    if payload['fleetAction'] not in ('create', 'reuse') or not payload['fleets']:
+    if payload['fleetAction'] not in ('create', 'reuse', 'update') or not payload['fleets']:
         raise PreparationError('Provide a valid fleetAction and nonempty initialization.fleets')
     desired = [FleetSpec.model_validate({'configuration': c, 'profile': {}})
                for c in payload['fleets']]
@@ -53,14 +67,36 @@ def prepare(client, payload):
     # Validate every existing fleet before performing any writes.
     for spec in desired:
         fleet = existing.get(spec.configuration.name)
-        if fleet and (canonical(fleet.spec) != canonical(spec)
-                      or fleet.status.value not in ('active', 'submitted')):
-            raise PreparationError('Existing fleet differs from the reviewed configuration or is not active; no fleet was changed')
+        if fleet and fleet.status.value not in ('active', 'submitted'):
+            raise PreparationError('Existing fleet is not active; no fleet was changed')
+        if fleet and canonical(fleet.spec) != canonical(spec):
+            if payload['fleetAction'] != 'update':
+                raise PreparationError('Existing fleet differs from the reviewed configuration; no fleet was changed')
+            fixed = changed_fields(fleet.spec, spec) - UPDATABLE
+            if fleet.spec.profile != spec.profile:
+                fixed.add('profile')
+            if fixed:
+                raise PreparationError(f'Existing fleet {spec.configuration.name} differs in fields dstack cannot update in place '
+                                       f'({", ".join(sorted(fixed))}); declare a fleet with a new name. No fleet was changed')
         if not fleet and payload['fleetAction'] == 'reuse':
             raise PreparationError('Required existing fleet is missing; choose create or prepare the declared fleet')
-    created = 0
+    created = updated = 0
     for spec in desired:
-        if spec.configuration.name in existing:
+        fleet = existing.get(spec.configuration.name)
+        if fleet:
+            if canonical(fleet.spec) == canonical(spec):
+                continue
+            plan = client.fleets.get_plan(project, spec)
+            current = plan.current_resource
+            if current is None or current.id != fleet.id or getattr(plan.action, 'value', plan.action) != 'update':
+                raise PreparationError('Dstack cannot update the fleet in place or it changed concurrently; retry or declare a fleet with a new name')
+            if canonical(plan.get_effective_spec()) != canonical(spec):
+                raise PreparationError('Dstack changed the requested fleet plan; review controller policies before retrying')
+            # force=False with the fleet just read: dstack refuses if it changed since.
+            result = client.fleets.apply_plan(project, ApplyFleetPlanInput(spec=spec, current_resource=current), force=False)
+            if canonical(result.spec) != canonical(spec):
+                raise PreparationError('Updated fleet readback differs; inspect controller policies before continuing')
+            updated += 1
             continue
         plan = client.fleets.get_plan(project, spec)
         if plan.current_resource is not None:
@@ -73,7 +109,7 @@ def prepare(client, payload):
         if canonical(fleet.spec) != canonical(spec):
             raise PreparationError('Created fleet readback differs; inspect controller policies before continuing')
         created += 1
-    return {'createdEmptyFleets': created, 'updated': True}
+    return {'createdEmptyFleets': created, 'updatedFleets': updated, 'updated': True}
 
 
 def main():

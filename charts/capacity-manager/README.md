@@ -40,8 +40,10 @@ passes `--dstack-fallback-fleet` to Core. Select an immutable manager image that
 supports this argument. The initialization Job checks the selected binary
 before installing the release.
 
-Keep primary AWS selectors unchanged and prepare a separate Vast fleet in the
-same dstack project, with a configured Vast backend. The fallback fleet must have
+Keep the primary selectors unchanged and prepare a separate fallback fleet in the
+same dstack project, with a configured backend for its provider. Chart 0.1.9
+accepts `aws` as well as `vastai` for `initialization.fallbackProvider`, so a
+Vast primary can fall back to on-demand AWS. The fallback fleet must have
 an explicit `max_price` within `pool.hourly_cost_usd_per_worker`, enough VRAM and
 node capacity, and a GPU supported by the same worker image and startup command.
 Core strips primary backend/region/GPU/price selectors from fallback runs and
@@ -60,8 +62,28 @@ in `initialization.fleets`, with the matching provider and `fleetAction`. The `p
 dstack project/backends, WP capacity API access and three existing Secret
 references, then uses the pinned dstack 0.21.5 client to create missing fleets or
 reuse equivalent ones. It requires zero initial/minimum nodes and a finite
-maximum. A changed existing fleet is rejected, never force-applied. `fleetAction:
-reuse` requires all fleets to exist. No Worker runs are submitted by the Job.
+maximum. With `fleetAction: create` or `reuse`, a changed existing fleet is
+rejected, never force-applied. `fleetAction: reuse` requires all fleets to exist.
+When a selected provider's backend is missing, the failed probe names it
+(`missingBackends`): dstack creates backends only at startup and only logs a
+failure, so check the dstack-controller log and restart the controller after
+fixing the credentials.
+No Worker runs are submitted by the Job.
+
+Chart 0.1.9 adds `fleetAction: update`: missing fleets are created as with
+`create`, and an existing fleet that differs is updated in place. Only the fields
+dstack 0.21.5 updates in place may differ: `nodes`, `resources`, `backends`,
+`regions`, `instance_types`, `spot_policy` and `max_price`. Any other difference,
+for example `idle_duration`, fails the Job before any fleet changes; declare a
+fleet with a new name instead. The update is planned with dstack and applied
+against the fleet just read, without force, so a concurrent change fails the Job.
+Fleets are updated one after another: if one update fails, the fleets updated
+before it keep their new configuration; rerunning the upgrade skips them and
+continues.
+dstack then terminates idle or provisioning instances that no longer match the
+fleet, and idle instances above a lowered `nodes.max`; busy instances keep
+running. A Helm rollback does not run the Job, so it does not revert fleets: run
+an upgrade with the previous values instead.
 
 The Job uses the manager's NetworkPolicy labels and no Kubernetes API token or
 RBAC. Secrets must already be synchronized, dstack and WP must be reachable, and
