@@ -121,6 +121,12 @@ configMaps:
       # Intentionally omit the live chunk timeout to inherit MAX_OPEN_L2_TIME (2h).
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CHUNK_MAX_OPEN_L2_TIME: "<TODO>"
       DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_CHUNKS_PER_BATCH: "64"
+      # Most L2 withdrawals one DA transaction, and so one AdvanceL2, carries.
+      # 4500 is Core's default, set here to keep it visible; an image without the
+      # limit ignores the key. Keep it at or above the most withdrawals one L2
+      # block can hold, and keep withdrawalBoundAlerts.maxWithdrawalsPerDaTx in
+      # the scroll-monitor values equal to it.
+      DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_WITHDRAWALS_PER_DA_TX: "4500"
       # Cutover mode only; START_BLOCK_NUMBER above must also be set.
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CUTOVER__LAST_BATCH_INDEX: "<TODO>"
       # DOGEOS_ETH_DA_SUBMITTER_BATCH__CUTOVER__LAST_BATCH_HASH: "<TODO>"

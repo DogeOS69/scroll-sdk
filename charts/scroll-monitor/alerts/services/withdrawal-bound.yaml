@@ -1,0 +1,95 @@
+# The eth-da-submitter seals so that one DA transaction, and so one AdvanceL2, adopts
+# at most [batch].max_withdrawals_per_da_tx withdrawals. These rules watch that limit
+# and the pay-down behind it. The withdrawal-processor's backlog lower bound counts
+# adopted, unpaid withdrawals only, so both thresholds read it. A count is used only
+# while its observation is valid and younger than snapshotMaxAgeSeconds.
+groups:
+- name: dogeos.services.withdrawal-bound
+  interval: 1m
+  rules:
+  - alert: WithdrawalBacklogAboveDALimit
+    timing: {"snapshotMaxAgeSeconds": 300}
+    expr: max by (namespace, job, instance) (withdrawal_processor_public_withdrawal_backlog_lower_bound and on (namespace, job, instance) __WP_WITHDRAWAL_BACKLOG_VALID__) > __WITHDRAWAL_DA_LIMIT__
+    for: 10m
+    labels:
+      severity: critical
+      service: withdrawal-processor
+    annotations:
+      summary: Adopted, unpaid withdrawals exceed the limit of one DA transaction.
+      description: '{{ $value | printf "%.0f" }} adopted withdrawals are unpaid, above the limit of __WITHDRAWAL_DA_LIMIT__ per DA transaction. Either a DA transaction was sealed above the limit or pay-down has stopped. Check EthDASingleBlockOverWithdrawalLimit and the eth-da-submitter limit, then withdrawal-processor AdvanceL1 jobs, TSO signing and broadcast.'
+  # Stays up next to the critical rule: an upper bound here would restart the hour
+  # each time the backlog crossed the limit.
+  - alert: WithdrawalBacklogPastOnePayDown
+    timing: {"snapshotMaxAgeSeconds": 300}
+    expr: max by (namespace, job, instance) (withdrawal_processor_public_withdrawal_backlog_lower_bound and on (namespace, job, instance) __WP_WITHDRAWAL_BACKLOG_VALID__) > __WITHDRAWAL_PAY_DOWN_CAPACITY__
+    for: 1h
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Adopted, unpaid withdrawals stay above what one pay-down transaction clears.
+      description: '{{ $value | printf "%.0f" }} adopted withdrawals are unpaid, above the __WITHDRAWAL_PAY_DOWN_CAPACITY__ one pay-down transaction clears with no deposits. A full deposit window pays only the reserve per transaction, so a slow pay-down can be normal. Check that AdvanceL1 transactions keep confirming and that the backlog is falling.'
+  # A withdrawal-processor that exports protocol metrics but no backlog validity is
+  # unobserved too.
+  - alert: WithdrawalBacklogUnobserved
+    timing: {"snapshotMaxAgeSeconds": 300}
+    expr: >-
+      max by (namespace, job, instance) (withdrawal_processor_public_withdrawal_backlog_lower_bound_valid unless on (namespace, job, instance) __WP_WITHDRAWAL_BACKLOG_VALID__)
+      or (max by (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid) unless on (namespace, job, instance) withdrawal_processor_public_withdrawal_backlog_lower_bound_valid)
+    for: 10m
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: The adopted withdrawal backlog cannot be observed.
+      description: The backlog lower bound on {{ $labels.instance }} is invalid, stale, or missing, so the withdrawal backlog rules cannot evaluate. Check the withdrawal-processor log, its database and its L2 RPC. A retained count does not establish the current backlog.
+  # A published batch stayed ahead of the adopted height for the whole window and no
+  # batch was adopted in it. Heights only rise, so a batch that was ahead when a
+  # window without adoption began was ahead throughout. The heights at the start of
+  # the window are read without the freshness guard: a stale one is lower, which
+  # keeps the rule quiet or shows as an adoption once it refreshes.
+  # L2BatchHeightStalled pages for the same condition.
+  - alert: AdvanceL2AdoptionDelayed
+    timing: {"window": "30m", "snapshotMaxAgeSeconds": 120}
+    timingAnnotations: {"summary": "Published L2 batches have waited __TIME_window__ for AdvanceL2 adoption.", "description": "{{ $value | printf \"%.0f\" }} published batch(es) have been ahead of the adopted batch height for __TIME_window__ with no adoption. Check L2 proof generation and the withdrawal-processor AdvanceL2 jobs, then TSO signing and broadcast. L2BatchHeightStalled pages if this continues."}
+    expr: >-
+      (
+        max by (namespace, job) (withdrawal_processor_protocol_latest_da_batch_height and on (namespace, job, instance) __WP_L2_VALID__)
+        - max by (namespace, job) (withdrawal_processor_protocol_state_l2_batch_height and on (namespace, job, instance) __WP_REPLAY_VALID__)
+      ) > 0
+      and (
+        max by (namespace, job) (withdrawal_processor_protocol_latest_da_batch_height offset __TIME_window__)
+        > max by (namespace, job) (withdrawal_processor_protocol_state_l2_batch_height offset __TIME_window__)
+      )
+      and (
+        max by (namespace, job) (withdrawal_processor_protocol_state_l2_batch_height)
+        == max by (namespace, job) (withdrawal_processor_protocol_state_l2_batch_height offset __TIME_window__)
+      )
+    labels:
+      severity: warning
+      service: withdrawal-processor
+    annotations:
+      summary: Published L2 batches have waited 30m for AdvanceL2 adoption.
+      description: '{{ $value | printf "%.0f" }} published batch(es) have been ahead of the adopted batch height for 30m with no adoption. Check L2 proof generation and the withdrawal-processor AdvanceL2 jobs, then TSO signing and broadcast. L2BatchHeightStalled pages if this continues.'
+  # Core creates the counter on the first event, so its first sample is not zero and
+  # shows no increase on its own. A scraped submitter without the counter reads as
+  # zero here, which makes the first event an increase and a restart a reset. A
+  # failed scrape pads nothing, so it leaves a gap and not a false reset. The sum
+  # carries the count over a replaced pod; the submitter runs as one replica.
+  # Under a job name without "eth-da-submitter" nothing is padded, and the first
+  # event after each start is missed.
+  - alert: EthDASingleBlockOverWithdrawalLimit
+    timing: {"window": "1h"}
+    expr: >-
+      increase((
+        sum by (namespace, job) (
+          (eth_da_submitter_single_block_over_withdrawal_limit_total * 1)
+          or on (namespace, job, instance) ((up{job=~".*eth-da-submitter.*"} == 1) * 0)
+        )
+      )[__TIME_window__:1m]) > 0
+    labels:
+      severity: critical
+      service: eth-da-submitter
+    annotations:
+      summary: One L2 block carried more withdrawals than the limit for one DA transaction.
+      description: An L2 block held more than the limit of __WITHDRAWAL_DA_LIMIT__ withdrawals and was published in a DA transaction of its own, so its AdvanceL2 adopts more than the limit. Raise the eth-da-submitter max_withdrawals_per_da_tx above the most withdrawals one L2 block can hold, set withdrawalBoundAlerts.maxWithdrawalsPerDaTx to match, and watch the backlog pay down.

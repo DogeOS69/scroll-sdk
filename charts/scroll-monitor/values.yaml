@@ -416,6 +416,14 @@ deprecatingKeyDrainAlerts:
   retiredBaseline: 0
   runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/f63456684e2ee9e51e1cd41a8d331d77cab40cc4/docs/runbooks/rotation-and-recovery-operations.md#deprecating-key-drain-monitor
 
+# Withdrawal bound rules; see "Withdrawal bound" in the README.
+# maxWithdrawalsPerDaTx: the eth-da-submitter [batch].max_withdrawals_per_da_tx; keep
+# the two equal. payDownCapacity: about what one pay-down transaction clears with no
+# deposits; an adopted backlog above it for an hour warns.
+withdrawalBoundAlerts:
+  maxWithdrawalsPerDaTx: 4500
+  payDownCapacity: 2745
+
 dogecoinIndexerAlerts:
   # Alert when an indexer's synced height stays unchanged for 2 minutes.
   # Generator: match the actual Prometheus job names; no confirmation input needed.

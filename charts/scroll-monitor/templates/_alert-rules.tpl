@@ -151,6 +151,17 @@
 {{- if or (le (int $drain.drainMargin) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
 {{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}
+{{- $bound := $.Values.withdrawalBoundAlerts -}}
+{{- range $key := list "maxWithdrawalsPerDaTx" "payDownCapacity" -}}
+{{- $value := index $bound $key -}}
+{{/* Helm reads YAML numbers as floats, which print as 1e+06 from a million up. */}}
+{{- if or (not (has (kindOf $value) (list "float64" "int64" "int"))) (ne (float64 $value) (float64 (int64 $value))) (le (int64 $value) 0) -}}
+{{- fail (printf "withdrawalBoundAlerts.%s must be a positive integer" $key) -}}
+{{- end -}}
+{{- end -}}
+{{- if gt (int64 $bound.payDownCapacity) (int64 $bound.maxWithdrawalsPerDaTx) -}}
+{{- fail "withdrawalBoundAlerts.payDownCapacity must not exceed maxWithdrawalsPerDaTx" -}}
+{{- end -}}
 {{/* A completion inside the age window means the queue is draining. Missing
      completion metrics do not suppress the alert. A materialize item can wait
      on proofs of another family (a batch on its chunks), so any completed
@@ -161,7 +172,7 @@
 {{- $materializeGate = ` unless on (namespace) ((sum by (namespace) (increase(proof_coordinator_work_items_total{outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0) or (sum by (namespace) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0))` -}}
 {{- $proveGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
 {{- end -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | fromYaml).groups -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | replace "__WITHDRAWAL_DA_LIMIT__" (toString (int64 $bound.maxWithdrawalsPerDaTx)) | replace "__WITHDRAWAL_PAY_DOWN_CAPACITY__" (toString (int64 $bound.payDownCapacity)) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}
@@ -183,7 +194,8 @@
 {{- $guards := dict -}}
 {{- $_ := set $guards "__TSO_REGISTRY_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_registry_snapshot_valid" "timestamp" "tso_core_registry_snapshot_timestamp_seconds")) -}}
 {{- $_ := set $guards "__TSO_STATUS_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "tso_core_metrics_snapshot_valid" "timestamp" "tso_core_observation_timestamp_seconds")) -}}
-{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" "l2" -}}
+{{- $_ := set $guards "__WP_WITHDRAWAL_BACKLOG_VALID__" (include "scroll-monitor.snapshotGuard" (dict "valid" "withdrawal_processor_public_withdrawal_backlog_lower_bound_valid" "timestamp" "withdrawal_processor_public_withdrawal_backlog_lower_bound_timestamp_seconds")) -}}
+{{- range $source := list "jobs" "job_head" "proof_work" "wf_unconfirmed" "l2" "replay" -}}
 {{- $_ := set $guards (printf "__WP_%s_VALID__" (upper $source)) (include "scroll-monitor.snapshotGuard" (dict "valid" (printf "withdrawal_processor_protocol_snapshot_valid{source=%s}" ($source | quote)) "timestamp" (printf "withdrawal_processor_protocol_snapshot_timestamp_seconds{source=%s}" ($source | quote)))) -}}
 {{- end -}}
 {{/* Apply explicit pauses to Grafana and omit them in the Prometheus fallback. */}}
@@ -195,7 +207,9 @@
 {{- range $marker, $guard := $guards -}}
 {{- if contains $marker $rule.expr -}}
 {{- $parameters := $rule.timing | default dict -}}
+{{- if not (hasKey $parameters "snapshotMaxAgeSeconds") -}}
 {{- $_ := set $parameters "snapshotMaxAgeSeconds" 120 -}}
+{{- end -}}
 {{- $_ := set $rule "timing" $parameters -}}
 {{- $_ := set $rule "expr" (replace $marker $guard $rule.expr) -}}
 {{- end -}}
