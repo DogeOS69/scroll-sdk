@@ -77,6 +77,10 @@ class WithdrawalBoundTests(unittest.TestCase):
         self.assertIn('limit of 6000', custom['WithdrawalBacklogAboveDALimit']['annotations']['description'])
         self.assertIn('limit of 6000', custom['EthDASingleBlockOverWithdrawalLimit']['annotations']['description'])
         self.assertIn('> 3000', custom['WithdrawalBacklogPastOnePayDown']['expr'])
+        # Helm prints a float of a million or more in exponent form; the limit must not.
+        large = rules('prometheus', '--set-json', 'withdrawalBoundAlerts={"maxWithdrawalsPerDaTx":12345678,"payDownCapacity":1000000}')
+        self.assertIn('> 12345678', large['WithdrawalBacklogAboveDALimit']['expr'])
+        self.assertIn('> 1000000', large['WithdrawalBacklogPastOnePayDown']['expr'])
         self.assertFalse(rules('prometheus', '--set', 'serviceAlerts.enabled=false'))
 
     def test_timing_overrides_reach_the_queries(self):
@@ -92,6 +96,8 @@ class WithdrawalBoundTests(unittest.TestCase):
         for flags in (('--set', 'withdrawalBoundAlerts.maxWithdrawalsPerDaTx=0'),
                       ('--set-string', 'withdrawalBoundAlerts.maxWithdrawalsPerDaTx=4500'),
                       ('--set', 'withdrawalBoundAlerts.payDownCapacity=2745.5'),
+                      ('--set', 'withdrawalBoundAlerts.payDownCapacity=-1'),
+                      ('--set', 'withdrawalBoundAlerts.maxWithdrawalsPerDaTx=null'),
                       ('--set', 'withdrawalBoundAlerts.payDownCapacity=4501')):
             with self.subTest(flags=flags):
                 failed = subprocess.run(['helm', 'template', 'scroll-monitor', str(CHART), '--namespace', 'monitoring', *flags],
