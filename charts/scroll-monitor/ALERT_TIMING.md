@@ -379,6 +379,19 @@ Thresholds come from `deprecatingKeyDrainAlerts` (`drainMargin`, `retiredBaselin
 | `TSOSigningQueueLarge` | `15m` | `snapshotMaxAgeSeconds: 120` |
 | `TSOShadowforkSentinelAccepted` | `0s` | `window: 5m` |
 
+### `dogeos.services.withdrawal-bound` (default evaluation interval `1m`)
+
+Thresholds come from `withdrawalBoundAlerts` (`maxWithdrawalsPerDaTx`, `payDownCapacity`), not timing parameters.
+`AdvanceL2AdoptionDelayed` has no pending period: its `window` is the time a published batch must stay unadopted.
+
+| Alert | Default `for` | Optional query parameters and defaults |
+| --- | --- | --- |
+| `WithdrawalBacklogAboveDALimit` | `10m` | `snapshotMaxAgeSeconds: 300` |
+| `WithdrawalBacklogPastOnePayDown` | `1h` | `snapshotMaxAgeSeconds: 300` |
+| `WithdrawalBacklogUnobserved` | `10m` | `snapshotMaxAgeSeconds: 300` |
+| `AdvanceL2AdoptionDelayed` | `0s` | `window: 30m`, `snapshotMaxAgeSeconds: 120` |
+| `EthDASingleBlockOverWithdrawalLimit` | `0s` | `window: 1h` |
+
 ### `dogeos.services.withdrawal-processor` (default evaluation interval `1m`)
 
 | Alert | Default `for` | Optional query parameters and defaults |

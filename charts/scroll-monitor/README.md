@@ -953,6 +953,47 @@ runbook describes) and `runbookUrl`. Both rules fire only while the WP's
 reported by `WPProtocolObservationUnavailable`. They inherit the service-alert
 enable/pause and routing.
 
+### Withdrawal bound
+
+The eth-da-submitter seals so that one DA transaction, and so one AdvanceL2, adopts
+at most `[batch].max_withdrawals_per_da_tx` withdrawals (4,500 by default). The
+withdrawal-processor then pays the adopted withdrawals in its following
+transactions, the pay-down. Five rules watch the limit and the pay-down; they
+follow the recommendations in dogeos-core's
+`docs/engineering/core-health-observability.md`:
+
+- `WithdrawalBacklogAboveDALimit` (critical, 10m): adopted, unpaid withdrawals
+  exceed `maxWithdrawalsPerDaTx`. A DA transaction was sealed above the limit, or
+  pay-down has stopped.
+- `WithdrawalBacklogPastOnePayDown` (warning, 1h): the same count stays above
+  `payDownCapacity`, about what one pay-down transaction clears with no deposits.
+  A full deposit window pays only the reserve per transaction, so the hour allows
+  a slow pay-down. It stays up next to the critical rule.
+- `WithdrawalBacklogUnobserved` (warning, 10m): the count is invalid, older than
+  five minutes, or missing from a withdrawal-processor that exports protocol
+  metrics. The two backlog rules cannot evaluate while it fires.
+- `AdvanceL2AdoptionDelayed` (warning): a published batch stayed ahead of the
+  adopted batch height for 30 minutes and no batch was adopted in that time.
+  `L2BatchHeightStalled` pages for the same condition after
+  `businessAlerts.l2BatchStallSeconds`, so this chart adds no second page.
+- `EthDASingleBlockOverWithdrawalLimit` (critical): one L2 block carried more
+  withdrawals than the limit and was published in a DA transaction of its own.
+  It stays up for the one-hour window after the event.
+
+`withdrawalBoundAlerts` sets `maxWithdrawalsPerDaTx` (default 4500) and
+`payDownCapacity` (default 2745). Keep `maxWithdrawalsPerDaTx` equal to the
+submitter's limit: these are deployment thresholds, not values read from the
+service. The backlog is the withdrawal-processor's lower bound, which counts
+adopted withdrawals only. A count above the limit shows that adoption and
+pay-down are not keeping the designed bound; it does not prove an outage.
+
+Core creates the single-block counter on its first event. The rule reads a
+scraped submitter without the counter as zero, so the first event counts, a
+restart is a reset and a failed scrape is a gap. This needs the submitter's job
+name to contain `eth-da-submitter`; under another name the first event after
+each start is missed.
+The rules inherit the service-alert enable/pause and routing.
+
 ## Optional alert timing
 
 Production values can override each alert's pending period, query window and

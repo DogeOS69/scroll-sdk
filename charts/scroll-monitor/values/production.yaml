@@ -357,6 +357,12 @@ businessAlerts:
   # Populate from the active bridge policy for exact per-role quorum checks.
   requiredSignersByRole: {}
 
+# Keep maxWithdrawalsPerDaTx equal to the eth-da-submitter
+# DOGEOS_ETH_DA_SUBMITTER_BATCH__MAX_WITHDRAWALS_PER_DA_TX.
+withdrawalBoundAlerts:
+  maxWithdrawalsPerDaTx: 4500
+  payDownCapacity: 2745
+
 loki:
   enabled: true
   fullnameOverride: loki
