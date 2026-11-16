@@ -102,7 +102,8 @@ fee_rate_sat_per_kvb = 1000000
 # Unset by default; prep-charts supplies the verified Bridge funding output.
 # Raw funding transaction hex and its Bridge output index; never a deposit.
 # opening_bridge_custody = [{ tx_hex = "<TODO>", vout = 0 }]
-# Unset by default; prep-charts sets it for a P2PKH genesis sequencer seed.
+# Unset by default; prep-charts sets it when doge-config declares
+# defaults.migrateSequencerTwoOfTwo, and never removes it.
 # migrate_sequencer_two_of_two = true
 initial_bridge_redeem_script_hex = "<TODO>"
 # Unset by default; declare only for snapshot/upgrade continuation.
