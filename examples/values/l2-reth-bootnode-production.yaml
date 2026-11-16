@@ -109,12 +109,15 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    # A bootnode serves peers, not RPC clients. Operators and the optional peer
+    # allowlist sidecar call admin over the node's IPC socket; with the
+    # allowlist enabled the chart rejects admin in the HTTP and WebSocket lists.
+    api: eth,net,web3,rpc
 
   ws:
     enabled: false
     addr: 0.0.0.0
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    api: eth,net,web3,rpc
 
   service:
     # Internal ClusterIP P2P ports on the main Service, for in-cluster peering.

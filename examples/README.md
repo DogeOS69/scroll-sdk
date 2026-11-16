@@ -74,6 +74,56 @@ The standalone `dogeos-rpc-package` also enables the flag in
 `scripts/l2reth_entrypoint.sh`; its `l2reth-node` Compose service uses
 `restart: on-failure` to restart after exit code `70`.
 
+### RPC API namespaces by role
+
+Each Reth example enables only the namespaces its callers use:
+
+| Example | HTTP | WebSocket | Callers |
+| --- | --- | --- | --- |
+| Sequencer | `eth,net,web3,rpc` | `eth,net,web3,rpc` | In-cluster services |
+| Bootnode | `eth,net,web3,rpc` | Disabled | No RPC caller; peers use P2P |
+| Internal RPC (`l2-rpc`) | `eth,net,web3,rpc,debug` | `eth,net,web3,rpc` | Proof materialization (`debug_executionWitness`), Blockscout tracing, core services |
+| Public RPC | `eth,net,web3` | `eth,net,web3` | Anyone, through the ingress |
+
+`admin`, `trace`, `txpool` and `ots` are off on every role, and `debug` is on the
+internal RPC only. `txpool` lists the transactions a node holds before they are
+in a block. The rollup-node status API is separate (`reth.rpc.rollupNode`).
+Point a public ingress or RPC provider at the public RPC release only: the
+internal RPC, sequencers and bootnodes expose ClusterIP services and are not
+meant to be fronted.
+
+For operator work that needs `admin`, `debug` or `txpool`, use the node's IPC
+socket (`reth.ipcPath`, `/tmp/reth.ipc` by default) from inside the pod; it
+serves every namespace and is not reachable over the network. The socket takes
+one JSON-RPC request per line and is not HTTP, so `curl --unix-socket` does not
+work. The rollup-node image has `perl`:
+
+```bash
+kubectl exec -n "$NAMESPACE" "$POD" -- perl -MIO::Socket::UNIX -e '
+  my $s = IO::Socket::UNIX->new(Peer => shift) or die "connect: $!\n";
+  print $s shift, "\n"; print scalar <$s>' \
+  /tmp/reth.ipc '{"jsonrpc":"2.0","id":1,"method":"admin_nodeInfo","params":[]}'
+```
+
+Reth is the pod's first container, so `kubectl exec` reaches it without `-c`.
+Add a namespace to an HTTP or WebSocket list only for a named caller, and never
+to the public RPC. Blockscout's pending-transaction fetcher would be such a
+caller of `txpool` on the internal RPC; the Blockscout example disables it
+(`INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER`).
+
+The [runtime peer allowlist](reth-peer-allowlist.md) sidecar on a bootnode
+calls `admin_peers`, `admin_addTrustedPeer`, `admin_removeTrustedPeer` and
+`admin_removePeer` over IPC, so it needs no HTTP namespace. In that mode the
+socket is `/run/reth-allowlist/reth.ipc` instead of `reth.ipcPath`, and the
+chart rejects `admin` in the HTTP and WebSocket lists.
+
+The `eth` namespace still serves pending-transaction subscriptions and filters
+(`eth_subscribe` with `newPendingTransactions`,
+`eth_newPendingTransactionFilter`). Reth has no switch for them, so a public
+endpoint serves the pending transactions its own node holds. Filter those
+methods at the proxy in front of the public RPC if a deployment should not
+serve them.
+
 ### Legacy Geth header compatibility
 
 The generic production examples omit `--network.legacy-geth-header-transform`.

@@ -124,14 +124,15 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    # Internal witness node: real materialization requires debug_executionWitness.
-    # Keep proof-coordinator witness traffic on this private endpoint.
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    # Internal witness node: real materialization requires debug_executionWitness,
+    # and Blockscout traces through debug. Keep both on this private endpoint.
+    # Nothing calls admin, trace, txpool or ots here; operators use the IPC socket.
+    api: eth,net,web3,rpc,debug
 
   ws:
     enabled: true
     addr: 0.0.0.0
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    api: eth,net,web3,rpc
 
   service:
     p2p:
