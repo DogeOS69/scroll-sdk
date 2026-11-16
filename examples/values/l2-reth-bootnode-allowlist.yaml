@@ -5,6 +5,9 @@ reth:
   peerAllowlist:
     enabled: true
     configMapName: reth-peer-allowlist
+  # The sidecar calls admin over IPC, and the chart rejects admin in these
+  # lists. They repeat the bootnode example so that values generated from an
+  # older template still render.
   http:
     api: eth,net,web3,rpc
   ws:

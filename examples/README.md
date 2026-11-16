@@ -97,6 +97,12 @@ socket (`reth.ipcPath`) from inside the pod; it serves every namespace and is
 not reachable over the network. Add a namespace to an HTTP or WebSocket list
 only for a named caller, and never to the public RPC.
 
+The [runtime peer allowlist](reth-peer-allowlist.md) sidecar on a bootnode
+calls `admin_peers`, `admin_addTrustedPeer`, `admin_removeTrustedPeer` and
+`admin_removePeer` over IPC, so it needs no HTTP namespace. In that mode the
+socket is `/run/reth-allowlist/reth.ipc` instead of `reth.ipcPath`, and the
+chart rejects `admin` in the HTTP and WebSocket lists.
+
 The `eth` namespace still serves pending-transaction subscriptions and filters
 (`eth_subscribe` with `newPendingTransactions`,
 `eth_newPendingTransactionFilter`). Reth has no switch for them, so a public

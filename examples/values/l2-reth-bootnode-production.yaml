@@ -109,8 +109,9 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    # A bootnode serves peers, not RPC clients. The peer allowlist sidecar and
-    # operators reach admin over the IPC socket (reth.ipcPath).
+    # A bootnode serves peers, not RPC clients. Operators and the optional peer
+    # allowlist sidecar call admin over the node's IPC socket; with the
+    # allowlist enabled the chart rejects admin in the HTTP and WebSocket lists.
     api: eth,net,web3,rpc
 
   ws:
