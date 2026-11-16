@@ -133,12 +133,15 @@ reth:
     enabled: true
     addr: 0.0.0.0
     corsDomain: "*"
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    # No service calls admin, debug, trace, txpool or ots on a sequencer, and
+    # txpool would list its pending transactions to any client of this port.
+    # Operators reach those namespaces over the IPC socket (reth.ipcPath).
+    api: eth,net,web3,rpc
 
   ws:
     enabled: true
     addr: 0.0.0.0
-    api: net,web3,rpc,admin,debug,trace,txpool,eth,ots
+    api: eth,net,web3,rpc
 
   service:
     p2p:

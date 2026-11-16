@@ -74,6 +74,36 @@ The standalone `dogeos-rpc-package` also enables the flag in
 `scripts/l2reth_entrypoint.sh`; its `l2reth-node` Compose service uses
 `restart: on-failure` to restart after exit code `70`.
 
+### RPC API namespaces by role
+
+Each Reth example enables only the namespaces its callers use:
+
+| Example | HTTP | WebSocket | Callers |
+| --- | --- | --- | --- |
+| Sequencer | `eth,net,web3,rpc` | `eth,net,web3,rpc` | In-cluster services |
+| Bootnode | `eth,net,web3,rpc` | Disabled | No RPC caller; peers use P2P |
+| Internal RPC (`l2-rpc`) | `eth,net,web3,rpc,debug` | `eth,net,web3,rpc` | Proof materialization (`debug_executionWitness`), Blockscout tracing, core services |
+| Public RPC | `eth,net,web3` | `eth,net,web3` | Anyone, through the ingress |
+
+`admin`, `trace`, `txpool` and `ots` are off on every role, and `debug` is on the
+internal RPC only. `txpool` lists the transactions a node holds before they are
+in a block. The rollup-node status API is separate (`reth.rpc.rollupNode`).
+Point a public ingress or RPC provider at the public RPC release only: the
+internal RPC, sequencers and bootnodes expose ClusterIP services and are not
+meant to be fronted.
+
+For operator work that needs `admin`, `debug` or `txpool`, use the node's IPC
+socket (`reth.ipcPath`) from inside the pod; it serves every namespace and is
+not reachable over the network. Add a namespace to an HTTP or WebSocket list
+only for a named caller, and never to the public RPC.
+
+The `eth` namespace still serves pending-transaction subscriptions and filters
+(`eth_subscribe` with `newPendingTransactions`,
+`eth_newPendingTransactionFilter`). Reth has no switch for them, so a public
+endpoint serves the pending transactions its own node holds. Filter those
+methods at the proxy in front of the public RPC if a deployment should not
+serve them.
+
 ### Legacy Geth header compatibility
 
 The generic production examples omit `--network.legacy-geth-header-transform`.
