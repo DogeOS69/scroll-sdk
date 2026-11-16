@@ -93,9 +93,23 @@ internal RPC, sequencers and bootnodes expose ClusterIP services and are not
 meant to be fronted.
 
 For operator work that needs `admin`, `debug` or `txpool`, use the node's IPC
-socket (`reth.ipcPath`) from inside the pod; it serves every namespace and is
-not reachable over the network. Add a namespace to an HTTP or WebSocket list
-only for a named caller, and never to the public RPC.
+socket (`reth.ipcPath`, `/tmp/reth.ipc` by default) from inside the pod; it
+serves every namespace and is not reachable over the network. The socket takes
+one JSON-RPC request per line and is not HTTP, so `curl --unix-socket` does not
+work. The rollup-node image has `perl`:
+
+```bash
+kubectl exec -n "$NAMESPACE" "$POD" -- perl -MIO::Socket::UNIX -e '
+  my $s = IO::Socket::UNIX->new(Peer => shift) or die "connect: $!\n";
+  print $s shift, "\n"; print scalar <$s>' \
+  /tmp/reth.ipc '{"jsonrpc":"2.0","id":1,"method":"admin_nodeInfo","params":[]}'
+```
+
+Reth is the pod's first container, so `kubectl exec` reaches it without `-c`.
+Add a namespace to an HTTP or WebSocket list only for a named caller, and never
+to the public RPC. Blockscout's pending-transaction fetcher would be such a
+caller of `txpool` on the internal RPC; the Blockscout example disables it
+(`INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER`).
 
 The [runtime peer allowlist](reth-peer-allowlist.md) sidecar on a bootnode
 calls `admin_peers`, `admin_addTrustedPeer`, `admin_removeTrustedPeer` and
