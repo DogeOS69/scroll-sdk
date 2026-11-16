@@ -278,9 +278,10 @@ one. The CLI checks the timelock against the earliest possible anchor before it
 asks for funding, and against the actual anchor afterwards, so leave margin for
 funding delays. A height that passes initial preparation does not by itself
 satisfy later rotation policy. Review the recovery horizon for production, and
-do not copy the builder's `525600` default as a live-network absolute height. Once funded, changing the
-script's timelock changes the Bridge address and requires the protocol's reviewed
-rotation process; editing the deployed spec does not update an existing Bridge.
+do not copy the builder's `525600` default as a live-network absolute height.
+Once funded, changing the script's timelock changes the Bridge address and
+requires the protocol's reviewed rotation process; editing the deployed spec
+does not update an existing Bridge.
 
 PostgreSQL settings can remain unconfigured while Blockscout is deferred and
 dstack uses SQLite. Do not select `preparation.databases: [blockscout]` until its
