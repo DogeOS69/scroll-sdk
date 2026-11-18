@@ -112,6 +112,15 @@ class MetricsPortTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(f"set metricsPort instead of env {env}", result.stderr)
 
+    def test_map_form_env_is_supported(self):
+        for service, env in ENV.items():
+            with self.subTest(service=service):
+                docs = self.documents(self.render(service, {"metricsPort": 9100, "env": {"EXAMPLE": "1"}}))
+                self.assertIn({"name": env, "value": "9100"}, self.container(docs)["env"])
+                result = self.render(service, {"metricsPort": 9100, "env": {env: "9100"}})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"set metricsPort instead of env {env}", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

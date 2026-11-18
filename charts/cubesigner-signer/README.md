@@ -53,7 +53,7 @@ Kubernetes: `>=1.22.0-0`
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"dogeos69/cubesigner-signer"` |  |
 | image.tag | string | `"v0.3.0-beta.2"` |  |
-| metricsPort | string | `nil` | Optional dedicated metrics listener port; null keeps /metrics on the API port |
+| metricsPort | int | `nil` | Optional dedicated metrics listener port; null keeps /metrics on the API port |
 | persistence.protocol-context.enabled | bool | `true` |  |
 | persistence.protocol-context.mountPath | string | `"/app/protocol_context.json"` |  |
 | persistence.protocol-context.name | string | `"protocol-context-config"` |  |

@@ -282,8 +282,8 @@ defaultProbes:
 # changing the URL cannot switch the binary to a PostgreSQL backend.
 
 # Restrict the unauthenticated API port (TSO callbacks, rotation routes and,
-# unless metricsPort is set, metrics) to the pods that legitimately call it. Replace the placeholder
-# selectors with your own labels.
+# unless metricsPort is set, metrics) to the pods that legitimately call it.
+# Replace the placeholder selectors with your own labels.
 # Enabled by default; configure every ingress caller before installation. With
 # metricsPort null, metrics are on the API port and a monitoring peer can reach
 # all API routes; with metricsPort set, it is admitted to that port only.
