@@ -55,6 +55,17 @@ resources:
     memory: "512Mi"
     cpu: "500m"
 
+# Optional dedicated metrics listener, e.g. 9100. Unset (null) keeps /metrics
+# on the API port. When set, the application serves /metrics only on this
+# port, so the chart passes it as METRICS_PORT, adds a "metrics" Service port
+# and moves this chart's ServiceMonitor endpoints from "http" to "metrics".
+# With networkPolicy enabled, monitoring peers are admitted to this port only.
+# A supplemental monitor in another chart (scroll-monitor's
+# additionalServiceMonitors.tso) must be switched to "metrics" as well.
+# Requires an image that includes the dedicated metrics listener; with an
+# older image nothing listens on this port and scrapes fail.
+metricsPort: null
+
 # Monitoring configuration
 serviceMonitor:
   main:
@@ -86,8 +97,10 @@ ingress:
 # signer callbacks or metrics scraping before the selectors below are set.
 # Enable it in every deployment that runs on a NetworkPolicy-enforcing CNI.
 # All lists hold NetworkPolicyPeer entries (podSelector / namespaceSelector).
-# The API, /health and /metrics share one port, so every listed peer reaches
-# every route. withdrawalProcessor and signers are required when enabled.
+# The API and /health share one port, so every peer listed for it reaches
+# every route. /metrics shares it too unless metricsPort is set; then
+# monitoring peers are admitted to metricsPort only. withdrawalProcessor and
+# signers are required when enabled.
 # edge admits the ALB subnet CIDRs (or ingress proxy pods). The Ingress
 # restricts public paths; this L4 policy cannot filter HTTP routes.
 networkPolicy:
@@ -98,7 +111,7 @@ networkPolicy:
     signers: []               # signer pods that post signature callbacks
     edge: []                  # public Ingress sources, e.g. [{ipBlock: {cidr: <ALB subnet CIDR>}}]
     operators: []             # optional: operator tooling / ad-hoc port-forward source
-    monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port
+    monitoring: []            # optional: Prometheus; API port, or metricsPort when set
 
 # Existing ALB target groups. Installed and removed with this application.
 # See ../../examples/existing-alb.md for targetGroupARN and serviceRef fields.

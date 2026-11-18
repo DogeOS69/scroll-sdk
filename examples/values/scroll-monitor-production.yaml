@@ -275,6 +275,7 @@ balanceMonitoring:
 # TSO is scraped by scroll-monitor by default. Keep the TSO chart's own
 # ServiceMonitor disabled to avoid duplicate scraping of the same endpoint.
 # Disable this entry only when another chart owns it or TSO is absent.
+# If the TSO chart sets metricsPort, change the endpoint port to metrics.
 additionalServiceMonitors:
   tso:
     enabled: true

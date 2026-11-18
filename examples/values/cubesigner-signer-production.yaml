@@ -189,6 +189,11 @@ resources:
   limits:
     memory: "512Mi"
     cpu: "1000m"
+# Dedicated metrics listener. Keep null with an image that serves /metrics on
+# the API port, as the pinned image does. Set a port (e.g. 9100) only with an
+# image that includes the dedicated listener; see the chart README.
+metricsPort: null
+
 serviceMonitor:
   main:
     enabled: true

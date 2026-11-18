@@ -10,6 +10,8 @@ global:
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
+{{- include "cubesigner-signer.metricsPort.apply" (dict "root" . "envName" "DOGEOS_CUBESIGNER_SIGNER_METRICS_PORT") }}
+
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}
 ---

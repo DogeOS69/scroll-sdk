@@ -257,6 +257,11 @@ resources:
     memory: "4Gi"
     cpu: "1500m"
 
+# Dedicated metrics listener. Keep null with an image that serves /metrics on
+# the API port, as the pinned image does. Set a port (e.g. 9100) only with an
+# image that includes the dedicated listener; see the chart README.
+metricsPort: null
+
 serviceMonitor:
   main:
     enabled: true
@@ -276,11 +281,12 @@ defaultProbes:
 # Keep database_url (or DOGEOS_WITHDRAWAL_DATABASE_URL) on the /app/data PVC;
 # changing the URL cannot switch the binary to a PostgreSQL backend.
 
-# Restrict the unauthenticated API port (TSO callbacks, rotation routes,
-# metrics) to the pods that legitimately call it. Replace the placeholder
-# selectors with your own labels.
-# Enabled by default; configure every ingress caller before installation. Beta.6
-# serves metrics on the API port; a monitoring peer can reach all API routes.
+# Restrict the unauthenticated API port (TSO callbacks, rotation routes and,
+# unless metricsPort is set, metrics) to the pods that legitimately call it.
+# Replace the placeholder selectors with your own labels.
+# Enabled by default; configure every ingress caller before installation. With
+# metricsPort null, metrics are on the API port and a monitoring peer can reach
+# all API routes; with metricsPort set, it is admitted to that port only.
 
 networkPolicy:
   enabled: true

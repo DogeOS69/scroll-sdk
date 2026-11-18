@@ -20,6 +20,15 @@
           "description": "cubesigner-signer uses the chart-owned RollingUpdate strategy."
         }
       }
+    },
+    "metricsPort": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Optional dedicated metrics listener port; null keeps /metrics on the API port."
     }
   }
 }

@@ -25,7 +25,7 @@ ETH_DA_SUBMITTER_CHART_VERSION ?= 0.1.4
 PROOF_COORDINATOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/proof-coordinator
 PROOF_COORDINATOR_CHART_VERSION ?= 0.3.7
 WITHDRAWAL_PROCESSOR_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/withdrawal-processor
-WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.27
+WITHDRAWAL_PROCESSOR_CHART_VERSION ?= 0.1.28
 PREINSTALLS_CHART ?= oci://ghcr.io/dogeos69/scroll-sdk/helm/preinstalls-deployer
 PREINSTALLS_CHART_VERSION ?= 0.1.3-dogeos
 PREINSTALLS_TIMEOUT ?= 20m
@@ -186,15 +186,15 @@ install-fee-oracle:
 		--values values/fee-oracle-production.yaml
 
 install-cubesigner-signer:
-	kubectl --context "$(KUBE_CONTEXT)" -n "$(NAMESPACE)" get secret cubesigner-signer-env cubesigner-signer-session >/dev/null 2>&1 || scrollsdk setup cubesigner-policy prepare-runtime-secrets --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.9 --namespace "$(NAMESPACE)"
-	scrollsdk setup cubesigner-policy verify-activation --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.9 --namespace "$(NAMESPACE)"
+	kubectl --context "$(KUBE_CONTEXT)" -n "$(NAMESPACE)" get secret cubesigner-signer-env cubesigner-signer-session >/dev/null 2>&1 || scrollsdk setup cubesigner-policy prepare-runtime-secrets --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.10 --namespace "$(NAMESPACE)"
+	scrollsdk setup cubesigner-policy verify-activation --dir . --kube-context "$(KUBE_CONTEXT)" --values values/cubesigner-signer-production.yaml --chart oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer --chart-version 0.1.10 --namespace "$(NAMESPACE)"
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i cubesigner-signer oci://ghcr.io/dogeos69/scroll-sdk/helm/cubesigner-signer -n "$(NAMESPACE)" \
-		--version=0.1.9 \
+		--version=0.1.10 \
 		--values values/cubesigner-signer-production.yaml
 
 install-tso:
 	helm --kube-context "$(KUBE_CONTEXT)" upgrade -i tso-service oci://ghcr.io/dogeos69/scroll-sdk/helm/tso-service -n "$(NAMESPACE)" \
-		--version=0.1.13 \
+		--version=0.1.14 \
 		--values values/tso-service-production.yaml \
 		--wait
 

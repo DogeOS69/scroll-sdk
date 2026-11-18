@@ -169,7 +169,7 @@ class MakefileContextTests(unittest.TestCase):
         self.assertTrue(calls[3].startswith('helm --kube-context selected'))
         for call in calls[1:]:
             self.assertIn('values/cubesigner-signer-production.yaml', call)
-            self.assertIn('0.1.9', call)
+            self.assertIn('0.1.10', call)
 
     def test_signer_install_leaves_delivered_secrets_alone(self):
         result, calls = self.run_signer_install(delivered=True)
