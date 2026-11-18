@@ -554,6 +554,11 @@ resources:
     memory: "2Gi"
     cpu: "1500m"  # also caps glibc malloc arenas (MALLOC_ARENA_MAX), see templates/common.yaml
 
+# Dedicated metrics listener. Keep null with an image that serves /metrics on
+# the API port. Set a port (e.g. 9100) only with an image that includes the
+# dedicated listener; see the chart README.
+metricsPort: null
+
 serviceMonitor:
   main:
     enabled: true
@@ -614,6 +619,6 @@ networkPolicy:
   allowFrom:
     tso: []                   # required when enabled: tso-service pods
     operators: []             # optional: who may call the rotation routes
-    monitoring: []            # optional: Prometheus, scrapes /metrics
+    monitoring: []            # optional: Prometheus; apiPort, or metricsPort when set
     capacityManager: []  # Filled only when Core capacity-manager is selected.
     proofCoordinator: []      # optional: proof-coordinator pods (proof-work port)

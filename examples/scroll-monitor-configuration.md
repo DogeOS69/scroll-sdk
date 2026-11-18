@@ -283,11 +283,14 @@ The TSO production profiles leave the application-owned ServiceMonitor disabled.
 No opt-in is required for the standard TSO Service in the release namespace.
 If another chart already owns the scrape, set this supplemental monitor to false
 so each endpoint has one owner. Its selector must match the Service labels and
-its port is the named Service port `http`, not the numeric port `3000`.
+its port is the named Service port `http`, not the numeric port `3000`. When
+the TSO chart sets `metricsPort`, the TSO no longer serves `/metrics` on `http`;
+change this endpoint's port to `metrics` in the same rollout.
 
 A ServiceMonitor does not override NetworkPolicy. If a NetworkPolicy restricts
 TSO, review access before opening its shared port to the scraper: that port also
-serves `/propose`.
+serves `/propose`. With `metricsPort` set, the TSO policy admits monitoring
+peers to that port only.
 
 ## Dogecoin indexer stall monitoring
 

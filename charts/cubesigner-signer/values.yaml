@@ -89,6 +89,14 @@ resources:
     memory: "512Mi"
     cpu: "500m"
 
+# Optional dedicated metrics listener, e.g. 9100. Unset (null) keeps /metrics
+# on the API port. When set, the application serves /metrics only on this
+# port, so the chart passes it as DOGEOS_CUBESIGNER_SIGNER_METRICS_PORT, adds a
+# "metrics" Service port and moves this chart's ServiceMonitor endpoints from
+# "http" to "metrics". Requires an image that includes the dedicated metrics
+# listener; with an older image nothing listens on this port and scrapes fail.
+metricsPort: null
+
 # Monitoring configuration
 serviceMonitor:
   main:

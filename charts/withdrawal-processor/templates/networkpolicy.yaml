@@ -1,11 +1,13 @@
 {{- /*
 Ingress allow-list for the withdrawal-processor. The API port serves the TSO
 callbacks (/submit-finalized-tx, /tso-failure, /register-tso), the operator
-rotation routes (/protocol-actions/*), health and /metrics. These carry no
-caller authentication by design; access control is this policy. Because they
-share one port, any peer allowed on it can reach every route. The proof-work
-port is a separate listener with its own bearer-token auth; it is only opened
-when a proof-coordinator selector is supplied. Selectors come from values only.
+rotation routes (/protocol-actions/*), health and, unless metricsPort is set,
+/metrics. These carry no caller authentication by design; access control is
+this policy. Because they share one port, any peer allowed on it can reach
+every route. With metricsPort set, monitoring peers are admitted to that port
+only and not to the API port. The proof-work port is a separate listener with
+its own bearer-token auth; it is only opened when a proof-coordinator selector
+is supplied. Selectors come from values only.
 */ -}}
 {{- if .Values.networkPolicy.enabled }}
 {{- $from := .Values.networkPolicy.allowFrom }}
@@ -30,8 +32,13 @@ when a proof-coordinator selector is supplied. Selectors come from values only.
 {{- end }}
 {{- $apiPeers := concat
       (required "networkPolicy.allowFrom.tso must list the tso-service pods (callbacks)" $from.tso)
-      ($from.operators | default list)
-      ($from.monitoring | default list) }}
+      ($from.operators | default list) }}
+{{- $metricsPort := .Values.metricsPort }}
+{{- if kindIs "invalid" $metricsPort }}
+{{- $apiPeers = concat $apiPeers ($from.monitoring | default list) }}
+{{- else if has (int $metricsPort) (list (int .Values.networkPolicy.apiPort) (int .Values.networkPolicy.proofWorkPort)) }}
+{{- fail "metricsPort must differ from networkPolicy.apiPort and networkPolicy.proofWorkPort" }}
+{{- end }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -53,5 +60,11 @@ spec:
       ports:
         - protocol: TCP
           port: {{ $.Values.networkPolicy.proofWorkPort }}
+    {{- end }}
+    {{- if and (not (kindIs "invalid" $metricsPort)) $from.monitoring }}
+    - from: {{- toYaml $from.monitoring | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ int $metricsPort }}
     {{- end }}
 {{- end }}

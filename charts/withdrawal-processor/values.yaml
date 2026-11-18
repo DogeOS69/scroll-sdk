@@ -76,6 +76,16 @@ resources:
     memory: "512Mi"
     cpu: "500m"  # also caps glibc malloc arenas (MALLOC_ARENA_MAX), see templates/common.yaml
 
+# Optional dedicated metrics listener, e.g. 9100. Unset (null) keeps /metrics
+# on the API port. When set, the application serves /metrics only on this
+# port, so the chart passes it as DOGEOS_WITHDRAWAL_METRICS_PORT, adds a
+# "metrics" Service port and moves this chart's ServiceMonitor endpoints from
+# "http" to "metrics". With networkPolicy enabled, monitoring peers are
+# admitted to this port only. Requires an image that includes the dedicated
+# metrics listener; with an older image nothing listens on this port and
+# scrapes fail.
+metricsPort: null
+
 # Monitoring configuration
 serviceMonitor:
   main:
@@ -90,8 +100,10 @@ serviceMonitor:
 # an upgrade cannot cut TSO callbacks or metrics scraping before the selectors
 # below are set. Enable it in every deployment that runs on a
 # NetworkPolicy-enforcing CNI. All lists hold NetworkPolicyPeer entries
-# (podSelector / namespaceSelector). Callbacks, rotation routes, health and
-# /metrics share apiPort, so every peer listed for it reaches every route.
+# (podSelector / namespaceSelector). Callbacks, rotation routes and health
+# share apiPort, so every peer listed for it reaches every route. /metrics
+# shares it too unless metricsPort is set; then monitoring peers are admitted
+# to metricsPort only.
 # proofCoordinator opens proofWorkPort (bearer-token auth is enforced by the
 # application there); leave it empty to keep that port closed.
 networkPolicy:
@@ -101,6 +113,6 @@ networkPolicy:
   allowFrom:
     tso: []                   # required when enabled: tso-service pods
     operators: []             # optional: who may call the rotation routes
-    monitoring: []            # optional: Prometheus, scrapes /metrics
+    monitoring: []            # optional: Prometheus; apiPort, or metricsPort when set
     capacityManager: []      # optional: Core manager (proof-work summary on the same port)
     proofCoordinator: []      # optional: proof-coordinator pods (proof-work port)

@@ -86,9 +86,11 @@ signers need no inbound ports; they connect through the TSO ALB. In-cluster
 CubeSigner callbacks go directly to the TSO Service.
 
 These policies isolate inbound traffic only. Outbound RPC, DNS, S3 and KMS
-remain available. API, health and metrics share a listener: a permitted
-monitoring pod can also reach that listener's management routes. NetworkPolicy
-cannot restrict HTTP paths; the public Ingress path rules do that at the edge.
+remain available. API, health and metrics share a listener unless the chart's
+`metricsPort` is set: a permitted monitoring pod can also reach that listener's
+management routes. With `metricsPort` set, the policies admit `monitoring` to
+that port only. NetworkPolicy cannot restrict HTTP paths; the public Ingress
+path rules do that at the edge.
 
 Before launch, enable NetworkPolicy enforcement in the cluster CNI and verify:
 

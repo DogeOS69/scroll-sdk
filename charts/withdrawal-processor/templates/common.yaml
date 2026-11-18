@@ -34,6 +34,8 @@ an explicit MALLOC_ARENA_MAX in either format wins.
 {{- end -}}
 {{- end -}}
 
+{{- include "withdrawal-processor.metricsPort.apply" (dict "root" . "envName" "DOGEOS_WITHDRAWAL_METRICS_PORT") }}
+
 {{/* Render the templates */}}
 {{ include "scroll.common.loader.generate" . }}
 ---

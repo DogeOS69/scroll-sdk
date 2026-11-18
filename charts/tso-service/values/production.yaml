@@ -62,6 +62,11 @@ resources:
     memory: "1Gi"
     cpu: "1000m"
 
+# Dedicated metrics listener. Keep null with an image that serves /metrics on
+# the API port. Set a port (e.g. 9100) only with an image that includes the
+# dedicated listener; see the chart README.
+metricsPort: null
+
 # scroll-monitor owns the default TSO metrics scrape. Enable this only when
 # its additionalServiceMonitors.tso entry is disabled.
 serviceMonitor:
@@ -79,4 +84,4 @@ networkPolicy:
     edge: []                  # ALB subnet CIDRs or ingress proxy pods
     signers: []               # signer pods that post signature callbacks
     operators: []             # optional: operator tooling / ad-hoc port-forward source
-    monitoring: []            # optional: Prometheus, scrapes /metrics on the shared port
+    monitoring: []            # optional: Prometheus; API port, or metricsPort when set

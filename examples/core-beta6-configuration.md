@@ -67,8 +67,11 @@ setting it to false does not make it compatible. For an active proof topology,
 ### Metrics and network isolation
 
 TSO, WP and CubeSigner still serve metrics on their API listener in beta.6.
-[Core #1406](https://github.com/DogeOS69/dogeos-core/pull/1406) is not included:
-do not enable its dedicated metrics ports or inject its environment overrides.
+[Core #1406](https://github.com/DogeOS69/dogeos-core/pull/1406) is not included.
+The tso-service, withdrawal-processor and cubesigner-signer charts expose that
+dedicated listener as `metricsPort`; keep it `null` with these images and do not
+set its environment variables directly. See the chart READMEs before setting it
+with a later image.
 The external Rust attestation signer already has a separate metrics listener;
 its `ATTESTATION_SIGNER_METRICS_PORT=9100` setting is supported.
 

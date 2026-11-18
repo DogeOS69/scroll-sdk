@@ -1,9 +1,12 @@
 {{- /*
 Ingress allow-list for the TSO API port. The private TSO routes (/propose,
 /register-signer, /register-script-pubkey and unprefixed callbacks) rely on
-network access control. Public /signer/* uses transport signatures. /health, /status and /metrics share the same port, so any peer
-allowed here can reach every route. Edge peers admit the ingress proxy;
-only the Ingress paths limit public callers to /health and signed /signer/*.
+network access control. Public /signer/* uses transport signatures. /health
+and /status share the API port, so any peer allowed on it can reach every
+route. /metrics is on the API port too unless metricsPort is set; then
+monitoring peers are admitted to metricsPort only. Edge peers admit the ingress
+proxy; only the Ingress paths limit public callers to /health and signed
+/signer/*.
 */ -}}
 {{- if .Values.networkPolicy.enabled }}
 {{- $from := .Values.networkPolicy.allowFrom }}
@@ -33,8 +36,13 @@ only the Ingress paths limit public callers to /health and signed /signer/*.
       (required "networkPolicy.allowFrom.withdrawalProcessor must list the withdrawal-processor pods" $from.withdrawalProcessor)
       (required "networkPolicy.allowFrom.signers must list the signer pods (signature callbacks)" $from.signers)
       ($from.edge | default list)
-      ($from.operators | default list)
-      ($from.monitoring | default list) }}
+      ($from.operators | default list) }}
+{{- $metricsPort := .Values.metricsPort }}
+{{- if kindIs "invalid" $metricsPort }}
+{{- $peers = concat $peers ($from.monitoring | default list) }}
+{{- else if eq (int $metricsPort) (int .Values.networkPolicy.port) }}
+{{- fail "metricsPort must differ from networkPolicy.port" }}
+{{- end }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -51,4 +59,10 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.networkPolicy.port }}
+    {{- if and (not (kindIs "invalid" $metricsPort)) $from.monitoring }}
+    - from: {{- toYaml $from.monitoring | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ int $metricsPort }}
+    {{- end }}
 {{- end }}
