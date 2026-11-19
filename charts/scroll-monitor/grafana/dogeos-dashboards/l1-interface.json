@@ -1054,15 +1054,16 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) (l1_interface_protocol_replay_deprecation_cutoff_wf_tx_number{namespace=~\"$namespace\"})",
+          "expr": "max by (namespace) (l1_interface_protocol_replay_deposit_cutoff_height{namespace=~\"$namespace\"})",
           "instant": true,
-          "legendFormat": "{{namespace}} wf_tx",
+          "legendFormat": "{{namespace}} height",
           "refId": "B",
           "range": false
         }
       ],
-      "title": "Replay Deprecation Cutoff WF Tx",
-      "type": "stat"
+      "title": "Replay Deposit Cutoff Height",
+      "type": "stat",
+      "description": "The deprecating key's committed deposit cutoff height (Dogecoin block). Old-key deposits at or below it are credited. 0 when no key is deprecating."
     },
     {
       "datasource": {

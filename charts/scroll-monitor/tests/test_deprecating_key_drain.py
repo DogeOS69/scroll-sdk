@@ -48,20 +48,21 @@ class DeprecatingKeyDrainTests(unittest.TestCase):
             self.assertNotIn('__', prom[name]['expr'] + str(prom[name]['annotations']))
             self.assertIn('rotation-and-recovery-operations.md#deprecating-key-drain-monitor',
                           prom[name]['annotations']['runbook_url'])
-        self.assertIn('< 2 * withdrawal_processor_protocol_deprecating_key_unspent_utxos',
-                      prom['DeprecatingKeyDrainBehind']['expr'])
+        self.assertIn('deprecating_key_remaining_blocks < 120)', prom['DeprecatingKeyDrainBehind']['expr'])
+        self.assertNotIn('wf_tx', prom['DeprecatingKeyDrainBehind']['expr'])
         self.assertIn('unspent_utxos > 0)', prom['RetiredKeyCoinsStranded']['expr'])
-        custom = rules('prometheus', '--set', 'deprecatingKeyDrainAlerts.drainMargin=3',
+        custom = rules('prometheus', '--set', 'deprecatingKeyDrainAlerts.drainMarginBlocks=30',
                        '--set', 'deprecatingKeyDrainAlerts.retiredBaseline=4')
-        self.assertIn('< 3 * withdrawal_processor_protocol_deprecating_key_unspent_utxos',
-                      custom['DeprecatingKeyDrainBehind']['expr'])
-        self.assertIn('fewer than 3 WF', custom['DeprecatingKeyDrainBehind']['annotations']['description'])
+        self.assertIn('deprecating_key_remaining_blocks < 30)', custom['DeprecatingKeyDrainBehind']['expr'])
+        self.assertIn('fewer than 30 Dogecoin blocks',
+                      custom['DeprecatingKeyDrainBehind']['annotations']['description'])
         self.assertIn('unspent_utxos > 4)', custom['RetiredKeyCoinsStranded']['expr'])
         self.assertFalse(rules('prometheus', '--set', 'serviceAlerts.enabled=false'))
 
     def test_invalid_values_fail_at_render_time(self):
-        for setting in ('deprecatingKeyDrainAlerts.drainMargin=0', 'deprecatingKeyDrainAlerts.retiredBaseline=-1',
-                        'deprecatingKeyDrainAlerts.runbookUrl='):
+        # drainMargin counted WF transactions per coin; a leftover value must not be read as blocks.
+        for setting in ('deprecatingKeyDrainAlerts.drainMarginBlocks=0', 'deprecatingKeyDrainAlerts.retiredBaseline=-1',
+                        'deprecatingKeyDrainAlerts.runbookUrl=', 'deprecatingKeyDrainAlerts.drainMargin=2'):
             with self.subTest(setting=setting), self.assertRaises(subprocess.CalledProcessError):
                 render('--set', setting)
 
@@ -74,7 +75,7 @@ class DeprecatingKeyDrainTests(unittest.TestCase):
         def check(name, coins, remaining, retired=0, timestamp=fresh, expected=()):
             series = [{'series': PREFIX + k + labels(TARGET), 'values': f'{v}x{EVAL}'}
                       for k, v in (('deprecating_key_unspent_utxos', coins),
-                                   ('deprecating_key_remaining_wf_txs', remaining),
+                                   ('deprecating_key_remaining_blocks', remaining),
                                    ('retired_key_unspent_utxos', retired))]
             series.append({'series': PREFIX + 'snapshot_timestamp_seconds' + labels({**TARGET, 'source': 'deprecating_key'}),
                            'values': timestamp})
@@ -90,12 +91,15 @@ class DeprecatingKeyDrainTests(unittest.TestCase):
                               if alert in expected else []} for alert in sorted(NAMES)]})
 
         check('no deprecating key is quiet', 0, 0)
-        check('healthy drain is quiet', 3, 20)
-        check('margin boundary is quiet', 5, 10)
-        check('below margin warns', 5, 9, expected=('DeprecatingKeyDrainBehind',))
-        check('one coin, one WF tx left warns', 1, 1, expected=('DeprecatingKeyDrainBehind',))
-        # At remaining 0 the coins count as retired; the critical takes over.
-        check('no WF tx left hands over to stranded', 3, 0, retired=3, expected=('RetiredKeyCoinsStranded',))
+        check('healthy drain is quiet', 3, 500)
+        check('margin boundary is quiet', 5, 120)
+        check('below margin warns', 5, 119, expected=('DeprecatingKeyDrainBehind',))
+        # A cursor still open in the cutoff block reads 0 with the key live.
+        check('cursor in the cutoff block warns', 1, 0, expected=('DeprecatingKeyDrainBehind',))
+        # Once the scan passes the cutoff the coins count as retired. Until a WF
+        # transaction clears the key, the deprecating gauges still hold them, so both fire.
+        check('scan past the cutoff hands over to stranded', 3, 0, retired=3,
+              expected=('DeprecatingKeyDrainBehind', 'RetiredKeyCoinsStranded'))
         check('coins left after the key clears', 0, 0, retired=2, expected=('RetiredKeyCoinsStranded',))
         # Last success 1000s before the evaluation: past the 900s freshness window.
         check('stale observation is quiet', 5, 1, retired=2, timestamp=f'-400x{EVAL}')
