@@ -615,16 +615,16 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (namespace) ((withdrawal_processor_protocol_replay_deprecation_cutoff_wf_tx_number{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
+          "expr": "max by (namespace) ((withdrawal_processor_protocol_replay_deposit_cutoff_height{namespace=~\"$namespace\"} and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_valid{namespace=~\"$namespace\",source=\"replay\"} == 1 and on (namespace, job, instance) (withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} <= time() and time() - withdrawal_processor_protocol_snapshot_timestamp_seconds{namespace=~\"$namespace\",source=\"replay\"} < 120) and on (namespace, job, instance) (up{namespace=~\"$namespace\"} == 1))))",
           "instant": true,
-          "legendFormat": "{{namespace}} wf_tx",
+          "legendFormat": "{{namespace}} height",
           "refId": "B",
           "range": false
         }
       ],
-      "title": "Replay Deprecation Cutoff WF Tx",
+      "title": "Replay Deposit Cutoff Height",
       "type": "stat",
-      "description": "Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data."
+      "description": "The deprecating key's committed deposit cutoff height (Dogecoin block). Old-key deposits at or below it are credited. 0 when no key is deprecating. Only successful source snapshots younger than 120 seconds from an up target are shown. Retained values from failed/stale observations appear as No data."
     },
     {
       "datasource": {
