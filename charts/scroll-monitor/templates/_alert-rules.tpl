@@ -148,9 +148,6 @@
 {{- fail "recoveryRunwayAlerts requires 0 < criticalBlocks < warningBlocks < 500000000" -}}
 {{- end -}}
 {{- $drain := $.Values.deprecatingKeyDrainAlerts -}}
-{{- if hasKey $drain "drainMargin" -}}
-{{- fail "deprecatingKeyDrainAlerts.drainMargin (WF transactions per coin) was replaced by drainMarginBlocks (Dogecoin blocks before the deposit cutoff height); remove drainMargin and set drainMarginBlocks" -}}
-{{- end -}}
 {{- if or (le (int $drain.drainMarginBlocks) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
 {{- fail "deprecatingKeyDrainAlerts requires drainMarginBlocks > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}

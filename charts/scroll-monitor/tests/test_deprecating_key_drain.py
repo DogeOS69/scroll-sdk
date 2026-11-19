@@ -58,11 +58,18 @@ class DeprecatingKeyDrainTests(unittest.TestCase):
                       custom['DeprecatingKeyDrainBehind']['annotations']['description'])
         self.assertIn('unspent_utxos > 4)', custom['RetiredKeyCoinsStranded']['expr'])
         self.assertFalse(rules('prometheus', '--set', 'serviceAlerts.enabled=false'))
+        # An overlay may clear a base file's drainMargin with an explicit null.
+        self.assertIn('remaining_blocks < 120)', rules('prometheus', '--set', 'deprecatingKeyDrainAlerts.drainMargin=null')['DeprecatingKeyDrainBehind']['expr'])
 
     def test_invalid_values_fail_at_render_time(self):
-        # drainMargin counted WF transactions per coin; a leftover value must not be read as blocks.
+        # drainMargin counted WF transactions per coin; a leftover value must not be read as blocks,
+        # whatever the backend and even while service rules are disabled or paused.
+        for backend in ('prometheus', 'grafana'):
+            for gate in ([], ['--set', 'serviceAlerts.enabled=false'], ['--set', 'serviceAlerts.paused=true']):
+                with self.subTest(backend=backend, gate=gate), self.assertRaises(subprocess.CalledProcessError):
+                    rules(backend, '--set', 'deprecatingKeyDrainAlerts.drainMargin=2', *gate)
         for setting in ('deprecatingKeyDrainAlerts.drainMarginBlocks=0', 'deprecatingKeyDrainAlerts.retiredBaseline=-1',
-                        'deprecatingKeyDrainAlerts.runbookUrl=', 'deprecatingKeyDrainAlerts.drainMargin=2'):
+                        'deprecatingKeyDrainAlerts.runbookUrl='):
             with self.subTest(setting=setting), self.assertRaises(subprocess.CalledProcessError):
                 render('--set', setting)
 
