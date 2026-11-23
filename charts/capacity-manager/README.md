@@ -33,6 +33,25 @@ Installing starts continuous reconciliation and can allocate paid resources.
 Pausing/uninstalling does not by itself stop remote workers. Preserve the state
 PVC and follow the drain procedure before deleting or changing the deployment.
 
+## Providers
+
+The manager is provider-neutral. Core sends `pool.provider` from `manager.policy`
+to dstack as the backend of each primary run, and the fleet sets the regions,
+instance types, GPU and price. The dstack project needs a backend of that type;
+its credentials stay with the controller.
+
+`initialization.provider` and `initialization.fallbackProvider` name the backend
+types the initialization Job requires in the project: `aws`, `vastai` or, from
+chart 0.1.10, `gcp`. Older charts reject `gcp` in the values schema.
+
+For GCP, configure a `gcp` backend in the controller's project (see the
+[dstack-controller chart](../dstack-controller/README.md)). Declare the fleets
+with `backends: [gcp]` and GCP region names such as `us-central1`. To fix the
+machine shape, add instance types such as `g2-standard-16`, which has one L4.
+Set `provider = "gcp"` under `[pool]` in `manager.policy`. Unlike Vast, a GCP
+policy does not need `manager.dstack.regions`. The GCP project needs GPU quota
+in the selected regions; an empty fleet does not check it.
+
 ## Optional primary-to-fallback fleet switching
 
 Chart 0.1.5 adds `manager.dstack.fallbackFleet`, default empty. A nonempty name
@@ -43,7 +62,8 @@ before installing the release.
 Keep the primary selectors unchanged and prepare a separate fallback fleet in the
 same dstack project, with a configured backend for its provider. Chart 0.1.9
 accepts `aws` as well as `vastai` for `initialization.fallbackProvider`, so a
-Vast primary can fall back to on-demand AWS. The fallback fleet must have
+Vast primary can fall back to on-demand AWS. Chart 0.1.10 also accepts `gcp`,
+as the primary or the fallback. The fallback fleet must have
 an explicit `max_price` within `pool.hourly_cost_usd_per_worker`, enough VRAM and
 node capacity, and a GPU supported by the same worker image and startup command.
 Core strips primary backend/region/GPU/price selectors from fallback runs and

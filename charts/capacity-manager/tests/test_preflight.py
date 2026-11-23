@@ -88,6 +88,18 @@ class ProbeTests(unittest.TestCase):
         self.run_probe()
         self.assertEqual(probe.DETAIL, {})
 
+    def test_gcp_backend_is_required_as_primary_or_fallback(self):
+        for selection in [{'provider': 'gcp'}, {'provider': 'vastai', 'fallbackProvider': 'gcp'}]:
+            self.payload.update(selection)
+            self.env['PROBE_INPUT'] = json.dumps(self.payload)
+            with self.assertRaisesRegex(RuntimeError, 'backend is absent'):
+                self.run_probe()
+            self.assertEqual(probe.DETAIL['missingBackends'], ['gcp'])
+        self.opener.open.assert_not_called()
+        self.client.projects.get = lambda _: types.SimpleNamespace(backends=[
+            types.SimpleNamespace(config=types.SimpleNamespace(type=n)) for n in ['gcp', 'vastai']])
+        self.assertEqual(json.loads(self.run_probe())['dstackTlsAuthProjectBackend'], 'passed')
+
     def test_redirect_cannot_forward_wp_authorization(self):
         with self.assertRaisesRegex(RuntimeError, 'Redirects'):
             probe.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://other.example.invalid')
