@@ -89,6 +89,24 @@ class CapacityManagerTests(unittest.TestCase):
         self.assertEqual(json.loads(env['FLEET_INPUT'])['fleetAction'], 'update')
         self.assertEqual(json.loads(env['PROBE_INPUT'])['fallbackProvider'], 'aws')
 
+    def test_initialization_accepts_gcp_and_rejects_unknown_providers(self):
+        fleets = [{'name': name, 'nodes': {'min': 0, 'target': 0, 'max': 2}} for name in ['test-fleet', 'gcp-fallback']]
+        for provider, fallback in [('gcp', ''), ('aws', 'gcp'), ('gcp', 'vastai')]:
+            values = config()
+            values['manager']['dstack']['fallbackFleet'] = 'gcp-fallback' if fallback else ''
+            values['initialization'] = {'enabled': True, 'provider': provider, 'fallbackProvider': fallback,
+                                        'fleets': fleets if fallback else fleets[:1]}
+            result = render('capacity-manager', values)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            job = next(d for d in yaml.safe_load_all(result.stdout) if d and d['kind'] == 'Job')
+            env = {e['name']: e.get('value') for e in job['spec']['template']['spec']['containers'][0]['env']}
+            probe = json.loads(env['PROBE_INPUT'])
+            self.assertEqual((probe['provider'], probe['fallbackProvider']), (provider, fallback))
+        for key in ['provider', 'fallbackProvider']:
+            values['initialization'][key] = 'unknown-cloud'
+            self.assertNotEqual(render('capacity-manager', values).returncode, 0, key)
+            values['initialization'][key] = 'gcp'
+
     def test_optional_fallback_fleet_argument(self):
         for fleet in ['', 'vast-fallback']:
             values = config()

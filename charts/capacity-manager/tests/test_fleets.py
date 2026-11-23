@@ -2,6 +2,7 @@
 import importlib.util
 import pathlib
 import sys
+import tempfile
 import types
 import unittest
 import uuid
@@ -10,6 +11,7 @@ from unittest.mock import Mock
 
 sys.dont_write_bytecode = True
 from dstack._internal.core.backends.aws.models import AWSBackendConfigWithCreds
+from dstack._internal.core.backends.gcp.models import GCPBackendFileConfigWithCreds
 from dstack._internal.core.backends.models import BackendInfo
 from dstack._internal.core.models.fleets import ApplyFleetPlanInput, Fleet, FleetSpec, FleetStatus
 
@@ -164,6 +166,25 @@ class CapacityFleets(unittest.TestCase):
         self.payload['fleets'][0].update(backends=['aws'], regions=['us-east-1'], instance_types=['g6.4xlarge'])
         self.payload['fleets'][0]['resources']['gpu']['name'] = ['L4']
         self.assertEqual(adapter.prepare(self.client, self.payload)['createdEmptyFleets'], 1)
+
+    def test_gcp_models_with_a_mounted_service_account_file(self):
+        with tempfile.NamedTemporaryFile('w', suffix='.json') as file:
+            file.write('{"type": "service_account"}')
+            file.flush()
+            backend = GCPBackendFileConfigWithCreds.model_validate({
+                'type': 'gcp', 'project_id': 'example-project',
+                'creds': {'type': 'service_account', 'filename': file.name}})
+        self.assertEqual((backend.type, backend.regions, backend.vpc_name), ('gcp', None, None))
+        self.payload['fleets'][0].update(backends=['gcp'], regions=['us-central1'], instance_types=['g2-standard-16'])
+        self.payload['fleets'][0]['resources']['gpu']['name'] = ['L4']
+        with self.assertRaisesRegex(adapter.PreparationError, 'backend is missing'):
+            adapter.prepare(self.client, self.payload)
+        self.assertFalse(self.client.applied)
+        self.client.projects.get = lambda _: types.SimpleNamespace(backends=[
+            BackendInfo.model_validate({'name': 'gcp', 'config': {'type': 'gcp', 'project_id': 'example-project'}})])
+        self.assertEqual(adapter.prepare(self.client, self.payload)['createdEmptyFleets'], 1)
+        stored = self.client.existing[0].spec.configuration
+        self.assertEqual((stored.regions, stored.instance_types), (['us-central1'], ['g2-standard-16']))
 
     def test_update_changes_existing_fleets_in_place_against_the_read_fleet(self):
         adapter.prepare(self.client, self.payload)

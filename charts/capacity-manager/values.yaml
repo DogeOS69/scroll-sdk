@@ -92,6 +92,7 @@ initialization:
     pullPolicy: IfNotPresent
   fleetAction: create
   fleets: []
+  # dstack backend types the project must have: aws, gcp (chart 0.1.10+) or vastai.
   provider: ""
   fallbackProvider: ""
   privateDns: false
