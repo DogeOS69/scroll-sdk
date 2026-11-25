@@ -166,9 +166,11 @@ securityContext:
   capabilities:
     drop: [ALL]
 
+# Without this monitor the coordinator's metrics are never scraped and its
+# alerts cannot fire. Needs proof-coordinator chart 0.3.7 or later.
 serviceMonitor:
   main:
-    enabled: false
+    enabled: true
     endpoints:
       - port: prover
         scheme: http
