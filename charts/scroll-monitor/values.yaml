@@ -435,14 +435,15 @@ recoveryRunwayAlerts:
   criticalBlocks: 86400
   runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/e6fd059636ffe515c81dda32d02d344861033f28/docs/runbooks/recovery-runway-monitor.md
 
-# Deprecating-key drain rules (dogeos-core rotation runbook). drainMargin: warn when
-# fewer than this many WF transactions remain per old-key coin. retiredBaseline:
+# Deprecating-key drain rules (dogeos-core rotation runbook). drainMarginBlocks: warn
+# when old-key coins remain and the deposit scan is fewer than this many Dogecoin
+# blocks from the deposit cutoff height (120 is about two hours). retiredBaseline:
 # retired-key coins tolerated before the critical fires; raise it only to the
 # triaged count of reconciled refund rows, as the runbook describes.
 deprecatingKeyDrainAlerts:
-  drainMargin: 2
+  drainMarginBlocks: 120
   retiredBaseline: 0
-  runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/f63456684e2ee9e51e1cd41a8d331d77cab40cc4/docs/runbooks/rotation-and-recovery-operations.md#deprecating-key-drain-monitor
+  runbookUrl: https://github.com/DogeOS69/dogeos-core/blob/3410fc8715d99f7350ff818c6f26a59f065a2491/docs/runbooks/rotation-and-recovery-operations.md#deprecating-key-drain-monitor
 
 # Withdrawal bound rules; see "Withdrawal bound" in the README.
 # maxWithdrawalsPerDaTx: the eth-da-submitter [batch].max_withdrawals_per_da_tx; keep

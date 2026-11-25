@@ -12,6 +12,11 @@
 {{- end }}
 {{- end }}
 {{- end }}
+{{- with .Values.deprecatingKeyDrainAlerts }}
+{{- if and (hasKey . "drainMargin") (not (kindIs "invalid" .drainMargin)) }}
+{{- fail "deprecatingKeyDrainAlerts.drainMargin (WF transactions per coin) was replaced by drainMarginBlocks (Dogecoin blocks before the deposit cutoff height); remove drainMargin and set drainMarginBlocks" }}
+{{- end }}
+{{- end }}
 {{- if and (hasKey .Values "promtail") ((index .Values "promtail").enabled | default false) }}
   {{- fail "promtail has been removed; use the bundled Grafana Alloy collector" }}
 {{- end }}

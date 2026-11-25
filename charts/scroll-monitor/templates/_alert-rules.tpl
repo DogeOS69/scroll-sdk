@@ -148,8 +148,8 @@
 {{- fail "recoveryRunwayAlerts requires 0 < criticalBlocks < warningBlocks < 500000000" -}}
 {{- end -}}
 {{- $drain := $.Values.deprecatingKeyDrainAlerts -}}
-{{- if or (le (int $drain.drainMargin) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
-{{- fail "deprecatingKeyDrainAlerts requires drainMargin > 0, retiredBaseline >= 0 and a runbookUrl" -}}
+{{- if or (le (int $drain.drainMarginBlocks) 0) (lt (int $drain.retiredBaseline) 0) (not $drain.runbookUrl) -}}
+{{- fail "deprecatingKeyDrainAlerts requires drainMarginBlocks > 0, retiredBaseline >= 0 and a runbookUrl" -}}
 {{- end -}}
 {{- $bound := $.Values.withdrawalBoundAlerts -}}
 {{- range $key := list "maxWithdrawalsPerDaTx" "payDownCapacity" -}}
@@ -172,7 +172,7 @@
 {{- $materializeGate = ` unless on (namespace) ((sum by (namespace) (increase(proof_coordinator_work_items_total{outcome=\"success\"}[__TIME_maxAgeSeconds__s])) > 0) or (sum by (namespace) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0))` -}}
 {{- $proveGate = ` unless on (namespace, proof_family) (sum by (namespace, proof_family) (increase(proof_coordinator_prove_attempts_ended_total{cause=\"succeeded\"}[__TIME_maxAgeSeconds__s])) > 0)` -}}
 {{- end -}}
-{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN__" (toString (int $drain.drainMargin)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | replace "__WITHDRAWAL_DA_LIMIT__" (toString (int64 $bound.maxWithdrawalsPerDaTx)) | replace "__WITHDRAWAL_PAY_DOWN_CAPACITY__" (toString (int64 $bound.payDownCapacity)) | fromYaml).groups -}}
+{{- $serviceGroups := ($.Files.Get $path | replace "__PROOF_MATERIALIZE_PROGRESS_GATE__" $materializeGate | replace "__PROOF_PROVE_PROGRESS_GATE__" $proveGate | replace "__CUBESIGNER_POLICY_REQUIRED__" $policyRequired | replace "__RUNWAY_WARN_BLOCKS__" (toString (int $runway.warningBlocks)) | replace "__RUNWAY_CRITICAL_BLOCKS__" (toString (int $runway.criticalBlocks)) | replace "__RUNWAY_RUNBOOK__" ($runway.runbookUrl | quote) | replace "__DRAIN_MARGIN_BLOCKS__" (toString (int $drain.drainMarginBlocks)) | replace "__RETIRED_BASELINE__" (toString (int $drain.retiredBaseline)) | replace "__ROTATION_RUNBOOK__" ($drain.runbookUrl | quote) | replace "__WITHDRAWAL_DA_LIMIT__" (toString (int64 $bound.maxWithdrawalsPerDaTx)) | replace "__WITHDRAWAL_PAY_DOWN_CAPACITY__" (toString (int64 $bound.payDownCapacity)) | fromYaml).groups -}}
 {{- if $grafanaManaged -}}
 {{- range $group := $serviceGroups -}}
 {{- range $rule := $group.rules -}}

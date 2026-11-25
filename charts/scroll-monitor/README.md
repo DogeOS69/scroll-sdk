@@ -977,19 +977,23 @@ this change configures no receiver or destination.
 
 ### Deprecating-key drain
 
-After a key rotation, WF transactions must spend the old key's coins before its
-deprecation point. Two WP rules from dogeos-core's rotation runbook ("Deprecating-key
+After a key rotation, AdvanceL1 transactions must consume the old key's deposits
+before the deposit scan passes the RotateKey's deposit cutoff height and the old
+key retires. Two WP rules from dogeos-core's rotation runbook ("Deprecating-key
 drain monitor") watch that drain:
 
 - `DeprecatingKeyDrainBehind` (warning, 5m): coins remain on the deprecating key
-  and fewer than `drainMargin` WF transactions are left per coin.
+  and the deposit scan is fewer than `drainMarginBlocks` Dogecoin blocks from the
+  deposit cutoff height (including the last stretch in the cutoff block itself).
 - `RetiredKeyCoinsStranded` (critical, 2m): more than `retiredBaseline` coins sit on
-  scripts no WF transaction can spend. It keeps firing after the deprecation point
+  scripts no WF transaction can spend. It keeps firing after the old key retires
   until those coins are spent.
 
-`deprecatingKeyDrainAlerts` sets `drainMargin` (default 2), `retiredBaseline`
-(default 0; raise it only to the triaged count of reconciled refund rows, as the
-runbook describes) and `runbookUrl`. Both rules fire only while the WP's
+`deprecatingKeyDrainAlerts` sets `drainMarginBlocks` (default 120, about two
+hours), `retiredBaseline` (default 0; raise it only to the triaged count of
+reconciled refund rows, as the runbook describes) and `runbookUrl`. The chart
+refuses to render with the former `drainMargin` key (WF transactions per coin):
+remove it and set `drainMarginBlocks` instead. Both rules fire only while the WP's
 `deprecating_key` observation is under 15 minutes old; a failed or stale read is
 reported by `WPProtocolObservationUnavailable`. They inherit the service-alert
 enable/pause and routing.

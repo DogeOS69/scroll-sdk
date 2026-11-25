@@ -277,7 +277,7 @@ rules consistent with the associated business rules.
 
 ### `dogeos.services.deprecating-key-drain` (default evaluation interval `1m`)
 
-Thresholds come from `deprecatingKeyDrainAlerts` (`drainMargin`, `retiredBaseline`), not timing parameters.
+Thresholds come from `deprecatingKeyDrainAlerts` (`drainMarginBlocks`, `retiredBaseline`), not timing parameters.
 
 | Alert | Default `for` | Optional query parameters and defaults |
 | --- | --- | --- |
