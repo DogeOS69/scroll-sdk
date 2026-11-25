@@ -71,7 +71,9 @@ configMaps:
       DOGEOS_FEE_ORACLE_L2__RPC_URL: http://l2-rpc:8545
       DOGEOS_FEE_ORACLE_L2__CHAIN_ID: "<TODO>"
       DOGEOS_FEE_ORACLE_L2__GAS_ORACLE_CONTRACT: "<TODO>"
-      DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "3"
+      # One block is the smallest depth the live write mode accepts, and the
+      # depth the DA submitter and withdrawal processor use for L2.
+      DOGEOS_FEE_ORACLE_L2__CONFIRMATIONS: "1"
       DOGEOS_FEE_ORACLE_L2__MAX_GAS_PRICE: "1000000000000"
       DOGEOS_FEE_ORACLE_L2__PRIORITY_FEE: "1000000000"
 
@@ -180,7 +182,9 @@ persistence:
     type: pvc
     mountPath: /data
     accessMode: ReadWriteOnce
-    size: 1Gi
+    # The oracle stores its fee samples in SQLite on this volume. Size it for
+    # the planned lifetime and alert on its usage.
+    size: 10Gi
     retain: true
 
 serviceMonitor:

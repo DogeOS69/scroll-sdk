@@ -237,6 +237,11 @@ resources:
     memory: "2Gi"
     cpu: "2"
 
+# Keep this above DOGEOS_ETH_DA_SUBMITTER_SERVICE__SHUTDOWN_GRACE_PERIOD_SEC so
+# the submitter can finish its own drain before Kubernetes kills the pod.
+termination:
+  gracePeriodSeconds: 60
+
 serviceMonitor:
   main:
     enabled: true
