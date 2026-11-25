@@ -3,15 +3,99 @@ groups:
   interval: 1m
   rules:
   - alert: NodeDiskUsageHigh
+    previousExpr: |
+        ((max by (cluster, node, instance, device, mountpoint) (
+          (
+            100 * (
+              node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+              - node_filesystem_avail_bytes{job="node-exporter"}
+            ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+          )
+          and (node_filesystem_readonly{job="node-exporter"} == 0)
+        )) >= __diskAlerts.usagePercent__) < __diskAlerts.criticalUsagePercent__
+    previousFor: 5m
+    previousAnnotations:
+      summary: Node disk capacity needs attention.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+          {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+          Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
+          Plan cleanup or expansion before writes fail.
     expr: |
-      ((max by (cluster, node, instance, device, mountpoint) (
+      (max by (cluster, node, instance, device, mountpoint) (
         (
           100 * (
-            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint=~__DISK_KUBELET_MOUNT__, mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
             - node_filesystem_avail_bytes{job="node-exporter"}
           ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
         )
         and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) >= __diskAlerts.nodeUsagePercent__
+    for: __diskAlerts.nodeWarningFor__
+    labels:
+      severity: warning
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk usage stays above the kubelet image garbage collection threshold.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+        {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+        This filesystem holds kubelet or container runtime data, and kubelet image garbage collection has not brought
+        usage back down, so the remaining data is not reclaimable images. Find the largest container writable layers,
+        logs and emptyDir volumes, or expand the disk.
+  - alert: NodeDiskUsageHighCritical
+    previousExpr: |
+        (max by (cluster, node, instance, device, mountpoint) (
+          (
+            100 * (
+              node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+              - node_filesystem_avail_bytes{job="node-exporter"}
+            ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+          )
+          and (node_filesystem_readonly{job="node-exporter"} == 0)
+        )) >= __diskAlerts.criticalUsagePercent__
+    previousAnnotations:
+      summary: Node disk capacity is critically low.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+          {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+          Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
+          Plan cleanup or expansion before writes fail.
+    expr: |
+      (max by (cluster, node, instance, device, mountpoint) (
+        (
+          100 * (
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint=~__DISK_KUBELET_MOUNT__, mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            - node_filesystem_avail_bytes{job="node-exporter"}
+          ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+        )
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+      )) >= __diskAlerts.nodeCriticalUsagePercent__
+    for: __diskAlerts.nodeCriticalFor__
+    labels:
+      severity: critical
+      service: node-storage
+      alert_scope: disks
+      alert_category: disk-capacity
+    annotations:
+      summary: Node disk is close to the kubelet eviction threshold.
+      description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
+        {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
+        This filesystem holds kubelet or container runtime data. The kubelet starts evicting pods when available space
+        falls below its eviction threshold. Free space on the node or expand the disk now.
+  # Node filesystems outside kubeletMountpointRegex. A device that also backs a
+  # kubelet mount point, such as through a bind mount, follows the kubelet rules.
+  - alert: NodeDataDiskUsageHigh
+    inheritOperatorSettingsFrom: NodeDiskUsageHigh
+    expr: |
+      ((max by (cluster, node, instance, device, mountpoint) (
+        (
+          100 * (
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_KUBELET_MOUNT__, mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            - node_filesystem_avail_bytes{job="node-exporter"}
+          ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
+        )
+        and (node_filesystem_readonly{job="node-exporter"} == 0)
+        unless on (cluster, instance, device) node_filesystem_size_bytes{job="node-exporter", mountpoint=~__DISK_KUBELET_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
       )) >= __diskAlerts.usagePercent__) < __diskAlerts.criticalUsagePercent__
     for: __diskAlerts.warningFor__
     labels:
@@ -20,21 +104,23 @@ groups:
       alert_scope: disks
       alert_category: disk-capacity
     annotations:
-      summary: Node disk capacity needs attention.
+      summary: Node data disk capacity needs attention.
       description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
         {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
-        Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
-        Plan cleanup or expansion before writes fail.
-  - alert: NodeDiskUsageHighCritical
+        This filesystem holds no kubelet or container runtime data, so the kubelet does not clean it up. Clean up its
+        data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
+  - alert: NodeDataDiskUsageHighCritical
+    inheritOperatorSettingsFrom: NodeDiskUsageHighCritical
     expr: |
       (max by (cluster, node, instance, device, mountpoint) (
         (
           100 * (
-            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
+            node_filesystem_size_bytes{job="node-exporter", mountpoint!="", mountpoint!~__DISK_KUBELET_MOUNT__, mountpoint!~__DISK_EXCLUDE_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
             - node_filesystem_avail_bytes{job="node-exporter"}
           ) / (node_filesystem_size_bytes{job="node-exporter"} > 0)
         )
         and (node_filesystem_readonly{job="node-exporter"} == 0)
+        unless on (cluster, instance, device) node_filesystem_size_bytes{job="node-exporter", mountpoint=~__DISK_KUBELET_MOUNT__, fstype!~"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs"}
       )) >= __diskAlerts.criticalUsagePercent__
     for: __diskAlerts.criticalFor__
     labels:
@@ -43,11 +129,11 @@ groups:
       alert_scope: disks
       alert_category: disk-capacity
     annotations:
-      summary: Node disk capacity is critically low.
+      summary: Node data disk capacity is critically low.
       description: Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is
         {{ $value | printf "%.1f" }}% unavailable, measured as total capacity minus space available to applications.
-        Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
-        Plan cleanup or expansion before writes fail.
+        This filesystem holds no kubelet or container runtime data, so the kubelet does not clean it up. Clean up its
+        data or expand the disk. Read-only and memory/pseudo filesystems are excluded.
   - alert: PVCUsageHigh
     expr: |
       ((max by (cluster, namespace, persistentvolumeclaim) (

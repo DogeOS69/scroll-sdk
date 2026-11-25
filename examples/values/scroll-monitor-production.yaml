@@ -294,10 +294,38 @@ diskAlerts:
   enabled: true
   # Exclude intentionally read-only or otherwise unmanaged mount paths.
   excludeMountpointRegex: ""
+  # PVCs and node filesystems that hold no kubelet or container runtime data.
+  # The kubelet neither cleans these up nor evicts pods for them, so a plain
+  # usage threshold applies. warningFor and criticalFor also apply to inodes.
   usagePercent: 80
   criticalUsagePercent: 95
   warningFor: 5m
   criticalFor: 5m
+  # Node mount points that hold kubelet or container runtime data (nodefs and
+  # imagefs). Their usage alerts follow the kubelet's own cleanup below. Remove
+  # "/" when kubelet and container runtime data live on a separate filesystem,
+  # so the root filesystem keeps the plain thresholds above.
+  kubeletMountpointRegex: "/|/var|/var/lib/kubelet|/var/lib/containerd"
+  # With default settings the kubelet removes unused images from 85% usage
+  # (imageGCHighThresholdPercent) down to 80%, so usage near 80% is normal. The
+  # warning fires when usage stays at or above nodeUsagePercent after garbage
+  # collection had time to run, and keeps firing above the critical threshold.
+  # The critical threshold must stay below the usage at which the kubelet starts
+  # evicting pods. Keep these in step with the kubelet configuration.
+  nodeUsagePercent: 85
+  nodeCriticalUsagePercent: 88
+  nodeWarningFor: 30m
+  nodeCriticalFor: 5m
+  # The highest evictionHard available-space percentage that applies to the
+  # kubelet mount points: nodefs.available, and also imagefs.available when
+  # images share the filesystem. Convert absolute values to a percentage of the
+  # filesystem size; 0 means no such threshold. nodeCriticalUsagePercent must
+  # be below 100 minus this value, with enough margin for the disk to keep
+  # filling during nodeCriticalFor. The default fits node images that set only
+  # nodefs.available (10%). The upstream kubelet defaults, used for example by
+  # kubeadm and GKE, also set imagefs.available (15%): set 15 there and see the
+  # README, because the default node thresholds then fire after eviction starts.
+  kubeletEvictionAvailablePercent: 10
   inodeWarningPercent: 90
   inodeCriticalPercent: 95
   # Forecasts require six hours of history, <40% free space and no capacity change.
