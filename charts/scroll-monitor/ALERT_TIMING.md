@@ -75,7 +75,8 @@ The following existing settings remain supported:
 | `businessAlerts.proofStuckFor` | 5m | Exhausted proof retries and terminal L2 proof ranges. |
 | `businessAlerts.recoveryFor` | 15m | `ProtocolReorgRecoveryStalled`. |
 | `businessAlerts.signerFailureFor` | 5m | TSO communication and attestation signing/callback failures. |
-| `diskAlerts.warningFor`, `criticalFor` | 5m, 5m | Disk usage and inode usage alerts. |
+| `diskAlerts.warningFor`, `criticalFor` | 5m, 5m | Node data disk, PVC and inode usage alerts. |
+| `diskAlerts.nodeWarningFor`, `nodeCriticalFor` | 30m, 5m | Usage alerts for node filesystems that hold kubelet data. |
 | `diskAlerts.predictionWarningHours`, `predictionCriticalHours` | 24, 4 | Disk exhaustion forecast horizons. |
 | `diskAlerts.predictionWarningFor`, `predictionCriticalFor` | 30m, 5m | Disk exhaustion pending periods. |
 | `resourceAlerts.memoryWarningFor`, `memoryCriticalFor` | 10m, 5m | Node/container memory alerts. |
@@ -180,8 +181,10 @@ rules consistent with the associated business rules.
 
 | Alert | Default `for` | Optional query parameters and defaults |
 | --- | --- | --- |
-| `NodeDiskUsageHigh` | `5m` | — |
+| `NodeDiskUsageHigh` | `30m` | — |
 | `NodeDiskUsageHighCritical` | `5m` | — |
+| `NodeDataDiskUsageHigh` | `5m` | — |
+| `NodeDataDiskUsageHighCritical` | `5m` | — |
 | `PVCUsageHigh` | `5m` | — |
 | `PVCUsageHighCritical` | `5m` | — |
 | `NodeDiskFillingUp` | `30m` | `window: 6h` |

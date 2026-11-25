@@ -207,7 +207,7 @@ tests:
     exp_samples:
     - labels: '{}'
       value: 0
-- name: NodeDisk capacity critical at exact 95
+- name: Node data disk capacity critical at exact 95
   interval: 5m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
@@ -217,17 +217,17 @@ tests:
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a",mountpoint="/data",device="/dev/sda",fstype="ext4"}
     values: '0x100'
   promql_expr_test:
-  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHighCritical",alertstate="firing"}) or vector(0)
     eval_time: 0m
     exp_samples:
     - labels: '{}'
       value: 0
-  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHighCritical",alertstate="firing"}) or vector(0)
     eval_time: 5m
     exp_samples:
     - labels: '{}'
       value: 1
-  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
     eval_time: 5m
     exp_samples:
     - labels: '{}'

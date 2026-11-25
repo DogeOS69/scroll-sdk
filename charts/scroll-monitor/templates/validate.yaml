@@ -50,7 +50,7 @@
 {{- end }}
 {{- if $settings.enabled }}
 {{- range $key, $value := $settings }}
-{{- if hasSuffix "Percent" $key }}
+{{- if and (hasSuffix "Percent" $key) (ne $key "kubeletEvictionAvailablePercent") }}
 {{- if or (not (regexMatch "^([0-9]+)(\\.[0-9]+)?$" (toString $value))) (le (float64 $value) 0.0) (gt (float64 $value) 100.0) }}
 {{- fail (printf "%s.%s must be greater than 0 and at most 100" $section $key) }}
 {{- end }}
@@ -68,6 +68,19 @@
 {{- if or (ge (float64 $d.usagePercent) (float64 $d.criticalUsagePercent)) (ge (float64 $d.inodeWarningPercent) (float64 $d.inodeCriticalPercent)) }}
 {{- fail "diskAlerts warning thresholds must be below critical thresholds" }}
 {{- end }}
+{{- if ge (float64 $d.nodeUsagePercent) (float64 $d.nodeCriticalUsagePercent) }}
+{{- fail "diskAlerts.nodeUsagePercent must be below diskAlerts.nodeCriticalUsagePercent" }}
+{{- end }}
+{{- if or (not (regexMatch "^([0-9]+)(\\.[0-9]+)?$" (toString $d.kubeletEvictionAvailablePercent))) (ge (float64 $d.kubeletEvictionAvailablePercent) 100.0) }}
+{{- fail "diskAlerts.kubeletEvictionAvailablePercent must be at least 0 and below 100" }}
+{{- end }}
+{{- if ge (float64 $d.nodeCriticalUsagePercent) (subf 100.0 (float64 $d.kubeletEvictionAvailablePercent)) }}
+{{- fail "diskAlerts.nodeCriticalUsagePercent must be below 100 minus diskAlerts.kubeletEvictionAvailablePercent, so the alert fires before the kubelet evicts pods" }}
+{{- end }}
+{{- if or (not (kindIs "string" $d.kubeletMountpointRegex)) (eq $d.kubeletMountpointRegex "") }}
+{{- fail "diskAlerts.kubeletMountpointRegex must be a non-empty string" }}
+{{- end }}
+{{- $_ := mustRegexMatch $d.kubeletMountpointRegex "" }}
 {{- if or (not (regexMatch "^[1-9][0-9]*$" (toString $d.predictionWarningHours))) (not (regexMatch "^[1-9][0-9]*$" (toString $d.predictionCriticalHours))) (le (int $d.predictionWarningHours) (int $d.predictionCriticalHours)) }}
 {{- fail "diskAlerts prediction hours must be positive integers with warning greater than critical" }}
 {{- end }}

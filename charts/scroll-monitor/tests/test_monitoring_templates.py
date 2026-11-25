@@ -52,7 +52,8 @@ def grafana_rules(docs):
 
 def without_migration_metadata(rules):
     return {name: {key: value for key, value in rule.items()
-                   if key not in ("previousExpr", "previousAnnotations", "previousFor", "isPaused")}
+                   if key not in ("previousExpr", "previousAnnotations", "previousFor",
+                                  "inheritOperatorSettingsFrom", "isPaused")}
             for name, rule in rules.items()}
 
 
@@ -168,7 +169,7 @@ class TemplateTests(unittest.TestCase):
         grafana.pop("ServicePanicOrFatalLogs")
         grafana = {name: {key: value for key, value in rule.items() if key != "isPaused"} for name, rule in grafana.items() if not rule.get("isPaused")}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 188)  # Includes the enabled service catalog.
+        self.assertEqual(len(native), 190)  # Includes the enabled service catalog.
 
     def test_configurable_thresholds_and_quorum_are_rendered(self):
         docs = render("--set", "balanceMonitoring.feeWallet.minimumDoge=250",
@@ -209,7 +210,7 @@ class TemplateTests(unittest.TestCase):
 
     def test_exporter_and_alerts_can_be_disabled_together(self):
         docs = render("--set", "balanceMonitoring.enabled=false,businessAlerts.enabled=false,serviceAlerts.enabled=false")
-        self.assertEqual(len(grafana_rules(docs)), 56)  # Dstack alerts remain independent.
+        self.assertEqual(len(grafana_rules(docs)), 58)  # Dstack alerts remain independent.
         self.assertFalse(any(doc["metadata"]["name"] == "scroll-monitor-account-balances" for doc in docs))
 
     def test_external_exporter_keeps_balance_alerts(self):
@@ -288,7 +289,7 @@ class TemplateTests(unittest.TestCase):
         })
         self.assertNotIn("isPaused", rules["FeeWalletBalanceLow"])
         self.assertNotIn("isPaused", rules["ProtocolStateWFTxNumberStalled"])
-        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 87)
+        self.assertEqual(len(grafana_rules(render("--set", "serviceAlerts.enabled=false"))), 89)
 
     def test_default_activation_is_equivalent_across_backends(self):
         grafana = grafana_rules(render(*SIGNERS_ON))
@@ -300,12 +301,12 @@ class TemplateTests(unittest.TestCase):
                           "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
         native = {rule["alert"]: rule for group in native for rule in group["rules"]}
         self.assertEqual(without_migration_metadata(grafana), native)
-        self.assertEqual(len(native), 188)
+        self.assertEqual(len(native), 190)
 
     def test_disabling_grafana_does_not_activate_paused_rules(self):
         for setting in ("grafanaAlerting.enabled=false", "grafana.enabled=false"):
             groups = resource(render(*SIGNERS_ON, "--set", setting, "--set", "serviceAlerts.paused=true"), "PrometheusRule", "scroll-monitor-dogeos")["spec"]["groups"]
-            self.assertEqual(sum(len(group["rules"]) for group in groups), 85)
+            self.assertEqual(sum(len(group["rules"]) for group in groups), 87)
             self.assertFalse(any("isPaused" in rule for group in groups for rule in group["rules"]))
 
     def test_supplemental_tso_monitor_is_default_and_discoverable(self):

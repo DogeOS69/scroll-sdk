@@ -2,68 +2,188 @@ rule_files:
 - rules.yaml
 evaluation_interval: 1m
 tests:
-- name: node fires exactly at 80 percent after five minutes
+- name: node at 80 percent stays healthy because kubelet image garbage collection owns that range
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 20x10
+    values: 20x40
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 5m
-    exp_samples:
-    - labels: '{}'
-      value: 1
-- name: node below 80 remains healthy
-  interval: 1m
-  input_series:
-  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
-  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 20.1x10
-  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
-  promql_expr_test:
-  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 0
-- name: node above 80 fires
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node below 85 remains healthy
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 10x10
+    values: 15.1x40
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node fires exactly at 85 percent after thirty minutes
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 15x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 29m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node between warning and critical fires only the warning
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 13x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node short spike above 85 does not fire the warning
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 20x10 13x10 20x20
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 25m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node fires critical exactly at 88 percent after five minutes and the warning keeps firing
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 12x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
     eval_time: 5m
     exp_samples:
     - labels: '{}'
       value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: node below 88 does not fire critical
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 12.1x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: node crossing 88 does not restart the warning pending period
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: 14x9 11x3 14x9 11x3 14x15
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 30m
+    exp_samples:
+    - labels: '{}'
+      value: 0
 - name: node cleanup resolves alert
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 10x5 30x5
+    values: 13x35 30x5
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 5m
+    eval_time: 31m
     exp_samples:
     - labels: '{}'
       value: 1
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 37m
     exp_samples:
     - labels: '{}'
       value: 0
@@ -71,14 +191,19 @@ tests:
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 1x10
+    values: 1x40
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 0
@@ -86,26 +211,41 @@ tests:
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="tmpfs"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/overlay",fstype="overlay"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/snap",fstype="squashfs"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 0
@@ -113,14 +253,19 @@ tests:
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 0
@@ -128,36 +273,194 @@ tests:
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 0
-- name: separate node filesystems remain separate alerts
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: separate kubelet filesystems remain separate alerts
   interval: 1m
   input_series:
   - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 100x10
+    values: 100x40
   - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: 10x10
+    values: 13x40
   - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sda1",mountpoint="/",fstype="ext4"}
-    values: '0x10'
-  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
-    values: 100x10
-  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
-    values: 20x10
-  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
-    values: '0x10'
+    values: '0x40'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/var/lib/kubelet",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/var/lib/kubelet",fstype="ext4"}
+    values: 14x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/var/lib/kubelet",fstype="ext4"}
+    values: '0x40'
   promql_expr_test:
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
-    eval_time: 6m
+    eval_time: 35m
     exp_samples:
     - labels: '{}'
       value: 2
+- name: data disk fires exactly at 80 percent after five minutes
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 20x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 4m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: data disk below 80 remains healthy
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 20.1x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: data disk fires critical at 95 percent and not the kubelet thresholds
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 5x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 5m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: data disk read only volume excluded
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: '0x40'
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdb",mountpoint="/data",fstype="ext4"}
+    values: 1x40
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHighCritical",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: data disk path of a device that backs a kubelet mount follows the kubelet thresholds
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: 18x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: '0x40'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: 18x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+- name: device behind a kubelet bind mount fires only the kubelet warning
+  interval: 1m
+  input_series:
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: 14x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/mnt/k8s-disks/0",fstype="xfs"}
+    values: '0x40'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: 14x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/md0",mountpoint="/var/lib/kubelet",fstype="xfs"}
+    values: '0x40'
+  - series: node_filesystem_size_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdc",mountpoint="/data",fstype="xfs"}
+    values: 100x40
+  - series: node_filesystem_avail_bytes{job="node-exporter",instance="node-a:9100",device="/dev/sdc",mountpoint="/data",fstype="xfs"}
+    values: 19x40
+  - series: node_filesystem_readonly{job="node-exporter",instance="node-a:9100",device="/dev/sdc",mountpoint="/data",fstype="xfs"}
+    values: '0x40'
+  promql_expr_test:
+  - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing",device="/dev/md0"}) or vector(0)
+    eval_time: 35m
+    exp_samples:
+    - labels: '{}'
+      value: 0
 - name: PVC fires exactly at 80 percent after five minutes
   interval: 1m
   input_series:
@@ -289,6 +592,11 @@ tests:
     - labels: '{}'
       value: 0
   - expr: count(ALERTS{alertname="NodeDiskUsageHigh",alertstate="firing"}) or vector(0)
+    eval_time: 6m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count(ALERTS{alertname="NodeDataDiskUsageHigh",alertstate="firing"}) or vector(0)
     eval_time: 6m
     exp_samples:
     - labels: '{}'
