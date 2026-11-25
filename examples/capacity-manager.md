@@ -42,6 +42,19 @@ connectivity and controller-to-worker reachability. Set `publicIps: true` only
 when using the corresponding public networking arrangement. Optional
 `iamInstanceProfile` names an existing worker instance profile.
 
+GCP needs capacity-manager chart 0.1.10 or newer and a CLI release that accepts
+`capacityManager.provider: gcp`. The backend uses a service-account key:
+`preparation.dstack.gcpServiceAccountFile` names the JSON file, and the CLI
+imports it into private local state and into the `dstack-gcp-credentials`
+Secret that the controller mounts. `preparation.dstack.gcpProjectId` selects a
+project other than the key's own. The generated backend keeps dstack's defaults:
+instances get public addresses in the project's `default` VPC network, and
+dstack adds one firewall rule to that network, which allows SSH (TCP 22) from
+any address to the instances it creates. Grant the service account the
+permissions the dstack documentation lists for its GCP backend, and request GPU
+quota for the selected regions (for L4, the regional NVIDIA L4 quota and the
+project-wide GPU quota). The CLI creates none of these.
+
 The CLI does not create AWS provisioning roles, VPCs, subnets or quotas. Core's
 `docs/engineering/aws-gpu-dstack.md` and
 `tools/real-proving/dstack/server-aws.yml.example` document these prerequisites.
@@ -50,13 +63,16 @@ These are provider-specific infrastructure inputs, not generated fleet IDs.
 `manager.dstack.regions: []` emits no run-level region filter, allowing all
 regions eligible in the configured fleet/backend. It does not expand backend
 regions, quotas or VPC/subnet coverage. Set an explicit list for restricted
-placement; Vast policies require a region in Core. See the L40S guide for
-multi-region AWS preparation and cost caveats.
+placement; Vast policies require a region in Core. GCP regions are region
+names such as `us-central1`, not zones. See the L40S guide for multi-region AWS
+preparation and cost caveats.
 
 Provider selection is explicit. Optional AWS-to-Vast fallback requires Core #1612,
 chart 0.1.5+, a separately priced Vast fleet and a backend in the same project;
 see `capacity-manager-spec.example.yaml`. Older pinned images do not support it.
-The manager Pod receives no AWS credentials or Kubernetes API token.
+Core passes the provider name to dstack as the backend, so a `gcp` primary or
+fallback needs no other manager image than an AWS or Vast one.
+The manager Pod receives no cloud credentials or Kubernetes API token.
 
 ## Worker command and artifact environment
 
@@ -220,8 +236,8 @@ fingerprint. New configuration generation deliberately refuses to silently chang
 an existing plan's identity. Never run two manager instances against the same
 state/prefix, or the SDK launcher against the same deployment's capacity.
 
-The examples cap instance offers at USD 1.50/hour (AWS L4) or USD 0.80/hour (Vast
-RTX4090), with one warm worker and at most two. These are configuration limits,
+The examples cap instance offers at USD 1.50/hour (AWS or GCP L4) or USD 0.80/hour
+(Vast RTX4090), with one warm worker and at most two. These are configuration limits,
 not live prices; storage, transfer and taxes are outside them. Runtime estimates
 are initial Core example values and should be calibrated using real proofs.
 Set `minWorkers: 0` for scale-to-zero when there is no prove backlog. Core submits

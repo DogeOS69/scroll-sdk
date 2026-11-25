@@ -115,6 +115,10 @@ env:
   # into the policy bundle before genesis to avoid a post-launch rotation.
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_PROOF_RESOLVER_AUTHORITY"
     value: ""
+  # Must be the request contract of the attached policy. prep-charts selects it:
+  # ...-explain-sequencing-consent-v5 for a chain whose output 0 pays the
+  # sequencing 2-of-2 (Core #1768), ...-explain-v3 for a chain that keeps a
+  # P2PKH sequencing output. A mismatch fails closed at the signer.
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_REQUEST_CONTRACT"
     value: "dogeos-cubesigner-compact-psbt-bridge-proof-ref-v1-sign-all-scripts-false-unprefixed-hex-explain-v3"
   - name: "DOGEOS_CUBESIGNER_SIGNER_PRODUCTION_POLICY_LIVE_EVIDENCE_REPORT_PATH"

@@ -266,16 +266,22 @@ placeholders, not working identities or credentials.
 | Blob/proof buckets | Select two distinct bucket names; apply prepares the blob bucket as selected by `archive` and the proof bucket as selected by `proofAws`. Configure proof storage only at `proofArtifacts.s3`, and blob storage at `ethereumDa.blobArchive.s3`. The CLI derives Coordinator and Topology bucket/region/prefix/endpoint settings; repeating those fields in the spec is rejected. Proof region defaults to `infrastructure.aws.region`; set `proofArtifacts.s3.region` only for a different region. For AWS S3, omit `publicBaseUrl` to derive `https://<bucket>.s3.<region>.amazonaws.com`. Set it for a different HTTP read origin, such as a CDN or gateway; it must serve the same blob objects. Keep `keyPrefix` separate. Deriving a URL does not configure public-read permissions. Separate prefixes in one bucket are insufficient. |
 
 `bridge.timelock` is an absolute Dogecoin block height chosen for this deployment,
-not a duration or a fixed release constant. Core beta.6 separately defines
-[`MIN_RECOVERY_DELAY_BLOCKS = 259200`](https://github.com/DogeOS69/dogeos-core/blob/v0.3.0-beta.6/crates/bridge_script_utils/src/types.rs)
-and enforces `new timelock >= CLTV anchor height + 259200` when admitting and
-verifying a RotateKey transition. The bridge-generation tool accepts the supplied
-absolute height; it does not automatically add this delay. A future height that
-passes initial preparation does not by itself satisfy later rotation policy.
-Review the recovery horizon for production, and do not copy the builder's
-`525600` default as a live-network absolute height. Once funded, changing the
-script's timelock changes the Bridge address and requires the protocol's reviewed
-rotation process; editing the deployed spec does not update an existing Bridge.
+not a duration or a fixed release constant. Core defines
+`MIN_RECOVERY_DELAY_BLOCKS = 259200` and, from Core #1768,
+`MAX_RECOVERY_DELAY_BLOCKS = 525600` in `crates/bridge_script_utils`. A genesis
+timelock must lie between the genesis anchor height plus 259,200 and the anchor
+plus 525,600, inclusive; the anchor is the block that confirms the genesis
+sequencer output. The same window, measured from the transition's CLTV anchor,
+applies when a RotateKey transition is admitted and verified. The
+bridge-generation tool rejects a height outside the window; it does not choose
+one. The CLI checks the timelock against the earliest possible anchor before it
+asks for funding, and against the actual anchor afterwards, so leave margin for
+funding delays. A height that passes initial preparation does not by itself
+satisfy later rotation policy. Review the recovery horizon for production, and
+do not copy the builder's `525600` default as a live-network absolute height.
+Once funded, changing the script's timelock changes the Bridge address and
+requires the protocol's reviewed rotation process; editing the deployed spec
+does not update an existing Bridge.
 
 PostgreSQL settings can remain unconfigured while Blockscout is deferred and
 dstack uses SQLite. Do not select `preparation.databases: [blockscout]` until its
@@ -352,7 +358,8 @@ Decide who controls each key before running plan:
 With `sequencerKms: {action: create}`, apply creates or reuses
 `alias/dogeos/<metadata.name>/<eksClusterName>/bridge-sequencer`. It adds signing
 permissions to the existing proof AWS withdrawal role, preserving proof access,
-and derives the sequencer funding address from the pinned KMS public key.
+and derives the sequencer funding address from the pinned KMS public key and
+the TEE public key: the sequencing 2-of-2 described under funding below.
 For an existing key use `sequencerKms: {action: reuse, keyId: alias/EXISTING_KEY}`;
 its existing workload role must already permit `kms:GetPublicKey` and `kms:Sign`.
 The role defaults to the proof AWS withdrawal role; `roleArn` selects another
@@ -496,6 +503,13 @@ only the actual outpoints in:
 ```text
 /private/instance/deployment/.scrollsdk/inputs/bridge-funding.json
 ```
+
+The displayed sequencer address is the sequencing 2-of-2,
+`P2SH(OP_2 <TEE key> <sequencing key> OP_2 OP_CHECKMULTISIG)` (Core #1768), not
+the sequencing key's own address: neither key can spend the genesis sequencer
+output alone. The CLI rejects a payment to the sequencing key's P2PKH. The
+sequencing key must not also be the TEE key or an attestation, recovery or
+fee-wallet key.
 
 No funding file is needed while writing the spec or running plan. Apply creates
 the file as `{}` at the funding step and prints a template for the required

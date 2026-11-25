@@ -69,7 +69,9 @@ missing environment file is an error. Paths do not need to be repeated on resume
 Review the plan's selected AWS operations before apply. Production mode does not
 sign or broadcast funding payments on the operator's behalf.
 
-1. At the wallet-funding wait, use the printed addresses and amounts. Fund the
+1. At the wallet-funding wait, use the printed addresses and amounts. The
+   sequencer address is the sequencing 2-of-2 of the TEE key and the sequencing
+   key (a P2SH address), not the sequencing key's own address. Fund the
    initial sequencer with exactly 0.42069 DOGE **at output vout 0**. Fund the fee
    wallet separately or place it later in that transaction. Keep change after the
    sequencer output. Inspect the final signed transaction before broadcasting;
@@ -79,7 +81,9 @@ sign or broadcast funding payments on the operator's behalf.
 2. Run the same `setup apply` again. It validates funding and derives the final
    Bridge address. Fund that address with the required amount and exact OP_RETURN
    marker printed by apply. Add the `bridge` outpoint to the same JSON file,
-   preserving the wallet entries, then wait for confirmations.
+   preserving the wallet entries, then wait for confirmations. This output is
+   the opening WF's custody and every later WF spends its parent's single
+   custody output, so send the full initial Bridge balance in this one output.
 3. Run the same `setup apply` again. It generates genesis and Bridge-bound real
    proof materials, publishes them, prepares Secrets and writes the signer
    deployment kit.

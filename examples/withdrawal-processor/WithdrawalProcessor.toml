@@ -6,11 +6,12 @@
 # Ownership:
 # - The managed deployment block below is merged by `scrollsdk setup
 #   prep-charts`: keys derived from config.toml / doge-config (RPC URLs,
-#   contract addresses, chain ids, start heights, redeem script, and the
-#   validated genesis sequencer transaction emitted by bridge-init) are
-#   overwritten on every run; any OTHER key you tune inside the block (fee
-#   rate, timeouts, indexer cadence) is preserved. Comments
-#   inside the block are not preserved — keep commentary outside.
+#   contract addresses, chain ids, start heights, redeem script, the
+#   validated genesis sequencer transaction emitted by bridge-init, and the
+#   opening Bridge custody list) are overwritten on every run; any OTHER key
+#   you tune inside the block (fee rate, timeouts, indexer cadence) is
+#   preserved. Comments inside the block are not preserved — keep commentary
+#   outside.
 # - The managed proof block at the bottom is also owned by `scrollsdk setup
 #   prep-charts`. Mode-specific activation fields are projected atomically by
 #   scrollsdk into deployment values; the generic chart does not interpret
@@ -26,8 +27,31 @@
 
 # beta.5a fulfills pending withdrawals on every WF kind unconditionally.
 # Do not add the removed parity switch: unknown fields fail startup.
-# max_withdrawal_outputs_per_tx reserves AdvanceL1 output space and paces
-# AdvanceL1/rotation fulfillment; AdvanceL2 is bounded by transaction size.
+# max_withdrawal_outputs_per_tx only reserves AdvanceL1 output space for a full
+# deposit window. It does not cap payouts: an AdvanceL1 or rotation pays every
+# outstanding withdrawal that fits next to its inputs, and AdvanceL2 is bounded
+# by transaction size.
+#
+# Single custody (Core #1768): every WF spends its parent's one Bridge custody
+# output. The opening WF has no parent and spends opening_bridge_custody, the
+# marked Bridge funding output(s) of genesis, each as the raw funding
+# transaction and its Bridge output index. Startup refuses a genesis deployment
+# (genesis_sequencer_tx_hex set) with an empty list, and refuses a deposit as
+# an entry. prep-charts writes the list from the verified Bridge funding.
+#
+# Sequencing 2-of-2 (Core #1768): output 0 of every WF pays
+# P2SH(OP_2 <TEE key> <sequencing key> OP_2 OP_CHECKMULTISIG), and the TEE
+# signing policy refuses a P2PKH output 0. WP takes the shape from the genesis
+# sequencer output in genesis_sequencer_tx_hex: a P2SH seed needs no setting,
+# but the hex must stay configured for the life of the chain. A chain whose
+# seed is the sequencing key's P2PKH needs migrate_sequencer_two_of_two = true;
+# prep-charts writes it when doge-config declares
+# defaults.migrateSequencerTwoOfTwo, and it stays set afterwards. The gateway
+# then uses the sequencing-consent-v5 request contract
+# (values/cubesigner-signer-production.yaml). A planned proposer rotation adds
+# sequencer_signer_next_key or [sequencer_signer_next_kms] with
+# sequencer_signer_next_possession_outpoint; see Core's
+# docs/runbooks/sequencing-two-of-two.md.
 # Mainnet uses 60 Dogecoin confirmations; strict L1 validation requires >=50.
 # Testnet/shadowfork operators may explicitly choose a smaller depth.
 # max_withdrawal_outputs_per_tx uses Core's 85-output baseline. AdvanceL1
@@ -75,6 +99,12 @@ fee_rate_sat_per_kvb = 1000000
 # Unset by default; prep-charts supplies the validated bridge-init transaction.
 # Full raw transaction hex from bridge-init, not a txid; do not invent a value.
 # genesis_sequencer_tx_hex = "<TODO>"
+# Unset by default; prep-charts supplies the verified Bridge funding output.
+# Raw funding transaction hex and its Bridge output index; never a deposit.
+# opening_bridge_custody = [{ tx_hex = "<TODO>", vout = 0 }]
+# Unset by default; prep-charts sets it when doge-config declares
+# defaults.migrateSequencerTwoOfTwo, and never removes it.
+# migrate_sequencer_two_of_two = true
 initial_bridge_redeem_script_hex = "<TODO>"
 # Unset by default; declare only for snapshot/upgrade continuation.
 # Integer next L2 starting block height from the matching snapshot/upgrade
