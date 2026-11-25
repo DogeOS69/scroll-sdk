@@ -1,0 +1,18 @@
+{
+  "NodeDiskUsageHigh": {
+    "expr": "((max by (cluster, node, instance, device, mountpoint) (\n  (\n    100 * (\n      node_filesystem_size_bytes{job=\"node-exporter\", mountpoint!=\"\", mountpoint!~\"\", fstype!~\"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs\"}\n      - node_filesystem_avail_bytes{job=\"node-exporter\"}\n    ) / (node_filesystem_size_bytes{job=\"node-exporter\"} > 0)\n  )\n  and (node_filesystem_readonly{job=\"node-exporter\"} == 0)\n)) >= 80) < 95\n",
+    "for": "5m",
+    "annotations": {
+      "summary": "Node disk capacity needs attention.",
+      "description": "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is {{ $value | printf \"%.1f\" }}% unavailable, measured as total capacity minus space available to applications. Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded. Plan cleanup or expansion before writes fail."
+    }
+  },
+  "NodeDiskUsageHighCritical": {
+    "expr": "(max by (cluster, node, instance, device, mountpoint) (\n  (\n    100 * (\n      node_filesystem_size_bytes{job=\"node-exporter\", mountpoint!=\"\", mountpoint!~\"\", fstype!~\"|tmpfs|devtmpfs|overlay|squashfs|aufs|nsfs|proc|sysfs|cgroup2?|devpts|ramfs|tracefs|debugfs|securityfs|pstore|configfs|fusectl|mqueue|hugetlbfs\"}\n      - node_filesystem_avail_bytes{job=\"node-exporter\"}\n    ) / (node_filesystem_size_bytes{job=\"node-exporter\"} > 0)\n  )\n  and (node_filesystem_readonly{job=\"node-exporter\"} == 0)\n)) >= 95\n",
+    "for": "5m",
+    "annotations": {
+      "summary": "Node disk capacity is critically low.",
+      "description": "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} (device {{ $labels.device }}) is {{ $value | printf \"%.1f\" }}% unavailable, measured as total capacity minus space available to applications. Clean up logs and container data or expand the disk. Read-only and memory/pseudo filesystems are excluded. Plan cleanup or expansion before writes fail."
+    }
+  }
+}

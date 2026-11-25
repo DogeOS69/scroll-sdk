@@ -41,7 +41,7 @@ PrometheusRule resources rather than merely silenced in Alertmanager.
 | `NodeCPUHighUsage` | NodeCPUUsageHigh |
 | `NodeMemoryHighUtilization` | NodeMemoryUsageHigh / NodeMemoryUsageHighCritical |
 | `NodeFilesystemSpaceFillingUp` | NodeDiskFillingUp / NodeDiskFillingUpCritical |
-| `NodeFilesystemAlmostOutOfSpace` | NodeDiskUsageHigh / NodeDiskUsageHighCritical |
+| `NodeFilesystemAlmostOutOfSpace` | NodeDiskUsageHigh / NodeDiskUsageHighCritical / NodeDataDiskUsageHigh / NodeDataDiskUsageHighCritical |
 | `NodeFilesystemAlmostOutOfFiles` | NodeDiskInodesHigh / NodeDiskInodesHighCritical |
 | `KubePersistentVolumeFillingUp` | PVCUsageHigh / PVCFillingUp (warning and critical) |
 | `KubePersistentVolumeInodesFillingUp` | PVCInodesHigh / PVCInodesHighCritical / PVCInodesFillingUp |

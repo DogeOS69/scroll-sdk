@@ -114,7 +114,7 @@ migrate only matching managed rules; customized queries remain untouched.
 
 ### Workload and resource alert policy (enabled by default)
 
-The chart supplies 35 active workload/resource rules in three configuration sections,
+The chart supplies 37 active workload/resource rules in three configuration sections,
 independently of the paused service diagnostic catalog. They use `alert_scope` for
 routing and `alert_category` for classification. These are starting thresholds for
 this deployment, not universal SLOs; tune them against workload baselines and the
@@ -125,7 +125,7 @@ time needed to recover or expand capacity.
 | `pod-health` | Any observed restart/abnormal exit/failed non-Job pod; three restarts in 10m; crash-loop evidence with continuously unready pod for 5m; other unready pods for 10m | Controller availability rules below |
 | `availability` | Deployment, StatefulSet or DaemonSet has some ready replicas but fewer than desired for 10m | Desired replicas >0 and no available/ready replicas for 2m |
 | `job-health` | Job condition Failed=true, without an extra pending period | Classify business-critical job outcomes separately |
-| `disk-capacity` | Node filesystem/PVC usage >=80% for 5m; or predicted exhaustion in 4–24h for 30m | Usage >=95% for 5m; or predicted exhaustion in <4h for 5m |
+| `disk-capacity` | Kubelet filesystem usage >=85% for 30m; other node filesystem or PVC usage >=80% for 5m; or predicted exhaustion in 4–24h for 30m | Kubelet filesystem usage >=88% for 5m; other node filesystem or PVC usage >=95% for 5m; or predicted exhaustion in <4h for 5m |
 | `disk-inodes` | Inodes >=90% used for 5m | Inodes >=95% used for 5m |
 | `disk-health` | — | Persistent node filesystem read-only for 2m |
 | `memory` | Node unavailable memory >=90%, container working set/limit >=85%, for 10m | Either ratio >=95% for 5m |
@@ -133,7 +133,11 @@ time needed to recover or expand capacity.
 | `node-pressure` | — | Kubernetes MemoryPressure or DiskPressure for 2m |
 
 Warning and critical bands for the same utilization/forecast metric are mutually
-exclusive. A transition starts the new severity's pending period. Capacity and
+exclusive. A transition starts the new severity's pending period. The kubelet
+filesystem usage warning is the exception: it keeps firing above the critical
+threshold, so usage that moves back and forth across the critical threshold
+does not restart the warning's 30m pending period. Above the critical threshold
+both alerts are active and each sends its own notification. Capacity and
 forecast checks can both fire; notification grouping combines their symptoms.
 Pod failures and memory/CPU pressure can also be related; grouping does not infer
 root cause or inhibit alerts across different categories.
@@ -150,6 +154,43 @@ root cause or inhibit alerts across different categories.
   readiness checks exclude terminating pods. Disruptive controller rollouts may
   still cause availability alerts; use an appropriate maintenance mute.
 - `diskAlerts`: Node filesystems and PVCs throughout the collected cluster.
+  Node mount points matching `kubeletMountpointRegex` (`/`, `/var`,
+  `/var/lib/kubelet` and `/var/lib/containerd` by default) hold kubelet or
+  container runtime data, and their thresholds follow the kubelet's own cleanup.
+  Remove `/` from the pattern when that data lives on a separate filesystem.
+  With default kubelet settings, image garbage collection runs from 85% usage
+  down to 80%, so such a filesystem commonly sits near 80% and that alone is not
+  actionable. `NodeDiskUsageHigh` fires when usage stays at or above
+  `nodeUsagePercent` (85) for `nodeWarningFor` (30m), meaning garbage collection
+  could not reclaim enough. `NodeDiskUsageHighCritical` uses
+  `nodeCriticalUsagePercent` (88), which must stay below
+  `100 - kubeletEvictionAvailablePercent`, the usage at which the kubelet starts
+  evicting pods; the chart rejects values that break this. Leave enough
+  margin for the disk to keep filling during `nodeCriticalFor`. Set
+  `kubeletEvictionAvailablePercent` to the highest `evictionHard`
+  available-space percentage for these filesystems: `nodefs.available`, and
+  also `imagefs.available` when images share the filesystem. The default of 10
+  matches node images that set only `nodefs.available=10%`. The upstream kubelet
+  defaults, used for example by kubeadm and GKE, also set
+  `imagefs.available=15%`, which starts eviction at 85% usage together with
+  image garbage collection, leaving no room for an alert in between. There, set
+  15, lower the kubelet's `imageGCHighThresholdPercent` and
+  `imageGCLowThresholdPercent` (for example to 75 and 70), and set both node
+  thresholds between the new garbage collection threshold and 85 (for example
+  80 and 83). Lowering only the alert thresholds puts the warning inside the
+  normal garbage collection range, where it fires on healthy nodes. Change these
+  settings whenever the kubelet's `imageGCHighThresholdPercent` or
+  `evictionHard` change. Other node
+  filesystems (`NodeDataDiskUsageHigh`) and PVCs have no kubelet cleanup and use
+  `usagePercent` (80) and `criticalUsagePercent` (95).
+  Upgrading from 0.1.64-dogeos or earlier: `usagePercent`, `criticalUsagePercent`,
+  `warningFor` and `criticalFor` no longer apply to the kubelet mount points.
+  Move any override meant for those filesystems to the `node*` settings.
+  Grafana rules that still hold the shipped 0.1.64-dogeos queries migrate on
+  the next seed. A `NodeDiskUsageHigh` or `NodeDiskUsageHighCritical` query edited
+  in Grafana is kept as is; it still covers every node mount, so data disks then
+  alert both there and in the new `NodeDataDisk*` rules. Narrow the edited
+  query or pause the new rule.
   `excludeMountpointRegex` excludes intentionally read-only or unmanaged node
   mounts; it does not filter PVCs. Memory/pseudo filesystems and zero capacities
   are excluded. Read-only filesystems use their own fault rule.

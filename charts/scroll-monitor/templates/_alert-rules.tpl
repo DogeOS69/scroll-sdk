@@ -106,7 +106,7 @@
 {{- range $section, $file := dict "diskAlerts" "disks" "resourceAlerts" "resources" "businessPodAlerts" "business-pods" -}}
 {{- $settings := index $.Values $section -}}
 {{- if $settings.enabled -}}
-{{- $source := $.Files.Get (printf "alerts/%s.yaml" $file) | replace "__NAMESPACE__" ($.Release.Namespace | quote) | replace "__POD_SELECTOR__" $selector | replace "__DISK_EXCLUDE_MOUNT__" ($.Values.diskAlerts.excludeMountpointRegex | quote) | replace "__WORKLOAD_REGEX__" ($.Values.businessPodAlerts.workloadNameRegex | quote) -}}
+{{- $source := $.Files.Get (printf "alerts/%s.yaml" $file) | replace "__NAMESPACE__" ($.Release.Namespace | quote) | replace "__POD_SELECTOR__" $selector | replace "__DISK_EXCLUDE_MOUNT__" ($.Values.diskAlerts.excludeMountpointRegex | quote) | replace "__DISK_KUBELET_MOUNT__" ($.Values.diskAlerts.kubeletMountpointRegex | quote) | replace "__WORKLOAD_REGEX__" ($.Values.businessPodAlerts.workloadNameRegex | quote) -}}
 {{- range $key, $value := $settings -}}
 {{- $source = replace (printf "__%s.%s__" $section $key) (toString $value) $source -}}
 {{- end -}}
@@ -234,6 +234,7 @@
 {{- $_ := unset $rule "previousExpr" -}}
 {{- $_ := unset $rule "previousAnnotations" -}}
 {{- $_ := unset $rule "previousFor" -}}
+{{- $_ := unset $rule "inheritOperatorSettingsFrom" -}}
 {{- $_ := unset $rule "isPaused" -}}
 {{- end -}}
 {{- $rules = append $rules $rule -}}
